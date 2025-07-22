@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="30" viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10 5H7C5.89543 5 5 5.89543 5 7V23C5 24.1046 5.89543 25 7 25H17C18.1046 25 19 24.1046 19 23V7C19 5.89543 18.1046 5 17 5H14M10 5C10 6.10457 10.8954 7 12 7C13.1046 7 14 6.10457 14 5M10 5C10 3.89543 10.8954 3 12 3C13.1046 3 14 3.89543 14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="25" y="20" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="currentColor">TaskManager</text>
+</svg>
