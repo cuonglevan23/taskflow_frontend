@@ -6,9 +6,7 @@ const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <MainLayout>
-        {/* <h1>ProjectLayout</h1> */}
         {children}
-        {/* <ItemList/> */}
       </MainLayout>
     </div>
   )
