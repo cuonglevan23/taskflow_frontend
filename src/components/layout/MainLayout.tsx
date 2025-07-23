@@ -8,7 +8,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <div>
+    <div className='relative'>
       <Header onToggleSidebar={() => setCollapsed(prev => !prev)} />
       <div className="flex">
         <NavBar collapsed={collapsed} />
