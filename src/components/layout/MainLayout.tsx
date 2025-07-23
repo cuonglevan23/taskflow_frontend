@@ -12,7 +12,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <Header onToggleSidebar={() => setCollapsed(prev => !prev)} />
       <div className="flex">
         <NavBar collapsed={collapsed} />
-        <main className="flex-1 p-4">
+        <main className="flex-1">
           {children}
         </main>
       </div>

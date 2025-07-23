@@ -1,1 +1,11 @@
 @import "tailwindcss";
+/* Hỗ trợ Chrome, Safari, Edge */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hỗ trợ Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE và Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
