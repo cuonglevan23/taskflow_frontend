@@ -30,7 +30,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
   }
 
   return (
-    <div className={`flex flex-col h-screen bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`flex flex-col absolute  bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Create Button */}
       <div className="p-4">
         <button className={`w-full flex items-center justify-center ${collapsed ? 'justify-center' : 'gap-2'} bg-red-500 hover:bg-red-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all`}>
@@ -121,7 +121,7 @@ interface SidebarItemProps {
 
 function SidebarItem({ icon: Icon, label, hasIndicator, hasChevron, collapsed }: SidebarItemProps) {
   return (
-    <button className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md group">
+    <button className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md group ">
       <Icon className="w-4 h-4 text-gray-500" />
       {!collapsed && <span className="ml-3 flex-1 text-left">{label}</span>}
       {hasIndicator && !collapsed && <div className="w-2 h-2 bg-teal-500 rounded-full"></div>}
