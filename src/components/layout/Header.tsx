@@ -4,7 +4,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AlignJustify, Search, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 
-const Header = () => {
+interface HeaderProps {
+  onToggleSidebar: () => void
+}
+
+const Header = ({ onToggleSidebar }: HeaderProps) => {
   const [open, setOpen] = useState(false)
   const [windowWidth, setWindowWidth] = useState<number>(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -16,7 +20,6 @@ const Header = () => {
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  // Đóng dropdown khi click ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -27,16 +30,14 @@ const Header = () => {
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
     <header className="w-full h-[50px] bg-white shadow flex items-center justify-between px-4">
       {/* Left: Menu + Logo */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        <button className="p-1 hover:bg-gray-100 rounded">
+        <button onClick={onToggleSidebar} className="p-1 hover:bg-gray-100 rounded">
           <AlignJustify className="w-5 h-5 text-gray-700" />
         </button>
         {windowWidth >= 500 && (
