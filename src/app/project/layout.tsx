@@ -9,6 +9,7 @@ const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
     <div className='flex flex-col w-full h-full'>
 
       <MainLayout>
+        <HeaderProject/>
         {/* <h1>ProjectLayout</h1> */}
         {children}
         {/* <ItemList/> */}
