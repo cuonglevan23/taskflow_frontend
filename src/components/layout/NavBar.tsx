@@ -30,7 +30,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
   }
 
   return (
-    <div className={`flex flex-col absolute  bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`flex flex-col bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Create Button */}
       <div className="p-4">
         <button className={`w-full flex items-center justify-center ${collapsed ? 'justify-center' : 'gap-2'} bg-red-500 hover:bg-red-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all`}>
