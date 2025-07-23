@@ -49,7 +49,7 @@ const getStatusColor = (status: string) => {
 }
 const ProjectListPage = () => {
   return (
-    <div className="pt-4">
+    <div className="pt-4 w-full">
       <div className="flex items-center justify-between mx-4">
         <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-1 rounded-md">
           <Plus className="w-4 h-4" />
@@ -74,7 +74,7 @@ const ProjectListPage = () => {
           </div>
         </div>
       </div>
-      <div className="max-h-[700px] overflow-y-auto">
+      <div className="max-h-[700px] w-full overflow-y-auto">
         <table className="w-full border-separate border-spacing-y-2 mt-4">
           <thead>
             <tr className="text-left text-sm text-gray-500 border-b border-t border-gray-20">

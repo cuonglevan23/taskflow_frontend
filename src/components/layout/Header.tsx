@@ -34,7 +34,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
   }, [])
 
   return (
-    <header className="w-full fixed h-[50px] bg-white shadow flex items-center justify-between px-4">
+    <header className="w-full h-[50px] bg-white shadow flex items-center justify-between px-4">
       {/* Left: Menu + Logo */}
       <div className="flex items-center gap-3 flex-shrink-0">
         <button onClick={onToggleSidebar} className="p-1 hover:bg-gray-100 rounded">
