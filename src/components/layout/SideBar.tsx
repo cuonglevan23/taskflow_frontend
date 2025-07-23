@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react'
+import Link from 'next/link'
 
 export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
   const [expandedSections, setExpandedSections] = useState({
@@ -30,10 +31,10 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
   }
 
   return (
-    <div className={`flex flex-col bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`flex flex-col h-[calc(100vh-50px)] fixed mt-[50px] bg-white border border-gray-200 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Create Button */}
       <div className="p-4">
-        <button className={`w-full flex items-center justify-center ${collapsed ? 'justify-center' : 'gap-2'} bg-red-500 hover:bg-red-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all`}>
+        <button className={`w-full flex items-center justify-center ${collapsed ? 'justify-center' : 'gap-2'} bg-red-500 hover:bg-red-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-all cursor-pointer`}>
           <Plus className="w-4 h-4" />
           {!collapsed && <span>Create</span>}
         </button>
@@ -41,9 +42,9 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
 
       {/* Main Navigation */}
       <nav className="flex-1 px-2 space-y-1">
-        <SidebarItem icon={Home} label="Home" collapsed={collapsed} />
-        <SidebarItem icon={CheckSquare} label="My tasks" collapsed={collapsed} />
-        <SidebarItem icon={Inbox} label="Inbox" collapsed={collapsed} />
+        <SidebarItem icon={Home} label="Home" collapsed={collapsed} link="/" />
+        <SidebarItem icon={CheckSquare} label="My tasks" collapsed={collapsed} link="/mytask" />
+        <SidebarItem icon={Inbox} label="Inbox" collapsed={collapsed} link="/inbox" />
 
         {/* Sections */}
         <div className="mt-6 space-y-2">
@@ -64,7 +65,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
             onToggle={() => toggleSection('projects')}
             collapsed={collapsed}
           >
-            <SidebarItem icon={FolderOpen} label="Cross-functional project pl..." hasIndicator collapsed={collapsed} />
+            <SidebarItem icon={FolderOpen} label="Cross-functional project pl..." hasIndicator collapsed={collapsed} link="/project" />
           </SidebarSection>
 
           <SidebarSection
@@ -117,16 +118,19 @@ interface SidebarItemProps {
   hasIndicator?: boolean
   hasChevron?: boolean
   collapsed?: boolean
+  link?: string
 }
 
-function SidebarItem({ icon: Icon, label, hasIndicator, hasChevron, collapsed }: SidebarItemProps) {
+function SidebarItem({ icon: Icon, label, hasIndicator, hasChevron, collapsed, link }: SidebarItemProps) {
   return (
-    <button className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md group ">
-      <Icon className="w-4 h-4 text-gray-500" />
+      <Link href={link || '/'}>
+    <div className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md group cursor-pointer">
+        <Icon className="w-4 h-4 text-gray-500" />
       {!collapsed && <span className="ml-3 flex-1 text-left">{label}</span>}
       {hasIndicator && !collapsed && <div className="w-2 h-2 bg-teal-500 rounded-full"></div>}
       {hasChevron && !collapsed && <ChevronRight className="w-4 h-4 text-gray-400" />}
-    </button>
+    </div>
+      </Link>
   )
 }
 

@@ -6,8 +6,10 @@ const MyTaskLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <MainLayout>
-        <HeaderMyTask/>
-        {children}
+        <div>
+          <HeaderMyTask/>
+          {children}
+        </div>
       </MainLayout>
     </div>
   )
