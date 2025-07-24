@@ -5,21 +5,21 @@ import { ArrowUpDown, ListFilter, Search, ChevronDown } from 'lucide-react'
 const tasks: Task[] = [
   {
     name: 'Task 1',
-    assignee: 'John Doe',
+    assignee: ['John Doe', 'Jane Doe'],
     dueDate: '2025-01-01',
     priority: 'Low',
     status: 'On track'
   },
   {
     name: 'Task 2',
-    assignee: 'Jane Doe',
+    assignee: ['Jane Doe'],
     dueDate: '2025-01-02',
     priority: 'Medium',
     status: 'Off track'
   },
   {
     name: 'Task 3',
-    assignee: 'John Doe',
+    assignee: ['oihh', 'John Doe', 'Jane Doe'],
     dueDate: '2025-01-03',
     priority: 'High',
     status: 'In progress'
@@ -105,9 +105,12 @@ const ProjectListPage = () => {
                     <span className='flex items-center gap-2'><CheckCircle className="w-5 h-5 text-gray-400" />
                       {task.name}</span>
                   </td>
-                  <td className="min-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="max-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <span className='flex items-center gap-2'><User className="w-5 h-5 text-gray-400" />
-                      {task.assignee}</span>
+                      {task.assignee.map((assignee, index) => (
+                        <span key={index}>{assignee}</span>
+                      ))}
+                    </span>
                   </td>
                   <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
@@ -127,6 +130,26 @@ const ProjectListPage = () => {
                   <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
                 </tr>
               ))}
+              {/* add new task */}
+              <tr>
+                <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                    
+                </td>
+                <td className="min-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                  <span className='flex items-center gap-2'><User className="w-5 h-5 text-gray-400" />
+                  </span>
+                </td>
+                <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">
+
+                </td>
+                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+
+                </td>
+                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+
+                </td>
+                <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+              </tr>
               <tr className=' rounded overflow-hidden border-b border-gray-300 mt-4'>
                 <td className='py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
                   <ChevronDown className="w-4 h-4" /> Doing
@@ -215,7 +238,7 @@ const ProjectListPage = () => {
             {/* Doing section */}
             <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1"><ChevronDown className="w-4 h-4" /> Doing</div>
             {tasks.map((task, idx) => (
-              <div key={idx+100} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
+              <div key={idx + 100} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
                 <div className="flex items-center gap-2 font-semibold text-gray-700"><CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}</div>
                 <div className="flex items-center gap-2 text-sm text-gray-500"><User className="w-4 h-4" /> {task.assignee}</div>
                 <div className="flex justify-between text-xs">
@@ -228,7 +251,7 @@ const ProjectListPage = () => {
             {/* Done section */}
             <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1"><ChevronDown className="w-4 h-4" /> Done</div>
             {tasks.map((task, idx) => (
-              <div key={idx+200} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
+              <div key={idx + 200} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
                 <div className="flex items-center gap-2 font-semibold text-gray-700"><CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}</div>
                 <div className="flex items-center gap-2 text-sm text-gray-500"><User className="w-4 h-4" /> {task.assignee}</div>
                 <div className="flex justify-between text-xs">

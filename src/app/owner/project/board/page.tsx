@@ -8,14 +8,14 @@ const sampleData: { title: string; tasks: Task[] }[] = [
     tasks: [
       {
         name: 'Task 1',
-        assignee: 'd2',
+        assignee: ['d2'],
         dueDate: 'Monday',
         priority: 'Low',
         status: 'On track',
       },
       {
         name: 'Task 2',
-        assignee: '',
+        assignee: ['sd'],
         dueDate: '',
         priority: 'Low',
         status: 'On track',
@@ -27,7 +27,7 @@ const sampleData: { title: string; tasks: Task[] }[] = [
     tasks: [
       {
         name: 'Task 3',
-        assignee: '',
+        assignee: ['sd'],
         dueDate: '',
         priority: 'Low',
         status: 'On track',
@@ -39,35 +39,35 @@ const sampleData: { title: string; tasks: Task[] }[] = [
     tasks: [
       {
         name: 'Schedule kickoff meeting',
-        assignee: 'OH',
+        assignee: ['kh'],
         dueDate: 'Today - 28 Jul',
         priority: 'Medium',
         status: 'Off track',
       },
       {
         name: 'Draft project brief',
-        assignee: 'OH',
+        assignee: ['OH', 'd2'],
         dueDate: '23 - 25 Jul',
         priority: 'Low',
         status: 'On track',
       },
       {
         name: 'Task 4',
-        assignee: '',
+        assignee: ['OH', 'd2'],
         dueDate: '',
         priority: 'Low',
         status: 'On track',
       },
       {
         name: 'Task 5',
-        assignee: '',
+        assignee: ['OH', 'hj'],
         dueDate: '',
         priority: 'Low',
         status: 'On track',
       },
       {
         name: 'Task 6',
-        assignee: '',
+        assignee: [],
         dueDate: '',
         priority: 'Low',
         status: 'On track',
