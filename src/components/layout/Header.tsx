@@ -1,61 +1,56 @@
-'use client'
-
 import React, { useEffect, useRef, useState } from 'react'
 import { AlignJustify, Search, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 
 interface HeaderProps {
-  onToggleSidebar: () => void
+  onMenuClick: () => void
 }
 
-const Header = ({ onToggleSidebar }: HeaderProps) => {
+const Header = ({ onMenuClick }: HeaderProps) => {
   const [open, setOpen] = useState(false)
-  const [windowWidth, setWindowWidth] = useState<number>(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => setWindowWidth(window.innerWidth)
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const toggleButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node) &&
+        !toggleButtonRef.current?.contains(event.target as Node)
       ) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+  
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
   }, [])
+  
 
   return (
-    <header className="w-full h-[50px] bg-white shadow flex items-center justify-between px-4">
-      {/* Left: Menu + Logo */}
+    <header className=" h-[50px] bg-white shadow flex items-center justify-between px-4">
       <div className="flex items-center gap-3 flex-shrink-0">
-        <button onClick={onToggleSidebar} className="p-1 hover:bg-gray-100 rounded">
+        <button
+          className="p-1 hover:bg-gray-100 rounded"
+          onClick={onMenuClick}
+        >
           <AlignJustify className="w-5 h-5 text-gray-700" />
         </button>
-        {windowWidth >= 500 && (
-          <Image src="/logo.svg" alt="logo" width={80} height={30} />
-        )}
+        <Image src="/logo.svg" alt="logo" width={80} height={30} />
       </div>
 
-      {/* Center: Search */}
       <div className="relative flex-grow max-w-lg mx-4 sm:block">
         <input
           type="text"
           placeholder="Tìm kiếm..."
-          className="w-full h-9 pl-10 pr-3 text-sm rounded-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-150 outline-none"
+          className="w-full h-9 pl-10 pr-3 text-sm rounded-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
         />
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
       </div>
 
-      {/* Right: Avatar + Dropdown */}
       <div className="relative flex-shrink-0" ref={dropdownRef}>
         <button
           onClick={() => setOpen(!open)}

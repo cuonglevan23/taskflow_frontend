@@ -76,7 +76,7 @@ const ProjectListPage = () => {
       </div>
       <div className="w-full overflow-x-auto scrollbar-hide max-h-[530px] mt-2">
         {/* Table header: hidden on mobile */}
-        <table className="min-w-[700px] md:min-w-[1270px] border-separate border-spacing-y-2 mt-4 hidden md:table">
+        <table className="w-full border-separate border-spacing-y-2 mt-4 hidden md:table">
           <thead>
             <tr className="text-left text-sm text-gray-500 border-b border-t border-gray-20">
               <th className='min-w-[200px] border-r border-b border-t border-gray-300 px-2 py-2'>Name</th>
@@ -90,7 +90,7 @@ const ProjectListPage = () => {
         </table>
 
         {/* Table body: card view on mobile, table on desktop */}
-        <div className="max-h-[700px] min-w-[700px] md:min-w-[1270px] overflow-y-auto scrollbar-hide">
+        <div className="max-h-[700px] w-full overflow-y-auto scrollbar-hide">
           {/* Desktop table */}
           <table className="w-full border-separate border-spacing-y-2 mt-4 hidden md:table">
             <tbody>

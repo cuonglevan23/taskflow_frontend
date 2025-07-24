@@ -9,7 +9,9 @@ const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
       <MainLayout>
         <div className=''>
           <HeaderProject/>
-          {children}
+          <div className=''>
+            {children}
+          </div>
         </div>
       </MainLayout>
     </div>
