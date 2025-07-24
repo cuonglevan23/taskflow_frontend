@@ -21,6 +21,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
     insights: false,
     projects: false,
     teams: false,
+    members: false,
   })
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -74,7 +75,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
             onToggle={() => toggleSection('teams')}
             collapsed={collapsed}
           >
-            <SidebarItem icon={Users} label="DiNH's first team" hasChevron collapsed={collapsed} />
+            <SidebarItem icon={Users} label="DiNH's first team" hasChevron collapsed={collapsed} link="/owner/Members/allMembers" />
             {!collapsed && (
               <div className="ml-6 mt-1">
                 <button className="text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors">
