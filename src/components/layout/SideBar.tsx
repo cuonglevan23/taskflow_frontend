@@ -42,8 +42,8 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
 
       {/* Main Navigation */}
       <nav className="flex-1 px-2 space-y-1">
-        <SidebarItem icon={Home} label="Home" collapsed={collapsed} link="/" />
-        <SidebarItem icon={CheckSquare} label="My tasks" collapsed={collapsed} link="/mytask" />
+        <SidebarItem icon={Home} label="Home" collapsed={collapsed} link="/owner/home" />
+        <SidebarItem icon={CheckSquare} label="My tasks" collapsed={collapsed} link="/owner/mytask" />
         <SidebarItem icon={Inbox} label="Inbox" collapsed={collapsed} link="/inbox" />
 
         {/* Sections */}
@@ -57,7 +57,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
             <SidebarItem icon={TrendingUp} label="Reporting" collapsed={collapsed} />
             <SidebarItem icon={Briefcase} label="Portfolios" collapsed={collapsed} />
             <SidebarItem icon={Target} label="Goals" collapsed={collapsed} />
-          </SidebarSection>
+          </SidebarSection> 
 
           <SidebarSection
             title="Projects"
@@ -65,7 +65,7 @@ export function NavBar({ collapsed = false }: { collapsed?: boolean }) {
             onToggle={() => toggleSection('projects')}
             collapsed={collapsed}
           >
-            <SidebarItem icon={FolderOpen} label="Cross-functional project pl..." hasIndicator collapsed={collapsed} link="/project" />
+            <SidebarItem icon={FolderOpen} label="Cross-functional project pl..." hasIndicator collapsed={collapsed} link="/owner/project" />
           </SidebarSection>
 
           <SidebarSection
