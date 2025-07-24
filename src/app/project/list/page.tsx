@@ -49,7 +49,7 @@ const getStatusColor = (status: string) => {
 }
 const ProjectListPage = () => {
   return (
-    <div className="pt-4 w-full">
+    <div className="pt-4 w-full px-4">
       <div className="flex items-center justify-between mx-4">
         <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-1 rounded-md">
           <Plus className="w-4 h-4" />
@@ -74,37 +74,40 @@ const ProjectListPage = () => {
           </div>
         </div>
       </div>
-      <div className="max-h-[700px] w-full overflow-y-auto">
-        <table className="w-full border-separate border-spacing-y-2 mt-4">
+      <div className="w-full overflow-x-auto scrollbar-hide">
+        <table className="min-w-[1300px] border-separate border-spacing-y-2 mt-4">
           <thead>
-            <tr className="text-left text-sm text-gray-500 border-b border-t border-gray-20">
-              <th className='border-r border-b border-t border-gray-300 px-2 py-2 '>Name</th>
-              <th className='border-r border-b border-t border-gray-300 px-2 py-2'>Assignee</th>
-              <th className='border-r border-b border-t border-gray-300 px-2 py-2'>Due Date</th>
-              <th className='border-r border-b border-t border-gray-300 px-2 py-2'>Priority</th>
-              <th className='border-r border-b border-t border-gray-300 px-2 py-2'>Status</th>
-              <th className=' border-b border-t border-gray-300 px-2 py-2'><Plus /></th>
+            <tr className="text-left  text-sm text-gray-500 border-b border-t border-gray-20">
+              <th className=' min-w-[200px] border-r border-b border-t border-gray-300 px-2 py-2 '>Name</th>
+              <th className=' min-w-[130px] border-r border-b border-t border-gray-300 px-2 py-2'>Assignee</th>
+              <th className=' min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Due Date</th>
+              <th className=' min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Priority</th>
+              <th className=' min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Status</th>
+              <th className=' min-w-[70px] border-b border-t border-gray-300 px-2 py-2'><Plus /></th>
             </tr>
           </thead>
-        
+        </table>
+
+        <div className="max-h-[700px] min-w-[1300px] overflow-y-auto scrollbar-hide">
+          <table className="w-full border-separate border-spacing-y-2 mt-4">
             <tbody >
               <tr className='rounded overflow-hidden border-b border-gray-300'>
-                <td className='py-2 px-2 flex items-center gap-2 '>
-                  <div className="flex items-center gap-2"><ChevronDown className="w-4 h-4" /> To Do</div>
+                <td className='py-2 px-2 min-w-[200px] flex items-center gap-2 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+                  <ChevronDown className="w-4 h-4" /> To Do
                 </td>
               </tr>
               {tasks.map((task, index) => (
                 <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
-                  <td className="py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
-                    <CheckCircle className="w-5 h-5 text-gray-400" />
-                    {task.name}
+                  <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                    <span className='flex items-center gap-2'><CheckCircle className="w-5 h-5 text-gray-400" />
+                      {task.name}</span>
                   </td>
-                  <td className="py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
-                    <User className="w-5 h-5 text-gray-400" />
-                    {/* {task.assignee} */}
+                  <td className="min-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                    <span className='flex items-center gap-2'><User className="w-5 h-5 text-gray-400" />
+                      {task.assignee}</span>
                   </td>
-                  <td className="py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
                         task.priority
@@ -113,26 +116,26 @@ const ProjectListPage = () => {
                       {task.priority}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
                       {task.status}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
                 </tr>
               ))}
               {tasks.map((task, index) => (
                 <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
-                  <td className="py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <CheckCircle className="w-5 h-5 text-gray-400" />
                     {task.name}
                   </td>
-                  <td className="py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[130px] py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
                     <User className="w-5 h-5 text-gray-400" />
                     {/* {task.assignee} */}
                   </td>
-                  <td className="py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
                         task.priority
@@ -141,31 +144,31 @@ const ProjectListPage = () => {
                       {task.priority}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
                       {task.status}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
                 </tr>
               ))}
               <tr className=' rounded overflow-hidden border-b border-gray-300 mt-4'>
-                <td className='py-2 px-2 flex items-center gap-2 mt-4'>
-                  <div className="flex items-center gap-2"><ChevronDown className="w-4 h-4" /> Doing</div>
+                <td className='py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+                  <ChevronDown className="w-4 h-4" /> Doing
                 </td>
               </tr>
               {tasks.map((task, index) => (
                 <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
-                  <td className="py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <CheckCircle className="w-5 h-5 text-gray-400" />
                     {task.name}
                   </td>
-                  <td className="py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[130px] py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
                     <User className="w-5 h-5 text-gray-400" />
                     {/* {task.assignee} */}
                   </td>
-                  <td className="py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
                         task.priority
@@ -174,32 +177,32 @@ const ProjectListPage = () => {
                       {task.priority}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
                       {task.status}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
                 </tr>
               ))}
 
               <tr className='rounded overflow-hidden border-b border-gray-300 '>
-                <td className='py-2 px-2 flex items-center gap-2 mt-4'>
-                  <div className="flex items-center gap-2"><ChevronDown className="w-4 h-4" /> Done</div>
+                <td className='py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+                  <ChevronDown className="w-4 h-4" /> Done
                 </td>
               </tr>
               {tasks.map((task, index) => (
                 <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
-                  <td className="py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <CheckCircle className="w-5 h-5 text-gray-400" />
                     {task.name}
                   </td>
-                  <td className="py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[130px] py-2 px-2   border-r border-b border-t border-gray-300 px-2 py-2">
                     <User className="w-5 h-5 text-gray-400" />
                     {/* {task.assignee} */}
                   </td>
-                  <td className="py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
                         task.priority
@@ -208,17 +211,18 @@ const ProjectListPage = () => {
                       {task.priority}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
+                  <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
                       {task.status}
                     </span>
                   </td>
-                  <td className="py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
                 </tr>
               ))}
+
             </tbody>
-        
-        </table>
+          </table>
+        </div>
 
       </div>
 
