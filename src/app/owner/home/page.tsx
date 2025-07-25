@@ -1,10 +1,7 @@
 "use client";
 import ProjectCard from "./components/ProjectCard";
 import React, { useState } from "react";
-<<<<<<< HEAD
-=======
 
->>>>>>> c0a9705d6a316b023f82dc863250f4fab3aef027
 import {
   Users,
   ListChecks,
