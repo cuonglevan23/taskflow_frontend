@@ -1,7 +1,6 @@
 "use client";
 import ProjectCard from "./components/ProjectCard";
 import React, { useState } from "react";
-import MainLayout from "@/components/layout/MainLayout";
 import {
   Users,
   ListChecks,
@@ -14,6 +13,7 @@ import ProjectFilters from "./components/ProjectFilters";
 
 import { Project } from "./types/project.types";
 import { projects } from "./data/projects";
+import { PrivateLayout } from "@/layouts";
 
 const HomePage = () => {
   const [status, setStatus] = useState("All");
@@ -35,7 +35,7 @@ const HomePage = () => {
   });
 
   return (
-    <MainLayout>
+    <PrivateLayout>
       <div className="px-6 py-8 space-y-10 bg-gray-50 min-h-screen">
         <div className="space-y-1">
           <h1 className="text-4xl font-semibold text-gray-900">All Projects</h1>
@@ -98,7 +98,7 @@ const HomePage = () => {
           ))}
         </div>
       </div>
-    </MainLayout>
+    </PrivateLayout>
   );
 };
 
