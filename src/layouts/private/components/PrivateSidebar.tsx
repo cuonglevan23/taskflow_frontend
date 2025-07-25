@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
+<<<<<<< HEAD
 import { useDisclosure } from "@/layouts/hooks";
+=======
+import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
+>>>>>>> origin/master
 import Dropdown, {
   DropdownItem,
   DropdownSeparator,
