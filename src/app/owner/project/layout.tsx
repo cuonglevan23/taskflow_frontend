@@ -1,19 +1,19 @@
-import MainLayout from '@/components/layout/MainLayout'
 import React from 'react'
-import HeaderProject from './components/header_project'
+import HeaderProject from './header_project'
+import PrivateLayout from '@/layouts/private/PrivateLayout'
 
 const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
 
-      <MainLayout>
+      <PrivateLayout>
         <div className=''>
           <HeaderProject/>
           <div className=''>
             {children}
           </div>
         </div>
-      </MainLayout>
+      </PrivateLayout>
     </div>
   )
 }

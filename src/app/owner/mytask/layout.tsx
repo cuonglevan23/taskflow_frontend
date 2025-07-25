@@ -1,16 +1,16 @@
 import React from 'react'
-import MainLayout from '@/components/layout/MainLayout'
-import HeaderMyTask from '@/app/owner/mytask/components/header_mytask'
+import PrivateLayout from '@/layouts/private/PrivateLayout'
+import HeaderMyTask from './header_mytask'
 
 const MyTaskLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
-      <MainLayout>
+      <PrivateLayout>
         <div>
           <HeaderMyTask/>
           {children}
         </div>
-      </MainLayout>
+      </PrivateLayout>
     </div>
   )
 }
