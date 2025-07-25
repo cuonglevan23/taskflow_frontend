@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { UserRole } from "@/constants/auth";
+import { UserRole } from "@/types/auth";
 import {
   LayoutContextValue,
   LayoutActions,
@@ -16,6 +16,7 @@ export function usePrivateLayout() {
 
   // Layout state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -233,6 +234,7 @@ export function usePrivateLayout() {
     quickActions: [],
     isLoading,
     isSidebarOpen,
+    isSidebarCollapsed,
     isUserMenuOpen,
     searchQuery,
     searchResults,
@@ -241,8 +243,10 @@ export function usePrivateLayout() {
 
   const actions: LayoutActions = {
     setSidebarOpen: setIsSidebarOpen,
+    setSidebarCollapsed: setIsSidebarCollapsed,
     setUserMenuOpen: setIsUserMenuOpen,
     toggleSidebar: () => setIsSidebarOpen((prev) => !prev),
+    toggleSidebarCollapse: () => setIsSidebarCollapsed((prev) => !prev),
     toggleUserMenu: () => setIsUserMenuOpen((prev) => !prev),
     setSearchQuery,
     performSearch,

@@ -109,6 +109,7 @@ export interface LayoutContextValue {
   quickActions: QuickAction[];
   isLoading: boolean;
   isSidebarOpen: boolean;
+  isSidebarCollapsed: boolean;
   isUserMenuOpen: boolean;
   searchQuery: string;
   searchResults: SearchResult[];
@@ -118,8 +119,10 @@ export interface LayoutContextValue {
 // Layout actions interface
 export interface LayoutActions {
   setSidebarOpen: (open: boolean) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setUserMenuOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  toggleSidebarCollapse: () => void;
   toggleUserMenu: () => void;
   setSearchQuery: (query: string) => void;
   performSearch: (query: string) => Promise<SearchResult[]>;

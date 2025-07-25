@@ -1,9 +1,9 @@
-import RoleBasedLayout from "@/layouts/RoleBasedLayout";
+import PrivateLayout from "@/layouts/private/PrivateLayout";
 
 export default function TasksLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleBasedLayout layoutType="private">{children}</RoleBasedLayout>;
+  return <PrivateLayout>{children}</PrivateLayout>;
 }

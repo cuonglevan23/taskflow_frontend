@@ -1,13 +1,16 @@
 "use client";
 
-import { PrivateLayoutProps } from "../types";
 import { PrivateLayoutProvider } from "./context/PrivateLayoutContext";
 import PrivateLayoutContent from "./components/PrivateLayoutContent";
 
-export default function PrivateLayout(props: PrivateLayoutProps) {
+interface PrivateLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function PrivateLayout({ children }: PrivateLayoutProps) {
   return (
     <PrivateLayoutProvider>
-      <PrivateLayoutContent {...props} />
+      <PrivateLayoutContent>{children}</PrivateLayoutContent>
     </PrivateLayoutProvider>
   );
 }

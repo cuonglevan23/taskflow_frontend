@@ -1,27 +1,57 @@
-// Generic API response wrapper
-export interface ApiResponse<T = any> {
-  success: boolean;
+// API Response types
+export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
-  errors?: ApiError[];
-  meta?: ApiMeta;
+  success: boolean;
+  timestamp: string;
 }
 
-// API error structure
 export interface ApiError {
-  field?: string;
   message: string;
   code: string;
+  status: number;
+  errors?: Record<string, string[]>;
 }
 
-// API metadata for pagination, etc.
-export interface ApiMeta {
+// Pagination
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
+  meta: PaginationMeta;
+}
+
+// Common API request types
+export interface CreateRequest<T = Record<string, unknown>> {
+  data: T;
+}
+
+export interface UpdateRequest<T = Record<string, unknown>> {
+  id: string;
+  data: Partial<T>;
+}
+
+export interface DeleteRequest {
+  id: string;
+}
+
+export interface GetByIdRequest {
+  id: string;
+}
+
+export interface ListRequest {
   page?: number;
   limit?: number;
-  total?: number;
-  totalPages?: number;
-  hasNext?: boolean;
-  hasPrev?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
 }
 
 // HTTP methods

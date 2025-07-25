@@ -1,4 +1,33 @@
-import { UserRole, Permission } from '@/constants/auth';
+// Auth related enums
+export enum UserRole {
+  ADMIN = 'admin',
+  OWNER = 'owner',
+  MANAGER = 'manager',
+  MEMBER = 'member',
+  VIEWER = 'viewer'
+}
+
+export enum Permission {
+  // Project permissions
+  CREATE_PROJECT = 'create_project',
+  EDIT_PROJECT = 'edit_project',
+  DELETE_PROJECT = 'delete_project',
+  VIEW_PROJECT = 'view_project',
+  
+  // Task permissions
+  CREATE_TASK = 'create_task',
+  EDIT_TASK = 'edit_task',
+  DELETE_TASK = 'delete_task',
+  VIEW_TASK = 'view_task',
+  ASSIGN_TASK = 'assign_task',
+  
+  // User management
+  MANAGE_USERS = 'manage_users',
+  INVITE_USERS = 'invite_users',
+  
+  // System permissions
+  ADMIN_ACCESS = 'admin_access'
+}
 
 // Base user interface
 export interface User {

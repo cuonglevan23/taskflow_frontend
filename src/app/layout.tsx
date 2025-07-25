@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/hooks/useTheme";
 import "./globals.css";
-import RoleBasedLayout from "@/layouts/RoleBasedLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <RoleBasedLayout layoutType="public">{children}</RoleBasedLayout>
+        <ThemeProvider defaultTheme="light" storageKey="taskmanagement-theme">
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
