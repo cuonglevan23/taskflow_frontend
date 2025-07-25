@@ -9,7 +9,7 @@ import Dropdown, {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/Dropdown/Dropdown";
-import { useDisclosure } from "@/hooks/ui/useDisclosure"; 
+import { useDisclosure } from "@/layouts/hooks";
 
 interface PrivateHeaderProps {
   user: User;
