@@ -34,7 +34,7 @@ export default function PrivateLayoutContent({
       />
 
       {/* Main Content Area with Sidebar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <PrivateSidebar
           user={user!}
@@ -45,13 +45,7 @@ export default function PrivateLayoutContent({
         />
 
         {/* Main Content - Offset by sidebar width on desktop */}
-        <div
-          className={`flex-1 overflow-auto transition-all duration-300 ${
-            isSidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
-          }`}
-        >
-          <PrivateMain>{children}</PrivateMain>
-        </div>
+        <PrivateMain>{children}</PrivateMain>
       </div>
     </div>
   );
