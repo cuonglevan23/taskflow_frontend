@@ -59,7 +59,7 @@ export default function TrialIntroSection() {
       {tab === "Explore" && (
         <>
           <p className="text-sm text-gray-700">
-            Discover popular ways that teams use Asana during their trial.
+            Discover popular ways that teams use ManaKai during their trial.
           </p>
 
           {/* 3 Cards */}
