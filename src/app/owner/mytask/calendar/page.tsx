@@ -286,7 +286,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Scrollable Task Area */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden scrollbar-hide">
         <div className="h-full overflow-y-auto">
           <div className="relative" style={{ minHeight: `${maxRows * 48 + 100}px` }}>
             {/* Multi-day tasks - rendered as continuous bars */}
