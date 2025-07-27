@@ -7,7 +7,7 @@ import clsx from 'clsx'
 import { ListTodo, LayoutDashboard, Calendar, FileText, User } from 'lucide-react'
 
 const navItems = [
-  { label: 'List', href: '/owner/mytask', icon: <ListTodo className='w-4 h-4' /> },
+  { label: 'List', href: '/owner/mytask/list', icon: <ListTodo className='w-4 h-4' /> },
   { label: 'Board', href: '/owner/mytask/board', icon: <LayoutDashboard className='w-4 h-4' /> },
   { label: 'Calendar', href: '/owner/mytask/calendar', icon: <Calendar className='w-4 h-4' /> },
   { label: 'Dashboard', href: '/owner/mytask/dashboard', icon: <LayoutDashboard className='w-4 h-4' /> },

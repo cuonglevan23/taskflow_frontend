@@ -38,6 +38,7 @@ interface SidebarItem {
   id: string;
   label: string;
   href: string;
+  tag: string;
   icon: React.ReactNode;
   count?: number;
   isActive?: boolean;
@@ -80,12 +81,14 @@ export default function PrivateSidebar({
           id: "home",
           label: "Home",
           href: "/home",
+          tag: "/home",
           icon: <Home size={20} className="text-gray-300" />,
         },
         {
           id: "my-tasks",
           label: "My tasks",
-          href: "/tasks",
+          href: "/owner/mytask/list",
+          tag: "/owner/mytask/",
           icon: <CheckSquare size={20} className="text-gray-300" />,
           count: 2,
         },
@@ -93,6 +96,7 @@ export default function PrivateSidebar({
           id: "inbox",
           label: "Inbox",
           href: "/inbox",
+          tag: "/inbox",
           icon: <Inbox size={20} className="text-gray-300" />,
         },
       ],
@@ -105,18 +109,21 @@ export default function PrivateSidebar({
           id: "reporting",
           label: "Reporting",
           href: "/reporting",
+          tag: "/reporting",
           icon: <BarChart3 size={20} className="text-gray-300" />,
         },
         {
           id: "portfolios",
           label: "Portfolios",
           href: "/portfolios",
+          tag: "/portfolios",
           icon: <Briefcase size={20} className="text-gray-300" />,
         },
         {
           id: "goals",
           label: "Goals",
           href: "/goals",
+          tag: "/goals",
           icon: <Target size={20} className="text-gray-300" />,
         },
       ],
@@ -128,19 +135,22 @@ export default function PrivateSidebar({
         {
           id: "cross-functional",
           label: "Cross-functional project plan",
-          href: "/projects/cross-functional",
+          href: "/owner/project/list",
+          tag: "/owner/project",
           icon: <Folder size={20} className="text-gray-300" />,
         },
         {
           id: "marketing",
           label: "Marketing Campaign",
           href: "/projects/marketing",
+          tag: "/owner/project/2",
           icon: <Folder size={20} className="text-gray-300" />,
         },
         {
           id: "website-redesign",
           label: "Website Redesign",
           href: "/projects/website",
+          tag: "/owner/project/3",
           icon: <Folder size={20} className="text-gray-300" />,
         },
       ],
@@ -364,7 +374,7 @@ export default function PrivateSidebar({
                           isCollapsed
                             ? "p-2 justify-center"
                             : "px-2 py-1.5 justify-between",
-                          pathname === item.href
+                            pathname.includes(item.tag)
                             ? "bg-orange-600 text-white"
                             : "text-gray-300 hover:bg-gray-700 hover:text-white"
                         )}

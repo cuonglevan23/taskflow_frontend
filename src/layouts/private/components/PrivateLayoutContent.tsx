@@ -45,17 +45,8 @@ export default function PrivateLayoutContent({
         />
 
         {/* Main Content - Offset by sidebar width on desktop */}
-<<<<<<< HEAD
-        <div
-          className={`flex-1 overflow-auto transition-all duration-300 ${
-            isSidebarCollapsed ? "" : ""
-          }`}
-        >
-          <PrivateMain>{children}</PrivateMain>
-        </div>
-=======
+
         <PrivateMain>{children}</PrivateMain>
->>>>>>> origin/alien
       </div>
     </div>
   );
