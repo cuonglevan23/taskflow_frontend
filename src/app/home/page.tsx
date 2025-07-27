@@ -22,7 +22,7 @@ import StatusCard from "./components/Cards/StatusCard";
 import MyTasksCard from "./components/Cards/MyTasksCard";
 
 export default function HomeDashboard() {
-  const [bgColor, setBgColor] = useState("#ffffff");
+  const [bgColor, setBgColor] = useState("#fdf9f9");
 
   return (
     <PrivateLayout>
@@ -36,10 +36,10 @@ export default function HomeDashboard() {
         </div>
 
         <div className="relative flex justify-center w-full">
-          {/* UserSummaryBar ở giữa */}
+          {/* UserSummaryBar */}
           <UserSummaryBar />
 
-          {/* Customize nằm sát phải tuyệt đối */}
+          {/* Customize*/}
           <div className="absolute right-0 bottom-0">
             <ToggleBackgroundButton onColorChange={setBgColor} />
           </div>
@@ -50,14 +50,12 @@ export default function HomeDashboard() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
           {/* ProjectCard */}
-          <ProjectCard/>
+          <ProjectCard />
 
-          <TaskIAssignCard/>
-          <StatusCard/>
-          <MyTasksCard/>
-
+          <TaskIAssignCard />
+          <StatusCard />
+          <MyTasksCard />
         </div>
       </div>
     </PrivateLayout>

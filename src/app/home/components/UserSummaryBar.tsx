@@ -24,23 +24,27 @@ export default function UserSummaryBar() {
             {selected} <ChevronDown className="w-4 h-4 ml-1" />
           </button>
           {dropdownOpen && (
-            <div className="absolute mt-2 w-32 bg-white rounded shadow z-10">
+            <ul className="absolute mt-2 w-32 bg-white rounded shadow z-10">
               {options.map((option) => (
-                <div
+                <li
                   key={option}
                   onClick={() => {
                     setSelected(option);
                     setDropdownOpen(false);
                   }}
-                  className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 ${
-                    option === selected ? "bg-gray-100 font-medium border-l-2 border-blue-500" : ""
+                  className={`px-3 py-2 cursor-pointer text-sm hover:bg-gray-100 whitespace-nowrap flex items-center justify-between ${
+                    option === selected ? "bg-gray-100" : ""
                   }`}
                 >
-                  {option === selected && <Check className="w-4 h-4 inline mr-1 text-blue-500" />}
-                  {option}
-                </div>
+                  <span className="w-4 mr-2 flex justify-center">
+                    {selected === option && (
+                      <Check className="w-4 h-4 text-blue-500" />
+                    )}
+                  </span>
+                  <span className="flex-1 text-left">{option}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
@@ -50,7 +54,8 @@ export default function UserSummaryBar() {
         {/* Task count */}
         <div className="text-sm text-gray-700">
           <Check className="inline w-4 h-4 mr-1" />
-          <span className="font-semibold">{completedTasks}</span> tasks completed
+          <span className="font-semibold">{completedTasks}</span> tasks
+          completed
         </div>
 
         {/* Collaborator count */}
