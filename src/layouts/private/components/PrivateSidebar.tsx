@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
+
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
 import Dropdown, {
   DropdownItem,
@@ -78,7 +79,7 @@ export default function PrivateSidebar({
         {
           id: "home",
           label: "Home",
-          href: "/dashboard",
+          href: "/home",
           icon: <Home size={20} className="text-gray-300" />,
         },
         {
