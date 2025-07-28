@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 const getGreeting = (): string => {
   const hour = new Date().getHours();
@@ -10,6 +11,7 @@ const getGreeting = (): string => {
 };
 
 export default function GreetingHeader() {
+  const { theme } = useTheme();
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -18,8 +20,15 @@ export default function GreetingHeader() {
 
   return (
     <div className="text-center">
-      <p className="text-sm text-gray-500">{today}</p>
-      <h1 className="text-2xl font-semibold">{getGreeting()}, Alienn704</h1>
+      <p className="text-sm" style={{ color: theme.text.secondary }}>
+        {today}
+      </p>
+      <h1
+        className="text-2xl font-semibold"
+        style={{ color: theme.text.primary }}
+      >
+        {getGreeting()}, Alienn704
+      </h1>
     </div>
   );
 }

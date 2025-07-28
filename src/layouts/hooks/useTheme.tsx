@@ -32,7 +32,7 @@ interface ThemeProviderProps {
 // Theme Provider Component
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
+  defaultTheme = "dark",
   storageKey = "taskmanagement-theme",
 }: ThemeProviderProps) {
   const [mode, setMode] = useState<ThemeMode>(defaultTheme);
@@ -109,7 +109,15 @@ export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
 
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    // Return fallback theme instead of throwing error
+    return {
+      mode: "dark" as ThemeMode,
+      theme: getTheme("dark"),
+      toggleTheme: () => {},
+      setTheme: () => {},
+      isDark: true,
+      isLight: false,
+    };
   }
 
   return context;

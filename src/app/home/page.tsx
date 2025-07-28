@@ -28,7 +28,10 @@ export default function HomeDashboard() {
     <PrivateLayout>
       <div
         className="px-30 py-10 space-y-6"
-        style={{ backgroundColor: bgColor }}
+        style={{
+          backgroundColor: "#0f172a",
+          minHeight: "100vh",
+        }}
       >
         {/* Header */}
         <div className="text-center">

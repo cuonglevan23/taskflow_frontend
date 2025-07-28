@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { backgroundColors } from "../types/color-bg.types";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 interface ToggleBackgroundPanelProps {
   colors?: string[];
@@ -16,6 +17,7 @@ export default function ToggleBackgroundPanel({
   onClose,
   onColorChange,
 }: ToggleBackgroundPanelProps) {
+  const { theme } = useTheme();
   const [selectedColor, setSelectedColor] = useState(defaultColor);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -42,27 +44,49 @@ export default function ToggleBackgroundPanel({
   return (
     <div
       ref={panelRef}
-      className="fixed top-1 right-0 h-[220px] w-[360px] bg-white shadow-lg p-6 overflow-y-auto z-50 rounded-md"
+      className="fixed top-1 right-0 h-[220px] w-[360px] shadow-lg p-6 overflow-y-auto z-50 rounded-md"
+      style={{ backgroundColor: theme.background.secondary }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Customize home</h3>
+        <h3
+          className="text-lg font-semibold"
+          style={{ color: theme.text.primary }}
+        >
+          Customize home
+        </h3>
         <button
           onClick={onClose}
-          className="text-gray-500 hover:text-black text-lg font-bold"
+          className="text-lg font-bold transition-colors"
+          style={{ color: theme.text.secondary }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = theme.text.primary;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = theme.text.secondary;
+          }}
         >
           ×
         </button>
       </div>
-      <p className="text-sm font-medium text-gray-700 mb-2">Background</p>
+      <p
+        className="text-sm font-medium mb-2"
+        style={{ color: theme.text.secondary }}
+      >
+        Background
+      </p>
       <div className="grid grid-cols-6 gap-3 ">
         {colors.map((color) => (
           <div
             key={color}
             onClick={() => handleSelect(color)}
-            className={`w-10 h-10 rounded-full cursor-pointer border-1 ${
-              selectedColor === color ? "border-black" : "border border-gray-300"
-            }`}
-            style={{ backgroundColor: color }}
+            className="w-10 h-10 rounded-full cursor-pointer border-2 transition-colors"
+            style={{
+              backgroundColor: color,
+              borderColor:
+                selectedColor === color
+                  ? theme.text.primary
+                  : theme.border.default,
+            }}
           />
         ))}
       </div>

@@ -280,7 +280,7 @@ export type Theme = ThemeConfig;
 export type ThemeMode = 'light' | 'dark';
 
 // Default Theme
-export const DEFAULT_THEME = LIGHT_THEME;
+export const DEFAULT_THEME = DARK_THEME;
 
 // CSS Variables for Dynamic Theming
 export const CSS_VARIABLES = {
