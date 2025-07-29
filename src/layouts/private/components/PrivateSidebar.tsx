@@ -155,6 +155,19 @@ export default function PrivateSidebar({
         },
       ],
     },
+    {
+      title: "Members",
+      collapsible: true,
+      items: [
+        {
+          id: "members",
+          label: "Members",
+          href: "/owner/Members",
+          tag: "/owner/Members",
+          icon: <Users size={20} className="text-gray-300" />,
+        },
+      ],
+    },
   ];
 
   const toggleSection = (sectionTitle: string) => {

@@ -15,7 +15,7 @@ export default function PrivateMain({ children }: PrivateMainProps) {
       className="flex-1 overflow-auto"
       style={{ backgroundColor: theme.background.primary }}
     >
-      <div className="max-w-full p-5">{children}</div>
+      <div className="max-w-full">{children}</div>
     </main>
   );
 }
