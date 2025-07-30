@@ -49,7 +49,7 @@ const getStatusColor = (status: string) => {
 }
 const ProjectListPage = () => {
   return (
-    <div className="pt-4 w-full px-2 sm:px-4">
+    <div className="pt-4 w-full px-2 sm:px-4 ">
       <div className="flex flex-col sm:flex-row items-center justify-between mx-0 sm:mx-4 gap-2 sm:gap-0">
         <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-1 rounded-md w-full sm:w-auto justify-center">
           <Plus className="w-4 h-4" />

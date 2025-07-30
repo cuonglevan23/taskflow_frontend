@@ -18,7 +18,7 @@ const HeaderMyTask = () => {
   const pathname = usePathname()
 
   return (
-    <div className='flex flex-col gap-2 border-b border-gray-200'>
+    <div className='flex flex-col gap-2 border-b border-gray-200 p-5'>
       <div className='flex items-center gap-2'>
         <div className='w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center'>
           <User className='w-6 h-6' />

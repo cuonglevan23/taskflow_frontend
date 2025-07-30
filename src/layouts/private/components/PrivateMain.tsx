@@ -10,7 +10,7 @@ export default function PrivateMain({ children }: PrivateMainProps) {
   return (
 
     <main className="flex-1 overflow-auto">
-      <div className="max-w-full p-5">{children}</div>
+      <div className="max-w-full">{children}</div>
     </main>
   );
 }

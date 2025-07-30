@@ -1,20 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Plus,
-  ClipboardList,
-  Folder,
-  Users,
-  CheckCircle,
-  BarChart,
-} from "lucide-react";
 import { PrivateLayout } from "@/layouts";
 import GreetingHeader from "./components/GreetingHeader";
 import UserSummaryBar from "./components/UserSummaryBar";
 import TrialIntroSection from "./components/TrialIntroSection";
-import DashboardCard from "./components/DashboardCard";
-import ToggleBackgroundPanel from "./components/ToggleBackgroundPanel";
 import ToggleBackgroundButton from "./components/ToggleBackgroundButton";
 import ProjectCard from "./components/Cards/ProjectCard";
 import TaskIAssignCard from "./components/Cards/TaskIAssignCard";
