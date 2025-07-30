@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { MoreVertical, Edit, Trash2 } from "lucide-react";
+
 import { User } from "@/types/user";
 
 interface UserActionsDropdownProps {

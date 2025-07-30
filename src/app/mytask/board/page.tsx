@@ -8,7 +8,7 @@ const sampleData: { title: string; tasks: Task[] }[] = [
     tasks: [
       {
         name: "Task 1",
-        assignee: ["d2"],
+        assignee: ["https://i.pravatar.cc/150?img=3"],
         dueDate: "Monday",
         priority: "Low",
         status: "On track",
