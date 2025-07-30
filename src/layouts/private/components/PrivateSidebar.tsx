@@ -87,8 +87,8 @@ export default function PrivateSidebar({
         {
           id: "my-tasks",
           label: "My tasks",
-          href: "/owner/mytask/list",
-          tag: "/owner/mytask/",
+          href: "/mytask/list",
+          tag: "/mytask/",
           icon: <CheckSquare size={20} className="text-gray-300" />,
           count: 2,
         },
@@ -152,6 +152,19 @@ export default function PrivateSidebar({
           href: "/projects/website",
           tag: "/owner/project/3",
           icon: <Folder size={20} className="text-gray-300" />,
+        },
+      ],
+    },
+    {
+      title: "Members",
+      collapsible: true,
+      items: [
+        {
+          id: "members",
+          label: "Members",
+          href: "/owner/Members",
+          tag: "/owner/Members",
+          icon: <Users size={20} className="text-gray-300" />,
         },
       ],
     },
@@ -374,7 +387,7 @@ export default function PrivateSidebar({
                           isCollapsed
                             ? "p-2 justify-center"
                             : "px-2 py-1.5 justify-between",
-                            pathname.includes(item.tag)
+                          pathname.includes(item.tag)
                             ? "bg-orange-600 text-white"
                             : "text-gray-300 hover:bg-gray-700 hover:text-white"
                         )}

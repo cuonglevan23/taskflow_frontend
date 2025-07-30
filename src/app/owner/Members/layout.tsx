@@ -1,16 +1,13 @@
-import MainLayout from "@/components/layout/MainLayout";
-import HeaderProject from "./components/header_team";
+import PrivateLayout from "@/layouts/private/PrivateLayout";
 
-export default function MembersLayout({ children }: { children: React.ReactNode }) {
-    return <div>
-
-        <MainLayout>
-            <div className=''>
-                <HeaderProject />   
-                <div className=''>
-                    {children}
-                </div>
-            </div>
-        </MainLayout>
-    </div>;
+export default function MembersLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <PrivateLayout>
+            {children}
+        </PrivateLayout>
+    )
 }

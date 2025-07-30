@@ -5,9 +5,8 @@ import PrivateLayout from '@/layouts/private/PrivateLayout'
 const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
-
       <PrivateLayout>
-        <div className=''>
+        <div className='p-6'>
           <HeaderProject/>
           <div className=''>
             {children}

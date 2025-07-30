@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 type TrialCardProps = {
   title: string;
@@ -8,47 +9,88 @@ type TrialCardProps = {
   bgColor: string;
   icon: React.ReactNode;
 };
-const TrialCard = ({ title, description, bgColor, icon }: TrialCardProps) => (
-  <div className={`rounded-lg p-5 ${bgColor} flex flex-col h-full`}>
-    <div className="mb-2">{icon}</div>
-    <h3 className="font-semibold">{title}</h3>
-    <p className="text-sm text-gray-700 mb-3">{description}</p>
+const TrialCard = ({ title, description, bgColor, icon }: TrialCardProps) => {
+  const { theme } = useTheme();
 
-    <div className="mt-auto">
-      <button className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-100">
-        Get started
-      </button>
+  return (
+    <div className={`rounded-lg p-5 ${bgColor} flex flex-col h-full`}>
+      <div className="mb-2">{icon}</div>
+      <h3 className="font-semibold" style={{ color: theme.text.primary }}>
+        {title}
+      </h3>
+      <p className="text-sm mb-3" style={{ color: theme.text.secondary }}>
+        {description}
+      </p>
+
+      <div className="mt-auto">
+        <button
+          className="px-4 py-2 text-sm rounded-md transition-colors"
+          style={{
+            backgroundColor: theme.button.secondary.background,
+            color: theme.button.secondary.text,
+            border: `1px solid ${theme.border.default}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              theme.button.secondary.hover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor =
+              theme.button.secondary.background;
+          }}
+        >
+          Get started
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function TrialIntroSection() {
   const [tab, setTab] = useState<"Explore" | "Manage">("Explore");
 
+  const { theme } = useTheme();
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow space-y-4">
+    <div
+      className="p-6 rounded-lg shadow space-y-4"
+      style={{ backgroundColor: theme.background.secondary }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">
+        <h2
+          className="text-lg font-semibold"
+          style={{ color: theme.text.primary }}
+        >
           Advanced trial{" "}
           <span className="text-sm text-green-600 ml-2">12 days left</span>
         </h2>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-4 text-sm font-medium border-b pb-2">
+      <div
+        className="flex space-x-4 text-sm font-medium border-b pb-2"
+        style={{ borderColor: theme.border.default }}
+      >
         <button
-          className={`${
-            tab === "Explore" ? "border-b-2 border-black" : "text-gray-500"
-          } pb-1`}
+          className="pb-1 transition-colors"
+          style={{
+            borderBottom:
+              tab === "Explore" ? `2px solid ${theme.text.primary}` : "none",
+            color:
+              tab === "Explore" ? theme.text.primary : theme.text.secondary,
+          }}
           onClick={() => setTab("Explore")}
         >
           Explore
         </button>
         <button
-          className={`${
-            tab === "Manage" ? "border-b-2 border-black" : "text-gray-500"
-          } pb-1`}
+          className="pb-1 transition-colors"
+          style={{
+            borderBottom:
+              tab === "Manage" ? `2px solid ${theme.text.primary}` : "none",
+            color: tab === "Manage" ? theme.text.primary : theme.text.secondary,
+          }}
           onClick={() => setTab("Manage")}
         >
           Manage
@@ -58,7 +100,7 @@ export default function TrialIntroSection() {
       {/* Description */}
       {tab === "Explore" && (
         <>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm" style={{ color: theme.text.secondary }}>
             Discover popular ways that teams use ManaKai during their trial.
           </p>
 
@@ -87,7 +129,7 @@ export default function TrialIntroSection() {
       )}
 
       {tab === "Manage" && (
-        <p className="text-sm text-gray-600 italic">
+        <p className="text-sm italic" style={{ color: theme.text.secondary }}>
           Manage tab content coming soon...
         </p>
       )}
