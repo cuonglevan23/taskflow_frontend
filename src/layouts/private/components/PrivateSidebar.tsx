@@ -201,7 +201,7 @@ export default function PrivateSidebar({
         )}
       >
         {/* Create Button */}
-        <div className="p-3 border-b border-gray-700">
+        <div className="p-3 border-b border-gray-700 w-full">
           <Dropdown
             trigger={
               <button
@@ -209,6 +209,7 @@ export default function PrivateSidebar({
                   "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold transition-all duration-200 w-full flex items-center shadow-lg hover:shadow-xl transform hover:scale-[1.02] hover:-translate-y-0.5",
                   isCollapsed ? "p-3 justify-center" : "px-4 py-3 space-x-3"
                 )}
+                style={{ width: "200px"}}
                 title={isCollapsed ? "Create new" : undefined}
               >
                 <div className="relative">
