@@ -1,10 +1,9 @@
 import React from 'react'
+import Overview from './overview/page'
 
 const ProjectPage = () => {
   return (
-    <div>
-      <h1>Project Overview</h1>
-    </div>
+    <Overview/>
   )
 }
 
