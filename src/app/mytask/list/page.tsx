@@ -5,6 +5,7 @@ import { Task } from "@/types/task";
 import { CheckCircle, Plus, User } from "lucide-react";
 import { ArrowUpDown, ListFilter, Search, ChevronDown } from "lucide-react";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import { Button } from "@/components/ui";
 const tasks: Task[] = [
   {
     name: "Task 1",
@@ -59,23 +60,14 @@ const ProjectListPage = () => {
       style={{ backgroundColor: theme.background.primary, minHeight: "100vh" }}
     >
       <div className="flex flex-col sm:flex-row items-center justify-between mx-0 sm:mx-4 gap-2 sm:gap-0">
-        <button
-          className="flex items-center gap-2 px-4 py-1 rounded-md w-full sm:w-auto justify-center transition-colors"
-          style={{
-            backgroundColor: theme.button.primary.background,
-            color: theme.button.primary.text,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.button.primary.hover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor =
-              theme.button.primary.background;
-          }}
+        <Button
+          variant="primary"
+          size="md"
+          icon={<Plus className="w-4 h-4" />}
+          className="w-full sm:w-auto"
         >
-          <Plus className="w-4 h-4" />
           Add Task
-        </button>
+        </Button>
         <div className="relative flex-grow max-w-full sm:max-w-sm mx-0 sm:mx-4 w-full">
           <input
             type="text"
@@ -99,14 +91,22 @@ const ProjectListPage = () => {
           className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end"
           style={{ color: theme.text.secondary }}
         >
-          <div className="flex items-center gap-2">
-            <ListFilter className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<ListFilter className="w-4 h-4" />}
+            className="!p-2"
+          >
             <span className="hidden xs:inline">Filter</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<ArrowUpDown className="w-4 h-4" />}
+            className="!p-2"
+          >
             <span className="hidden xs:inline">Sort</span>
-          </div>
+          </Button>
         </div>
       </div>
       <div className="w-full overflow-x-auto scrollbar-hide max-h-[530px] mt-2">

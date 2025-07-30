@@ -9,6 +9,7 @@ import {
   FILE_ICONS,
   HEADER_ICONS,
 } from "@/constants/icons";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 export interface NavigationItem {
   label: string;
@@ -81,28 +82,7 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
           href: "/mytask/file",
         },
       ],
-      actions: [
-        {
-          label: "Filter",
-          icon: <ACTION_ICONS.filter className="w-4 h-4" />,
-          variant: "ghost",
-        },
-        {
-          label: "Sort: Priority",
-          icon: <ACTION_ICONS.sort className="w-4 h-4" />,
-          variant: "ghost",
-        },
-        {
-          label: "Add Task",
-          icon: <ACTION_ICONS.create className="w-4 h-4" />,
-          variant: "primary",
-        },
-        {
-          label: "",
-          icon: <HEADER_ICONS.chevronDown className="w-5 h-5" />,
-          variant: "ghost",
-        },
-      ],
+      actions: [],
       showTabsPlus: true,
     };
   }
@@ -125,28 +105,8 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
           href: "/inbox/archive",
         },
       ],
-      actions: [
-        {
-          label: "Filter",
-          icon: <ACTION_ICONS.filter className="w-4 h-4" />,
-          variant: "ghost",
-        },
-        {
-          label: "Sort: Newest",
-          icon: <ACTION_ICONS.sort className="w-4 h-4" />,
-          variant: "ghost",
-        },
-        {
-          label: "Manage notifications",
-          variant: "primary",
-        },
-        {
-          label: "",
-          icon: <HEADER_ICONS.chevronDown className="w-5 h-5" />,
-          variant: "ghost",
-        },
-      ],
-      showTabsPlus: true,
+      actions: [],
+      showTabsPlus: false,
     };
   }
 

@@ -1,12 +1,13 @@
 "use client";
 
+import React from "react";
+import PrivateHeader from "./PrivateHeader";
+import PrivateSidebar from "./PrivateSidebar";
 import {
   useLayoutContext,
   useLayoutActions,
 } from "../context/PrivateLayoutContext";
-import PrivateHeader from "./PrivateHeader";
-import PrivateSidebar from "./PrivateSidebar";
-import PrivateMain from "./PrivateMain";
+import { DetailPanel } from "@/components/DetailPanel";
 
 interface PrivateLayoutContentProps {
   children: React.ReactNode;
@@ -47,9 +48,13 @@ export default function PrivateLayoutContent({
           onToggleCollapse={toggleSidebarCollapse}
         />
 
-        {/* Main Content - Offset by sidebar width on desktop */}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <main className="flex-1 overflow-auto relative">{children}</main>
+        </div>
 
-        <PrivateMain>{children}</PrivateMain>
+        {/* Detail Panel */}
+        <DetailPanel />
       </div>
     </div>
   );
