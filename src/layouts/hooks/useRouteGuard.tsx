@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { UserRole, Permission } from "@/constants/auth";
 import { getRouteByPath, hasRouteAccess } from "@/config/routes";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/layouts/hooks/useAuth";
 
 export interface RouteGuardOptions {
   requiredRoles?: UserRole[];

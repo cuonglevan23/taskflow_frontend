@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { UserRole, Permission } from "@/constants/auth";
 import { getSidebarNavigation } from "@/config/routes";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/layouts/hooks/useAuth";
 import {
   LayoutContext,
   LayoutActions,
