@@ -1,53 +1,63 @@
-import React from 'react'
-import { Task } from '@/types/task'
-import { CheckCircle, Plus, User } from 'lucide-react'
-import { ArrowUpDown, ListFilter, Search, ChevronDown } from 'lucide-react'
+"use client";
+import React, { useState } from "react";
+import { Task } from "@/types/task";
+import { CheckCircle, Plus, User } from "lucide-react";
+import { ArrowUpDown, ListFilter, Search, ChevronDown } from "lucide-react";
+import TaskDetailPanel from "./components/TaskDetailPanel";
 const tasks: Task[] = [
   {
-    name: 'Task 1',
-    assignee: ['John Doe', 'Jane Doe'],
-    dueDate: '2025-01-01',
-    priority: 'Low',
-    status: 'On track'
+    name: "Task 1",
+    assignee: ["John Doe", "Jane Doe"],
+    dueDate: "2025-01-01",
+    priority: "Low",
+    status: "On track",
   },
   {
-    name: 'Task 2',
-    assignee: ['Jane Doe'],
-    dueDate: '2025-01-02',
-    priority: 'Medium',
-    status: 'Off track'
+    name: "Task 2",
+    assignee: ["Jane Doe"],
+    dueDate: "2025-10-02",
+    priority: "Medium",
+    status: "Off track",
   },
   {
-    name: 'Task 3',
-    assignee: ['oihh', 'John Doe', 'Jane Doe'],
-    dueDate: '2025-01-03',
-    priority: 'High',
-    status: 'In progress'
-  }
-]
+    name: "Task 3",
+    assignee: ["oihh", "John Doe", "Jane Doe"],
+    dueDate: "2025-01-03",
+    priority: "High",
+    status: "In progress",
+  },
+];
 const getPriorityColor = (priority: string) => {
   switch (priority) {
-    case 'High':
-      return 'bg-purple-300 text-purple-800'
-    case 'Medium':
-      return 'bg-yellow-300 text-yellow-800'
+    case "High":
+      return "bg-purple-300 text-purple-800";
+    case "Medium":
+      return "bg-yellow-300 text-yellow-800";
     default:
-      return 'bg-green-300 text-green-800'
+      return "bg-green-300 text-green-800";
   }
-}
+};
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'On track':
-      return 'bg-blue-300 text-green-800'
-    case 'Off track':
-      return 'bg-red-300 text-red-900'
-    case 'In progress':
-      return 'bg-yellow-300 text-yellow-800'
+    case "On track":
+      return "bg-blue-300 text-green-800";
+    case "Off track":
+      return "bg-red-300 text-red-900";
+    case "In progress":
+      return "bg-yellow-300 text-yellow-800";
     default:
-      return 'bg-gray-200 text-gray-700'
+      return "bg-gray-200 text-gray-700";
   }
-}
+};
 const ProjectListPage = () => {
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsPanelOpen(true);
+  };
+
   return (
     <div className="pt-4 w-full px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row items-center justify-between mx-0 sm:mx-4 gap-2 sm:gap-0">
@@ -79,12 +89,24 @@ const ProjectListPage = () => {
         <table className="w-full border-separate border-spacing-y-2 mt-4 hidden md:table">
           <thead>
             <tr className="text-left text-sm text-gray-500 border-b border-t border-gray-20">
-              <th className='min-w-[200px] border-r border-b border-t border-gray-300 px-2 py-2'>Name</th>
-              <th className='min-w-[130px] border-r border-b border-t border-gray-300 px-2 py-2'>Assignee</th>
-              <th className='min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Due Date</th>
-              <th className='min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Priority</th>
-              <th className='min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2'>Status</th>
-              <th className='min-w-[70px] border-b border-t border-gray-300 px-2 py-2'><Plus /></th>
+              <th className="min-w-[200px] border-r border-b border-t border-gray-300 px-2 py-2">
+                Name
+              </th>
+              <th className="min-w-[130px] border-r border-b border-t border-gray-300 px-2 py-2">
+                Assignee
+              </th>
+              <th className="min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2">
+                Due Date
+              </th>
+              <th className="min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2">
+                Priority
+              </th>
+              <th className="min-w-[100px] border-r border-b border-t border-gray-300 px-2 py-2">
+                Status
+              </th>
+              <th className="min-w-[70px] border-b border-t border-gray-300 px-2 py-2">
+                <Plus />
+              </th>
             </tr>
           </thead>
         </table>
@@ -94,25 +116,34 @@ const ProjectListPage = () => {
           {/* Desktop table */}
           <table className="w-full border-separate border-spacing-y-2 mt-4 hidden md:table">
             <tbody>
-              <tr className='rounded overflow-hidden border-b border-gray-300'>
-                <td className='py-2 px-2 min-w-[200px] flex items-center gap-2 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+              <tr className="rounded overflow-hidden border-b border-gray-300">
+                <td className="py-2 px-2 min-w-[200px] flex items-center gap-2 font-bold text-gray-500 hover:text-gray-700 cursor-pointer ">
                   <ChevronDown className="w-4 h-4" /> To Do
                 </td>
               </tr>
               {tasks.map((task, index) => (
-                <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
+                <tr
+                  key={index}
+                  onClick={() => handleTaskClick(task)}
+                  className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300"
+                >
                   <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
-                    <span className='flex items-center gap-2'><CheckCircle className="w-5 h-5 text-gray-400" />
-                      {task.name}</span>
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-gray-400" />
+                      {task.name}
+                    </span>
                   </td>
                   <td className="max-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
-                    <span className='flex items-center gap-2'><User className="w-5 h-5 text-gray-400" />
+                    <span className="flex items-center gap-2">
+                      <User className="w-5 h-5 text-gray-400" />
                       {task.assignee.map((assignee, index) => (
                         <span key={index}>{assignee}</span>
                       ))}
                     </span>
                   </td>
-                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">
+                    {task.dueDate}
+                  </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
@@ -123,40 +154,44 @@ const ProjectListPage = () => {
                     </span>
                   </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(
+                        task.status
+                      )}`}
+                    >
                       {task.status}
                     </span>
                   </td>
-                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">
+                    {/* thêm hành động nếu cần */}
+                  </td>
                 </tr>
               ))}
               {/* add new task */}
               <tr>
-                <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
-                    
-                </td>
+                <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2"></td>
                 <td className="min-w-[130px] py-2 px-2 gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
-                  <span className='flex items-center gap-2'><User className="w-5 h-5 text-gray-400" />
+                  <span className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-gray-400" />
                   </span>
                 </td>
-                <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">
-
+                <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2"></td>
+                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2"></td>
+                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2"></td>
+                <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">
+                  {/* thêm hành động nếu cần */}
                 </td>
-                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
-
-                </td>
-                <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
-
-                </td>
-                <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
               </tr>
-              <tr className=' rounded overflow-hidden border-b border-gray-300 mt-4'>
-                <td className='py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+              <tr className=" rounded overflow-hidden border-b border-gray-300 mt-4">
+                <td className="py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer ">
                   <ChevronDown className="w-4 h-4" /> Doing
                 </td>
               </tr>
               {tasks.map((task, index) => (
-                <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
+                <tr
+                  key={index}
+                  className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300"
+                >
                   <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <CheckCircle className="w-5 h-5 text-gray-400" />
                     {task.name}
@@ -165,7 +200,9 @@ const ProjectListPage = () => {
                     <User className="w-5 h-5 text-gray-400" />
                     {/* {task.assignee} */}
                   </td>
-                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">
+                    {task.dueDate}
+                  </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
@@ -176,21 +213,30 @@ const ProjectListPage = () => {
                     </span>
                   </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(
+                        task.status
+                      )}`}
+                    >
                       {task.status}
                     </span>
                   </td>
-                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">
+                    {/* thêm hành động nếu cần */}
+                  </td>
                 </tr>
               ))}
 
-              <tr className='rounded overflow-hidden border-b border-gray-300 '>
-                <td className='py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer '>
+              <tr className="rounded overflow-hidden border-b border-gray-300 ">
+                <td className="py-2 px-2 flex items-center gap-2 mt-4 font-bold text-gray-500 hover:text-gray-700 cursor-pointer ">
                   <ChevronDown className="w-4 h-4" /> Done
                 </td>
               </tr>
               {tasks.map((task, index) => (
-                <tr key={index} className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300">
+                <tr
+                  key={index}
+                  className="bg-indigo-20 hover:bg-indigo-100 rounded overflow-hidden border-b border-gray-300"
+                >
                   <td className="min-w-[200px] py-2 px-2 flex items-center gap-2  border-r border-b border-t border-gray-300 px-2 py-2">
                     <CheckCircle className="w-5 h-5 text-gray-400" />
                     {task.name}
@@ -199,7 +245,9 @@ const ProjectListPage = () => {
                     <User className="w-5 h-5 text-gray-400" />
                     {/* {task.assignee} */}
                   </td>
-                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">{task.dueDate}</td>
+                  <td className="min-w-[100px] py-2 px-2 text-sm text-gray-700 border-r border-b border-t border-gray-300 px-2 py-2">
+                    {task.dueDate}
+                  </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(
@@ -210,54 +258,147 @@ const ProjectListPage = () => {
                     </span>
                   </td>
                   <td className="min-w-[100px] py-2 px-2 border-r border-b border-t border-gray-300 px-2 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded font-medium ${getStatusColor(
+                        task.status
+                      )}`}
+                    >
                       {task.status}
                     </span>
                   </td>
-                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">{/* thêm hành động nếu cần */}</td>
+                  <td className="min-w-[70px] py-2 px-2 border-b border-t border-gray-300 px-2 py-2">
+                    {/* thêm hành động nếu cần */}
+                  </td>
                 </tr>
               ))}
-
             </tbody>
           </table>
+
+          {/* Slide-in Detail Panel */}
+
+          {isPanelOpen && selectedTask && (
+            <div
+              className="fixed inset-0 z-40 flex justify-end"
+              onClick={() => setIsPanelOpen(false)} // click nền ngoài để close
+            >
+              {/* panel chi tiết task */}
+              <div onClick={(e) => e.stopPropagation()}>
+                <TaskDetailPanel
+                  task={selectedTask}
+                  isOpen={!!selectedTask}
+                  onClose={() => setIsPanelOpen(false)}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Mobile card view */}
           <div className="flex flex-col gap-3 md:hidden mt-4">
             {/* To Do section */}
-            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mb-1"><ChevronDown className="w-4 h-4" /> To Do</div>
+            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mb-1">
+              <ChevronDown className="w-4 h-4" /> To Do
+            </div>
             {tasks.map((task, idx) => (
-              <div key={idx} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700"><CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}</div>
-                <div className="flex items-center gap-2 text-sm text-gray-500"><User className="w-4 h-4" /> {task.assignee}</div>
+              <div
+                key={idx}
+                className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2"
+              >
+                <div className="flex items-center gap-2 font-semibold text-gray-700">
+                  <CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <User className="w-4 h-4" /> {task.assignee}
+                </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Due: <span className="text-gray-700">{task.dueDate}</span></span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>{task.status}</span>
+                  <span className="text-gray-400">
+                    Due: <span className="text-gray-700">{task.dueDate}</span>
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    {task.priority}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getStatusColor(
+                      task.status
+                    )}`}
+                  >
+                    {task.status}
+                  </span>
                 </div>
               </div>
             ))}
             {/* Doing section */}
-            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1"><ChevronDown className="w-4 h-4" /> Doing</div>
+            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1">
+              <ChevronDown className="w-4 h-4" /> Doing
+            </div>
             {tasks.map((task, idx) => (
-              <div key={idx + 100} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700"><CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}</div>
-                <div className="flex items-center gap-2 text-sm text-gray-500"><User className="w-4 h-4" /> {task.assignee}</div>
+              <div
+                key={idx + 100}
+                className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2"
+              >
+                <div className="flex items-center gap-2 font-semibold text-gray-700">
+                  <CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <User className="w-4 h-4" /> {task.assignee}
+                </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Due: <span className="text-gray-700">{task.dueDate}</span></span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>{task.status}</span>
+                  <span className="text-gray-400">
+                    Due: <span className="text-gray-700">{task.dueDate}</span>
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    {task.priority}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getStatusColor(
+                      task.status
+                    )}`}
+                  >
+                    {task.status}
+                  </span>
                 </div>
               </div>
             ))}
             {/* Done section */}
-            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1"><ChevronDown className="w-4 h-4" /> Done</div>
+            <div className="font-bold text-gray-500 flex items-center gap-2 text-base mt-4 mb-1">
+              <ChevronDown className="w-4 h-4" /> Done
+            </div>
             {tasks.map((task, idx) => (
-              <div key={idx + 200} className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700"><CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}</div>
-                <div className="flex items-center gap-2 text-sm text-gray-500"><User className="w-4 h-4" /> {task.assignee}</div>
+              <div
+                key={idx + 200}
+                className="bg-white rounded-lg shadow border border-gray-200 p-3 flex flex-col gap-2"
+              >
+                <div className="flex items-center gap-2 font-semibold text-gray-700">
+                  <CheckCircle className="w-5 h-5 text-gray-400" /> {task.name}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <User className="w-4 h-4" /> {task.assignee}
+                </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Due: <span className="text-gray-700">{task.dueDate}</span></span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                  <span className={`px-2 py-0.5 rounded font-medium ${getStatusColor(task.status)}`}>{task.status}</span>
+                  <span className="text-gray-400">
+                    Due: <span className="text-gray-700">{task.dueDate}</span>
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    {task.priority}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded font-medium ${getStatusColor(
+                      task.status
+                    )}`}
+                  >
+                    {task.status}
+                  </span>
                 </div>
               </div>
             ))}
@@ -265,7 +406,7 @@ const ProjectListPage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProjectListPage
+export default ProjectListPage;
