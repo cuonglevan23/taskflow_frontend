@@ -25,9 +25,13 @@ export default function PrivateLayoutContent({
   };
 
   return (
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/anhduc
     <div
       className="h-screen flex flex-col"
-      style={{ backgroundColor: "#0f172a" }}
+      // style={{ backgroundColor: "#0f172a" }}
     >
       {/* Header - Fixed at top */}
       <PrivateHeader

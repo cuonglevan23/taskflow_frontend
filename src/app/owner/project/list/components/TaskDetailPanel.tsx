@@ -103,6 +103,7 @@ export default function TaskDetailPanel({ task, onClose, isOpen }: Props) {
                       Cross-functional project plan
                     </span>
                     <span className="text-xs text-gray-500">To do</span>
+
                     <button className="text-gray-400 hover:text-gray-600">
                       <X className="w-4 h-4" />
                     </button>

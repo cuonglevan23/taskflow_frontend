@@ -1,20 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Plus,
-  ClipboardList,
-  Folder,
-  Users,
-  CheckCircle,
-  BarChart,
-} from "lucide-react";
 import { PrivateLayout } from "@/layouts";
 import GreetingHeader from "./components/GreetingHeader";
 import UserSummaryBar from "./components/UserSummaryBar";
 import TrialIntroSection from "./components/TrialIntroSection";
-import DashboardCard from "./components/DashboardCard";
-import ToggleBackgroundPanel from "./components/ToggleBackgroundPanel";
 import ToggleBackgroundButton from "./components/ToggleBackgroundButton";
 import ProjectCard from "./components/Cards/ProjectCard";
 import TaskIAssignCard from "./components/Cards/TaskIAssignCard";
@@ -22,14 +12,14 @@ import StatusCard from "./components/Cards/StatusCard";
 import MyTasksCard from "./components/Cards/MyTasksCard";
 
 export default function HomeDashboard() {
-  const [bgColor, setBgColor] = useState("#fdf9f9");
+  const [bgColor, setBgColor] = useState("#fafcff");
 
   return (
     <PrivateLayout>
       <div
         className="px-30 py-10 space-y-6"
         style={{
-          backgroundColor: "#0f172a",
+          backgroundColor: bgColor,
           minHeight: "100vh",
         }}
       >

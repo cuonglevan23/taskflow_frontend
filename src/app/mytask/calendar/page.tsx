@@ -10,6 +10,7 @@ import {
   Settings,
   Search,
 } from "lucide-react";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 interface Task {
   id: number;
@@ -23,6 +24,8 @@ interface Task {
 }
 
 export default function CalendarPage() {
+  const { theme } = useTheme();
+
   const [currentWeekStart, setCurrentWeekStart] = useState(
     new Date(2025, 6, 20)
   ); // July 20, 2025 (Sunday)
@@ -403,7 +406,17 @@ export default function CalendarPage() {
       {/* Header - Fixed */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white z-20 relative">
         <div className="flex items-center gap-6">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors">
+          <button className="text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors"
+          style={{
+            backgroundColor: theme.button.primary.background,
+            color: theme.button.primary.text,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.button.primary.hover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = theme.button.primary.background;
+          }}>
             <Plus className="w-4 h-4" />
             Add task
           </button>
