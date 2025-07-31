@@ -2,6 +2,10 @@
 
 import React, { useState } from "react";
 import { PrivateLayout } from "@/layouts";
+import {
+  getTheme,
+  type ThemeMode,
+} from "@/constants/theme"; 
 import GreetingHeader from "./components/GreetingHeader";
 import UserSummaryBar from "./components/UserSummaryBar";
 import TrialIntroSection from "./components/TrialIntroSection";
@@ -12,7 +16,9 @@ import StatusCard from "./components/Cards/StatusCard";
 import MyTasksCard from "./components/Cards/MyTasksCard";
 
 export default function HomeDashboard() {
-  const [bgColor, setBgColor] = useState("#fafcff");
+  const [themeMode] = useState<ThemeMode>("light");
+  const theme = getTheme(themeMode);
+  const [bgColor, setBgColor] = useState(theme.background.secondary);
 
   return (
     <PrivateLayout>
@@ -23,29 +29,21 @@ export default function HomeDashboard() {
           minHeight: "100vh",
         }}
       >
-        {/* Header */}
         <div className="text-center">
-          <GreetingHeader></GreetingHeader>
+          <GreetingHeader />
         </div>
 
         <div className="relative flex justify-center w-full">
-          {/* UserSummaryBar */}
           <UserSummaryBar />
-
-          {/* Customize*/}
           <div className="absolute right-0 bottom-0">
             <ToggleBackgroundButton onColorChange={setBgColor} />
           </div>
         </div>
 
-        {/* Trial Section */}
-        <TrialIntroSection></TrialIntroSection>
+        <TrialIntroSection />
 
-        {/* Dashboard Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* ProjectCard */}
           <ProjectCard />
-
           <TaskIAssignCard />
           <StatusCard />
           <MyTasksCard />
