@@ -12,14 +12,14 @@ import StatusCard from "./components/Cards/StatusCard";
 import MyTasksCard from "./components/Cards/MyTasksCard";
 
 export default function HomeDashboard() {
-  const [bgColor, setBgColor] = useState("#fdf9f9");
+  const [bgColor, setBgColor] = useState("#fafcff");
 
   return (
     <PrivateLayout>
       <div
         className="px-30 py-10 space-y-6"
         style={{
-          backgroundColor: "#0f172a",
+          backgroundColor: bgColor,
           minHeight: "100vh",
         }}
       >

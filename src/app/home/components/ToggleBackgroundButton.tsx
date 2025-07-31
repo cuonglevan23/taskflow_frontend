@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import ToggleBackgroundPanel from "./ToggleBackgroundPanel";
-import { PaintbrushVertical } from "lucide-react";
 
 export default function ToggleBackgroundButton({
   onColorChange,
