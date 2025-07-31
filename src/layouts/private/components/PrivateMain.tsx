@@ -10,10 +10,6 @@ interface PrivateMainProps {
 export default function PrivateMain({ children }: PrivateMainProps) {
   const { theme } = useTheme();
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/alien
   return (
     <main
       className="flex-1 overflow-auto"

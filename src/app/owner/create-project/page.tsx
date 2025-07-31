@@ -9,7 +9,7 @@ export default function CreateProjectPage() {
 
   return (
     <PrivateLayout>
-      <div className="flex justify-center gap-6 py-14 min-h-screen">
+      <div className="flex justify-center gap-6 mt-7">
         <CreateProjectForm onNameChange={setProjectName} />
         <div className="w-full max-w-2xl">
           <ViewCard projectName={projectName} />
