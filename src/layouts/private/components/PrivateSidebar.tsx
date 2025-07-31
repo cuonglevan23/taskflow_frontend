@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
 import Dropdown, {
@@ -180,6 +181,7 @@ export default function PrivateSidebar({
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
   const showLabels = !isCollapsed;
+  const router = useRouter();
 
   return (
     <>
@@ -245,7 +247,7 @@ export default function PrivateSidebar({
                   </div>
                 </DropdownItem>
 
-                <DropdownItem>
+                <DropdownItem  onClick={() => router.push("/owner/create-project")}>
                   <div className="flex items-center space-x-4 px-2 py-2 group">
                     <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
                       <ProjectIcon size="sm" />
@@ -416,7 +418,10 @@ export default function PrivateSidebar({
                   {/* Add create buttons for projects section */}
                   {section.title === "Projects" && showLabels && (
                     <li>
-                      <button className="flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full">
+                      <button
+                        onClick={() => router.push("/owner/create-project")}
+                        className="flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full"
+                      >
                         <Plus size={16} />
                         <span>Create project</span>
                       </button>

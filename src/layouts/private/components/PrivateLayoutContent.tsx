@@ -24,14 +24,11 @@ export default function PrivateLayoutContent({
   };
 
   return (
-<<<<<<< HEAD
-    <div className="h-screen flex flex-col">
-=======
+
     <div
       className="h-screen flex flex-col"
-      style={{ backgroundColor: "#0f172a" }}
+      // style={{ backgroundColor: "#0f172a" }}
     >
->>>>>>> 7a61072f515649dd578722054c0df02cdb177acb
       {/* Header - Fixed at top */}
       <PrivateHeader
         user={user!}
