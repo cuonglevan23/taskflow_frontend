@@ -1,38 +1,121 @@
 "use client";
 
 import React from "react";
-import { Archive, FolderOpen } from "lucide-react";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import InboxNotificationItem from "../components/InboxNotificationItem";
+import { useInboxActions, InboxNotification } from "../hooks/useInboxActions";
+import FilterSortControls from "../components/FilterSortControls";
+
+// Get archived notifications from localStorage or global state
+const getArchivedNotifications = (): InboxNotification[] => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("archivedNotifications");
+    return saved ? JSON.parse(saved) : [];
+  }
+  return [];
+};
 
 const ArchivePage = () => {
   const { theme } = useTheme();
 
+  const archivedNotifications = getArchivedNotifications();
+
+  const { notifications, actions, showMoreMenu, hideMoreActions, isLoading } =
+    useInboxActions(archivedNotifications, (updatedNotifications) => {
+      // Update localStorage when archived notifications change
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "archivedNotifications",
+          JSON.stringify(updatedNotifications)
+        );
+      }
+    });
+
+  const handleNotificationClick = (notification: InboxNotification) => {
+    console.log("Archived notification clicked:", notification);
+  };
+
+  const clearAllArchived = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("archivedNotifications");
+      window.location.reload();
+    }
+  };
+
   return (
-    <div
-      className="p-6 max-w-5xl mx-auto"
-      style={{ backgroundColor: theme.background.primary, minHeight: "100vh" }}
-    >
-      <div className="text-center py-12">
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: theme.background.secondary }}
-        >
-          <Archive
-            className="w-8 h-8"
-            style={{ color: theme.text.secondary }}
-          />
-        </div>
-        <h2
-          className="text-xl font-semibold mb-2"
-          style={{ color: theme.text.primary }}
-        >
-          No archived notifications
-        </h2>
-        <p className="max-w-md mx-auto" style={{ color: theme.text.secondary }}>
-          Archived notifications will appear here. Archive any notification to
-          remove it from your main inbox.
-        </p>
+    <div className="p-6 max-w-5xl mx-auto">
+      {/* Filter and Sort Controls */}
+      <div
+        className="flex items-center justify-end mb-6 pb-4 border-b"
+        style={{ borderColor: theme.border.default }}
+      >
+        <FilterSortControls />
       </div>
+
+      {/* Clear All Button */}
+      {notifications.length > 0 && (
+        <div className="mb-6 flex justify-end">
+          <button
+            onClick={clearAllArchived}
+            className="px-4 py-2 text-sm rounded-lg border transition-colors hover:bg-gray-50"
+            style={{
+              color: theme.text.secondary,
+              borderColor: theme.border.default,
+            }}
+          >
+            Clear all archived
+          </button>
+        </div>
+      )}
+
+      {/* Archived Notifications */}
+      {notifications.length > 0 ? (
+        <div className="space-y-1">
+          {notifications.map((notification) => (
+            <InboxNotificationItem
+              key={notification.id}
+              notification={notification}
+              actions={actions}
+              isLoading={isLoading(notification.id)}
+              showMoreMenu={showMoreMenu === notification.id}
+              onHideMoreActions={hideMoreActions}
+              onClick={handleNotificationClick}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16" style={{ color: theme.text.muted }}>
+          <div className="mb-4">
+            <div
+              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4"
+              style={{ backgroundColor: theme.background.secondary }}
+            >
+              <span className="text-2xl">📁</span>
+            </div>
+            <h3
+              className="text-lg font-medium mb-2"
+              style={{ color: theme.text.primary }}
+            >
+              No archived notifications
+            </h3>
+            <p>Notifications you archive will appear here.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Feedback */}
+      {Object.values(isLoading).some(Boolean) && (
+        <div
+          className="fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg"
+          style={{
+            backgroundColor: theme.background.secondary,
+            border: `1px solid ${theme.border.default}`,
+            color: theme.text.primary,
+          }}
+        >
+          Processing action...
+        </div>
+      )}
     </div>
   );
 };
