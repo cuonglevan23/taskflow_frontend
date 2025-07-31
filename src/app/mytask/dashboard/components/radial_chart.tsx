@@ -2,9 +2,8 @@
 import { useEffect, useRef, useState } from "react"
 
 const data = [
-  { label: "Design", value: 30, color: "#60a5fa" },
-  { label: "Development", value: 50, color: "#34d399" },
-  { label: "Testing", value: 20, color: "#f87171" },
+  { label: "Completed", value: 1, color: "#8b5cf6" },
+  { label: "Incomplete", value: 1, color: "#E7E2FA" },
 ]
 
 const total = data.reduce((acc, item) => acc + item.value, 0)
@@ -57,7 +56,7 @@ export default function DonutChart() {
           ctx.font = "bold 14px sans-serif"
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
-          ctx.fillText(`${Math.round((item.value / total) * 100)}%`, textX, textY)
+          ctx.fillText(`${item.value}`, textX, textY)
         }
 
         startAngle = endAngle
@@ -76,28 +75,36 @@ export default function DonutChart() {
     }
 
     requestAnimationFrame(draw)
-  }, [])
+  }, [data])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
-      <div className="">
-        <div className="p-4">
-          <div className="w-full h-full flex justify-center items-center">
-            <canvas ref={canvasRef} width={250} height={250} />
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="flex justify-center">
+          <canvas ref={canvasRef} width={280} height={280} />
+        </div>
+
+        {/* Chi tiết phân loại */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Task Status</h3>
+          {data.map((item, index) => (
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
+                <span className="text-gray-700 text-sm font-medium">
+                  {item.label}
+                </span>
+              </div>
+              <span className="text-gray-600 text-sm font-bold">
+                {item.value}
+              </span>
+            </div>
+          ))}
+          <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="text-sm text-gray-600 mb-1">Total Tasks</div>
+            <div className="text-xl font-bold text-purple-600">{total}</div>
           </div>
         </div>
-      </div>
-
-      {/* Chi tiết phân loại */}
-      <div className="flex flex-col justify-center gap-3">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
-            <span className="text-gray-700 text-sm">
-              {item.label}: {item.value}
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   )
