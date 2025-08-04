@@ -1,46 +1,56 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import InboxNotificationItem from "../components/InboxNotificationItem";
 import { useInboxActions, InboxNotification } from "../hooks/useInboxActions";
 import FilterSortControls from "../components/FilterSortControls";
 
-// Get archived notifications from localStorage or global state
-const getArchivedNotifications = (): InboxNotification[] => {
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("archivedNotifications");
-    return saved ? JSON.parse(saved) : [];
-  }
-  return [];
-};
-
 const ArchivePage = () => {
   const { theme } = useTheme();
+  const [archivedNotifications, setArchivedNotifications] = useState<InboxNotification[]>([]);
+  const [mounted, setMounted] = useState(false);
 
-  const archivedNotifications = getArchivedNotifications();
+  // Load archived notifications from localStorage after component mounts
+  useEffect(() => {
+    const saved = localStorage.getItem("archivedNotifications");
+    if (saved) {
+      setArchivedNotifications(JSON.parse(saved));
+    }
+    setMounted(true);
+  }, []);
 
   const { notifications, actions, showMoreMenu, hideMoreActions, isLoading } =
     useInboxActions(archivedNotifications, (updatedNotifications) => {
       // Update localStorage when archived notifications change
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "archivedNotifications",
-          JSON.stringify(updatedNotifications)
-        );
-      }
+      localStorage.setItem(
+        "archivedNotifications",
+        JSON.stringify(updatedNotifications)
+      );
+      setArchivedNotifications(updatedNotifications);
     });
 
-  const handleNotificationClick = (notification: InboxNotification) => {
-    console.log("Archived notification clicked:", notification);
-  };
+
 
   const clearAllArchived = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("archivedNotifications");
-      window.location.reload();
-    }
+    localStorage.removeItem("archivedNotifications");
+    setArchivedNotifications([]);
   };
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="space-y-3">
+            <div className="h-16 bg-gray-200 rounded"></div>
+            <div className="h-16 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -79,7 +89,6 @@ const ArchivePage = () => {
               isLoading={isLoading(notification.id)}
               showMoreMenu={showMoreMenu === notification.id}
               onHideMoreActions={hideMoreActions}
-              onClick={handleNotificationClick}
             />
           ))}
         </div>

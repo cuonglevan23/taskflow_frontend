@@ -91,6 +91,11 @@ const PageLayout = ({ children }: PageLayoutProps) => {
   const pathname = usePathname();
   const config = usePageNavigation();
   const { theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!config) {
     // Fallback for pages without navigation config
@@ -106,147 +111,192 @@ const PageLayout = ({ children }: PageLayoutProps) => {
     headerSections = [],
   } = config;
 
-  // Determine navigation style based on page type
-  const isInboxStyle =
-    pathname.startsWith("/inbox") || pathname.startsWith("/mytask");
+  // Determine navigation style based on page type - only after mount to prevent hydration mismatch
+  const isInboxStyle = mounted && (pathname.startsWith("/inbox") || pathname.startsWith("/mytask"));
   const isMyTaskStyle = false; // Now using inbox style for mytask too
+  const isTeamsStyle = mounted && pathname.startsWith("/teams");
+
+  // Prevent hydration mismatch by not rendering sticky styles until mounted
+  if (!mounted) {
+    return (
+      <PrivateLayout>
+        <div style={{ backgroundColor: theme.background.primary }}>
+          <div className="flex-shrink-0">
+            <div className="flex flex-col border-b gap-2 px-6" style={{ borderColor: theme.border.default }}>
+              <div className="flex items-center justify-between">
+                <h1 className="text-lg font-bold" style={{ color: theme.text.primary }}>
+                  {title}
+                </h1>
+              </div>
+              <div>
+                <ul className="flex items-center gap-5">
+                  {navItems.map((item) => (
+                    <li key={item.href}>
+                      <Link href={item.href} className="flex items-center gap-1">
+                        {item.icon}
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div>{children}</div>
+        </div>
+      </PrivateLayout>
+    );
+  }
 
   return (
     <PrivateLayout>
       <div
-        className="flex flex-col"
         style={{
           backgroundColor: theme.background.primary,
-          minHeight: "100vh",
         }}
       >
-        {/* Top Header Sections */}
-        {headerSections.length > 0 && (
-          <div className="p-6 pb-0">
-            <HeaderSectionRenderer sections={headerSections} position="top" />
-          </div>
-        )}
-
-        {/* Header */}
-        <div
-          className={clsx(
-            "flex flex-col border-b",
-            isInboxStyle ? "gap-4 pb-4 px-6" : "gap-2 px-6"
-          )}
-          style={{ borderColor: theme.border.default }}
+        {/* Sticky Header */}
+        <div 
+          className="sticky top-0 z-50"
+          style={{ backgroundColor: theme.background.primary }}
         >
-          {/* Breadcrumbs */}
-          {headerInfo?.breadcrumbs && (
-            <Breadcrumbs breadcrumbs={headerInfo.breadcrumbs} />
+          {/* Top Header Sections */}
+          {headerSections.length > 0 && (
+            <div className="p-6 pb-0">
+              <HeaderSectionRenderer sections={headerSections} position="top" />
+            </div>
           )}
 
-          {/* Title and Actions Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {headerInfo?.avatar}
-              <h1
-                className={clsx(
-                  "font-semibold",
-                  isInboxStyle ? "text-2xl" : "text-lg font-bold"
+          {/* Header */}
+          <div
+            className={clsx(
+              "flex flex-col border-b",
+              isInboxStyle ? "gap-4 pb-4 px-6" : "gap-2 px-6"
+            )}
+            style={{ borderColor: theme.border.default }}
+          >
+            {/* Breadcrumbs */}
+            {headerInfo?.breadcrumbs && (
+              <Breadcrumbs breadcrumbs={headerInfo.breadcrumbs} />
+            )}
+
+            {/* Title and Actions Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {headerInfo?.avatar}
+                <h1
+                  className={clsx(
+                    "font-semibold",
+                    isInboxStyle ? "text-2xl" : "text-lg font-bold"
+                  )}
+                  style={{ color: theme.text.primary }}
+                >
+                  {title}
+                </h1>
+                {headerInfo?.subtitle && (
+                  <span className="text-gray-600">{headerInfo.subtitle}</span>
                 )}
-                style={{ color: theme.text.primary }}
-              >
-                {title}
-              </h1>
-              {headerInfo?.subtitle && (
-                <span className="text-gray-600">{headerInfo.subtitle}</span>
+              </div>
+
+              {/* Actions */}
+              {actions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {actions.map((action, index) => (
+                    <ActionButton key={index} action={action} />
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Actions */}
-            {actions.length > 0 && (
-              <div className="flex items-center gap-2">
-                {actions.map((action, index) => (
-                  <ActionButton key={index} action={action} />
-                ))}
-              </div>
+            {/* Custom Header Content */}
+            {headerInfo?.customContent && (
+              <div className="py-2">{headerInfo.customContent}</div>
             )}
+
+            {/* Middle Header Sections */}
+            <HeaderSectionRenderer sections={headerSections} position="middle" />
+
+            {/* Navigation Tabs */}
+            <div>
+              <ul
+                className={clsx(
+                  "flex items-center",
+                  isInboxStyle ? "gap-6 border-b -mb-4" : "gap-5"
+                )}
+                style={isInboxStyle ? { borderColor: theme.border.default } : {}}
+              >
+                {navItems.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={clsx(
+                        "flex items-center gap-1",
+                        isInboxStyle &&
+                          "inline-block pb-4 border-b-2 font-medium text-sm",
+                        isMyTaskStyle && "font-medium",
+                        // Inbox active state
+                        isInboxStyle &&
+                          pathname === item.href &&
+                          "border-orange-500 text-orange-600",
+                        isInboxStyle &&
+                          pathname !== item.href &&
+                          "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+                        // MyTask active state
+                        isMyTaskStyle &&
+                          pathname === item.href &&
+                          "font-semibold text-black border-b-2 border-black",
+                        isMyTaskStyle &&
+                          pathname !== item.href &&
+                          "text-gray-500 hover:text-black",
+                        // Teams active state
+                        isTeamsStyle &&
+                          pathname === item.href &&
+                          "border-orange-500 text-white font-semibold border-b-2",
+                        isTeamsStyle &&
+                          pathname !== item.href &&
+                          "border-transparent text-gray-300 hover:text-white hover:border-gray-300"
+                      )}
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+
+                {/* Plus button for inbox style */}
+                {isInboxStyle && showTabsPlus && (
+                  <li className="ml-auto">
+                    <button
+                      className="p-1.5 rounded-md transition-colors"
+                      style={{
+                        color: theme.text.secondary,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = theme.text.primary;
+                        e.currentTarget.style.backgroundColor =
+                          theme.background.secondary;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = theme.text.secondary;
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                    >
+                      <ACTION_ICONS.create className="w-4 h-4" />
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {/* Bottom Header Sections */}
+            <HeaderSectionRenderer sections={headerSections} position="bottom" />
           </div>
-
-          {/* Custom Header Content */}
-          {headerInfo?.customContent && (
-            <div className="py-2">{headerInfo.customContent}</div>
-          )}
-
-          {/* Middle Header Sections */}
-          <HeaderSectionRenderer sections={headerSections} position="middle" />
-
-          {/* Navigation Tabs */}
-          <div>
-            <ul
-              className={clsx(
-                "flex items-center",
-                isInboxStyle ? "gap-6 border-b -mb-4" : "gap-5"
-              )}
-              style={isInboxStyle ? { borderColor: theme.border.default } : {}}
-            >
-              {navItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={clsx(
-                      "flex items-center gap-1",
-                      isInboxStyle &&
-                        "inline-block pb-4 border-b-2 font-medium text-sm",
-                      isMyTaskStyle && "font-medium",
-                      // Inbox active state
-                      isInboxStyle &&
-                        pathname === item.href &&
-                        "border-orange-500 text-orange-600",
-                      isInboxStyle &&
-                        pathname !== item.href &&
-                        "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                      // MyTask active state
-                      isMyTaskStyle &&
-                        pathname === item.href &&
-                        "font-semibold text-black border-b-2 border-black",
-                      isMyTaskStyle &&
-                        pathname !== item.href &&
-                        "text-gray-500 hover:text-black"
-                    )}
-                  >
-                    {item.icon}
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                </li>
-              ))}
-
-              {/* Plus button for inbox style */}
-              {isInboxStyle && showTabsPlus && (
-                <li className="ml-auto">
-                  <button
-                    className="p-1.5 rounded-md transition-colors"
-                    style={{
-                      color: theme.text.secondary,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = theme.text.primary;
-                      e.currentTarget.style.backgroundColor =
-                        theme.background.secondary;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = theme.text.secondary;
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <ACTION_ICONS.create className="w-4 h-4" />
-                  </button>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {/* Bottom Header Sections */}
-          <HeaderSectionRenderer sections={headerSections} position="bottom" />
         </div>
 
         {/* Content */}
-        <div>{children}</div>
+        <div>
+          {children}
+        </div>
       </div>
     </PrivateLayout>
   );

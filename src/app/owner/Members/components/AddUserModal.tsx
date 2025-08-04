@@ -117,7 +117,7 @@ export default function AddUserModal({ isOpen, onClose, onSubmit }: AddUserModal
 
   return (
     <div 
-      className={`fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300 ${
+      className={`fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[70] p-4 transition-opacity duration-300 ${
         isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
       onClick={handleBackdropClick}

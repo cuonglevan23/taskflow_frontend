@@ -136,22 +136,22 @@ export default function PrivateSidebar({
         {
           id: "cross-functional",
           label: "Cross-functional project plan",
-          href: "/owner/project/list",
-          tag: "/owner/project",
+          href: "/project/list",
+          tag: "/project",
           icon: <Folder size={20} className="text-gray-300" />,
         },
         {
           id: "marketing",
           label: "Marketing Campaign",
           href: "/projects/marketing",
-          tag: "/owner/project/2",
+          tag: "/project/2",
           icon: <Folder size={20} className="text-gray-300" />,
         },
         {
           id: "website-redesign",
           label: "Website Redesign",
           href: "/projects/website",
-          tag: "/owner/project/3",
+          tag: "/project/3",
           icon: <Folder size={20} className="text-gray-300" />,
         },
       ],
@@ -248,7 +248,7 @@ export default function PrivateSidebar({
                   </div>
                 </DropdownItem>
 
-                <DropdownItem  onClick={() => router.push("/owner/create-project")}>
+                <DropdownItem  onClick={() => router.push("/create-project")}>
                   <div className="flex items-center space-x-4 px-2 py-2 group">
                     <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
                       <ProjectIcon size="sm" />
@@ -420,7 +420,7 @@ export default function PrivateSidebar({
                   {section.title === "Projects" && showLabels && (
                     <li>
                       <button
-                        onClick={() => router.push("/owner/create-project")}
+                        onClick={() => router.push("/create-project")}
                         className="flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full"
                       >
                         <Plus size={16} />

@@ -69,7 +69,7 @@ export default function Dropdown({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 min-w-48 bg-white rounded-xl shadow-2xl border border-gray-100 transform transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95",
+            "absolute z-[60] min-w-48 bg-white rounded-xl shadow-2xl border border-gray-100 transform transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95",
             placementClasses[placement],
             contentClassName
           )}

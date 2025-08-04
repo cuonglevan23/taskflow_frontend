@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { EditableTask, TaskStatus, Assignee } from "@/types/task";
 import TaskSection from "./TaskSection";
 import { NewTaskDataType } from "./types";
-import TaskDetailPanel from "@/app/owner/project/list/components/TaskDetailPanel";
+import TaskDetailPanel from "@/app/project/list/components/TaskDetailPanel";
 interface TaskTableProps {
   tasks: EditableTask[];
   assignees: Assignee[];

@@ -231,17 +231,17 @@ export function getContextualNavigation(
   const navigation: NavigationItem[] = [];
   
   // Project context navigation
-  if (currentPath.startsWith('/projects') || currentPath.startsWith('/owner/project')) {
+  if (currentPath.startsWith('/projects') || currentPath.startsWith('/project')) {
     const projectNavigation = [
-      { key: 'project-list', title: 'All Projects', href: '/owner/project/list', icon: 'list' },
-      { key: 'project-board', title: 'Board View', href: '/owner/project/board', icon: 'trello' },
+      { key: 'project-list', title: 'All Projects', href: '/project/list', icon: 'list' },
+      { key: 'project-board', title: 'Board View', href: '/project/board', icon: 'trello' },
     ];
 
     if (userPermissions.includes(Permission.VIEW_REPORTS)) {
       projectNavigation.push({
         key: 'project-timeline',
         title: 'Timeline',
-        href: '/owner/project/timeline',
+        href: '/project/timeline',
         icon: 'gantt-chart'
       });
     }

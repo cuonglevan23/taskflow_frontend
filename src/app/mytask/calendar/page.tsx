@@ -406,17 +406,21 @@ export default function CalendarPage() {
       {/* Header - Fixed */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white z-20 relative">
         <div className="flex items-center gap-6">
-          <button className="text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors"
-          style={{
-            backgroundColor: theme.button.primary.background,
-            color: theme.button.primary.text,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.button.primary.hover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = theme.button.primary.background;
-          }}>
+          <button
+            className="text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors"
+            style={{
+              backgroundColor: theme.button.primary.background,
+              color: theme.button.primary.text,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor =
+                theme.button.primary.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor =
+                theme.button.primary.background;
+            }}
+          >
             <Plus className="w-4 h-4" />
             Add task
           </button>

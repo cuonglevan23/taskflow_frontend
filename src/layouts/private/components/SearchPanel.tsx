@@ -366,7 +366,7 @@ export default function SearchPanel({
 
       {isOpen && (
         <div
-          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-xl border border-gray-200 overflow-hidden z-50"
+          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-xl border border-gray-200 overflow-hidden z-[60]"
           style={{
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
             minWidth: "600px",
