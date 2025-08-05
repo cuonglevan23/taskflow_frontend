@@ -75,6 +75,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="Changing view from timeGridWeek to dayGridMonth&#10;layout.tsx:35 Changing view from timeGridWeek to dayGridMonth&#10;layout.tsx:45 Current pathname: /mytask/calendar&#10;layout.tsx:48 Cloning calendar child with props: {searchValue: '', calendarView: 'dayGridMonth', onViewChange: ƒ}&#10;layout.tsx:45 Current pathname: /mytask/calendar&#10;layout.tsx:48 Cloning calendar child with props: {searchValue: '', calendarView: 'dayGridMonth', onViewChange: ƒ}&#10;&#10;&#10;vẫn không có sử thay đổ khi click chuyển lịch tuần sang tháng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754373945676" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="ChatGPT đã nói:&#10;Bạn đang gặp lỗi render trùng các tháng/ngày và header bị lặp khi sử dụng multiMonthYear trong FullCalendar. Lý do là:&#10;&#10;✅ multiMonthYear sẽ hiển thị nhiều tháng trong 1 lần render, và nếu không kiểm soát, sẽ render nhiều instance riêng biệt của các tháng, gây ra tình trạng trùng lặp các ngày, nhiều header, v.v.&#10;&#10;✅ Cách giải quyết&#10;Bạn cần giới hạn lại số tháng được render và chỉ render đúng 1 instance FullCalendar">
           <value>
             <GhostTextMetaData>
@@ -82,6 +94,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754276105017" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="Click nút đỏ &quot;TEST: Create 5-Day Task&quot; có hoạt động, task có kéo dài 5 ngày nhưng chỉnh bằng detailpanel lại không hoạt đông">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376633106" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -243,6 +267,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="add task chỉ cần có lịch tuần còn lịch tháng chỉ cần click vào ô lịch là được rồi">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375445883" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="add task vẫn đang sử dụng lịch cũ chưa đồng bộ với lịch mới">
           <value>
             <GhostTextMetaData>
@@ -315,6 +351,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="bở phần header chứ các thứ và các nút này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754374908326" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="check lại thật kỹ vẫn có hai header các thứ lỗi ở các nút ở header gốc">
           <value>
             <GhostTextMetaData>
@@ -341,6 +389,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="check ở phần lịch dùng chung xem cho Sat/Sun">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376989379" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="chưa cần thiết giao diện lịch phức tạp như này hãy cập nhật giao diện lịch ở page teams như ảnh mẫu tôi gưửi header đơn giản">
           <value>
             <GhostTextMetaData>
@@ -353,6 +413,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="chưa giống yêu cầu của tôi khi add task task mới sẽ xuất hiện phía trên như trên ảnh vào điền thông tin ngay trên task đó">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754371215606" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="chưa thấy có sự thay đổi ở page teams/calendar kiểm tra lại cấu trúc và fix bug cho đúng">
           <value>
             <GhostTextMetaData>
@@ -360,6 +432,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754287235048" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="chưa đúng yêu cầu của tôi tôi muốn quản lý các task dựa trên các Recently assigned, do today .v..v.v">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754369180071" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -444,6 +528,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754032262032" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="css lại chữa no date đang nằm dọc">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754372612518" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -713,6 +809,30 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="giao diện phần lịch có lớp phủ trắng ở sat và sun hãy bỏ lớp phủ này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376771829" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="giao diện task vẫn chỉ hiện thi task được 1 ngày không kéo dài tương ứng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376537363" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="giao diện thực tế code và giao diện mẫu khác ra nhau hãy clone lại giống phần lịch 100%">
           <value>
             <GhostTextMetaData>
@@ -821,6 +941,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="header lịch đang rất xấu header lịch tận dụng lại cho phần này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754374680336" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="header mytask đang rất xấu hãy css lại cho đẹp hơn các tabs và icon các tabs nằm đều vị trí">
           <value>
             <GhostTextMetaData>
@@ -893,6 +1025,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="header ở tabs lịch có sự thay đổi so với list hãy chỉnh lại cho đúng với yêu cầu">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754372439478" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="hãy chỉnh các chữ tiêu đề của các task sang màu trắng">
           <value>
             <GhostTextMetaData>
@@ -926,6 +1070,30 @@
                 <list>
                   <option value="1754031907669" />
                   <option value="1754031885239" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="hãy cập nhật các nút ở header của phần lịch để có thể chuyển đổi giữa lịch tháng và lịch tuần tận dụng thư viên fullcalendar hỗ trợ sẵn">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754373279448" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="hãy giúp tôi chỉnh sửa lại tabs board với yêu cầu khi chỉnh sửa task ở list thì board cũng thay đổi và ngược lại hãy quản lý hook thật tốt chuẩn doanh nghiệp để dễ phát triển sau này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754368956050" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -991,6 +1159,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="khi add task các task dài ngày thì task cũng sẽ kéo dài tương ứng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375731990" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="khi add task phần lịch tôi muốn giống như này có các đường kẻ nhưng hình ảnh mẫu">
           <value>
             <GhostTextMetaData>
@@ -1003,6 +1183,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="khi add thêm task sẽ như này ở board và khi chỉnh sửa hoặc click vào các task sẽ mở detailtaskpanel">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754371021346" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="khi chọn click vào ngày mới lỗi không click được">
           <value>
             <GhostTextMetaData>
@@ -1010,6 +1202,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754361946580" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="khi click vào mytask/calendar phần lịch week và mother không thay đổi hay kiểm tra lại">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754373506315" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -1185,6 +1389,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="lỗi giao diện phần mytask phải nằm trong private layout">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754369578769" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="lỗi khi cuộn trang xuống thì không render ra lịch thời gian lịch tiếp">
           <value>
             <GhostTextMetaData>
@@ -1192,6 +1408,30 @@
               <option name="timestamps">
                 <list>
                   <option value="1754037831838" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="lỗi khi tôi vào taskdetailpanel để chỉnh lại độ dài ngày của task thì phần lịch không update theo độ dài">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376283553" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="lỗi khi tạo lịch mặc định thanh task chỉ hiện thi được tối đa 3 ngày hãy sửa lại nếu tôi muốn tạo ít ngày hoặc nhiều ngày hơn vẫy hiện thị được">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376148874" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -1228,6 +1468,42 @@
               <option name="timestamps">
                 <list>
                   <option value="1754281891538" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="lỗi thiết kế phần lịch phần lịch phủ hết content, có header của lịch để chuyển sang các tuần hoặc các tháng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754374316511" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="lỗi ở list  xuất hiện 2 header">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754372785313" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="lớp phủ này chắc là do 1 thuộc tính ở fullcalendar chứ không phải do css">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754377262816" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -1593,6 +1869,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="sai layout các tabs phải nằm trong layout chính của mytask">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754369692567" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="task lại không xuất hiện nữa lại lỗi css hãy css cho thật đúng">
           <value>
             <GhostTextMetaData>
@@ -1773,6 +2061,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="tôi cần header của phần lịch xuất hiện để có thể chuyển sang các tuần các ngày xuất hiện">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754374569178" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="tôi hiiểu lỗi này tại vì phần header phải được để mặc định vào tabs lịch teams, bạn đang cố gọi api phần lịch tạo nên tình trạng vậy">
           <value>
             <GhostTextMetaData>
@@ -1809,6 +2109,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="tôi muốn khi không tìm kiếm có kết quả thì sẽ hiện thị giống như này, hãy áp dụng cho board và list">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754371507171" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="tôi muốn khi thay thế bảng modal cũ bằng detailpanel như này hãy tiến hành tạo giúp tôi dựa trên giao diện mẫu">
           <value>
             <GhostTextMetaData>
@@ -1840,6 +2152,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754116171817" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="tôi muốn phần lịch tuần của mytask/calendar giống như này cho phép add task bỏ phần time chứa giờ">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375077436" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -1905,6 +2229,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="tôi đã có sẵn một componet của phần lịch dùng chung cho page bây giờ hãy tận dụng componets này cho phần mytask/calendar">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754373017580" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="tôi đã đưa project và create ra app bây giờ hãy cập nhật lại đường dẫn mới">
           <value>
             <GhostTextMetaData>
@@ -1936,6 +2272,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754294566866" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="tận dụng header list làm header chung cho cả page mytask, điều chỉnh sao cho các tabs render theo yêu cầu tabs đó bây giờ làm tiếp phần lịch">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754372043696" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -2085,6 +2433,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="vẫn chưa thay đổi hãy kiểm tra lại">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376878616" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="vẫn chưa thấy thay đổi ở mytask phần header của mytask">
           <value>
             <GhostTextMetaData>
@@ -2097,6 +2457,42 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="vẫn chưa được hãy kiểm tra lại ,khi add task các task dài ngày thì task cũng sẽ kéo dài tương ứng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375939900" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="vẫn chưa được khi tôi tạo task ở list thì ở board vẫn chưa cập nhật xem lại hook để cập nhật đúng yêu cầu tôi muốn hai tabs list và board có thể dễ dàng crud các task">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754369426936" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="vẫn không có sự thay đổi tôi chỉnh ngày thông qua taskdetailpanel mà phần task không kéo dài tương ứng">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754376403063" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="vẫn không có thay đổi gì cả hãy kiểm tra lại xem đã thay đổi đúng chưa có phải là page teams/calendar không">
           <value>
             <GhostTextMetaData>
@@ -2104,6 +2500,30 @@
               <option name="timestamps">
                 <list>
                   <option value="1754284657565" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="vẫn không hoạt động hãy kiểm tra lại">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754373809700" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="vẫn không thấy nút add task ở phần lịch week">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375641870" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -2289,6 +2709,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="vẫn xuất hiện lớp phủ ở 2 ngày cuối tuần do đâu hãy bỏ lớp phủ này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754377132718" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key="xem ảnh chụp màn hình giao diện hiện tại của web tôi check lỗi sau, lỗi khi cuộn xuống chưa hiện thi đúng ngày thaáng và vị trí của thứ trong tuần hãy code logic đúng chuẩn product">
           <value>
             <GhostTextMetaData>
@@ -2321,6 +2753,18 @@
                 <list>
                   <option value="1754031359144" />
                   <option value="1754031345034" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="xóa nút add task ở header, add task sẽ giống như này">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375307716" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -2417,6 +2861,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754361126733" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key="đây là yêu cầu của tôi cho tab borad tabs này sẽ không cho phép người dùng cuộn trang chỉ cuộn được các phần task cho Recently assigned, to day ..v.v.v">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754370874644" />
                 </list>
               </option>
             </GhostTextMetaData>
@@ -2554,6 +3010,18 @@
             </GhostTextMetaData>
           </value>
         </entry>
+        <entry key="ở trang board tôi muốn có thêm phần header giống chứa các nút như Filter&#10;&#10;Sort&#10;&#10;Group&#10;&#10;Options&#10;&#10;giống phần list">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754369917091" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
         <entry key=" Lịch hiển thị luôn đúng bắt đầu từ Thứ Hai → Chủ Nhật&#10;&#10; Ngày cuối tháng trước / đầu tháng sau sẽ được hiển thị để lấp đầy các ô trống&#10;&#10; Có thể gắn task, event, badge... dễ dàng&#10;&#10; Sticky Header: sticky top-0 giúp thanh thứ luôn giữ trên cùng khi cuộn">
           <value>
             <GhostTextMetaData>
@@ -2561,6 +3029,18 @@
               <option name="timestamps">
                 <list>
                   <option value="1754274649706" />
+                </list>
+              </option>
+            </GhostTextMetaData>
+          </value>
+        </entry>
+        <entry key=" Week view: Hover → nút &quot;+ Add task&quot; xuất hiện → click để tạo task&#10;&#10;tôi không thấy nút add task">
+          <value>
+            <GhostTextMetaData>
+              <option name="count" value="1.0" />
+              <option name="timestamps">
+                <list>
+                  <option value="1754375571061" />
                 </list>
               </option>
             </GhostTextMetaData>

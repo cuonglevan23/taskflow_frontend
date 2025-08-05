@@ -524,8 +524,14 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             
             // Save to task data with complete sync
             if (onSave) {
+              console.log('TaskDetailPanel saving:', {
+                dueDate: endDateFormatted || startDateFormatted, // dueDate should be end date
+                startDate: startDateFormatted,
+                endDate: endDateFormatted,
+              });
+              
               onSave(task.id, { 
-                dueDate: startDateFormatted,
+                dueDate: endDateFormatted || startDateFormatted, // ✅ Fix: dueDate = end date
                 startDate: startDateFormatted,
                 endDate: endDateFormatted,
                 startTime: data.startTime || startTime,

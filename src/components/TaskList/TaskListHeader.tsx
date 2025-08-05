@@ -20,6 +20,7 @@ interface TaskListHeaderProps {
   showGroup?: boolean;
   showOptions?: boolean;
   className?: string;
+  hideLeftSide?: boolean;
 }
 
 const TaskListHeader: React.FC<TaskListHeaderProps> = ({
@@ -36,27 +37,31 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
   showGroup = true,
   showOptions = true,
   className = '',
+  hideLeftSide = false,
 }) => {
   const { theme } = useTheme();
   const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
 
   return (
     <div 
-      className={`flex items-center justify-between py-4 px-6 w-full ${className}`}
+      className={`flex items-center ${hideLeftSide ? '' : 'justify-between py-4 px-6'} w-full ${className}`}
       style={{ 
         backgroundColor: theme.background.primary,
-        borderBottom: `1px solid ${theme.border.default}`,
+        borderBottom: hideLeftSide ? 'none' : `1px solid ${theme.border.default}`,
         width: '100%',
         minWidth: '100%'
       }}
     >
       {/* Left side - Empty space where Add Task Button was */}
-      <div className="flex items-center">
-        {/* Add task button removed */}
-      </div>
+      {!hideLeftSide && (
+        <div className="flex items-center">
+          {/* Add task button removed */}
+        </div>
+      )}
 
       {/* Right side - Action Dropdowns */}
       <div className="flex items-center gap-2">
+
         {showFilters && (
           <Dropdown
             trigger={

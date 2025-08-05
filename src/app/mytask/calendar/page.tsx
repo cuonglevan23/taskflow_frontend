@@ -1,569 +1,592 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Calendar,
-  Filter,
-  Settings,
-  Search,
-} from "lucide-react";
+import React, { useState, useRef } from "react";
+import { useTaskManagementContext } from "../context/TaskManagementContext";
+import { useTaskActions } from "../hooks";
+import { TaskListItem } from "@/components/TaskList";
+import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import CalendarHeader from "@/components/Calendar/CalendarHeader";
 
-interface Task {
-  id: number;
-  text: string;
-  color: string;
-  startDate: number;
-  endDate: number;
-  month: number;
-  year: number;
-  row?: number;
+interface MyTaskCalendarPageProps {
+  searchValue?: string;
 }
 
-export default function CalendarPage() {
+const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({ 
+  searchValue = ""
+}) => {
   const { theme } = useTheme();
+  const taskManagement = useTaskManagementContext();
+  const taskActions = useTaskActions({ taskActions: taskManagement });
+  const calendarRef = useRef<FullCalendar>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [currentWeekStart, setCurrentWeekStart] = useState(
-    new Date(2025, 6, 20)
-  ); // July 20, 2025 (Sunday)
-
-  const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-
-  // Calculate current week dates
-  const weekDates = useMemo(() => {
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  }, [currentWeekStart]);
-
-  // Extended tasks with more entries to demonstrate scrolling
-  const allTasks: Task[] = [
-    // July 2025 tasks
-    {
-      id: 1,
-      text: "Project Planning",
-      color: "bg-blue-200",
-      startDate: 21,
-      endDate: 23,
-      month: 6,
-      year: 2025,
-      row: 0,
-    },
-    {
-      id: 2,
-      text: "Team Meeting",
-      color: "bg-green-200",
-      startDate: 22,
-      endDate: 22,
-      month: 6,
-      year: 2025,
-      row: 1,
-    },
-    {
-      id: 3,
-      text: "Code Review",
-      color: "bg-yellow-200",
-      startDate: 22,
-      endDate: 22,
-      month: 6,
-      year: 2025,
-      row: 2,
-    },
-    {
-      id: 4,
-      text: "qyedddqqdy",
-      color: "bg-teal-200",
-      startDate: 25,
-      endDate: 26,
-      month: 6,
-      year: 2025,
-      row: 0,
-    },
-    {
-      id: 5,
-      text: "Client Call",
-      color: "bg-purple-200",
-      startDate: 25,
-      endDate: 25,
-      month: 6,
-      year: 2025,
-      row: 1,
-    },
-    {
-      id: 6,
-      text: "Documentation",
-      color: "bg-orange-200",
-      startDate: 24,
-      endDate: 26,
-      month: 6,
-      year: 2025,
-      row: 2,
-    },
-
-    // More tasks for demonstration
-    {
-      id: 7,
-      text: "Daily Standup",
-      color: "bg-indigo-200",
-      startDate: 21,
-      endDate: 21,
-      month: 6,
-      year: 2025,
-      row: 3,
-    },
-    {
-      id: 8,
-      text: "Design Review",
-      color: "bg-pink-200",
-      startDate: 21,
-      endDate: 21,
-      month: 6,
-      year: 2025,
-      row: 4,
-    },
-    {
-      id: 9,
-      text: "Sprint Planning",
-      color: "bg-red-200",
-      startDate: 22,
-      endDate: 22,
-      month: 6,
-      year: 2025,
-      row: 5,
-    },
-    {
-      id: 10,
-      text: "Bug Fixes",
-      color: "bg-gray-200",
-      startDate: 23,
-      endDate: 23,
-      month: 6,
-      year: 2025,
-      row: 3,
-    },
-    {
-      id: 11,
-      text: "Testing",
-      color: "bg-cyan-200",
-      startDate: 23,
-      endDate: 23,
-      month: 6,
-      year: 2025,
-      row: 4,
-    },
-    {
-      id: 12,
-      text: "Deployment",
-      color: "bg-lime-200",
-      startDate: 24,
-      endDate: 24,
-      month: 6,
-      year: 2025,
-      row: 5,
-    },
-    {
-      id: 13,
-      text: "Performance Review",
-      color: "bg-amber-200",
-      startDate: 25,
-      endDate: 25,
-      month: 6,
-      year: 2025,
-      row: 6,
-    },
-    {
-      id: 14,
-      text: "Training Session",
-      color: "bg-emerald-200",
-      startDate: 26,
-      endDate: 26,
-      month: 6,
-      year: 2025,
-      row: 3,
-    },
-    {
-      id: 15,
-      text: "Retrospective",
-      color: "bg-violet-200",
-      startDate: 26,
-      endDate: 26,
-      month: 6,
-      year: 2025,
-      row: 4,
-    },
-    {
-      id: 16,
-      text: "1:1 Meeting",
-      color: "bg-rose-200",
-      startDate: 20,
-      endDate: 20,
-      month: 6,
-      year: 2025,
-      row: 0,
-    },
-    {
-      id: 17,
-      text: "Architecture Review",
-      color: "bg-sky-200",
-      startDate: 20,
-      endDate: 20,
-      month: 6,
-      year: 2025,
-      row: 1,
-    },
-    {
-      id: 18,
-      text: "Security Audit",
-      color: "bg-stone-200",
-      startDate: 21,
-      endDate: 21,
-      month: 6,
-      year: 2025,
-      row: 5,
-    },
-    {
-      id: 19,
-      text: "Database Migration",
-      color: "bg-neutral-200",
-      startDate: 23,
-      endDate: 24,
-      month: 6,
-      year: 2025,
-      row: 6,
-    },
-    {
-      id: 20,
-      text: "User Research",
-      color: "bg-zinc-200",
-      startDate: 25,
-      endDate: 25,
-      month: 6,
-      year: 2025,
-      row: 7,
-    },
-
-    // August 2025 tasks
-    {
-      id: 21,
-      text: "Sprint Planning",
-      color: "bg-indigo-200",
-      startDate: 1,
-      endDate: 2,
-      month: 7,
-      year: 2025,
-      row: 0,
-    },
-    {
-      id: 22,
-      text: "Design Review",
-      color: "bg-pink-200",
-      startDate: 1,
-      endDate: 1,
-      month: 7,
-      year: 2025,
-      row: 1,
-    },
-
-    // June 2025 tasks
-    {
-      id: 23,
-      text: "Q2 Review",
-      color: "bg-red-200",
-      startDate: 29,
-      endDate: 30,
-      month: 5,
-      year: 2025,
-      row: 0,
-    },
-  ];
-
-  // Filter tasks for current week
-  const currentWeekTasks = useMemo(() => {
-    return allTasks.filter((task) => {
-      const taskStart = new Date(task.year, task.month, task.startDate);
-      const taskEnd = new Date(task.year, task.month, task.endDate);
-      const weekStart = weekDates[0];
-      const weekEnd = weekDates[6];
-
-      // Check if task overlaps with current week
-      return taskStart <= weekEnd && taskEnd >= weekStart;
+  // Convert TaskListItem to FullCalendar Event format
+  const convertToFullCalendarEvents = (tasks: TaskListItem[]) => {
+    return tasks.map(task => {
+      const startDate = task.startDate || task.dueDate || new Date().toISOString().split('T')[0];
+      const endDate = task.dueDate || task.startDate || new Date().toISOString().split('T')[0];
+      
+      console.log('Converting task:', task.name, 'startDate:', startDate, 'endDate:', endDate);
+      
+      // For multi-day tasks, ensure proper end date for FullCalendar
+      // FullCalendar expects end date to be the day AFTER the last day for all-day events
+      let fcEndDate = endDate;
+      const isMultiDay = startDate !== endDate;
+      
+      if (isMultiDay) {
+        const nextDay = new Date(endDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        fcEndDate = nextDay.toISOString().split('T')[0];
+        console.log('Multi-day task detected, FC end date:', fcEndDate);
+      }
+      
+      const event = {
+        id: task.id,
+        title: task.name,
+        start: startDate,
+        end: fcEndDate,
+        allDay: true, // Ensure it's treated as all-day event for proper spanning
+        backgroundColor: task.priority === 'high' ? '#8B5CF6' : 
+                       task.priority === 'medium' ? '#06B6D4' : '#10B981',
+        borderColor: task.priority === 'high' ? '#7C3AED' : 
+                    task.priority === 'medium' ? '#0891B2' : '#059669',
+        textColor: '#FFFFFF',
+        extendedProps: {
+          originalTask: task,
+          assignee: task.assignedTo || 'Unassigned',
+          description: task.description,
+          project: task.project,
+          status: task.status,
+          priority: task.priority,
+          isMultiDay: isMultiDay
+        }
+      };
+      
+      console.log('FullCalendar event created:', event);
+      return event;
     });
-  }, [weekDates, allTasks]);
+  };
 
-  const navigateWeek = (direction: "prev" | "next") => {
-    const newDate = new Date(currentWeekStart);
-    newDate.setDate(
-      currentWeekStart.getDate() + (direction === "next" ? 7 : -7)
+  // Filter tasks based on search
+  const filteredTasks = React.useMemo(() => {
+    if (!searchValue.trim()) return taskManagement.tasks;
+    return taskManagement.tasks.filter(task => 
+      task.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchValue.toLowerCase()) ||
+      task.project?.toLowerCase().includes(searchValue.toLowerCase())
     );
-    setCurrentWeekStart(newDate);
+  }, [taskManagement.tasks, searchValue]);
+
+  // Convert filtered tasks to FullCalendar events
+  const calendarEvents = convertToFullCalendarEvents(filteredTasks);
+  console.log('Calendar events recalculated:', calendarEvents.length, 'tasks');
+
+  // Task detail panel logic
+  const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
+    console.log('Calendar handleTaskSave called:', taskId, updates);
+    taskManagement.updateTask(taskId, updates);
+    
+    // Force calendar re-render by updating currentDate (triggers key change)
+    setTimeout(() => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.render();
+        console.log('Calendar re-rendered after task update');
+      }
+    }, 100);
   };
 
-  const goToToday = () => {
-    const today = new Date();
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - today.getDay()); // Get Sunday of current week
-    setCurrentWeekStart(sunday);
+  const handleTaskDelete = (taskId: string) => {
+    console.log('Calendar handleTaskDelete called:', taskId);
+    taskManagement.deleteTask(taskId);
+    
+    // Force calendar re-render
+    setTimeout(() => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.render();
+        console.log('Calendar re-rendered after task delete');
+      }
+    }, 100);
   };
 
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
-
-  // Get current month and year for display
-  const displayMonthYear = useMemo(() => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
-    // If week spans multiple months, show both
-    const startMonth = weekDates[0].getMonth();
-    const endMonth = weekDates[6].getMonth();
-    const startYear = weekDates[0].getFullYear();
-    const endYear = weekDates[6].getFullYear();
-
-    if (startMonth !== endMonth || startYear !== endYear) {
-      return `${months[startMonth]} ${startYear} - ${months[endMonth]} ${endYear}`;
+  // FullCalendar event handlers
+  const handleEventClick = (info: any) => {
+    const originalTask = info.event.extendedProps.originalTask;
+    if (originalTask) {
+      taskActions.onTaskClick?.(originalTask);
     }
-
-    return `${months[startMonth]} ${startYear}`;
-  }, [weekDates]);
-
-  // Get single-day tasks for a specific date
-  const getSingleDayTasksForDate = (date: Date) => {
-    return currentWeekTasks.filter((task) => {
-      const taskStart = new Date(task.year, task.month, task.startDate);
-      const taskEnd = new Date(task.year, task.month, task.endDate);
-      return (
-        taskStart.toDateString() === date.toDateString() &&
-        taskEnd.toDateString() === date.toDateString()
-      );
-    });
   };
 
-  // Calculate position and width for multi-day tasks
-  const getMultiDayTaskStyle = (task: Task) => {
-    const taskStart = new Date(task.year, task.month, task.startDate);
-    const taskEnd = new Date(task.year, task.month, task.endDate);
-
-    // Find which days of the current week this task spans
-    let startIndex = -1;
-    let endIndex = -1;
-
-    weekDates.forEach((date, index) => {
-      if (date >= taskStart && startIndex === -1) startIndex = index;
-      if (date <= taskEnd) endIndex = index;
-    });
-
-    if (startIndex === -1 || endIndex === -1) return { display: "none" };
-
-    const columnWidth = 100 / 7;
-    const left = startIndex * columnWidth;
-    const width = (endIndex - startIndex + 1) * columnWidth;
-
-    return {
-      position: "absolute" as const,
-      left: `${left}%`,
-      width: `${width}%`,
-      top: `${(task.row || 0) * 48 + 8}px`,
-      height: "36px",
-      zIndex: 10,
-      paddingLeft: "16px",
-      paddingRight: "16px",
+  const handleDateClick = (info: any) => {
+    // Create new task for the selected date
+    const dateStr = info.dateStr;
+    console.log('Creating task for date:', dateStr);
+    
+    // Create single-day task by default (user can edit to extend duration)
+    const taskData = {
+      name: 'New Task',
+      dueDate: dateStr,
+      startDate: dateStr,
+      project: '',
+      status: 'todo' as const
     };
+    
+    console.log('Task data being created:', taskData);
+    taskActions.onCreateTask?.(taskData);
   };
 
-  // Get maximum number of task rows needed
-  const maxRows = Math.max(...currentWeekTasks.map((t) => (t.row || 0) + 1), 8);
+  const handleEventDrop = (info: any) => {
+    // Update task with new date
+    const taskId = info.event.id;
+    const newStart = info.event.start;
+    const dateStr = newStart.toISOString().split('T')[0];
+    
+    taskManagement.updateTask(taskId, {
+      dueDate: dateStr,
+      startDate: dateStr
+    });
+  };
 
-  // Separate single-day and multi-day tasks
-  const multiDayTasks = currentWeekTasks.filter((task) => {
-    const taskStart = new Date(task.year, task.month, task.startDate);
-    const taskEnd = new Date(task.year, task.month, task.endDate);
-    return taskStart.toDateString() !== taskEnd.toDateString();
-  });
+  const handleEventResize = (info: any) => {
+    // Update task end date when resized
+    const taskId = info.event.id;
+    const newEnd = info.event.end;
+    const endDateStr = newEnd ? newEnd.toISOString().split('T')[0] : null;
+    
+    if (endDateStr) {
+      taskManagement.updateTask(taskId, {
+        dueDate: endDateStr
+      });
+    }
+  };
+
+  // Calendar navigation handlers
+  const handlePrevious = () => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.prev();
+      setCurrentDate(calendarApi.getDate());
+    }
+  };
+
+  const handleNext = () => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.next();
+      setCurrentDate(calendarApi.getDate());
+    }
+  };
+
+  const handleToday = () => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.today();
+      setCurrentDate(calendarApi.getDate());
+    }
+  };
+
+  const handleCreateTaskFromHeader = () => {
+    // Create test multi-day task
+    const today = new Date();
+    const startDate = today.toISOString().split('T')[0];
+    const endDate = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 5 days later
+    
+    taskActions.onCreateTask?.({
+      name: 'Test Multi-day Task (5 days)',
+      dueDate: endDate,
+      startDate: startDate,
+      project: '',
+      status: 'todo'
+    });
+    console.log('Created test multi-day task:', startDate, 'to', endDate);
+  };
+
+  // Handle view changes from context
+  React.useEffect(() => {
+    console.log('Calendar view from context changed to:', taskManagement.calendarView);
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      console.log('Attempting to change FullCalendar view to:', taskManagement.calendarView);
+      try {
+        calendarApi.changeView(taskManagement.calendarView);
+        console.log('Successfully changed FullCalendar view to:', taskManagement.calendarView);
+      } catch (error) {
+        console.error('Failed to change calendar view:', error);
+      }
+    }
+  }, [taskManagement.calendarView]);
+
+  // Debug task changes
+  React.useEffect(() => {
+    console.log('=== TASKS CHANGED ===');
+    console.log('Total tasks:', taskManagement.tasks.length);
+    taskManagement.tasks.forEach(task => {
+      console.log(`Task ${task.name}: startDate=${task.startDate}, dueDate=${task.dueDate}`);
+    });
+    console.log('===================');
+  }, [taskManagement.tasks]);
 
   return (
-    <div className="w-full h-[calc(100vh-160px)] bg-white flex flex-col">
-      {/* Header - Fixed */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white z-20 relative">
-        <div className="flex items-center gap-6">
-          <button
-            className="text-white px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors"
-            style={{
-              backgroundColor: theme.button.primary.background,
-              color: theme.button.primary.text,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor =
-                theme.button.primary.hover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor =
-                theme.button.primary.background;
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Add task
-          </button>
+    <>
+      <div className="h-full" style={{ backgroundColor: theme.background.primary }}>
+        {/* Custom Calendar Header */}
+        <CalendarHeader
+          currentDate={currentDate}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          onToday={handleToday}
+        />
+        
+        <FullCalendar
+          key={`${taskManagement.calendarView}-${taskManagement.tasks.length}-${JSON.stringify(taskManagement.tasks.map(t => t.id + t.startDate + t.dueDate))}`} // Force re-render when view or tasks change
+          ref={calendarRef}
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView={taskManagement.calendarView}
+          headerToolbar={false}
+          titleFormat={{ year: 'numeric', month: 'long' }}
+          height="100%"
+          events={calendarEvents}
+          editable={true}
+          droppable={true}
+          selectable={true}
+          selectMirror={true}
+          eventClick={handleEventClick}
+          dateClick={handleDateClick}
+          eventDrop={handleEventDrop}
+          eventResize={handleEventResize}
+          eventDisplay="block"
+          dayMaxEvents={false}
+          weekends={true}
+          firstDay={1} // Start week on Monday
+          weekNumberCalculation="ISO"
+          displayEventTime={false}
+          eventTextColor="#FFFFFF"
+          eventBorderWidth={1}
+          eventClassNames="cursor-pointer hover:opacity-80 transition-opacity"
+          slotMinTime="06:00:00"
+          slotMaxTime="22:00:00"
+          allDaySlot={true}
+          nowIndicator={true}
+          businessHours={false}
+          themeSystem="standard"
+          // Custom styling
+          eventDidMount={(info) => {
+            // Add custom styling to events
+            const el = info.el;
+            const priority = info.event.extendedProps.priority;
+            
+            // Add priority indicator
+            if (priority === 'high') {
+              el.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.4)';
+            } else if (priority === 'medium') {
+              el.style.boxShadow = '0 2px 8px rgba(6, 182, 212, 0.4)';
+            } else {
+              el.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.4)';
+            }
+            
+            // Add hover effects
+            el.style.borderRadius = '6px';
+            el.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+          }}
+          dayCellDidMount={(info) => {
+            console.log('dayCellDidMount called, current view:', taskManagement.calendarView);
+            
+            // Force remove weekend styling
+            const dayEl = info.el;
+            const date = info.date;
+            const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+            
+            if (dayOfWeek === 0 || dayOfWeek === 6) { // Weekend days
+              dayEl.style.setProperty('background-color', theme.background.primary, 'important');
+              dayEl.style.setProperty('background', theme.background.primary, 'important');
+              dayEl.style.opacity = '1';
+              console.log('Removing weekend styling for:', date.toDateString());
+            }
+            
+            // Only add "Add task" button in week view
+            if (taskManagement.calendarView === 'dayGridWeek') {
+              console.log('Adding Add task button for week view');
+              const dayEl = info.el;
+              const date = info.date;
+              
+              // Create add task button
+              const addTaskBtn = document.createElement('button');
+              addTaskBtn.innerHTML = '+ Add task';
+              addTaskBtn.className = 'fc-add-task-btn';
+              addTaskBtn.style.cssText = `
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                padding: 8px;
+                background: #1f2937;
+                border: 1px dashed #4b5563;
+                color: #9ca3af;
+                font-size: 11px;
+                border-radius: 4px;
+                cursor: pointer;
+                z-index: 100;
+                display: block;
+                opacity: 0.7;
+                text-align: center;
+                font-family: inherit;
+              `;
+              
+              // Add hover effect to show button
+              dayEl.addEventListener('mouseenter', () => {
+                console.log('Day cell mouse enter - showing button');
+                addTaskBtn.style.opacity = '1';
+                addTaskBtn.style.background = '#374151';
+              });
+              
+              dayEl.addEventListener('mouseleave', () => {
+                console.log('Day cell mouse leave - hiding button');
+                addTaskBtn.style.opacity = '0.7';
+                addTaskBtn.style.background = '#1f2937';
+              });
+              
+              // Add click handler
+              addTaskBtn.addEventListener('click', (e) => {
+                console.log('Add task button clicked for date:', date);
+                e.stopPropagation();
+                handleDateClick({ dateStr: date.toISOString().split('T')[0] });
+              });
+              
+              // Make day cell relative positioned and set min height
+              dayEl.style.position = 'relative';
+              dayEl.style.minHeight = '120px';
+              dayEl.appendChild(addTaskBtn);
+              
+              console.log('Add task button added to day cell');
+            } else {
+              console.log('Month view - no add task button needed');
+            }
+          }}
+        />
 
-          <div className="flex items-center gap-3">
-            <button
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              onClick={() => navigateWeek("prev")}
-              title="Previous week"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              className="px-4 py-2 hover:bg-gray-100 rounded-md font-medium text-gray-700 transition-colors"
-              onClick={goToToday}
-            >
-              Today
-            </button>
-            <button
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-              onClick={() => navigateWeek("next")}
-              title="Next week"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        {/* Custom FullCalendar Styles */}
+        <style jsx global>{`
+          /* Hide FullCalendar header completely */
+          .fc-header-toolbar {
+            display: none !important;
+          }
+          
+          .fc-toolbar {
+            display: none !important;
+          }
+          
+          .fc-toolbar-chunk {
+            display: none !important;
+          }
 
-          <span className="text-lg font-semibold text-gray-700">
-            {displayMonthYear}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 hover:bg-gray-100 rounded-md text-gray-600 flex items-center gap-2 transition-colors">
-            <Calendar className="w-4 h-4" />
-            Weeks
-          </button>
-          <button className="px-4 py-2 hover:bg-gray-100 rounded-md text-gray-600 flex items-center gap-2 transition-colors">
-            <Filter className="w-4 h-4" />
-            Filter
-          </button>
-          <button className="px-4 py-2 hover:bg-gray-100 rounded-md text-gray-600 flex items-center gap-2 transition-colors">
-            <Settings className="w-4 h-4" />
-            Options
-          </button>
-          <button className="p-2 hover:bg-gray-100 rounded-md text-gray-600 transition-colors">
-            <Search className="w-4 h-4" />
-          </button>
-        </div>
+          /* FullCalendar custom styling */
+          .fc {
+            font-family: inherit;
+          }
+          
+          /* Remove weekend overlay/styling - comprehensive selectors */
+          .fc-day-sat,
+          .fc-day-sun,
+          .fc-daygrid-day.fc-day-sat,
+          .fc-daygrid-day.fc-day-sun,
+          .fc-day[data-date*="-sat"],
+          .fc-day[data-date*="-sun"],
+          .fc-daygrid-day[data-date*="-sat"],
+          .fc-daygrid-day[data-date*="-sun"] {
+            background-color: ${theme.background.primary} !important;
+            opacity: 1 !important;
+          }
+          
+          /* Remove any weekend-specific background or overlay */
+          .fc .fc-daygrid-day.fc-day-sat::before,
+          .fc .fc-daygrid-day.fc-day-sun::before,
+          .fc-day-sat::before,
+          .fc-day-sun::before {
+            display: none !important;
+          }
+          
+          /* Ensure weekend days have same styling as weekdays */
+          .fc-daygrid-day.fc-day-sat,
+          .fc-daygrid-day.fc-day-sun {
+            background: ${theme.background.primary} !important;
+            color: ${theme.text.primary} !important;
+          }
+          
+          /* Override FullCalendar weekend classes */
+          .fc-theme-standard .fc-scrollgrid .fc-daygrid-day.fc-day-sat,
+          .fc-theme-standard .fc-scrollgrid .fc-daygrid-day.fc-day-sun {
+            background-color: ${theme.background.primary} !important;
+          }
+          
+          /* Remove any weekend styling from theme system */
+          .fc-theme-standard td.fc-daygrid-day.fc-day-sat,
+          .fc-theme-standard td.fc-daygrid-day.fc-day-sun,
+          .fc-theme-standard .fc-daygrid-day.fc-day-sat,
+          .fc-theme-standard .fc-daygrid-day.fc-day-sun {
+            background-color: ${theme.background.primary} !important;
+            background: ${theme.background.primary} !important;
+          }
+          
+          /* Multi-day event styling */
+          .fc-daygrid-event {
+            border-radius: 4px !important;
+            margin: 1px 0 !important;
+            padding: 2px 6px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+          }
+          
+          .fc-daygrid-event-harness {
+            margin-bottom: 2px !important;
+          }
+          
+          /* Ensure multi-day events span properly */
+          .fc-daygrid-event.fc-event-start {
+            border-top-left-radius: 4px !important;
+            border-bottom-left-radius: 4px !important;
+          }
+          
+          .fc-daygrid-event.fc-event-end {
+            border-top-right-radius: 4px !important;
+            border-bottom-right-radius: 4px !important;
+          }
+          
+          .fc-daygrid-event:not(.fc-event-start):not(.fc-event-end) {
+            border-radius: 0 !important;
+          }
+          
+          .fc-theme-standard .fc-scrollgrid {
+            border-color: ${theme.border.default};
+          }
+          
+          .fc-theme-standard td, .fc-theme-standard th {
+            border-color: ${theme.border.default};
+          }
+          
+          .fc-col-header-cell {
+            background-color: ${theme.background.secondary};
+            color: ${theme.text.primary};
+            font-weight: 600;
+            padding: 12px 8px;
+          }
+          
+          .fc-daygrid-day {
+            background-color: ${theme.background.primary};
+            color: ${theme.text.primary};
+          }
+          
+          .fc-day-today {
+            background-color: ${theme.background.secondary} !important;
+          }
+          
+          .fc-daygrid-day-number {
+            color: ${theme.text.primary};
+            font-weight: 500;
+            padding: 8px;
+          }
+          
+          .fc-day-today .fc-daygrid-day-number {
+            background-color: #3B82F6;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+          }
+          
+          .fc-timegrid-slot {
+            color: ${theme.text.secondary};
+            background-color: ${theme.background.primary};
+          }
+          
+          .fc-timegrid-slot-minor {
+            border-top-color: ${theme.border.default};
+          }
+          
+          .fc-timegrid-slot-major {
+            border-top-color: ${theme.border.default};
+          }
+          
+          .fc-timegrid-axis {
+            color: ${theme.text.secondary};
+            background-color: ${theme.background.secondary};
+          }
+          
+          .fc-event {
+            border-radius: 6px !important;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 2px 6px;
+            margin: 1px;
+          }
+          
+          .fc-event:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+          }
+          
+          .fc-more-link {
+            color: ${theme.text.primary};
+            background-color: ${theme.background.secondary};
+            border: 1px solid ${theme.border.default};
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+          }
+          
+          .fc-more-link:hover {
+            background-color: ${theme.background.primary};
+            text-decoration: none;
+          }
+          
+          .fc-daygrid-more-link {
+            margin: 2px;
+          }
+          
+          /* Week view specific styling */
+          .fc-timegrid-event {
+            border-radius: 4px !important;
+          }
+          
+          .fc-timegrid-event-harness {
+            margin: 0 2px;
+          }
+          
+          /* All day events styling */
+          .fc-daygrid-event {
+            border-radius: 4px !important;
+            margin: 1px 2px;
+          }
+          
+          .fc-event-main {
+            padding: 2px 4px;
+          }
+          
+          .fc-event-title {
+            font-weight: 500;
+          }
+        `}</style>
       </div>
 
-      {/* Day Headers - Fixed */}
-      <div className="grid grid-cols-7 border-b border-gray-200 bg-white z-10 relative">
-        {weekDays.map((day, index) => (
-          <div
-            key={day}
-            className="px-4 py-6 text-center border-r border-gray-200 last:border-r-0"
-          >
-            <div className="text-sm font-semibold text-gray-600 mb-3">
-              {day}
-            </div>
-            <div
-              className={`text-2xl font-semibold ${
-                isToday(weekDates[index])
-                  ? "bg-blue-600 text-white rounded-lg w-12 h-12 flex items-center justify-center mx-auto"
-                  : "text-gray-900"
-              }`}
-            >
-              {weekDates[index].getDate()}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Scrollable Task Area */}
-      <div className="flex-1 relative overflow-hidden scrollbar-hide">
-        <div className="h-full overflow-y-auto">
-          <div
-            className="relative"
-            style={{ minHeight: `${maxRows * 48 + 100}px` }}
-          >
-            {/* Multi-day tasks - rendered as continuous bars */}
-            {multiDayTasks.map((task) => (
-              <div
-                key={task.id}
-                className={`${task.color} rounded-lg px-4 py-2 text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity flex items-center shadow-sm border border-white/50`}
-                style={getMultiDayTaskStyle(task)}
-                title={task.text}
-              >
-                <span className="truncate">{task.text}</span>
-              </div>
-            ))}
-
-            {/* Day columns with single-day tasks */}
-            <div className="grid grid-cols-7 h-full">
-              {weekDates.map((date, index) => (
-                <div
-                  key={date.toISOString()}
-                  className="border-r border-gray-200 last:border-r-0 px-4 py-2 relative"
-                >
-                  {/* Single-day tasks for this day */}
-                  <div
-                    className="relative"
-                    style={{ minHeight: `${maxRows * 48}px` }}
-                  >
-                    {getSingleDayTasksForDate(date).map((task) => (
-                      <div
-                        key={task.id}
-                        className={`${task.color} rounded-lg px-3 py-2 text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity flex items-center shadow-sm border border-white/50`}
-                        style={{
-                          position: "absolute",
-                          top: `${(task.row || 0) * 48 + 8}px`,
-                          left: "0",
-                          right: "0",
-                          height: "36px",
-                        }}
-                        title={task.text}
-                      >
-                        <span className="truncate">{task.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Add task buttons - Fixed at bottom */}
-            <div className="grid grid-cols-7 mt-4 sticky bottom-0 bg-white border-t border-gray-200 z-10">
-              {weekDates.map((date) => (
-                <div
-                  key={date.toISOString()}
-                  className="border-r border-gray-200 last:border-r-0 px-4 py-4"
-                >
-                  <button className="w-full text-left px-3 py-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg flex items-center gap-2 transition-colors border border-dashed border-gray-300 hover:border-gray-400">
-                    <Plus className="w-4 h-4" />
-                    <span className="text-sm">Add task</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Task Detail Panel */}
+      <TaskDetailPanel
+        task={taskManagement.selectedTask}
+        isOpen={taskManagement.isPanelOpen}
+        onClose={taskManagement.closeTaskPanel}
+        onSave={handleTaskSave}
+        onDelete={handleTaskDelete}
+      />
+    </>
   );
-}
+};
+
+export default MyTaskCalendarPage;

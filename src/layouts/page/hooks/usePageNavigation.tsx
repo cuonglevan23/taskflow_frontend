@@ -75,7 +75,7 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
           icon: <LAYOUT_ICONS.list className="w-4 h-4" />,
         },
         {
-          label: "Board",
+          label: "Board", 
           href: "/mytask/board",
           icon: <LAYOUT_ICONS.board className="w-4 h-4" />,
         },
@@ -86,12 +86,12 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
         },
         {
           label: "Dashboard",
-          href: "/mytask/dashboard",
+          href: "/mytask/dashboard", 
           icon: <LAYOUT_ICONS.timeline className="w-4 h-4" />,
         },
         {
           label: "File",
-          href: "/owner/project/file",
+          href: "/mytask/file",
           icon: <FILE_ICONS.document className="w-4 h-4" />,
         },
       ],

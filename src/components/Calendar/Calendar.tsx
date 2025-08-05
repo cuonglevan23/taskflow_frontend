@@ -380,8 +380,6 @@ const Calendar: React.FC<AsanaCalendarProps> = ({
                     key={`${date.toISOString()}-${dayIndex}`}
                     className={`min-h-[140px] p-3 border-r border-b border-gray-700 relative transition-all duration-200 ${
                       isToday(date) ? 'bg-blue-900/30' : 'bg-gray-900'
-                    } ${
-                      !isCurrentMonth(date, monthDate) ? 'opacity-30 bg-gray-950' : ''
                     } hover:bg-gray-800/50`}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, date)}
@@ -391,7 +389,7 @@ const Calendar: React.FC<AsanaCalendarProps> = ({
                       className={`text-sm font-semibold mb-3 inline-block ${
                         isToday(date) 
                           ? 'bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center' 
-                          : isCurrentMonth(date, monthDate) ? 'text-white' : 'text-gray-500'
+                          : 'text-white'
                       }`}
                     >
                       {date.getDate()}
@@ -433,14 +431,12 @@ const Calendar: React.FC<AsanaCalendarProps> = ({
                     </div>
 
                     {/* Add Task Button */}
-                    {isCurrentMonth(date, monthDate) && (
-                      <button 
-                        className="absolute bottom-2 right-2 w-6 h-6 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
-                        onClick={() => onEventCreate && onEventCreate({ date: date.toISOString(), allDay: true })}
-                      >
-                        <Plus className="w-3 h-3 text-gray-300" />
-                      </button>
-                    )}
+                    <button 
+                      className="absolute bottom-2 right-2 w-6 h-6 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
+                      onClick={() => onEventCreate && onEventCreate({ date: date.toISOString(), allDay: true })}
+                    >
+                      <Plus className="w-3 h-3 text-gray-300" />
+                    </button>
                   </div>
                 ))}
               </div>

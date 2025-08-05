@@ -3,111 +3,46 @@
 import React from "react";
 import { TaskList, TaskListItem, TaskStatus } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
-import { useTaskState, useTaskActions, useTaskDetailPanel } from "./hooks";
+import { useTaskActions } from "../hooks";
+import { useTaskManagementContext } from "../context/TaskManagementContext";
 
-const MyTaskListPage: React.FC = () => {
-  // Initialize task state management
-  const {
-    tasks,
-    selectedTask,
-    isPanelOpen,
-    openTaskPanel,
-    closeTaskPanel,
-    addTask,
-    updateTask,
-    deleteTask,
-    bulkUpdateTasks,
-    bulkDeleteTasks,
-  } = useTaskState();
+interface MyTaskListPageProps {
+  searchValue?: string;
+}
 
-  // Create task handler with enhanced calendar support
-  const handleCreateTask = (taskData: string | { 
-    name: string; 
-    dueDate?: string; 
-    startDate?: string;
-    endDate?: string;
-    startTime?: string;
-    endTime?: string;
-    hasStartTime?: boolean;
-    hasEndTime?: boolean;
-    project?: string; 
-    status?: TaskStatus;
-  } = "New task") => {
-    // Handle both string and object formats for backward compatibility
-    let taskName = "New task";
-    let taskDueDate: string | undefined;
-    let taskStartDate: string | undefined;
-    let taskEndDate: string | undefined;
-    let taskStartTime: string | undefined;
-    let taskEndTime: string | undefined;
-    let hasStartTime: boolean = false;
-    let hasEndTime: boolean = false;
-    let taskProject: string | undefined;
-    let taskStatus: TaskStatus = "todo";
+const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => {
+  // Use shared task management context
+  const taskManagement = useTaskManagementContext();
 
-    if (typeof taskData === 'string') {
-      taskName = taskData;
-    } else {
-      taskName = taskData.name;
-      taskDueDate = taskData.dueDate;
-      taskStartDate = taskData.startDate;
-      taskEndDate = taskData.endDate;
-      taskStartTime = taskData.startTime;
-      taskEndTime = taskData.endTime;
-      hasStartTime = taskData.hasStartTime || false;
-      hasEndTime = taskData.hasEndTime || false;
-      taskProject = taskData.project;
-      taskStatus = taskData.status || "todo";
-    }
+  // Initialize task actions with shared management
+  const taskActions = useTaskActions({ 
+    taskActions: taskManagement 
+  });
 
-    // Create a new task with enhanced calendar data
-    const newTask: TaskListItem = {
-      id: Date.now().toString(),
-      name: taskName,
-      description: "",
-      assignees: [],
-      dueDate: taskDueDate,
-      startDate: taskStartDate,
-      endDate: taskEndDate,
-      startTime: taskStartTime,
-      endTime: taskEndTime,
-      hasStartTime,
-      hasEndTime,
-      priority: "medium",
-      status: taskStatus,
-      project: taskProject,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    addTask(newTask);
+  // Task detail panel logic
+  const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
+    taskManagement.updateTask(taskId, updates);
   };
 
-  // Initialize task actions
-  const taskActions = useTaskActions({
-    onTaskClick: openTaskPanel,
-    onCreateTask: handleCreateTask,
-    onTaskUpdate: updateTask,
-    onTaskDelete: deleteTask,
-    onBulkUpdate: bulkUpdateTasks,
-    onBulkDelete: bulkDeleteTasks,
-  });
+  const handleTaskDelete = (taskId: string) => {
+    taskManagement.deleteTask(taskId);
+  };
 
-  // Initialize task detail panel logic
-  const { panelProps } = useTaskDetailPanel({
-    selectedTask,
-    isPanelOpen,
-    onClose: closeTaskPanel,
-    onTaskUpdate: updateTask,
-    onTaskDelete: deleteTask,
-  });
+  // Update TaskList with search value from layout
+  const taskListRef = React.useRef<any>(null);
+  
+  React.useEffect(() => {
+    if (taskListRef.current && typeof taskListRef.current.setSearchValue === 'function') {
+      taskListRef.current.setSearchValue(searchValue);
+    }
+  }, [searchValue]);
 
   return (
     <>
-      {/* Fixed height container to prevent page scroll */}
-      <div className="h-[calc(100vh-140px)] overflow-y-auto">
+      <div className="h-full overflow-y-auto">
         <TaskList
-          tasks={tasks}
+          ref={taskListRef}
+          tasks={taskManagement.tasks}
           config={{
             showSearch: true,
             showFilters: true,
@@ -125,13 +60,20 @@ const MyTaskListPage: React.FC = () => {
             ],
           }}
           actions={taskActions}
-          loading={false}
-          error={undefined}
+          loading={taskManagement.isLoading}
+          error={taskManagement.error}
+          hideHeader={true}
         />
       </div>
 
       {/* Task Detail Panel */}
-      <TaskDetailPanel {...panelProps} />
+      <TaskDetailPanel
+        task={taskManagement.selectedTask}
+        isOpen={taskManagement.isPanelOpen}
+        onClose={taskManagement.closeTaskPanel}
+        onSave={handleTaskSave}
+        onDelete={handleTaskDelete}
+      />
     </>
   );
 };

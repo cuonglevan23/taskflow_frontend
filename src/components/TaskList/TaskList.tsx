@@ -16,6 +16,7 @@ import TaskListHeader from './TaskListHeader';
 import TaskTable from './TaskTable';
 import TaskSection from './TaskSection';
 import { EnhancedCalendar } from '@/components/EnhancedCalendar';
+import EmptySearchState from '@/components/ui/EmptySearchState';
 
 interface TaskListProps {
   tasks: TaskListItem[];
@@ -24,6 +25,7 @@ interface TaskListProps {
   loading?: boolean;
   error?: string;
   className?: string;
+  hideHeader?: boolean;
 }
 
 const DEFAULT_CONFIG: TaskListConfig = {
@@ -42,6 +44,7 @@ const TaskList: React.FC<TaskListProps> = ({
   loading = false,
   error,
   className = '',
+  hideHeader = false,
 }) => {
   const { theme } = useTheme();
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
@@ -197,56 +200,58 @@ const TaskList: React.FC<TaskListProps> = ({
       style={{ backgroundColor: theme.background.primary }}
     >
       {/* Header - Fixed Position within container with solid background */}
-      <div 
-        className="sticky top-0 z-30 shadow-sm border-b" 
-        style={{ 
-          backgroundColor: theme.background.primary,
-          borderColor: theme.border.default,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-          width: '100%'
-        }}
-      >
-        <TaskListHeader
-          searchValue={searchValue}
-          onSearchChange={handleSearchChange}
-          onCreateTask={handleCreateTask}
-          onFilterClick={() => {/* Handle filter modal */}}
-          onSortClick={() => {/* Handle sort modal */}}
-          onGroupClick={() => {/* Handle group modal */}}
-          onOptionsClick={() => {/* Handle options modal */}}
-          showSearch={finalConfig.showSearch}
-          showFilters={finalConfig.showFilters}
-          showSort={finalConfig.showSort}
-          showGroup={true}
-          showOptions={true}
-          className="mb-0"
-        />
-        
-        {/* Table Column Headers - Always visible when grouped */}
-        {finalConfig.enableGrouping && processedTasks.length > 0 && (
-          <div
-            className="flex items-center py-3 border-b text-sm font-medium w-full"
-            style={{
-              backgroundColor: theme.background.secondary,
-              borderColor: theme.border.default,
-              color: theme.text.secondary,
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              width: '100%',
-              minWidth: '100%',
-              paddingLeft: '64px',
-              paddingRight: '96px'
-            }}
-          >
-            <div className="flex-1 min-w-[300px] px-2">Name</div>
-            <div className="w-[120px] px-2">Due date</div>
-            <div className="w-[150px] px-2">Collaborators</div>
-            <div className="w-[150px] px-2">Projects</div>
-            <div className="w-[140px] px-2">Task visibility</div>
+      {!hideHeader && (
+        <div 
+          className="sticky top-0 z-30 shadow-sm border-b" 
+          style={{ 
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            width: '100%'
+          }}
+        >
+          <TaskListHeader
+            searchValue={searchValue}
+            onSearchChange={handleSearchChange}
+            onCreateTask={handleCreateTask}
+            onFilterClick={() => {/* Handle filter modal */}}
+            onSortClick={() => {/* Handle sort modal */}}
+            onGroupClick={() => {/* Handle group modal */}}
+            onOptionsClick={() => {/* Handle options modal */}}
+            showSearch={finalConfig.showSearch}
+            showFilters={finalConfig.showFilters}
+            showSort={finalConfig.showSort}
+            showGroup={true}
+            showOptions={true}
+            className="mb-0"
+          />
+          
+          {/* Table Column Headers - Always visible when grouped */}
+          {finalConfig.enableGrouping && processedTasks.length > 0 && (
+            <div
+              className="flex items-center py-3 border-b text-sm font-medium w-full"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.secondary,
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                width: '100%',
+                minWidth: '100%',
+                paddingLeft: '64px',
+                paddingRight: '96px'
+              }}
+            >
+              <div className="flex-1 min-w-[300px] px-2">Name</div>
+              <div className="w-[120px] px-2">Due date</div>
+              <div className="w-[150px] px-2">Collaborators</div>
+              <div className="w-[150px] px-2">Projects</div>
+              <div className="w-[140px] px-2">Task visibility</div>
 
-          </div>
-        )}
+            </div>
+          )}
 
-      </div>
+        </div>
+      )}
 
       {/* Bulk Actions */}
       {selectedTasks.length > 0 && (
@@ -284,30 +289,41 @@ const TaskList: React.FC<TaskListProps> = ({
 
       {/* Task Content */}
       <div className="space-y-6 p-6">
-        {finalConfig.enableGrouping ? (
-          groupedTasks.map((section) => (
-            <TaskSection
-              key={section.id}
-              section={section}
-              actions={actions}
-              selectedTasks={selectedTasks}
-              onSelectTask={handleSelectTask}
-              onSelectAll={handleSelectAll}
-              viewMode={viewMode}
-            />
-          ))
-        ) : (
-          <TaskTable
-            tasks={processedTasks}
-            columns={finalConfig.columns}
-            actions={actions}
-            selectedTasks={selectedTasks}
-            onSelectTask={finalConfig.showSelection ? handleSelectTask : undefined}
-            onSelectAll={finalConfig.showSelection ? handleSelectAll : undefined}
-            onSort={handleSort}
-            sortField={sort.field}
-            sortDirection={sort.direction}
+        {/* Show empty search state when search has no results */}
+        {searchValue && processedTasks.length === 0 ? (
+          <EmptySearchState
+            searchQuery={searchValue}
+            onClearSearch={() => setSearchValue("")}
+            onAdvancedSearch={() => {/* Handle advanced search */}}
           />
+        ) : (
+          <>
+            {finalConfig.enableGrouping ? (
+              groupedTasks.map((section) => (
+                <TaskSection
+                  key={section.id}
+                  section={section}
+                  actions={actions}
+                  selectedTasks={selectedTasks}
+                  onSelectTask={handleSelectTask}
+                  onSelectAll={handleSelectAll}
+                  viewMode={viewMode}
+                />
+              ))
+            ) : (
+              <TaskTable
+                tasks={processedTasks}
+                columns={finalConfig.columns}
+                actions={actions}
+                selectedTasks={selectedTasks}
+                onSelectTask={finalConfig.showSelection ? handleSelectTask : undefined}
+                onSelectAll={finalConfig.showSelection ? handleSelectAll : undefined}
+                onSort={handleSort}
+                sortField={sort.field}
+                sortDirection={sort.direction}
+              />
+            )}
+          </>
         )}
       </div>
 
