@@ -184,7 +184,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
             )}
 
             {/* Title and Actions Row */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 {headerInfo?.avatar && (
                   <div className="flex items-center">
@@ -266,7 +266,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                           "border-orange-500 text-white font-semibold",
                         isMyTaskStyle &&
                           pathname !== item.href &&
-                          "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-400",
+                          "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-500",
                         // Teams active state
                         isTeamsStyle &&
                           pathname === item.href &&
@@ -278,7 +278,6 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                       style={
                         isMyTaskStyle && pathname === item.href
                           ? {
-                              borderBottomColor: theme.background.primary,
                               marginBottom: '-1px',
                             }
                           : {}

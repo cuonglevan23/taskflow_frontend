@@ -11,6 +11,9 @@ import Dropdown, {
 } from "@/components/ui/Dropdown/Dropdown";
 import SearchPanel from "./SearchPanel";
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { HiChevronDoubleLeft, HiChevronDoubleRight } from "react-icons/hi";
+import { CheckSquare, Folder, MessageSquare, Briefcase, Target, Users } from "lucide-react";
 
 interface PrivateHeaderProps {
   user: User;
@@ -34,6 +37,22 @@ export default function PrivateHeader({
     console.log("Searching for:", query);
   };
 
+  const PlusIcon = () => (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4v16m8-8H4"
+      />
+    </svg>
+  );
+
   const BellIcon = () => (
     <svg
       className="h-5 w-5"
@@ -45,12 +64,14 @@ export default function PrivateHeader({
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={2}
-        d="M15 17h5l-3.5-3.5a.5.5 0 010-.7l3.5-3.5H15m0 8v-8"
+        d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
       />
     </svg>
   );
 
-  const QuestionIcon = () => (
+
+
+  const HelpIcon = () => (
     <svg
       className="h-5 w-5"
       fill="none"
@@ -66,176 +87,216 @@ export default function PrivateHeader({
     </svg>
   );
 
-  const MenuIcon = () => (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 6h16M4 12h16M4 18h16"
-      />
-    </svg>
-  );
 
-  const SidebarCollapseIcon = () => (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d={
-          isSidebarCollapsed
-            ? "M13 5l7 7-7 7M6 5l7 7-7 7"
-            : "M11 19l-7-7 7-7M18 19l-7-7 7-7"
-        }
-      />
-    </svg>
-  );
+
+
 
   return (
     <header className="h-12 bg-gray-800 flex items-center justify-between px-4 border-b border-gray-700">
-      {/* Left Section */}
-      <div className="flex items-center space-x-4 flex-1">
-        {/* Mobile Sidebar Toggle */}
+      {/* Left Section - Menu and Create */}
+      <div className="flex items-center space-x-2">
+        {/* Sidebar Toggle */}
         <button
           onClick={onSidebarToggle}
-          className="lg:hidden p-1 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+          className="lg:hidden p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
         >
-          <MenuIcon />
+          <GiHamburgerMenu className="h-5 w-5" />
         </button>
 
-        {/* Desktop Sidebar Collapse Toggle */}
+        {/* Desktop Sidebar Toggle */}
         <button
-          onClick={onSidebarCollapseToggle}
-          className="hidden lg:flex p-1 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
-          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          onClick={onSidebarToggle}
+          className="hidden lg:flex p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+          title="Toggle sidebar"
         >
-          <SidebarCollapseIcon />
+          <GiHamburgerMenu className="h-5 w-5" />
         </button>
 
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <Image
-            src="/logo-white.svg"
-            alt="Logo"
-            width={120}
-            height={32}
-            className="h-8 w-auto"
-          />
-        </Link>
+        {/* Create Button */}
+        <Dropdown
+          trigger={
+            <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full transition-colors text-sm font-medium">
+              <PlusIcon />
+              <span>Create</span>
+            </button>
+          }
+          placement="right"
+          usePortal={false}
+          contentClassName="w-48"
+        >
+          <div className="py-2">
+            <DropdownItem icon={<CheckSquare className="w-4 h-4" />}>
+              Task
+            </DropdownItem>
+
+            <DropdownItem icon={<Folder className="w-4 h-4" />}>
+              Project
+            </DropdownItem>
+
+            <DropdownItem icon={<MessageSquare className="w-4 h-4" />}>
+              Message
+            </DropdownItem>
+
+            <DropdownItem icon={<Briefcase className="w-4 h-4" />}>
+              Portfolio
+            </DropdownItem>
+
+            <DropdownItem icon={<Target className="w-4 h-4" />}>
+              Goal
+            </DropdownItem>
+
+            <DropdownSeparator />
+
+            <DropdownItem icon={<Users className="w-4 h-4" />}>
+              Invite
+            </DropdownItem>
+          </div>
+        </Dropdown>
       </div>
 
       {/* Center Section - Search Panel */}
-      <div className="hidden md:flex items-center flex-1 justify-center max-w-2xl mx-4">
-        <SearchPanel onSearch={handleSearch} />
+      <div className="flex-1 flex items-center justify-center mx-4">
+        <SearchPanel onSearch={handleSearch} className="w-full max-w-2xl" />
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center space-x-3 flex-1 justify-end">
+      <div className="flex items-center space-x-1">
         {/* Help */}
         <button className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-          <QuestionIcon />
+          <HelpIcon />
         </button>
 
         {/* Notifications */}
-        <Dropdown
-          trigger={
-            <button className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors relative">
-              <BellIcon />
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
-                3
-              </span>
-            </button>
-          }
-          placement="bottom-right"
-        >
-          <div className="p-3 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
+        <div className="relative">
+          <Dropdown
+            trigger={
+              <button className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors relative">
+                <BellIcon />
+                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+              </button>
+            }
+            placement="bottom-right"
+            usePortal={false}
+            contentClassName="w-80 max-w-sm"
+          >
+          <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
+            <h3 className="font-semibold text-white text-sm">Notifications</h3>
           </div>
-          <DropdownItem>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium text-sm">New task assigned</p>
-                <p className="text-xs text-gray-500">
-                  Cross-functional project plan
-                </p>
-                <p className="text-xs text-gray-400">2 minutes ago</p>
+          <div className="max-h-64 overflow-y-auto">
+            <DropdownItem>
+              <div className="flex items-start space-x-3 py-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm text-gray-200">New task assigned</p>
+                  <p className="text-xs text-gray-400 truncate">Cross-functional project plan</p>
+                  <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+                </div>
               </div>
-            </div>
-          </DropdownItem>
-          <DropdownItem>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-              <div>
-                <p className="font-medium text-sm">Project completed</p>
-                <p className="text-xs text-gray-500">Marketing Campaign</p>
-                <p className="text-xs text-gray-400">1 hour ago</p>
+            </DropdownItem>
+            <DropdownItem>
+              <div className="flex items-start space-x-3 py-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm text-gray-200">Project completed</p>
+                  <p className="text-xs text-gray-400 truncate">Marketing Campaign</p>
+                  <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
+                </div>
               </div>
-            </div>
-          </DropdownItem>
+            </DropdownItem>
+            <DropdownItem>
+              <div className="flex items-start space-x-3 py-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm text-gray-200">Meeting reminder</p>
+                  <p className="text-xs text-gray-400 truncate">Team standup in 15 minutes</p>
+                  <p className="text-xs text-gray-500 mt-1">5 minutes ago</p>
+                </div>
+              </div>
+            </DropdownItem>
+          </div>
+          <div className="p-3 border-t" style={{ borderColor: '#374151' }}>
+            <button className="w-full text-center text-sm text-blue-400 hover:text-blue-300 transition-colors">
+              View all notifications
+            </button>
+          </div>
         </Dropdown>
+        </div>
 
         {/* User Menu */}
-        <Dropdown
-          trigger={
-            <button className="flex items-center space-x-2 p-1 rounded hover:bg-gray-700 transition-colors">
+        <div className="relative">
+          <Dropdown
+            trigger={
+              <button className="flex items-center p-1 rounded hover:bg-gray-700 transition-colors ml-1">
+                <Avatar
+                  name={user.name}
+                  src={user.avatar}
+                  size="sm"
+                  className="ring-1 ring-gray-600"
+                />
+              </button>
+            }
+            placement="bottom-right"
+            usePortal={false}
+            contentClassName="w-64 max-w-xs"
+          >
+          <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
+            <div className="flex items-center space-x-3">
               <Avatar
                 name={user.name}
                 src={user.avatar}
-                size="sm"
+                size="md"
                 className="ring-2 ring-gray-600"
               />
-              <svg
-                className="h-3 w-3 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-          }
-          placement="bottom-right"
-        >
-          <div className="p-3 border-b border-gray-200">
-            <p className="font-semibold text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-500">{user.email}</p>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-white text-sm truncate">{user.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
           </div>
 
-          <DropdownItem>My Profile Settings</DropdownItem>
-          <DropdownItem>My Display Picture</DropdownItem>
-          <DropdownItem>My Notification Settings</DropdownItem>
+          <div className="py-1">
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">My Profile Settings</span>
+            </DropdownItem>
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">My Display Picture</span>
+            </DropdownItem>
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">My Notification Settings</span>
+            </DropdownItem>
+          </div>
 
           <DropdownSeparator />
 
-          <DropdownItem>Switch Teams</DropdownItem>
-          <DropdownItem>Create Team</DropdownItem>
+          <div className="py-1">
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">Switch Teams</span>
+            </DropdownItem>
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">Create Team</span>
+            </DropdownItem>
+          </div>
 
           <DropdownSeparator />
 
-          <DropdownItem>Admin Console</DropdownItem>
-          <DropdownItem>Invite Members</DropdownItem>
+          <div className="py-1">
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">Admin Console</span>
+            </DropdownItem>
+            <DropdownItem>
+              <span className="text-gray-200 text-sm">Invite Members</span>
+            </DropdownItem>
+          </div>
 
           <DropdownSeparator />
 
-          <DropdownItem>Log out</DropdownItem>
+          <div className="py-1">
+            <DropdownItem>
+              <span className="text-red-400 text-sm font-medium">Log out</span>
+            </DropdownItem>
+          </div>
         </Dropdown>
+        </div>
       </div>
     </header>
   );

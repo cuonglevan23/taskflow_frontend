@@ -3,12 +3,11 @@
 import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { TaskListItem, TaskStatus, TaskListActions } from "@/components/TaskList/types";
-import { formatTaskDate } from "@/components/TaskList/utils";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { EnhancedCalendar } from "@/components/EnhancedCalendar";
-import TaskListHeader from "@/components/TaskList/TaskListHeader";
-import AddTaskModal from "./AddTaskModal";
 import EmptySearchState from "@/components/ui/EmptySearchState";
+import DragAndDropContext from "./DragAndDropContext";
+import DroppableColumn from "./DroppableColumn";
 
 interface KanbanBoardProps {
   tasks: TaskListItem[];
@@ -39,7 +38,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   searchValue: externalSearchValue = "",
 }) => {
   const { theme } = useTheme();
-  const [draggedTask, setDraggedTask] = useState<TaskListItem | null>(null);
+  const [activeTask, setActiveTask] = useState<TaskListItem | null>(null);
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
   const [newTaskSection, setNewTaskSection] = useState<string>("recently-assigned");
   const [searchValue, setSearchValue] = useState(externalSearchValue);
@@ -101,23 +100,75 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     },
   ];
 
-  // Drag and Drop handlers
-  const handleDragStart = (e: React.DragEvent, task: TaskListItem) => {
-    setDraggedTask(task);
-    e.dataTransfer.effectAllowed = "move";
+  // Professional Drag and Drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const task = tasks.find(t => t.id === active.id);
+    setActiveTask(task || null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, sectionId: string) => {
-    e.preventDefault();
-    if (draggedTask) {
-      onTaskMove?.(draggedTask.id, sectionId);
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+    
+    const activeId = active.id;
+    const overId = over.id;
+    
+    // Handle dragging over different columns
+    if (activeId !== overId) {
+      const activeTask = tasks.find(t => t.id === activeId);
+      const overData = over.data.current;
+      
+      if (activeTask && overData?.type === 'column') {
+        // Optional: Implement optimistic updates here for smooth UX
+        console.log(`Moving task ${activeTask.name} over column ${overData.columnId}`);
+      }
     }
-    setDraggedTask(null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    setActiveTask(null);
+    
+    if (!over) return;
+    
+    const activeId = active.id;
+    const overId = over.id;
+    const overData = over.data.current;
+    
+    // Handle dropping on a column
+    if (overData?.type === 'column') {
+      const task = tasks.find(t => t.id === activeId);
+      if (task) {
+        onTaskMove?.(task.id, overData.columnId);
+      }
+    }
+    
+    // Handle reordering within the same column
+    if (activeId !== overId) {
+      const activeTask = tasks.find(t => t.id === activeId);
+      const overTask = tasks.find(t => t.id === overId);
+      
+      if (activeTask && overTask) {
+        // Find which column both tasks belong to
+        const activeColumn = Object.keys(filteredTasksByAssignmentDate).find(
+          key => filteredTasksByAssignmentDate[key].some(t => t.id === activeId)
+        );
+        const overColumn = Object.keys(filteredTasksByAssignmentDate).find(
+          key => filteredTasksByAssignmentDate[key].some(t => t.id === overId)
+        );
+        
+        if (activeColumn === overColumn) {
+          // Same column reordering - could implement position updates here
+          console.log(`Reordering task ${activeTask.name} in column ${activeColumn}`);
+        } else if (overColumn) {
+          // Moving to different column
+          onTaskMove?.(activeTask.id, overColumn);
+        }
+      }
+    }
   };
 
   const handleAddTask = (sectionId: string) => {
@@ -244,99 +295,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     setSearchValue("");
   };
 
-  // Task Card Component
-  const TaskCard: React.FC<{ task: TaskListItem }> = ({ task }) => (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, task)}
-      onClick={() => actions?.onTaskClick?.(task)}
-      className="p-3 mb-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
-      style={{
-        backgroundColor: theme.background.primary,
-        borderColor: theme.border.default,
-        border: `1px solid ${theme.border.default}`,
-      }}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <h4 
-          className="text-sm font-medium line-clamp-2"
-          style={{ color: theme.text.primary }}
-        >
-          {task.name}
-        </h4>
-        <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <MoreHorizontal 
-            className="w-4 h-4" 
-            style={{ color: theme.text.secondary }}
-          />
-        </button>
-      </div>
-      
-      {task.description && (
-        <p 
-          className="text-xs mb-2 line-clamp-2"
-          style={{ color: theme.text.secondary }}
-        >
-          {task.description}
-        </p>
-      )}
-
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          {task.dueDate && (
-            <span 
-              className="px-2 py-1 rounded text-xs"
-              style={{ 
-                backgroundColor: theme.background.secondary,
-                color: theme.text.secondary 
-              }}
-            >
-              {formatTaskDate(task)}
-            </span>
-          )}
-          
-          {task.priority && (
-            <span 
-              className={`px-2 py-1 rounded text-white ${
-                task.priority === 'urgent' ? 'bg-red-500' :
-                task.priority === 'high' ? 'bg-orange-500' :
-                task.priority === 'medium' ? 'bg-yellow-500' :
-                'bg-gray-500'
-              }`}
-            >
-              {task.priority}
-            </span>
-          )}
-        </div>
-
-        {task.assignees && task.assignees.length > 0 && (
-          <div className="flex -space-x-1">
-            {task.assignees.slice(0, 3).map((assignee, index) => (
-              <div
-                key={assignee.id}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
-                style={{ backgroundColor: theme.colors?.primary || '#3B82F6' }}
-                title={assignee.name}
-              >
-                {assignee.name.charAt(0).toUpperCase()}
-              </div>
-            ))}
-            {task.assignees.length > 3 && (
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
-                style={{ 
-                  backgroundColor: theme.background.secondary,
-                  color: theme.text.secondary 
-                }}
-              >
-                +{task.assignees.length - 3}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // Handle task click
+  const handleTaskClick = (task: TaskListItem) => {
+    actions?.onTaskClick?.(task);
+  };
 
   // Loading state
   if (loading) {
@@ -376,7 +338,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       className={`h-full ${className}`}
       style={{ backgroundColor: theme.background.primary }}
     >
-      {/* Board Content - No header, it's now in layout */}
+      {/* Board Content - Professional Drag and Drop */}
       {!hasSearchResults && searchValue.trim() ? (
         <EmptySearchState
           searchQuery={searchValue}
@@ -384,113 +346,66 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
           onAdvancedSearch={() => {/* Handle advanced search */}}
         />
       ) : (
-        <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6">
-          {columns.map((column) => (
-            <div
-              key={column.id}
-              className="flex-shrink-0 w-80 flex flex-col h-full"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, column.id)}
-            >
-              {/* Column Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: column.color }}
-                  />
-                  <h3 
-                    className="font-semibold"
-                    style={{ color: theme.text.primary }}
-                  >
-                    {column.title}
-                  </h3>
-                  <span 
-                    className="px-2 py-1 text-xs rounded-full"
-                    style={{ 
-                      backgroundColor: theme.background.secondary,
-                      color: theme.text.secondary 
-                    }}
-                  >
-                    {column.count}
-                  </span>
-                </div>
-                
-                <button
-                  onClick={() => handleAddTask(column.id)}
-                  className="p-1 rounded hover:bg-opacity-10 hover:bg-gray-500 transition-colors"
-                  style={{ color: theme.text.secondary }}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Column Content - Individual scroll */}
-              <div 
-                className="flex-1 p-2 rounded-lg min-h-[200px] group overflow-y-auto"
-                style={{ 
-                  backgroundColor: theme.background.secondary,
-                  border: `2px dashed ${theme.border.default}`,
-                  maxHeight: 'calc(100vh - 280px)'
-                }}
-              >
-                {/* New Task Input (when adding) */}
-                {editingTask === `new-${column.id}` && (
-                  <div
-                    className="p-3 mb-2 rounded-lg border transition-all"
-                    style={{
-                      backgroundColor: theme.background.primary,
-                      borderColor: theme.border.default,
-                      border: `1px solid ${theme.border.default}`,
-                    }}
-                  >
-                    <div className="flex items-start gap-3 mb-2">
-                      <div className="flex-shrink-0 mt-1">
-                        <div 
-                          className="w-4 h-4 rounded border-2"
-                          style={{ borderColor: theme.text.secondary }}
+        <DragAndDropContext
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          activeTask={activeTask}
+        >
+          <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6">
+            {columns.map((column) => (
+              <DroppableColumn
+                key={column.id}
+                id={column.id}
+                title={column.title}
+                color={column.color}
+                tasks={filteredTasksByAssignmentDate[column.id] || []}
+                onTaskClick={handleTaskClick}
+                onAddTask={handleAddTask}
+                isAddingTask={editingTask === `new-${column.id}`}
+                newTaskInput={
+                  editingTask === `new-${column.id}` ? (
+                    <div
+                      className="p-3 mb-2 rounded-lg border transition-all"
+                      style={{
+                        backgroundColor: theme.background.primary,
+                        borderColor: theme.border.default,
+                        border: `1px solid ${theme.border.default}`,
+                      }}
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="flex-shrink-0 mt-1">
+                          <div 
+                            className="w-4 h-4 rounded border-2"
+                            style={{ borderColor: theme.text.secondary }}
+                          />
+                        </div>
+                        
+                        <input
+                          type="text"
+                          value={newTaskName}
+                          onChange={(e) => setNewTaskName(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveNewTask();
+                            } else if (e.key === 'Escape') {
+                              handleCancelNewTask();
+                            }
+                          }}
+                          onBlur={handleSaveNewTask}
+                          placeholder="Write a task name"
+                          className="flex-1 bg-transparent border-none outline-none text-sm font-medium"
+                          style={{ color: theme.text.primary }}
+                          autoFocus
                         />
                       </div>
-                      
-                      <input
-                        type="text"
-                        value={newTaskName}
-                        onChange={(e) => setNewTaskName(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            handleSaveNewTask();
-                          } else if (e.key === 'Escape') {
-                            handleCancelNewTask();
-                          }
-                        }}
-                        onBlur={handleSaveNewTask}
-                        placeholder="Write a task name"
-                        className="flex-1 bg-transparent border-none outline-none text-sm font-medium"
-                        style={{ color: theme.text.primary }}
-                        autoFocus
-                      />
                     </div>
-                  </div>
-                )}
-
-                {/* Existing Tasks */}
-                {filteredTasksByAssignmentDate[column.id]?.map((task) => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-                
-                {/* Empty State */}
-                {(!filteredTasksByAssignmentDate[column.id] || filteredTasksByAssignmentDate[column.id].length === 0) && editingTask !== `new-${column.id}` && (
-                  <div 
-                    className="flex items-center justify-center h-32 text-sm opacity-50"
-                    style={{ color: theme.text.secondary }}
-                  >
-                    Drop tasks here
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                  ) : undefined
+                }
+              />
+            ))}
+          </div>
+        </DragAndDropContext>
       )}
 
       {/* Enhanced Calendar Modal */}

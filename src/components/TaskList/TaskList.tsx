@@ -225,31 +225,41 @@ const TaskList: React.FC<TaskListProps> = ({
             showOptions={true}
             className="mb-0"
           />
-          
-          {/* Table Column Headers - Always visible when grouped */}
-          {finalConfig.enableGrouping && processedTasks.length > 0 && (
-            <div
-              className="flex items-center py-3 border-b text-sm font-medium w-full"
-              style={{
-                backgroundColor: theme.background.secondary,
-                borderColor: theme.border.default,
-                color: theme.text.secondary,
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                width: '100%',
-                minWidth: '100%',
-                paddingLeft: '64px',
-                paddingRight: '96px'
-              }}
-            >
-              <div className="flex-1 min-w-[300px] px-2">Name</div>
-              <div className="w-[120px] px-2">Due date</div>
-              <div className="w-[150px] px-2">Collaborators</div>
-              <div className="w-[150px] px-2">Projects</div>
-              <div className="w-[140px] px-2">Task visibility</div>
+        </div>
+      )}
 
-            </div>
-          )}
+      {/* Table Column Headers - Always visible when grouped and tasks exist */}
+      {finalConfig.enableGrouping && processedTasks.length > 0 && (
+        <div 
+          className="sticky top-0 z-30 shadow-sm border-b" 
+          style={{ 
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            width: '100%',
+            isolation: 'auto' // Ensure this doesn't create a new stacking context
+          }}
+        >
+          <div
+            className="flex items-center py-3 border-b text-sm font-medium w-full"
+            style={{
+              backgroundColor: theme.background.secondary,
+              borderColor: theme.border.default,
+              color: theme.text.secondary,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              width: '100%',
+              minWidth: '100%',
+              paddingLeft: '64px',
+              paddingRight: '96px'
+            }}
+          >
+            <div className="flex-1 min-w-[300px] px-2">Name</div>
+            <div className="w-[120px] px-2">Due date</div>
+            <div className="w-[150px] px-2">Collaborators</div>
+            <div className="w-[150px] px-2">Projects</div>
+            <div className="w-[140px] px-2">Task visibility</div>
 
+          </div>
         </div>
       )}
 

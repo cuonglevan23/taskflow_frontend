@@ -94,9 +94,9 @@ export function ThemeProvider({
     isLight,
   };
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch - no opacity flicker
   if (!mounted) {
-    return <div className="opacity-0">{children}</div>;
+    return null;
   }
 
   return (

@@ -15,8 +15,17 @@ export default function BarChart() {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    const ctx = canvas?.getContext("2d")
-    if (!canvas || !ctx) return
+    if (!canvas) return
+
+    // Add error handling for canvas context
+    let ctx: CanvasRenderingContext2D | null = null
+    try {
+      ctx = canvas.getContext("2d")
+      if (!ctx) return
+    } catch (error) {
+      console.error("Failed to get canvas context:", error)
+      return
+    }
 
     const width = canvas.width
     const height = canvas.height
@@ -41,70 +50,86 @@ export default function BarChart() {
 
     let animationProgress = 0
     let startTime: number | null = null
+    let animationId: number | null = null
+    let isCancelled = false
 
     const draw = (timestamp: number) => {
+      if (isCancelled || !ctx) return
+
       if (!startTime) startTime = timestamp
       const elapsed = timestamp - startTime
       animationProgress = Math.min(elapsed / 1000, 1) // 1s animation
 
-      ctx.clearRect(0, 0, width, height)
+      try {
+        ctx.clearRect(0, 0, width, height)
 
-             // Vẽ background cho chart (trong suốt)
-       ctx.clearRect(padding, padding, chartWidth, chartHeight)
+        // Vẽ background cho chart (trong suốt)
+        ctx.clearRect(padding, padding, chartWidth, chartHeight)
 
-      // Vẽ grid lines
-      ctx.strokeStyle = "#e5e7eb"
-      ctx.lineWidth = 1
-      for (let i = 0; i <= gridLines; i++) {
-        const y = padding + (chartHeight / gridLines) * i
-        ctx.beginPath()
-        ctx.moveTo(padding, y)
-        ctx.lineTo(padding + chartWidth, y)
-        ctx.stroke()
-      }
+        // Vẽ grid lines
+        ctx.strokeStyle = "#e5e7eb"
+        ctx.lineWidth = 1
+        for (let i = 0; i <= gridLines; i++) {
+          const y = padding + (chartHeight / gridLines) * i
+          ctx.beginPath()
+          ctx.moveTo(padding, y)
+          ctx.lineTo(padding + chartWidth, y)
+          ctx.stroke()
+        }
 
-             // Vẽ bars
-       data.forEach((item, index) => {
-         const x = padding + index * (chartWidth / data.length) + (chartWidth / data.length - barWidth) / 2
-         const barHeight = (item.value / adjustedMaxValue) * chartHeight * animationProgress
-         const y = padding + chartHeight - barHeight
-        const percentage = (item.value / total) * 100
+        // Vẽ bars
+        data.forEach((item, index) => {
+          const x = padding + index * (chartWidth / data.length) + (chartWidth / data.length - barWidth) / 2
+          const barHeight = (item.value / adjustedMaxValue) * chartHeight * animationProgress
+          const y = padding + chartHeight - barHeight
+          const percentage = (item.value / total) * 100
 
-                 // Vẽ bar với màu đơn giản
-         ctx.fillStyle = item.color
-         ctx.fillRect(x, y, barWidth, barHeight)
+          // Vẽ bar với màu đơn giản
+          ctx.fillStyle = item.color
+          ctx.fillRect(x, y, barWidth, barHeight)
 
-                 // Vẽ giá trị trên bar
-         if (item.value > 0) {
-           ctx.fillStyle = "#111"
-           ctx.font = "bold 12px sans-serif"
-           ctx.textAlign = "center"
-           ctx.fillText(item.value.toString(), x + barWidth / 2, y - 5)
-         }
+          // Vẽ giá trị trên bar
+          if (item.value > 0) {
+            ctx.fillStyle = "#111"
+            ctx.font = "bold 12px sans-serif"
+            ctx.textAlign = "center"
+            ctx.fillText(item.value.toString(), x + barWidth / 2, y - 5)
+          }
 
-        // Vẽ label dưới bar
-        ctx.fillStyle = "#374151"
+          // Vẽ label dưới bar
+          ctx.fillStyle = "#374151"
+          ctx.font = "12px sans-serif"
+          ctx.textAlign = "center"
+          ctx.fillText(item.label, x + barWidth / 2, padding + chartHeight + 20)
+        })
+
+        // Vẽ axis labels
+        ctx.fillStyle = "#6b7280"
         ctx.font = "12px sans-serif"
-        ctx.textAlign = "center"
-        ctx.fillText(item.label, x + barWidth / 2, padding + chartHeight + 20)
-      })
+        ctx.textAlign = "right"
+        for (let i = 0; i <= gridLines; i++) {
+          const value = Math.round((adjustedMaxValue / gridLines) * (gridLines - i))
+          const y = padding + (chartHeight / gridLines) * i
+          ctx.fillText(value.toString(), padding - 10, y + 5)
+        }
 
-             // Vẽ axis labels
-       ctx.fillStyle = "#6b7280"
-       ctx.font = "12px sans-serif"
-       ctx.textAlign = "right"
-       for (let i = 0; i <= gridLines; i++) {
-         const value = Math.round((adjustedMaxValue / gridLines) * (gridLines - i))
-         const y = padding + (chartHeight / gridLines) * i
-         ctx.fillText(value.toString(), padding - 10, y + 5)
-       }
-
-      if (animationProgress < 1) {
-        requestAnimationFrame(draw)
+        if (animationProgress < 1 && !isCancelled) {
+          animationId = requestAnimationFrame(draw)
+        }
+      } catch (error) {
+        console.error("Canvas drawing error:", error)
       }
     }
 
-    requestAnimationFrame(draw)
+    animationId = requestAnimationFrame(draw)
+
+    // Cleanup function
+    return () => {
+      isCancelled = true
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+      }
+    }
   }, [data])
 
   // Helper function để điều chỉnh độ sáng của màu

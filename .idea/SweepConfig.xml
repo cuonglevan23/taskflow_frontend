@@ -13,5 +13,6 @@
         <option value="bash" />
       </set>
     </option>
+    <option name="debounceThresholdMs" value="300" />
   </component>
 </project>

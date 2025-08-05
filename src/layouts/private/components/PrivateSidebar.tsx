@@ -8,48 +8,21 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
-import Dropdown, {
-  DropdownItem,
-  DropdownSeparator,
-} from "@/components/ui/Dropdown/Dropdown";
 import {
-  TaskIcon,
-  ProjectIcon,
-  MessageIcon,
-  TeamIcon,
-  PortfolioIcon,
-  GoalIcon,
-  InviteIcon,
-} from "@/components/ui/Icon/Icon";
+  navigationConfig,
+  getVisibleSections,
+  isItemActive,
+  badgeColors,
+  NavigationSection,
+  NavigationItem,
+} from "@/config/navigation";
 import {
-  Home,
-  CheckSquare,
-  Inbox,
-  BarChart3,
-  Briefcase,
-  Target,
   Plus,
   ChevronDown,
   ChevronRight,
-  Users,
-  Folder,
 } from "lucide-react";
 
-interface SidebarItem {
-  id: string;
-  label: string;
-  href: string;
-  tag: string;
-  icon: React.ReactNode;
-  count?: number;
-  isActive?: boolean;
-}
-
-interface SidebarSection {
-  title?: string;
-  items: SidebarItem[];
-  collapsible?: boolean;
-}
+// Using types from navigation config
 
 interface PrivateSidebarProps {
   user: User;
@@ -67,121 +40,34 @@ export default function PrivateSidebar({
   onToggleCollapse,
 }: PrivateSidebarProps) {
   const pathname = usePathname();
-  const [expandedSections, setExpandedSections] = useState<string[]>([
-    "insights",
-    "projects",
-  ]);
+  const router = useRouter();
+
+  // Get user permissions (you can customize this based on your auth system)
+  const userPermissions = ["admin"]; // Example: get from user context
+
+  // Get visible sections based on permissions
+  const sections = getVisibleSections(userPermissions);
 
   // Use useDisclosure for teams section
   const teamsDisclosure = useDisclosure(false);
 
-  const sections: SidebarSection[] = [
-    {
-      items: [
-        {
-          id: "home",
-          label: "Home",
-          href: "/home",
-          tag: "/home",
-          icon: <Home size={20} className="text-gray-300" />,
-        },
-        {
-          id: "my-tasks",
-          label: "My tasks",
-          href: "/mytask/list",
-          tag: "/mytask/",
-          icon: <CheckSquare size={20} className="text-gray-300" />,
-          count: 2,
-        },
-        {
-          id: "inbox",
-          label: "Inbox",
-          href: "/inbox",
-          tag: "/inbox",
-          icon: <Inbox size={20} className="text-gray-300" />,
-        },
-      ],
-    },
-    {
-      title: "Insights",
-      collapsible: true,
-      items: [
-        {
-          id: "reporting",
-          label: "Reporting",
-          href: "/reporting",
-          tag: "/reporting",
-          icon: <BarChart3 size={20} className="text-gray-300" />,
-        },
-        {
-          id: "portfolios",
-          label: "Portfolios",
-          href: "/portfolios",
-          tag: "/portfolios",
-          icon: <Briefcase size={20} className="text-gray-300" />,
-        },
-        {
-          id: "goals",
-          label: "Goals",
-          href: "/goals",
-          tag: "/goals",
-          icon: <Target size={20} className="text-gray-300" />,
-        },
-      ],
-    },
-    {
-      title: "Projects",
-      collapsible: true,
-      items: [
-        {
-          id: "cross-functional",
-          label: "Cross-functional project plan",
-          href: "/project/list",
-          tag: "/project",
-          icon: <Folder size={20} className="text-gray-300" />,
-        },
-        {
-          id: "marketing",
-          label: "Marketing Campaign",
-          href: "/projects/marketing",
-          tag: "/project/2",
-          icon: <Folder size={20} className="text-gray-300" />,
-        },
-        {
-          id: "website-redesign",
-          label: "Website Redesign",
-          href: "/projects/website",
-          tag: "/project/3",
-          icon: <Folder size={20} className="text-gray-300" />,
-        },
-      ],
-    },
-    {
-      title: "Members",
-      collapsible: true,
-      items: [
-        {
-          id: "members",
-          label: "Members",
-          href: "/owner/Members",
-          tag: "/owner/Members",
-          icon: <Users size={20} className="text-gray-300" />,
-        },
-      ],
-    },
-  ];
+  // Initialize expanded sections with default expanded ones
+  const [expandedSections, setExpandedSections] = useState<string[]>(() => {
+    return sections
+      .filter(section => section.defaultExpanded)
+      .map(section => section.id);
+  });
 
-  const toggleSection = (sectionTitle: string) => {
+  const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
-      prev.includes(sectionTitle)
-        ? prev.filter((s) => s !== sectionTitle)
-        : [...prev, sectionTitle]
+      prev.includes(sectionId)
+        ? prev.filter((s) => s !== sectionId)
+        : [...prev, sectionId]
     );
   };
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
   const showLabels = !isCollapsed;
-  const router = useRouter();
 
   return (
     <>
@@ -196,190 +82,19 @@ export default function PrivateSidebar({
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-12 left-0 h-[calc(100vh-3rem)] bg-gray-800 border-r border-gray-700 z-50 transform transition-all duration-300 ease-in-out",
+          "fixed top-12 left-0 h-[calc(100vh-3rem)] bg-gray-800 border-r border-gray-700 z-50 transform transition-all duration-300 ease-in-out flex flex-col",
           sidebarWidth,
-          isOpen ? "translate-x-0" : "-translate-x-full",
-          "lg:translate-x-0 lg:static lg:z-auto"
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Create Button */}
-        <div className="p-3 border-b border-gray-700 w-full">
-          <Dropdown
-            trigger={
-              <button
-                className={cn(
-                  "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-semibold transition-all duration-200 flex items-center shadow-lg hover:shadow-xl transform hover:scale-[1.02] hover:-translate-y-0.5 hover:cursor-pointer min-w-full",
-                  isCollapsed ? "p-3 justify-center" : "px-4 py-3 space-x-3"
-                )}
-                style={{ width: "200px"}}
-                title={isCollapsed ? "Create new" : undefined}
-              >
-                <div className="relative">
-                  <Plus size={20} strokeWidth={2.5} />
-                </div>
-                {showLabels && <span className="text-sm">Create</span>}
-              </button>
-            }
-            placement="bottom-left"
-          >
-            <div className="min-w-[280px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
-              {/* Header */}
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  Create new
-                </h3>
-              </div>
 
-              {/* Main Items */}
-              <div className="py-2">
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                      <TaskIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Task
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Assign work to team members
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
 
-                <DropdownItem  onClick={() => router.push("/create-project")}>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                      <ProjectIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Project
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Plan and organize work
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                      <MessageIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Message
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Send updates to your team
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                      <TeamIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Team
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Bring people together
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                      <PortfolioIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Portfolio
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Track multiple projects
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
-                      <GoalIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Goal
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Set objectives and track progress
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-              </div>
-
-              <DropdownSeparator />
-
-              {/* Invite Section */}
-              <div className="py-2">
-                <DropdownItem>
-                  <div className="flex items-center space-x-4 px-2 py-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                      <InviteIcon size="sm" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">
-                        Invite
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Add people to your workspace
-                      </div>
-                    </div>
-                  </div>
-                </DropdownItem>
-              </div>
-            </div>
-          </Dropdown>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 h-[calc(100%-140px)]">
-          {sections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="mb-4">
-              {section.title && showLabels && (
-                <button
-                  onClick={() =>
-                    section.collapsible &&
-                    section.title &&
-                    toggleSection(section.title)
-                  }
-                  className="flex items-center justify-between w-full text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2 py-1 hover:text-gray-300 transition-colors"
-                >
-                  <span>{section.title}</span>
-                  {section.collapsible &&
-                    (expandedSections.includes(section.title) ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronRight size={16} />
-                    ))}
-                </button>
-              )}
-
-              {(!section.title ||
-                !section.collapsible ||
-                (section.title &&
-                  expandedSections.includes(section.title))) && (
+        {/* Fixed Main Navigation Section */}
+        <div className="p-3 border-b border-gray-700">
+          {sections
+            .filter(section => section.id === "main")
+            .map((section) => (
+              <div key={section.id}>
                 <ul className="space-y-1">
                   {section.items.map((item) => (
                     <li key={item.id}>
@@ -390,11 +105,13 @@ export default function PrivateSidebar({
                           isCollapsed
                             ? "p-2 justify-center"
                             : "px-2 py-1.5 justify-between",
-                          pathname.includes(item.tag)
+                          isItemActive(item, pathname)
                             ? "bg-orange-600 text-white"
                             : "text-gray-300 hover:bg-gray-700 hover:text-white"
                         )}
                         title={isCollapsed ? item.label : undefined}
+                        target={item.external ? "_blank" : undefined}
+                        rel={item.external ? "noopener noreferrer" : undefined}
                       >
                         <div
                           className={cn(
@@ -407,31 +124,105 @@ export default function PrivateSidebar({
                             <span className="truncate">{item.label}</span>
                           )}
                         </div>
-                        {item.count && showLabels && (
-                          <span className="bg-gray-600 text-gray-300 text-xs px-1.5 py-0.5 rounded-full">
-                            {item.count}
+                        {item.badge && showLabels && (
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded-full",
+                            badgeColors[item.badge.color || "default"]
+                          )}>
+                            {item.badge.text || item.badge.count}
                           </span>
                         )}
                       </Link>
                     </li>
                   ))}
-
-                  {/* Add create buttons for projects section */}
-                  {section.title === "Projects" && showLabels && (
-                    <li>
-                      <button
-                        onClick={() => router.push("/create-project")}
-                        className="flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full"
-                      >
-                        <Plus size={16} />
-                        <span>Create project</span>
-                      </button>
-                    </li>
-                  )}
                 </ul>
-              )}
-            </div>
-          ))}
+              </div>
+            ))}
+        </div>
+
+        {/* Scrollable Navigation */}
+        <nav className="flex-1 overflow-y-auto p-3 min-h-0">
+          {sections
+            .filter(section => section.id !== "main")
+            .map((section) => (
+              <div key={section.id} className="mb-4">
+                {section.title && showLabels && (
+                  <button
+                    onClick={() =>
+                      section.collapsible && toggleSection(section.id)
+                    }
+                    className="flex items-center justify-between w-full text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2 py-1 hover:text-gray-300 transition-colors"
+                  >
+                    <span>{section.title}</span>
+                    {section.collapsible &&
+                      (expandedSections.includes(section.id) ? (
+                        <ChevronDown size={16} />
+                      ) : (
+                        <ChevronRight size={16} />
+                      ))}
+                  </button>
+                )}
+
+                {(!section.title ||
+                  !section.collapsible ||
+                  expandedSections.includes(section.id)) && (
+                  <ul className="space-y-1">
+                    {section.items.map((item) => (
+                      <li key={item.id}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "flex items-center rounded text-sm font-medium transition-colors group",
+                            isCollapsed
+                              ? "p-2 justify-center"
+                              : "px-2 py-1.5 justify-between",
+                            isItemActive(item, pathname)
+                              ? "bg-orange-600 text-white"
+                              : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                          )}
+                          title={isCollapsed ? item.label : undefined}
+                          target={item.external ? "_blank" : undefined}
+                          rel={item.external ? "noopener noreferrer" : undefined}
+                        >
+                          <div
+                            className={cn(
+                              "flex items-center min-w-0",
+                              isCollapsed ? "justify-center" : "space-x-3"
+                            )}
+                          >
+                            <span className="flex-shrink-0">{item.icon}</span>
+                            {showLabels && (
+                              <span className="truncate">{item.label}</span>
+                            )}
+                          </div>
+                          {item.badge && showLabels && (
+                            <span className={cn(
+                              "text-xs px-1.5 py-0.5 rounded-full",
+                              badgeColors[item.badge.color || "default"]
+                            )}>
+                              {item.badge.text || item.badge.count}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+
+                    {/* Add create buttons for projects section */}
+                    {section.id === "projects" && showLabels && (
+                      <li>
+                        <button
+                          onClick={() => router.push("/create-project")}
+                          className="flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full"
+                        >
+                          <Plus size={16} />
+                          <span>Create project</span>
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            ))}
 
           {/* Teams Section */}
           <div className="mt-6 pt-4 border-t border-gray-700">

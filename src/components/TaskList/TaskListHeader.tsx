@@ -49,7 +49,9 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
         backgroundColor: theme.background.primary,
         borderBottom: hideLeftSide ? 'none' : `1px solid ${theme.border.default}`,
         width: '100%',
-        minWidth: '100%'
+        minWidth: '100%',
+        position: 'relative',
+        zIndex: 40 // Higher than column headers (z-30)
       }}
     >
       {/* Left side - Empty space where Add Task Button was */}
@@ -64,6 +66,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
 
         {showFilters && (
           <Dropdown
+            usePortal={true}
             trigger={
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
@@ -128,6 +131,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
 
         {showSort && (
           <Dropdown
+            usePortal={true}
             trigger={
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
@@ -179,6 +183,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
 
         {showGroup && (
           <Dropdown
+            usePortal={true}
             trigger={
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
@@ -232,6 +237,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
 
         {showOptions && (
           <Dropdown
+            usePortal={true}
             trigger={
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"

@@ -54,7 +54,9 @@ npm run dev
 ```
 Starts development server (usually on port 3000, will use next available port if occupied).
 
-## FullCalendar Installation
+## Package Installations
+
+### FullCalendar Installation
 ```bash
 npm install @fullcalendar/react @fullcalendar/core @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction @fullcalendar/list @fullcalendar/multimonth
 ```
@@ -66,6 +68,27 @@ This installs FullCalendar with all necessary plugins for:
 - Drag & drop interaction
 - List view
 - Multi-month year view
+
+### React Icons Installation
+```bash
+npm install react-icons
+```
+
+This installs react-icons package for using professional icon sets like:
+- `import { GiHamburgerMenu } from "react-icons/gi";` - Game Icons
+- `import { FaUser } from "react-icons/fa";` - Font Awesome
+- `import { MdEmail } from "react-icons/md";` - Material Design
+- `import { AiOutlineHome } from "react-icons/ai";` - Ant Design
+
+**Common Error:** `Module not found: Can't resolve 'react-icons/gi'`
+**Solution:** Run the installation command above.
+
+### Drag and Drop Installation
+```bash
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @dnd-kit/modifiers
+```
+
+This installs @dnd-kit - the professional drag and drop library used by modern products like Linear, Notion, and GitHub Projects.
 
 ## Simple Calendar System
 

@@ -28,20 +28,12 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
     taskManagement.deleteTask(taskId);
   };
 
-  // Update TaskList with search value from layout
-  const taskListRef = React.useRef<any>(null);
-  
-  React.useEffect(() => {
-    if (taskListRef.current && typeof taskListRef.current.setSearchValue === 'function') {
-      taskListRef.current.setSearchValue(searchValue);
-    }
-  }, [searchValue]);
+  // Note: searchValue prop not needed as TaskList manages its own search state
 
   return (
     <>
       <div className="h-full overflow-y-auto">
         <TaskList
-          ref={taskListRef}
           tasks={taskManagement.tasks}
           config={{
             showSearch: true,
@@ -49,7 +41,7 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
             showSort: true,
             enableGrouping: true,
             defaultGroupBy: 'assignmentDate',
-            showSelection: false,
+            showSelection: true,
             columns: [
               { key: 'name', label: 'Name', width: 'flex-1 min-w-[300px]', sortable: true },
               { key: 'dueDate', label: 'Due date', width: 'w-[120px]', sortable: true },
@@ -61,7 +53,7 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
           }}
           actions={taskActions}
           loading={taskManagement.isLoading}
-          error={taskManagement.error}
+          error={taskManagement.error ?? undefined}
           hideHeader={true}
         />
       </div>

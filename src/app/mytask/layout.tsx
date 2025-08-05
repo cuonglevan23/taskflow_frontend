@@ -36,8 +36,14 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // Clone children with search value prop
   const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, { searchValue } as any);
+    if (React.isValidElement(child) && typeof child.type !== 'string') {
+      // Only clone component elements, not DOM elements
+      try {
+        return React.cloneElement(child, { searchValue });
+      } catch (error) {
+        console.warn('Failed to clone element:', error);
+        return child;
+      }
     }
     return child;
   });

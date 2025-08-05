@@ -57,7 +57,7 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
         textColor: '#FFFFFF',
         extendedProps: {
           originalTask: task,
-          assignee: task.assignedTo || 'Unassigned',
+          assignee: 'Unassigned', // TODO: Add assignedTo field to TaskListItem type
           description: task.description,
           project: task.project,
           status: task.status,
@@ -94,7 +94,7 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
     setTimeout(() => {
       if (calendarRef.current) {
         const calendarApi = calendarRef.current.getApi();
-        calendarApi.render();
+        calendarApi.refetchEvents();
         console.log('Calendar re-rendered after task update');
       }
     }, 100);
@@ -108,7 +108,7 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
     setTimeout(() => {
       if (calendarRef.current) {
         const calendarApi = calendarRef.current.getApi();
-        calendarApi.render();
+        calendarApi.refetchEvents();
         console.log('Calendar re-rendered after task delete');
       }
     }, 100);
@@ -265,12 +265,7 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
           firstDay={1} // Start week on Monday
           weekNumberCalculation="ISO"
           displayEventTime={false}
-          eventTextColor="#FFFFFF"
-          eventBorderWidth={1}
-          eventClassNames="cursor-pointer hover:opacity-80 transition-opacity"
-          slotMinTime="06:00:00"
-          slotMaxTime="22:00:00"
-          allDaySlot={true}
+
           nowIndicator={true}
           businessHours={false}
           themeSystem="standard"
