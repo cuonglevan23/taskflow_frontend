@@ -1,9 +1,105 @@
-import { TaskStatus } from '@/types/task'
+// Task List Component Types
+export interface TaskListConfig {
+  showSearch?: boolean;
+  showFilters?: boolean;
+  showSort?: boolean;
+  enableGrouping?: boolean;
+  defaultGroupBy?: TaskGroupBy;
+  showSelection?: boolean;
+  columns?: TaskTableColumn[];
+}
 
-export type NewTaskDataType = {
-  name: string
-  assignee: string[]
-  dueDate: string
-  priority: 'Low' | 'Medium' | 'High'
-  status: TaskStatus
-} 
+export interface TaskTableColumn {
+  key: keyof TaskListItem | 'actions';
+  label: string;
+  width?: string;
+  sortable?: boolean;
+  filterable?: boolean;
+  renderCell?: (task: TaskListItem) => React.ReactNode;
+}
+
+export interface TaskListItem {
+  id: string;
+  name: string;
+  description?: string;
+  assignees: TaskAssignee[];
+  dueDate?: string;
+  startDate?: string; // ISO date string for enhanced calendar
+  endDate?: string; // ISO date string for enhanced calendar
+  startTime?: string; // Time string like "10:00"
+  endTime?: string; // Time string like "10:30"
+  hasStartTime?: boolean; // Whether start time is enabled
+  hasEndTime?: boolean; // Whether end time is enabled
+  priority: TaskPriority;
+  status: TaskStatus;
+  tags?: string[];
+  project?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskAssignee {
+  id: string;
+  name: string;
+  avatar?: string;
+  email?: string;
+}
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled';
+export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate';
+
+export interface TaskSection {
+  id: string;
+  title: string;
+  tasks: TaskListItem[];
+  collapsible?: boolean;
+  collapsed?: boolean;
+}
+
+export interface TaskListFilters {
+  search?: string;
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
+  assignee?: string[];
+  project?: string[];
+  dateRange?: {
+    start?: string;
+    end?: string;
+  };
+}
+
+export interface TaskListSort {
+  field: keyof TaskListItem;
+  direction: 'asc' | 'desc';
+}
+
+export interface TaskListActions {
+  onTaskClick?: (task: TaskListItem) => void;
+  onTaskEdit?: (task: TaskListItem) => void;
+  onTaskDelete?: (taskId: string) => void;
+  onTaskStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onTaskAssign?: (taskId: string, assigneeId: string) => void;
+  onCreateTask?: (taskData?: string | { 
+    name: string; 
+    dueDate?: string; 
+    startDate?: string;
+    endDate?: string;
+    startTime?: string;
+    endTime?: string;
+    hasStartTime?: boolean;
+    hasEndTime?: boolean;
+    project?: string; 
+    status?: TaskStatus;
+  }) => void;
+  onBulkAction?: (taskIds: string[], action: string) => void;
+}
+
+// Legacy compatibility types
+export interface NewTaskDataType {
+  name: string;
+  assignee: string[];
+  dueDate: string;
+  priority: 'Low' | 'Medium' | 'High';
+  status: string;
+}

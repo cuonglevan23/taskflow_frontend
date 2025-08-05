@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { X, Calendar, User, CheckCircle, Plus, MessageCircle, Paperclip, MoreHorizontal } from 'lucide-react';
+import DueDatePicker from '@/app/project/list/components/DueDatePicker';
+import { EnhancedCalendar } from '@/components/EnhancedCalendar';
 
 interface Task {
   id: string;
@@ -39,6 +41,13 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   const [isCompleted, setIsCompleted] = useState(false);
   const [description, setDescription] = useState('');
   const [comment, setComment] = useState('');
+  
+  // Time options
+  const [hasStartTime, setHasStartTime] = useState(false);
+  const [hasEndTime, setHasEndTime] = useState(false);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,15 +58,41 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
       ? assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : '';
 
-    onSave({
-      title: title.trim(),
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      color: editTask?.color || '#60A5FA',
-      assignee: assignee.trim(),
-      avatar
-    });
+    // Combine date and time if time is enabled
+    const finalStartDate = new Date(startDate);
+    const finalEndDate = new Date(endDate);
+    
+    if (hasStartTime) {
+      const [hours, minutes] = startTime.split(':');
+      finalStartDate.setHours(parseInt(hours), parseInt(minutes));
+    }
+    
+    if (hasEndTime) {
+      const [hours, minutes] = endTime.split(':');
+      finalEndDate.setHours(parseInt(hours), parseInt(minutes));
+    }
 
+    const newTask = {
+      title: title.trim(),
+      startDate: finalStartDate,
+      endDate: finalEndDate,
+      color: editTask?.color || '#60A5FA',
+      assignee: assignee.trim() || 'Unassigned',
+      avatar,
+      hasStartTime,
+      hasEndTime,
+      startTime: hasStartTime ? startTime : undefined,
+      endTime: hasEndTime ? endTime : undefined
+    };
+
+    onSave(newTask);
+    
+    // Reset form
+    setTitle('');
+    setStartDate(new Date());
+    setEndDate(new Date());
+    setAssignee('');
+    
     onClose();
   };
 
@@ -104,159 +139,108 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Task visibility notice */}
-          <div className="flex items-start gap-3 p-4 bg-gray-700/50 rounded-lg">
-            <div className="w-5 h-5 bg-gray-600 rounded flex items-center justify-center mt-0.5">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-            </div>
-            <div className="text-sm text-gray-300">
-              This task is visible to members of Cross-functional project plan.
-            </div>
-            <button className="text-blue-400 text-sm hover:underline ml-auto">
-              Make public
-            </button>
-          </div>
-
           {/* Task Title */}
           <div>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-2xl font-bold bg-transparent text-white placeholder-gray-500 border-none outline-none resize-none"
+              className="w-full text-xl font-semibold bg-transparent text-white placeholder-gray-400 border-none outline-none resize-none"
               placeholder="Task name"
             />
           </div>
 
-          {/* Assignee */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Assignee</label>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {assignee ? assignee.split(' ').map(n => n[0]).join('').slice(0, 2) : 'LC'}
-              </div>
+          {/* Simple Form Fields */}
+          <div className="space-y-4">
+            {/* Enhanced Calendar Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 block">Due date & time</label>
+              <button
+                onClick={() => setIsEnhancedCalendarOpen(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded border transition-colors hover:opacity-80 bg-gray-700 border-gray-600 text-white"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>
+                  {formatDate(startDate)} - {formatDate(endDate)}
+                </span>
+              </button>
+            </div>
+
+            {/* Assignee */}
+            <div>
+              <label className="text-sm font-medium text-gray-300 block mb-2">Assignee</label>
               <input
                 type="text"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                className="flex-1 bg-transparent text-white placeholder-gray-500 border-none outline-none"
-                placeholder="LÊ VĂN CƯỜNG"
+                className="w-full bg-gray-700 text-white placeholder-gray-400 px-3 py-2 rounded border border-gray-600 outline-none focus:border-blue-500"
+                placeholder="Unassigned"
               />
-              <X className="w-4 h-4 text-gray-500 cursor-pointer" />
             </div>
-          </div>
 
-          {/* Due Date */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Due date</label>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <span className="text-white">
-                {formatDate(startDate)} - {formatDate(endDate)}
-              </span>
-              <X className="w-4 h-4 text-gray-500 cursor-pointer ml-auto" />
-            </div>
-          </div>
-
-          {/* Projects */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Projects</label>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-white">Cross-functional project plan</span>
-              <span className="text-gray-500">To do</span>
-              <X className="w-4 h-4 text-gray-500 cursor-pointer ml-auto" />
-            </div>
-            <button className="text-blue-400 text-sm hover:underline">
-              Add to projects
-            </button>
-          </div>
-
-          {/* Dependencies */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Dependencies</label>
-            <button className="text-blue-400 text-sm hover:underline">
-              Add dependencies
-            </button>
-          </div>
-
-          {/* Fields */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-300">Fields</label>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                <span className="text-gray-300">Priority</span>
-              </div>
-              <span className="text-gray-500">—</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                <span className="text-gray-300">Status</span>
-              </div>
-              <span className="text-gray-500">—</span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-300">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full h-24 bg-transparent text-white placeholder-gray-500 border-none outline-none resize-none"
-              placeholder="What is this task about?"
-            />
-          </div>
-
-          {/* Comments */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                LC
-              </div>
+            {/* Project Name */}
+            <div>
+              <label className="text-sm font-medium text-gray-300 block mb-2">Project</label>
               <input
                 type="text"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="flex-1 bg-gray-700 text-white placeholder-gray-400 px-3 py-2 rounded border-none outline-none"
-                placeholder="Add a comment"
+                className="w-full bg-gray-700 text-white placeholder-gray-400 px-3 py-2 rounded border border-gray-600 outline-none focus:border-blue-500"
+                placeholder="Project name"
               />
             </div>
+
+            {/* Status */}
+            <div>
+              <label className="text-sm font-medium text-gray-300 block mb-2">Status</label>
+              <select className="w-full bg-gray-700 text-white px-3 py-2 rounded border border-gray-600 outline-none focus:border-blue-500">
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
           </div>
 
-          {/* Collaborators */}
-          <div className="space-y-2 border-t border-gray-700 pt-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-300">Collaborators</span>
-              <button className="text-blue-400 text-sm hover:underline">
-                Leave task
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                LC
-              </div>
-              <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center">
-                <Plus className="w-3 h-3 text-gray-400" />
-              </div>
-              <Plus className="w-4 h-4 text-gray-500 cursor-pointer" />
-            </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={handleSubmit}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md font-medium transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 p-6">
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium transition-colors"
-          >
-            {editTask ? 'Save changes' : 'Create task'}
-          </button>
-        </div>
+        {/* Enhanced Calendar Modal */}
+        <EnhancedCalendar
+          isOpen={isEnhancedCalendarOpen}
+          onClose={() => setIsEnhancedCalendarOpen(false)}
+          onSave={(data) => {
+            // Convert dd/mm/yy format to proper date
+            const parseDate = (dateStr: string) => {
+              if (!dateStr) return new Date();
+              const [day, month, year] = dateStr.split('/');
+              return new Date(parseInt(`20${year}`), parseInt(month) - 1, parseInt(day));
+            };
+            
+            const startDateParsed = parseDate(data.startDate);
+            const endDateParsed = parseDate(data.endDate);
+            
+            // Update form state
+            setStartDate(startDateParsed);
+            setEndDate(endDateParsed);
+            setStartTime(data.startTime);
+            setEndTime(data.endTime);
+            setHasStartTime(!!data.startTime);
+            setHasEndTime(!!data.endTime);
+          }}
+        />
       </div>
     </div>
   );

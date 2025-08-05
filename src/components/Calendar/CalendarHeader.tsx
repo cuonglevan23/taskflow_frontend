@@ -58,29 +58,29 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   // Simple header mode - minimal design
   if (simpleHeader) {
     return (
-      <div className="sticky top-0 z-50 bg-gray-900">
+      <div className="relative w-full bg-gray-900 border-b border-gray-700">
         {/* Simple Navigation Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3">
           {/* Left side - Basic navigation */}
           <div className="flex items-center gap-3">
             <button
               onClick={onPrevious}
-              className="p-1 hover:bg-gray-800 rounded transition-colors text-white"
+              className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
               title="Previous month"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             
-            <h1 className="text-lg font-medium text-white">
+            <h1 className="text-xl font-semibold text-white">
               {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </h1>
             
             <button
               onClick={onNext}
-              className="p-1 hover:bg-gray-800 rounded transition-colors text-white"
+              className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
               title="Next month"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
@@ -88,18 +88,18 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           <div className="flex items-center">
             <button
               onClick={onToday}
-              className="px-3 py-1 hover:bg-gray-800 rounded transition-colors text-sm text-white"
+              className="px-4 py-2 hover:bg-gray-800 rounded transition-colors text-sm text-white font-medium"
             >
               Today
             </button>
           </div>
         </div>
 
-        {/* Day Headers - Fixed under navigation */}
-        <div className="grid grid-cols-7 border-b border-gray-700 bg-gray-900">
+        {/* Day Headers */}
+        <div className="grid grid-cols-7 border-t border-gray-700 bg-gray-800">
           {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-            <div key={day} className="px-3 py-3 text-center border-r border-gray-700 last:border-r-0">
-              <div className="text-xs font-medium text-gray-400">{day}</div>
+            <div key={day} className="px-3 py-4 text-center border-r border-gray-700 last:border-r-0">
+              <div className="text-xs font-semibold text-gray-300 uppercase tracking-wide">{day}</div>
             </div>
           ))}
         </div>
@@ -108,9 +108,9 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   }
 
   return (
-    <div className="sticky top-0 z-50 bg-gray-900">
+    <div className="relative w-full bg-gray-900 border-b border-gray-700">
       {/* Main Navigation Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 py-4">
         {/* Left side - Navigation and month */}
         <div className="flex items-center gap-4">
           <button
@@ -217,11 +217,11 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </div>
       </div>
 
-      {/* Day Headers - Fixed under navigation */}
-      <div className="grid grid-cols-7 border-b border-gray-700 bg-gray-900">
+      {/* Day Headers */}
+      <div className="grid grid-cols-7 border-t border-gray-700 bg-gray-800">
         {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-          <div key={day} className="px-3 py-3 text-center border-r border-gray-700 last:border-r-0">
-            <div className="text-xs font-medium text-gray-400">{day}</div>
+          <div key={day} className="px-3 py-4 text-center border-r border-gray-700 last:border-r-0">
+            <div className="text-xs font-semibold text-gray-300 uppercase tracking-wide">{day}</div>
           </div>
         ))}
       </div>

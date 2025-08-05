@@ -312,8 +312,8 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <div className="simple-calendar h-full w-full bg-gray-900 text-white flex flex-col" style={{ height }}>
-      {/* Calendar Header Component */}
+    <div className="simple-calendar h-full w-full bg-gray-900 text-white flex flex-col overflow-hidden" style={{ height }}>
+      {/* Calendar Header Component - Fixed at top */}
       <CalendarHeader
         currentDate={currentDate}
         onPrevious={handlePrevious}
@@ -330,19 +330,19 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
         simpleHeader={simpleHeader}
       />
 
-      {/* Scrollable Calendar Content Only */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      {/* Calendar Content */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-hidden">
         {months.map((monthDate, monthIndex) => {
           const monthDays = getMonthDays(monthDate);
 
           return (
-            <div key={monthIndex} className="month-section">
-              {/* Calendar Grid - scrollable content */}
-              <div className="grid grid-cols-7">
+            <div key={monthIndex} className="month-section h-full">
+              {/* Calendar Grid - fixed content */}
+              <div className="grid grid-cols-7 h-full">
                 {monthDays.map((date, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className={`min-h-[120px] p-2 border-r border-b border-gray-700 relative cursor-pointer transition-colors overflow-visible ${
+                    className={`h-[calc((100vh-140px)/6)] p-2 border-r border-b border-gray-700 relative cursor-pointer transition-colors overflow-visible ${
                       isToday(date) ? 'bg-blue-600 text-white' : 'bg-gray-900'
                     } ${
                       !isCurrentMonth(date, monthDate) ? 'opacity-40' : ''

@@ -1,13 +1,9 @@
-import PrivateLayout from "@/layouts/private/PrivateLayout";
+import { PageLayout } from "@/layouts/page";
 
 export default function MembersLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <PrivateLayout>
-            {children}
-        </PrivateLayout>
-    )
+    return <PageLayout>{children}</PageLayout>;
 }

@@ -69,10 +69,14 @@ export default function Dropdown({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-[60] min-w-48 bg-white rounded-xl shadow-2xl border border-gray-100 transform transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95",
+            "absolute z-[60] min-w-48 rounded-xl shadow-2xl border transform transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95",
             placementClasses[placement],
             contentClassName
           )}
+          style={{
+            backgroundColor: '#1f2937', // theme.background.primary for dark theme
+            borderColor: '#374151', // theme.border.default for dark theme
+          }}
         >
           {children}
         </div>
@@ -101,7 +105,7 @@ export function DropdownItem({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out rounded-lg mx-2",
+        "w-full flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 ease-out rounded-lg mx-2",
         className
       )}
     >
@@ -117,6 +121,6 @@ export interface DropdownSeparatorProps {
 
 export function DropdownSeparator({ className }: DropdownSeparatorProps) {
   return (
-    <div className={cn("my-2 mx-2 border-t border-gray-100", className)} />
+    <div className={cn("my-2 mx-2 border-t border-gray-600", className)} />
   );
 }

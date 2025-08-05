@@ -1,20 +1,8 @@
 import React from "react";
-import PrivateLayout from "@/layouts/private/PrivateLayout";
-import HeaderMyTask from "./header_mytask";
+import { PageLayout } from "@/layouts/page";
 
 const MyTaskLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div>
-      <PrivateLayout>
-        <div className='p-6'>
-          <HeaderMyTask/>
-          <div className=''>
-            {children}
-          </div>
-        </div>
-      </PrivateLayout>
-    </div>
-  )
+  return <PageLayout>{children}</PageLayout>;
 };
 
 export default MyTaskLayout;

@@ -112,8 +112,8 @@ const PageLayout = ({ children }: PageLayoutProps) => {
   } = config;
 
   // Determine navigation style based on page type - only after mount to prevent hydration mismatch
-  const isInboxStyle = mounted && (pathname.startsWith("/inbox") || pathname.startsWith("/mytask"));
-  const isMyTaskStyle = false; // Now using inbox style for mytask too
+  const isInboxStyle = mounted && pathname.startsWith("/inbox");
+  const isMyTaskStyle = mounted && (pathname.startsWith("/mytask") || pathname.startsWith("/project") || pathname.startsWith("/owner"));
   const isTeamsStyle = mounted && pathname.startsWith("/teams");
 
   // Prevent hydration mismatch by not rendering sticky styles until mounted
@@ -158,7 +158,10 @@ const PageLayout = ({ children }: PageLayoutProps) => {
         {/* Sticky Header */}
         <div 
           className="sticky top-0 z-50"
-          style={{ backgroundColor: theme.background.primary }}
+          style={{ 
+            backgroundColor: isMyTaskStyle || isTeamsStyle ? theme.header.background : theme.background.primary,
+            borderBottom: `1px solid ${theme.border.default}`
+          }}
         >
           {/* Top Header Sections */}
           {headerSections.length > 0 && (
@@ -182,19 +185,32 @@ const PageLayout = ({ children }: PageLayoutProps) => {
 
             {/* Title and Actions Row */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {headerInfo?.avatar}
+              <div className="flex items-center gap-3">
+                {headerInfo?.avatar && (
+                  <div className="flex items-center">
+                    {headerInfo.avatar}
+                  </div>
+                )}
                 <h1
                   className={clsx(
                     "font-semibold",
-                    isInboxStyle ? "text-2xl" : "text-lg font-bold"
+                    isInboxStyle ? "text-2xl" : isMyTaskStyle || isTeamsStyle ? "text-2xl" : "text-lg font-bold"
                   )}
-                  style={{ color: theme.text.primary }}
+                  style={{ 
+                    color: isMyTaskStyle || isTeamsStyle ? theme.header.text : theme.text.primary 
+                  }}
                 >
                   {title}
                 </h1>
                 {headerInfo?.subtitle && (
-                  <span className="text-gray-600">{headerInfo.subtitle}</span>
+                  <span 
+                    className="text-sm"
+                    style={{ 
+                      color: isMyTaskStyle || isTeamsStyle ? theme.sidebar.textMuted : theme.text.secondary 
+                    }}
+                  >
+                    {headerInfo.subtitle}
+                  </span>
                 )}
               </div>
 
@@ -221,7 +237,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
               <ul
                 className={clsx(
                   "flex items-center",
-                  isInboxStyle ? "gap-6 border-b -mb-4" : "gap-5"
+                  isInboxStyle ? "gap-6 border-b -mb-4" : isMyTaskStyle ? "gap-1 -mb-px" : "gap-5"
                 )}
                 style={isInboxStyle ? { borderColor: theme.border.default } : {}}
               >
@@ -230,10 +246,13 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                     <Link
                       href={item.href}
                       className={clsx(
-                        "flex items-center gap-1",
+                        "flex items-center gap-2 transition-all duration-200 group",
+                        // Inbox style
                         isInboxStyle &&
                           "inline-block pb-4 border-b-2 font-medium text-sm",
-                        isMyTaskStyle && "font-medium",
+                        // MyTask style - modern tabs
+                        isMyTaskStyle && 
+                          "px-4 py-3 rounded-t-lg border-b-2 font-medium text-sm relative",
                         // Inbox active state
                         isInboxStyle &&
                           pathname === item.href &&
@@ -241,13 +260,13 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                         isInboxStyle &&
                           pathname !== item.href &&
                           "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                        // MyTask active state
+                        // MyTask active state - consistent with teams theme
                         isMyTaskStyle &&
                           pathname === item.href &&
-                          "font-semibold text-black border-b-2 border-black",
+                          "border-orange-500 text-white font-semibold",
                         isMyTaskStyle &&
                           pathname !== item.href &&
-                          "text-gray-500 hover:text-black",
+                          "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-400",
                         // Teams active state
                         isTeamsStyle &&
                           pathname === item.href &&
@@ -256,9 +275,27 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                           pathname !== item.href &&
                           "border-transparent text-gray-300 hover:text-white hover:border-gray-300"
                       )}
+                      style={
+                        isMyTaskStyle && pathname === item.href
+                          ? {
+                              borderBottomColor: theme.background.primary,
+                              marginBottom: '-1px',
+                            }
+                          : {}
+                      }
                     >
-                      {item.icon}
-                      <span className="font-medium">{item.label}</span>
+                      {item.icon && (
+                        <span 
+                          className={clsx(
+                            "flex-shrink-0 transition-colors duration-200",
+                            isMyTaskStyle && pathname === item.href && "text-orange-500",
+                            isMyTaskStyle && pathname !== item.href && "text-gray-400 group-hover:text-orange-400"
+                          )}
+                        >
+                          {item.icon}
+                        </span>
+                      )}
+                      <span className="font-medium whitespace-nowrap">{item.label}</span>
                     </Link>
                   </li>
                 ))}

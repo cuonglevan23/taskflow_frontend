@@ -1,136 +1,178 @@
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
-import { EditableTask, TaskStatus, Assignee } from "@/types/task";
-import TaskSection from "./TaskSection";
-import { NewTaskDataType } from "./types";
-import TaskDetailPanel from "@/app/project/list/components/TaskDetailPanel";
+"use client";
+
+import React from 'react';
+import { Plus } from 'lucide-react';
+import { useTheme } from '@/layouts/hooks/useTheme';
+import { TaskTableColumn, TaskListItem, TaskListActions } from './types';
+import { DEFAULT_COLUMNS } from './utils';
+import TaskRow from './TaskRow';
+
 interface TaskTableProps {
-  tasks: EditableTask[];
-  assignees: Assignee[];
-  showAddTaskInput: boolean;
-  addTaskStatus: TaskStatus | null;
-  newTaskData: NewTaskDataType;
-  editingNewTaskField:
-    | "name"
-    | "assignee"
-    | "dueDate"
-    | "priority"
-    | "status"
-    | null;
-  onEdit: (
-    taskId: string,
-    field: "name" | "assignee" | "dueDate" | "priority" | "status",
-    value: any
-  ) => void;
-  onToggleEdit: (
-    taskId: string,
-    field: "name" | "assignee" | "dueDate" | "priority" | "status"
-  ) => void;
-  onKeyPress: (
-    e: React.KeyboardEvent,
-    taskId: string,
-    field: "name" | "assignee" | "dueDate" | "priority" | "status",
-    value: any
-  ) => void;
-  onAddTaskClick: (status: TaskStatus) => void;
-  onNewTaskDataChange: (field: keyof NewTaskDataType, value: any) => void;
-  onEditingFieldChange: (
-    field: "name" | "assignee" | "dueDate" | "priority" | "status" | null
-  ) => void;
-  onAddTask: () => void;
-  onCancelAddTask: () => void;
-  onAddTaskKeyDown: (e: React.KeyboardEvent) => void;
+  tasks: TaskListItem[];
+  columns?: TaskTableColumn[];
+  actions?: TaskListActions;
+  selectedTasks?: string[];
+  onSelectTask?: (taskId: string) => void;
+  onSelectAll?: (taskIds: string[]) => void;
+  onSort?: (field: keyof TaskListItem) => void;
+  sortField?: keyof TaskListItem;
+  sortDirection?: 'asc' | 'desc';
+  className?: string;
 }
 
 const TaskTable: React.FC<TaskTableProps> = ({
   tasks,
-  assignees,
-  showAddTaskInput,
-  addTaskStatus,
-  newTaskData,
-  editingNewTaskField,
-  onEdit,
-  onToggleEdit,
-  onKeyPress,
-  onAddTaskClick,
-  onNewTaskDataChange,
-  onEditingFieldChange,
-  onAddTask,
-  onCancelAddTask,
-  onAddTaskKeyDown,
+  columns = DEFAULT_COLUMNS,
+  actions,
+  selectedTasks = [],
+  onSelectTask,
+  onSelectAll,
+  onSort,
+  sortField,
+  sortDirection,
+  className = '',
 }) => {
-  const sections = [
-    { title: "To do", status: TaskStatus.TO_DO },
-    { title: "In Progress", status: TaskStatus.IN_PROGRESS },
-  ];
+  const { theme } = useTheme();
 
-  const [selectedTask, setSelectedTask] = useState<EditableTask | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const handleOpenDetail = (task: EditableTask) => {
-    setSelectedTask(task);
-    setPanelOpen(true);
+  const handleSelectAll = () => {
+    if (onSelectAll) {
+      const allSelected = tasks.length > 0 && tasks.every(task => selectedTasks.includes(task.id));
+      if (allSelected) {
+        onSelectAll([]);
+      } else {
+        onSelectAll(tasks.map(task => task.id));
+      }
+    }
   };
 
-  const handleClosePanel = () => {
-    setSelectedTask(null);
-    setPanelOpen(false);
+  const handleSort = (field: keyof TaskListItem) => {
+    if (onSort) {
+      onSort(field);
+    }
   };
+
+  const isAllSelected = tasks.length > 0 && tasks.every(task => selectedTasks.includes(task.id));
+  const isIndeterminate = tasks.some(task => selectedTasks.includes(task.id)) && !isAllSelected;
 
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide max-h-[530px] mt-2">
-      <table className="w-full border-collapse mt-4">
-        <thead>
-          <tr className="text-left text-sm text-gray-500">
-            <th className="min-w-[200px] px-2 py-2">Name</th>
-            <th className="min-w-[130px] px-2 py-2">Assignee</th>
-            <th className="min-w-[100px] px-2 py-2">Due date</th>
-            <th className="min-w-[100px] px-2 py-2">Priority</th>
-            <th className="min-w-[100px] px-2 py-2">Status</th>
-            <th className="min-w-[70px] px-2 py-2">
-              <Plus className="w-4 h-4" />
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sections.map((section, index) => (
-            <React.Fragment key={section.status}>
-              <TaskSection
-                onOpenDetail={handleOpenDetail}
-                title={section.title}
-                status={section.status}
-                tasks={tasks}
-                assignees={assignees}
-                showAddTaskInput={showAddTaskInput}
-                addTaskStatus={addTaskStatus}
-                newTaskData={newTaskData}
-                editingNewTaskField={editingNewTaskField}
-                onEdit={onEdit}
-                onToggleEdit={onToggleEdit}
-                onKeyPress={onKeyPress}
-                onAddTaskClick={onAddTaskClick}
-                onNewTaskDataChange={
-                  onNewTaskDataChange as (
-                    field: string | number | symbol,
-                    value: any
-                  ) => void
-                }
-                onEditingFieldChange={onEditingFieldChange}
-                onAddTask={onAddTask}
-                onCancelAddTask={onCancelAddTask}
-                onAddTaskKeyDown={onAddTaskKeyDown}
-              />
-              {index < sections.length - 1 && <tr className="h-10"></tr>}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
-      {selectedTask && (
-        <TaskDetailPanel
-          task={selectedTask}
-          isOpen={panelOpen}
-          onClose={handleClosePanel}
-        />
-      )}
+    <div className={`${className}`}>
+      {/* Table Header Row */}
+      <div
+        className="flex items-center px-6 py-3 border-b text-sm font-medium"
+        style={{
+          backgroundColor: theme.background.secondary,
+          borderColor: theme.border.default,
+          color: theme.text.secondary
+        }}
+      >
+        {/* Select All Checkbox */}
+        {onSelectAll && (
+          <div className="w-6 mr-4">
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = isIndeterminate;
+              }}
+              onChange={handleSelectAll}
+              className="rounded transition-colors"
+              style={{ accentColor: theme.border.focus }}
+            />
+          </div>
+        )}
+
+        {columns.map((column) => (
+          <div
+            key={column.key}
+            className={`${column.width || 'flex-1'} px-2`}
+          >
+            {column.sortable ? (
+              <button
+                onClick={() => handleSort(column.key as keyof TaskListItem)}
+                className="flex items-center gap-1 hover:text-current transition-colors text-left"
+                style={{ color: theme.text.secondary }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = theme.text.secondary;
+                }}
+              >
+                {column.label}
+                {sortField === column.key && (
+                  <span className="text-xs">
+                    {sortDirection === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <span className="text-left">{column.label}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Table Content */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-separate border-spacing-0">
+          {/* Table Body */}
+
+          <tbody>
+            {tasks.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length + (onSelectAll ? 1 : 0)}
+                  className="px-6 py-12 text-center"
+                  style={{ color: theme.text.secondary }}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-4xl opacity-50">📝</div>
+                    <p>No tasks found</p>
+                    <button
+                      onClick={actions?.onCreateTask}
+                      className="mt-2 px-4 py-2 text-sm rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: theme.button.primary.background,
+                        color: theme.button.primary.text,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.button.primary.hover;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.button.primary.background;
+                      }}
+                    >
+                      Create your first task
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              tasks.map((task) => (
+                <React.Fragment key={task.id}>
+                  {onSelectAll && (
+                    <td className="w-6 px-6 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedTasks.includes(task.id)}
+                        onChange={() => onSelectTask?.(task.id)}
+                        className="rounded transition-colors"
+                        style={{ accentColor: theme.border.focus }}
+                      />
+                    </td>
+                  )}
+                  <TaskRow
+                    task={task}
+                    actions={actions}
+                    isSelected={selectedTasks.includes(task.id)}
+                    onSelect={onSelectTask}
+                  />
+                </React.Fragment>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

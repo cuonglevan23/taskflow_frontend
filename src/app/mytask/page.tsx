@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
 
-const MyTaskPage = () => {
-  return <div>MyTaskPage</div>;
-};
+import { redirect } from "next/navigation";
 
-export default MyTaskPage;
+export default function MyTaskPage() {
+  redirect("/mytask/list");
+}

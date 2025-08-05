@@ -1,20 +1,8 @@
 import React from 'react'
-import HeaderProject from './header_project'
-import PrivateLayout from '@/layouts/private/PrivateLayout'
+import { PageLayout } from '@/layouts/page'
 
 const ProjectLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div>
-      <PrivateLayout>
-        <div className='p-6'>
-          <HeaderProject/>
-          <div className=''>
-            {children}
-          </div>
-        </div>
-      </PrivateLayout>
-    </div>
-  )
+  return <PageLayout>{children}</PageLayout>
 }
 
 export default ProjectLayout

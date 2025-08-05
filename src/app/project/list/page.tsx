@@ -218,7 +218,7 @@ const ProjectListPage = () => {
   return (
     <div className="pt-4 w-full px-2 sm:px-4">
       <TaskHeader onAddTask={handleHeaderAddTask} />
-      
+
       <TaskTable
         tasks={tasks}
         assignees={assignees}
