@@ -1,57 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import { PrivateLayout } from "@/layouts";
+import React from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { 
-  FaPlus, 
-  FaCheckCircle, 
-  FaUsers, 
-  FaChevronDown,
-  FaEllipsisV
-} from "react-icons/fa";
-import { 
-  MdKeyboardArrowDown,
-  MdMoreHoriz
-} from "react-icons/md";
-import { 
-  HiSparkles 
-} from "react-icons/hi";
-import { 
-  IoCheckbox,
-  IoCheckboxOutline 
-} from "react-icons/io5";
-import { 
-  BsCircle,
-  BsCheckCircle 
-} from "react-icons/bs";
+import { MdMoreHoriz } from "react-icons/md";
 
-// Import Refactored Cards using BaseCard
-import RefactoredMyTasksCard from "./components/Cards/MyTasksCardRefactored";
-import RefactoredProjectsCard from "./components/Cards/ProjectsCardRefactored";
-import RefactoredTasksAssignedCard from "./components/Cards/TasksAssignedCardRefactored";
-import RefactoredGoalsCard from "./components/Cards/GoalsCardRefactored";
-
-// Import Global Context
-import { useTasksContext } from "@/contexts";
-
-// Base Card Types & Interfaces
-interface TabConfig {
+// Professional TypeScript Interfaces
+export interface TabConfig {
   key: string;
   label: string;
   count?: number | null;
 }
 
-interface ActionButtonConfig {
+export interface ActionButtonConfig {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
 }
 
-interface BaseCardProps {
+export interface BaseCardProps {
   title: string;
   icon?: React.ReactNode;
   avatar?: React.ReactNode;
+  lockIcon?: boolean;
   tabs?: TabConfig[];
   activeTab?: string;
   onTabChange?: (tabKey: string) => void;
@@ -62,13 +32,15 @@ interface BaseCardProps {
     onClick: () => void;
   };
   className?: string;
+  onMenuClick?: () => void;
 }
 
-// Professional Base Card Component
+// Professional BaseCard Component - Senior Product Code
 const BaseCard = ({
   title,
   icon,
   avatar,
+  lockIcon = false,
   tabs,
   activeTab,
   onTabChange,
@@ -76,9 +48,11 @@ const BaseCard = ({
   children,
   showMoreButton,
   className = "",
+  onMenuClick,
 }: BaseCardProps) => {
   const { theme } = useTheme();
 
+  // Tab Button Sub-Component
   const TabButton = ({ 
     tab, 
     isActive, 
@@ -121,7 +95,7 @@ const BaseCard = ({
       {/* Professional Header */}
       <div className="flex items-center justify-between p-6 pb-4">
         <div className="flex items-center gap-3">
-          {/* Avatar or Icon */}
+          {/* Avatar with Dashed Border */}
           {avatar && (
             <div 
               className="w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center"
@@ -135,6 +109,8 @@ const BaseCard = ({
               </div>
             </div>
           )}
+
+          {/* Regular Icon */}
           {icon && !avatar && (
             <div className="flex-shrink-0">
               {icon}
@@ -149,11 +125,20 @@ const BaseCard = ({
             >
               {title}
             </h3>
+            {lockIcon && (
+              <span 
+                className="text-base opacity-70"
+                style={{ color: theme.text.secondary }}
+              >
+                🔒
+              </span>
+            )}
           </div>
         </div>
 
         {/* Actions Menu */}
         <button 
+          onClick={onMenuClick}
           className="p-2 rounded-lg transition-colors duration-200"
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = theme.background.secondary;
@@ -190,7 +175,7 @@ const BaseCard = ({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col px-6 py-4 min-h-0">
-        {/* Create/Add Action */}
+        {/* Create/Add Action Button */}
         {createAction && (
           <button 
             onClick={createAction.onClick}
@@ -208,12 +193,12 @@ const BaseCard = ({
           </button>
         )}
 
-        {/* Dynamic Content */}
+        {/* Dynamic Content Area */}
         <div className="flex-1 overflow-y-auto min-h-0 mb-3">
           {children}
         </div>
 
-        {/* Show More Action - Conditional */}
+        {/* Show More Action - Conditional Rendering */}
         {showMoreButton?.show && (
           <div className="flex-shrink-0 border-t pt-3" style={{ borderColor: theme.border.default }}>
             <button 
@@ -242,177 +227,4 @@ const BaseCard = ({
   );
 };
 
-const getGreeting = (): string => {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 18) return "Good afternoon";
-  return "Good evening";
-};
-
-// Header Component
-const HomeHeader = () => {
-  const { theme } = useTheme();
-  
-  return (
-    <div className="mb-8">
-      <h1 
-        className="text-2xl font-semibold mb-6"
-        style={{ color: theme.text.primary }}
-      >
-        Home
-      </h1>
-    </div>
-  );
-};
-
-// Greeting Section
-const GreetingSection = () => {
-  const { theme } = useTheme();
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
-  return (
-    <div className="text-center mb-8">
-      <p 
-        className="text-sm mb-2"
-        style={{ color: theme.text.secondary }}
-      >
-        {today}
-      </p>
-      <h2 
-        className="text-2xl font-semibold"
-        style={{ color: theme.text.primary }}
-      >
-        {getGreeting()}, levancuong
-      </h2>
-    </div>
-  );
-};
-
-// Achievements Widget (Summary Bar) - Dynamic with Real Data
-const AchievementsWidget = () => {
-  const { theme } = useTheme();
-  
-  // Use global context for real-time task statistics
-  const { taskStats } = useTasksContext();
-  
-  return (
-    <div className="flex justify-center mb-8">
-      <div 
-        className="flex items-center gap-8 px-8 py-4 rounded-2xl border"
-        style={{
-          backgroundColor: theme.background.primary,
-          borderColor: theme.border.default,
-        }}
-      >
-        {/* My Week */}
-        <div className="flex items-center gap-2">
-          <button 
-            className="flex items-center gap-2 text-sm font-medium"
-            style={{ color: theme.text.primary }}
-          >
-            My week
-            <MdKeyboardArrowDown className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Task Completed - Dynamic from Global Context */}
-        <div className="flex items-center gap-2">
-          <FaCheckCircle 
-            className="w-4 h-4"
-            style={{ color: "#10b981" }}
-          />
-          <span 
-            className="text-sm"
-            style={{ color: theme.text.primary }}
-          >
-            {taskStats.completed} task{taskStats.completed !== 1 ? 's' : ''} completed
-          </span>
-        </div>
-
-        {/* Collaborators - Could be dynamic in future */}
-        <div className="flex items-center gap-2">
-          <FaUsers 
-            className="w-4 h-4"
-            style={{ color: theme.text.secondary }}
-          />
-          <span 
-            className="text-sm"
-            style={{ color: theme.text.primary }}
-          >
-            0 collaborators
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-
-
-
-
-
-
-
-export default function HomeDashboard() {
-  const { theme } = useTheme();
-
-  return (
-    <PrivateLayout>
-        <div
-          className="min-h-screen px-8 py-6"
-          style={{
-            backgroundColor: theme.background.secondary,
-          }}
-        >
-          {/* Header */}
-          <HomeHeader />
-
-          {/* Greeting Section */}
-          <GreetingSection />
-
-          {/* Achievements Widget (Summary Bar) with Customize Button */}
-          <div className="relative">
-            <AchievementsWidget />
-            
-            {/* Customize Button - Positioned at top right */}
-            <button 
-              className="absolute top-0 right-8 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border"
-              style={{
-                backgroundColor: theme.background.primary,
-                borderColor: theme.border.default,
-                color: theme.text.primary,
-              }}
-            >
-              <HiSparkles className="w-4 h-4" />
-              Customize
-            </button>
-          </div>
-
-          {/* Main Dashboard Grid - Using Refactored BaseCard Components */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-7xl mx-auto">
-            {/* Top Row */}
-            <div className="h-[400px]">
-              <RefactoredMyTasksCard />
-            </div>
-            <div className="h-[400px]">
-              <RefactoredProjectsCard />
-            </div>
-            
-            {/* Bottom Row */}
-            <div className="h-[400px]">
-              <RefactoredTasksAssignedCard />
-            </div>
-            <div className="h-[400px]">
-              <RefactoredGoalsCard />
-            </div>
-          </div>
-        </div>
-      </PrivateLayout>
-  );
-}
+export default BaseCard;

@@ -20,7 +20,12 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
+  Folder,
 } from "lucide-react";
+
+// Import global context hooks for data synchronization
+import { useProjectsContext, useTasksContext } from "@/contexts";
+import { GrProjects } from "react-icons/gr";
 
 // Using types from navigation config
 
@@ -42,11 +47,53 @@ export default function PrivateSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
+  // Global context data for synchronization with home cards
+  const { projects } = useProjectsContext();
+  const { taskStats } = useTasksContext();
+
   // Get user permissions (you can customize this based on your auth system)
   const userPermissions = ["admin"]; // Example: get from user context
 
-  // Get visible sections based on permissions
-  const sections = getVisibleSections(userPermissions);
+  // Get visible sections based on permissions and merge with dynamic data
+  const baseSections = getVisibleSections(userPermissions);
+  
+  // Create dynamic sections with real data
+  const sections = baseSections.map(section => {
+    // Update My Tasks with real task count
+    if (section.id === "main") {
+      return {
+        ...section,
+        items: section.items.map(item => {
+          if (item.id === "my-tasks") {
+            return {
+              ...item,
+              badge: {
+                count: taskStats.pending || 0,
+                color: "default" as const,
+              }
+            };
+          }
+          return item;
+        })
+      };
+    }
+    
+    // Replace static projects section with dynamic projects from global context
+    if (section.id === "projects") {
+      return {
+        ...section,
+        items: projects.slice(0, 5).map(project => ({
+          id: `project-${project.id}`,
+          label: project.name,
+          href: `/projects/${project.id}`,
+          icon: <GrProjects size={20} className="text-gray-300" />,
+          activePattern: `/projects/${project.id}`,
+        }))
+      };
+    }
+    
+    return section;
+  });
 
   // Use useDisclosure for teams section
   const teamsDisclosure = useDisclosure(false);

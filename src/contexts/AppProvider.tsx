@@ -1,0 +1,27 @@
+"use client";
+
+import React, { ReactNode } from "react";
+import { ProjectsProvider } from "./ProjectsContext";
+import { TasksProvider } from "./TasksContext";
+
+// Global App Provider - Senior Product Code
+interface AppProviderProps {
+  children: ReactNode;
+}
+
+/**
+ * Global App Provider that wraps all context providers
+ * This ensures data synchronization across all components
+ * including sidebar, home cards, and other parts of the app
+ */
+export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
+  return (
+    <ProjectsProvider>
+      <TasksProvider>
+        {children}
+      </TasksProvider>
+    </ProjectsProvider>
+  );
+};
+
+export default AppProvider;

@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import PageLayout from '@/layouts/page/PageLayout';
-import { TaskManagementProvider, useTaskManagementContext } from './context/TaskManagementContext';
 import TaskListHeader from '@/components/TaskList/TaskListHeader';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { usePathname } from 'next/navigation';
 import { Clock } from 'lucide-react';
+import { useTasksContext } from '@/contexts';
 
 interface MyTaskLayoutProps {
   children: React.ReactNode;
@@ -15,8 +15,9 @@ interface MyTaskLayoutProps {
 const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { theme } = useTheme();
   const pathname = usePathname();
-  const taskManagement = useTaskManagementContext();
+  const { tasks, taskStats } = useTasksContext();
   const [searchValue, setSearchValue] = useState("");
+  const [calendarView, setCalendarView] = useState<'dayGridMonth' | 'dayGridWeek'>('dayGridMonth');
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value);
@@ -28,10 +29,10 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
 
   const handleCalendarViewChange = () => {
-    console.log('Current view:', taskManagement.calendarView);
-    const newView = taskManagement.calendarView === 'dayGridMonth' ? 'dayGridWeek' : 'dayGridMonth';
-    console.log('Changing view from', taskManagement.calendarView, 'to', newView);
-    taskManagement.setCalendarView(newView);
+    console.log('Current view:', calendarView);
+    const newView = calendarView === 'dayGridMonth' ? 'dayGridWeek' : 'dayGridMonth';
+    console.log('Changing view from', calendarView, 'to', newView);
+    setCalendarView(newView);
   };
 
   // Clone children with search value prop
@@ -72,7 +73,7 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap" 
                 style={{ color: theme.text.secondary }}
               >
-                No date ({taskManagement.tasks.filter(t => !t.dueDate && !t.startDate).length})
+                No date ({tasks.filter(t => !t.dueDateISO).length})
               </span>
               
               <button 
@@ -95,7 +96,7 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 }}
               >
                 <Clock className="w-4 h-4" />
-                <span>{taskManagement.calendarView === 'dayGridMonth' ? 'Month' : 'Week'}</span>
+                <span>{calendarView === 'dayGridMonth' ? 'Month' : 'Week'}</span>
               </button>
               
               <TaskListHeader
@@ -146,11 +147,9 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const MyTaskLayout: React.FC<MyTaskLayoutProps> = ({ children }) => {
   return (
     <PageLayout>
-      <TaskManagementProvider>
-        <MyTaskContent>
-          {children}
-        </MyTaskContent>
-      </TaskManagementProvider>
+      <MyTaskContent>
+        {children}
+      </MyTaskContent>
     </PageLayout>
   );
 };

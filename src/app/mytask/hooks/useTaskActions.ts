@@ -12,8 +12,8 @@ interface UseTaskActionsProps {
  */
 export const useTaskActions = ({ taskActions }: UseTaskActionsProps): TaskListActions => {
   
-  // Create task handler with enhanced calendar support
-  const handleCreateTask = useCallback((taskData: string | {
+  // Create task handler with enhanced calendar support - ASYNC
+  const handleCreateTask = useCallback(async (taskData: string | {
     name: string;
     dueDate?: string;
     startDate?: string;
@@ -70,7 +70,12 @@ export const useTaskActions = ({ taskActions }: UseTaskActionsProps): TaskListAc
       tags: [],
     };
 
-    taskActions.addTask(newTaskData);
+    try {
+      await taskActions.addTask(newTaskData);
+      console.log('✅ Task created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create task:', error);
+    }
   }, [taskActions]);
 
   const handleTaskEdit = useCallback((task: TaskListItem) => {
@@ -81,18 +86,34 @@ export const useTaskActions = ({ taskActions }: UseTaskActionsProps): TaskListAc
     taskActions.openTaskPanel(task);
   }, [taskActions]);
 
-  const handleTaskDelete = useCallback((taskId: string) => {
+  const handleTaskDelete = useCallback(async (taskId: string) => {
     if (process.env.NODE_ENV === 'development') {
       console.log("Delete task:", taskId);
     }
-    taskActions.deleteTask(taskId);
+    try {
+      await taskActions.deleteTask(taskId);
+      console.log('✅ Task deleted successfully');
+    } catch (error) {
+      console.error('❌ Failed to delete task:', error);
+    }
   }, [taskActions]);
 
-  const handleTaskStatusChange = useCallback((taskId: string, status: TaskStatus) => {
+  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
     if (process.env.NODE_ENV === 'development') {
       console.log("Change task status:", taskId, status);
     }
-    taskActions.updateTask(taskId, { status });
+    try {
+      // Update both status and completed for proper synchronization
+      await taskActions.updateTask(taskId, { 
+        status,
+        // Set completed field based on status for home page sync
+        ...(status === 'done' && { completed: true }),
+        ...(status !== 'done' && { completed: false })
+      });
+      console.log('✅ Task status updated successfully');
+    } catch (error) {
+      console.error('❌ Failed to update task status:', error);
+    }
   }, [taskActions]);
 
   const handleTaskAssign = useCallback((taskId: string, assigneeId: string) => {
@@ -103,24 +124,31 @@ export const useTaskActions = ({ taskActions }: UseTaskActionsProps): TaskListAc
     // For now, we'll just log it
   }, []);
 
-  const handleBulkAction = useCallback((taskIds: string[], action: string) => {
+  const handleBulkAction = useCallback(async (taskIds: string[], action: string) => {
     if (process.env.NODE_ENV === 'development') {
       console.log("Bulk action:", action, taskIds);
     }
     
-    switch (action) {
-      case 'delete':
-        taskActions.bulkDeleteTasks(taskIds);
-        break;
-      case 'complete':
-        taskActions.bulkUpdateTasks(taskIds, { status: 'done' });
-        break;
-      case 'archive':
-        // Handle archive action
-        taskActions.bulkUpdateTasks(taskIds, { status: 'done' }); // For now, treat as complete
-        break;
-      default:
-        console.warn("Unknown bulk action:", action);
+    try {
+      switch (action) {
+        case 'delete':
+          await taskActions.bulkDeleteTasks(taskIds);
+          console.log('✅ Bulk delete completed successfully');
+          break;
+        case 'complete':
+          await taskActions.bulkUpdateTasks(taskIds, { status: 'done' });
+          console.log('✅ Bulk complete completed successfully');
+          break;
+        case 'archive':
+          // Handle archive action
+          await taskActions.bulkUpdateTasks(taskIds, { status: 'done' }); // For now, treat as complete
+          console.log('✅ Bulk archive completed successfully');
+          break;
+        default:
+          console.warn("Unknown bulk action:", action);
+      }
+    } catch (error) {
+      console.error('❌ Failed to execute bulk action:', action, error);
     }
   }, [taskActions]);
 

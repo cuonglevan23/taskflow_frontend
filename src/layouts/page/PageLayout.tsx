@@ -192,6 +192,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                   </div>
                 )}
                 <h1
+                  data-page-title
                   className={clsx(
                     "font-semibold",
                     isInboxStyle ? "text-2xl" : isMyTaskStyle || isTeamsStyle ? "text-2xl" : "text-lg font-bold"

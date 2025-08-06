@@ -12,9 +12,9 @@ export interface TaskManagementState {
 
 export interface TaskManagementActions {
   // Task CRUD operations
-  addTask: (newTask: Omit<TaskListItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateTask: (taskId: string, updates: Partial<TaskListItem>) => void;
-  deleteTask: (taskId: string) => void;
+  addTask: (newTask: Omit<TaskListItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   bulkUpdateTasks: (taskIds: string[], updates: Partial<TaskListItem>) => void;
   bulkDeleteTasks: (taskIds: string[]) => void;
   

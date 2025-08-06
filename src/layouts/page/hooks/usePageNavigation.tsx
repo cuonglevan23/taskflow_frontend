@@ -107,7 +107,57 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
     };
   }
 
-  // Project Navigation
+  // Dynamic Projects Navigation
+  if (pathname.startsWith("/projects/")) {
+    const projectId = pathname.split('/')[2];
+    
+    return {
+      title: "Project", // This will be updated dynamically by the DynamicProjectProvider
+      navItems: [
+        {
+          label: "Overview",
+          href: `/projects/${projectId}`,
+          icon: <LAYOUT_ICONS.grid className="w-4 h-4" />,
+        },
+        {
+          label: "List",
+          href: `/projects/${projectId}/list`,
+          icon: <LAYOUT_ICONS.list className="w-4 h-4" />,
+        },
+        {
+          label: "Board",
+          href: `/projects/${projectId}/board`,
+          icon: <LAYOUT_ICONS.board className="w-4 h-4" />,
+        },
+        {
+          label: "Calendar",
+          href: `/projects/${projectId}/calendar`,
+          icon: <LAYOUT_ICONS.calendar className="w-4 h-4" />,
+        },
+        {
+          label: "Timeline",
+          href: `/projects/${projectId}/timeline`,
+          icon: <LAYOUT_ICONS.timeline className="w-4 h-4" />,
+        },
+        {
+          label: "Files",
+          href: `/projects/${projectId}/files`,
+          icon: <FILE_ICONS.document className="w-4 h-4" />,
+        },
+      ],
+      actions: [],
+      headerInfo: {
+        avatar: (
+          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+            <LAYOUT_ICONS.grid className="w-6 h-6" />
+          </div>
+        ),
+      },
+      showTabsPlus: false,
+    };
+  }
+
+  // Legacy Project Navigation (for backward compatibility)
   if (pathname.startsWith("/project")) {
     return {
       title: "My Project",
