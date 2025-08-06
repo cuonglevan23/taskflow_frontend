@@ -48,6 +48,23 @@ rm -rf .next && npm run build
 
 This clears corrupted Next.js cache and rebuilds the application. The issue commonly occurs after making significant changes to components or when switching between development and production builds.
 
+### Fix Runtime Reference Errors
+When encountering runtime errors like `ReferenceError: [Component] is not defined`:
+
+**Clear Build Cache:**
+```bash
+rm -rf .next
+```
+
+**Common Symptoms:**
+- `ReferenceError: Target is not defined`
+- `ReferenceError: [IconName] is not defined`
+- Runtime errors after refactoring imports
+
+**Root Cause:** Stale build cache containing old compiled code with outdated imports/references.
+
+**Solution:** Clear `.next` directory to force complete rebuild with latest code changes.
+
 ### Development Server
 ```bash
 npm run dev

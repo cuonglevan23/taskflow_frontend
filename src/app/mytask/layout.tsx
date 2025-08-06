@@ -7,6 +7,7 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 import { usePathname } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
+import { TaskManagementProvider } from './context/TaskManagementContext';
 
 interface MyTaskLayoutProps {
   children: React.ReactNode;
@@ -146,11 +147,13 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 const MyTaskLayout: React.FC<MyTaskLayoutProps> = ({ children }) => {
   return (
-    <PageLayout>
-      <MyTaskContent>
-        {children}
-      </MyTaskContent>
-    </PageLayout>
+    <TaskManagementProvider>
+      <PageLayout>
+        <MyTaskContent>
+          {children}
+        </MyTaskContent>
+      </PageLayout>
+    </TaskManagementProvider>
   );
 };
 
