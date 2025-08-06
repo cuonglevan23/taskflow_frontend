@@ -1,0 +1,170 @@
+/* TimelineGantt Styles */
+.timelineGantt {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendarContainer {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  height: calc(100vh - 120px);
+  min-height: 600px;
+}
+
+/* FullCalendar Base Styles */
+.timelineGantt :global(.fc) {
+  font-family: inherit;
+}
+
+.timelineGantt :global(.fc-theme-standard td),
+.timelineGantt :global(.fc-theme-standard th) {
+  border-color: var(--border-color);
+}
+
+/* Timeline Slots */
+.timelineGantt :global(.fc-timeline-slot) {
+  border-right: 1px solid var(--border-color);
+}
+
+.timelineGantt :global(.fc-timeline-slot-minor) {
+  border-right: 1px solid var(--border-color);
+}
+
+/* Column Headers */
+.timelineGantt :global(.fc-col-header-cell) {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 8px 4px;
+  text-align: center;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.timelineGantt :global(.fc-timeline-header .fc-col-header-cell) {
+  min-width: 80px;
+}
+
+/* Resource Areas */
+.timelineGantt :global(.fc-resource-timeline .fc-datagrid-header) {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.timelineGantt :global(.fc-resource-timeline .fc-datagrid-header .fc-datagrid-header-cell) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 12px 16px;
+}
+
+/* Timeline Lanes - Compact */
+.timelineGantt :global(.fc-timeline-lane) {
+  border-bottom: 1px solid var(--border-color);
+  min-height: 32px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.timelineGantt :global(.fc-timeline-lane:hover) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Datagrid Rows - Compact */
+.timelineGantt :global(.fc-resource-timeline .fc-datagrid-body .fc-datagrid-row) {
+  border-bottom: 1px solid var(--border-color);
+  min-height: 32px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.timelineGantt :global(.fc-datagrid-cell-frame) {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.timelineGantt :global(.fc-datagrid-cell) {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
+/* Timeline Body */
+.timelineGantt :global(.fc-timeline-body) {
+  background: var(--bg-primary);
+  min-height: calc(100vh - 220px);
+}
+
+/* Scrollers */
+.timelineGantt :global(.fc-scroller) {
+  overflow-x: auto !important;
+}
+
+.timelineGantt :global(.fc-scroller-liquid-absolute) {
+  position: absolute !important;
+  height: 100% !important;
+}
+
+.timelineGantt :global(.fc-timeline-body .fc-scroller) {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+/* Events */
+.timelineGantt :global(.fc-event) {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 32px;
+  margin: 2px 0;
+}
+
+.timelineGantt :global(.fc-event::before) {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.timelineGantt :global(.fc-event:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  filter: brightness(1.1);
+  z-index: 10;
+}
+
+.timelineGantt :global(.fc-event-title) {
+  font-weight: 500;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+/* Resource Datagrid */
+.timelineGantt :global(.fc-resource-timeline .fc-datagrid) {
+  border-right: 2px solid var(--border-color);
+}
