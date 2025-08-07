@@ -17,12 +17,21 @@ export default function PrivateLayoutContent({
   children,
 }: PrivateLayoutContentProps) {
   const { user, isSidebarOpen, isSidebarCollapsed } = useLayoutContext();
-  const { toggleSidebar, setSidebarOpen, toggleSidebarCollapse } =
+  const { toggleSidebar, setSidebarOpen, toggleSidebarCollapse, signOut } =
     useLayoutActions();
 
   const closeSidebar = () => {
     setSidebarOpen(false);
   };
+
+  // Don't render if user is null (during logout process)
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -31,17 +40,18 @@ export default function PrivateLayoutContent({
     >
       {/* Header - Fixed at top */}
       <PrivateHeader
-        user={user!}
+        user={user}
         onSidebarToggle={toggleSidebar}
         onSidebarCollapseToggle={toggleSidebarCollapse}
         isSidebarCollapsed={isSidebarCollapsed}
+        onLogout={signOut}
       />
 
       {/* Main Content Area with Sidebar */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <PrivateSidebar
-          user={user!}
+          user={user}
           isOpen={isSidebarOpen}
           isCollapsed={isSidebarCollapsed}
           onClose={closeSidebar}

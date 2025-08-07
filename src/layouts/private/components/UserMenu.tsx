@@ -69,6 +69,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
   showDefaultSections = true,
 }) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Don't render if user is null
+  if (!user) {
+    return null;
+  }
   // Default menu sections - matches Asana design
   const defaultSections: MenuSection[] = [
     {
@@ -192,11 +197,16 @@ const UserMenu: React.FC<UserMenuProps> = ({
               />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white text-base truncate">
-                  My workspace
+                  {user.name}
                 </p>
                 <p className="text-sm text-gray-400 truncate">
                   {user.email}
                 </p>
+                <div className="flex items-center mt-1">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    {user.role?.toUpperCase() || 'UNKNOWN'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

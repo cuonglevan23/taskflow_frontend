@@ -16,8 +16,8 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
+    // Add JWT token if available
+    const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -28,18 +28,48 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor with token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
-    // Handle common errors
-    if (error.response?.status === 401) {
-      // Redirect to login or refresh token
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 errors (token expired)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh token
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refreshToken
+          });
+
+          const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+          
+          // Update tokens
+          localStorage.setItem('access_token', accessToken);
+          localStorage.setItem('refresh_token', newRefreshToken);
+          localStorage.setItem('token_expires_at', 
+            (Date.now() + expiresIn * 1000).toString()
+          );
+
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        // Refresh failed, redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('token_expires_at');
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );

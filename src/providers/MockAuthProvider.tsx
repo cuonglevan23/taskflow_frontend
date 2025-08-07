@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserRole, UserWithRole } from '@/types/roles';
+import { DemoJWTService, DemoTokenStorage } from '@/utils/demoJWT';
 
 interface MockAuthContextValue {
   user: UserWithRole | null;
@@ -13,6 +14,11 @@ interface MockAuthContextValue {
   switchRole: (role: UserRole) => void;
   switchUser: (userId: string) => void;
   error: string | null;
+  // JWT Demo features
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenInfo: any;
+  refreshAccessToken: () => Promise<void>;
 }
 
 const MockAuthContext = createContext<MockAuthContextValue | undefined>(undefined);
@@ -85,25 +91,40 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-  // Initialize with default user
+  // Initialize with default user and JWT tokens
   useEffect(() => {
     const initializeAuth = () => {
-      // Check if user was previously logged in (localStorage)
+      // Check if user was previously logged in with JWT tokens
+      const storedAccessToken = DemoTokenStorage.getAccessToken();
       const savedUser = localStorage.getItem('mock_auth_user');
-      if (savedUser) {
+      
+      if (storedAccessToken && !DemoTokenStorage.isTokenExpired() && savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser);
           setUser(parsedUser);
+          setAccessToken(storedAccessToken);
+          setRefreshToken(DemoTokenStorage.getRefreshToken());
         } catch (e) {
           console.error('Failed to parse saved user:', e);
+          DemoTokenStorage.clearTokens();
         }
-      } else if (enableDevMode) {
-        // Auto-login with default role in dev mode
-        const defaultUser = MOCK_USERS.find(u => u.role === defaultRole) || MOCK_USERS[4];
-        setUser(defaultUser);
-        localStorage.setItem('mock_auth_user', JSON.stringify(defaultUser));
       }
+      // Disabled auto-login to allow manual role testing
+      // } else if (enableDevMode) {
+      //   // Auto-login with default role in dev mode
+      //   const defaultUser = MOCK_USERS.find(u => u.role === defaultRole) || MOCK_USERS[4];
+      //   const tokens = DemoJWTService.generateTokenPair(defaultUser);
+      //   
+      //   setUser(defaultUser);
+      //   setAccessToken(tokens.accessToken);
+      //   setRefreshToken(tokens.refreshToken);
+      //   
+      //   localStorage.setItem('mock_auth_user', JSON.stringify(defaultUser));
+      //   DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+      // }
       
       setIsLoading(false);
     };
@@ -134,8 +155,15 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
         throw new Error('Invalid credentials');
       }
 
+      // Generate JWT tokens for the user
+      const tokens = await DemoJWTService.generateTokenPair(mockUser);
+      
       setUser(mockUser);
+      setAccessToken(tokens.accessToken);
+      setRefreshToken(tokens.refreshToken);
+      
       localStorage.setItem('mock_auth_user', JSON.stringify(mockUser));
+      DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
     } catch (err: any) {
       setError(err.message || 'Login failed');
       throw err;
@@ -151,8 +179,20 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Clear all state
       setUser(null);
+      setAccessToken(null);
+      setRefreshToken(null);
+      setError(null);
+      
+      // Clear all localStorage data
       localStorage.removeItem('mock_auth_user');
+      localStorage.clear(); // Clear everything to be safe
+      
+      // Clear all tokens and cookies
+      DemoTokenStorage.clearTokens();
+      
+      console.log('🚪 Logout completed - all tokens and data cleared');
     } finally {
       setIsLoading(false);
     }
@@ -163,16 +203,43 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
 
     const newUser = MOCK_USERS.find(u => u.role === role);
     if (newUser) {
-      setUser(newUser);
-      localStorage.setItem('mock_auth_user', JSON.stringify(newUser));
+      DemoJWTService.generateTokenPair(newUser).then(tokens => {
+        setUser(newUser);
+        setAccessToken(tokens.accessToken);
+        setRefreshToken(tokens.refreshToken);
+        
+        localStorage.setItem('mock_auth_user', JSON.stringify(newUser));
+        DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+      });
     }
   };
 
   const switchUser = (userId: string): void => {
     const newUser = MOCK_USERS.find(u => u.id === userId);
     if (newUser) {
-      setUser(newUser);
-      localStorage.setItem('mock_auth_user', JSON.stringify(newUser));
+      DemoJWTService.generateTokenPair(newUser).then(tokens => {
+        setUser(newUser);
+        setAccessToken(tokens.accessToken);
+        setRefreshToken(tokens.refreshToken);
+        
+        localStorage.setItem('mock_auth_user', JSON.stringify(newUser));
+        DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+      });
+    }
+  };
+
+  const refreshAccessToken = async (): Promise<void> => {
+    if (!user || !refreshToken) return;
+
+    try {
+      const newTokens = await DemoJWTService.refreshAccessToken(refreshToken, user);
+      if (newTokens) {
+        setAccessToken(newTokens.accessToken);
+        DemoTokenStorage.storeTokens(newTokens.accessToken, refreshToken, newTokens.expiresIn);
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      await logout();
     }
   };
 
@@ -185,6 +252,10 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
     switchRole,
     switchUser,
     error,
+    accessToken,
+    refreshToken,
+    tokenInfo: DemoTokenStorage.getTokenInfo(),
+    refreshAccessToken,
   };
 
   return (

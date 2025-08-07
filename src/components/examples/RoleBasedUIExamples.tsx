@@ -15,6 +15,7 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui';
 import { getRoleDisplayName, getRoleColor } from '@/utils/roleUtils';
+import { JWTTokenDemo } from './JWTTokenDemo';
 
 export const RoleBasedUIExamples: React.FC = () => {
   const { user, role, can, is } = usePermissions();
@@ -191,6 +192,9 @@ export const RoleBasedUIExamples: React.FC = () => {
             </RoleGuard>
           </div>
         </div>
+
+        {/* JWT Token Demo */}
+        <JWTTokenDemo />
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
           <AppProvider>
             <DetailPanelProvider>
-              <MockAuthProvider defaultRole="member" enableDevMode={true}>
+              <MockAuthProvider defaultRole="member" enableDevMode={false}>
                 {children}
               </MockAuthProvider>
             </DetailPanelProvider>

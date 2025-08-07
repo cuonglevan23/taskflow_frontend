@@ -1,70 +1,100 @@
-// Auth Service - Authentication-related API operations
+// Real Auth Service - Spring Boot + JWT + Google OAuth
 import { api } from './api';
-import type { User, LoginCredentials, RegisterCredentials } from '@/types';
+import type { User, UserWithRole } from '@/types/roles';
+
+interface GoogleAuthResponse {
+  user: UserWithRole;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
 
 export const authService = {
-  // Login user
-  login: async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
-    const response = await api.post<{ user: User; token: string }>('/auth/login', credentials);
+  // Google OAuth login
+  loginWithGoogle: async (authorizationCode: string): Promise<GoogleAuthResponse> => {
+    const response = await api.post<GoogleAuthResponse>('/auth/google', {
+      code: authorizationCode,
+      redirectUri: `${window.location.origin}/auth/callback`
+    });
     
-    // Store token in localStorage
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
-    }
+    const { accessToken, refreshToken } = response.data;
     
-    return response.data;
-  },
-
-  // Register user
-  register: async (credentials: RegisterCredentials): Promise<{ user: User; token: string }> => {
-    const response = await api.post<{ user: User; token: string }>('/auth/register', credentials);
-    
-    // Store token in localStorage
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
-    }
+    // Store tokens
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem('token_expires_at', 
+      (Date.now() + response.data.expiresIn * 1000).toString()
+    );
     
     return response.data;
-  },
-
-  // Logout user
-  logout: async (): Promise<void> => {
-    try {
-      await api.post('/auth/logout');
-    } finally {
-      // Always remove token from localStorage
-      localStorage.removeItem('auth_token');
-    }
   },
 
   // Get current user
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/auth/me');
+  getCurrentUser: async (): Promise<UserWithRole> => {
+    const response = await api.get<UserWithRole>('/auth/me');
     return response.data;
   },
 
   // Refresh token
-  refreshToken: async (): Promise<{ token: string }> => {
-    const response = await api.post<{ token: string }>('/auth/refresh');
-    
-    if (response.data.token) {
-      localStorage.setItem('auth_token', response.data.token);
+  refreshToken: async (): Promise<AuthTokens> => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
     }
-    
-    return response.data;
-  },
 
-  // Update profile
-  updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await api.put<User>('/auth/profile', data);
-    return response.data;
-  },
-
-  // Change password
-  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
-    await api.post('/auth/change-password', {
-      currentPassword,
-      newPassword,
+    const response = await api.post<AuthTokens>('/auth/refresh', {
+      refreshToken
     });
+
+    const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+    
+    // Update stored tokens
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', newRefreshToken);
+    localStorage.setItem('token_expires_at', 
+      (Date.now() + expiresIn * 1000).toString()
+    );
+
+    return response.data;
   },
+
+  // Logout
+  logout: async (): Promise<void> => {
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        await api.post('/auth/logout', { refreshToken });
+      }
+    } finally {
+      // Always clear local storage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('token_expires_at');
+    }
+  },
+
+  // Check if token is expired
+  isTokenExpired: (): boolean => {
+    const expiresAt = localStorage.getItem('token_expires_at');
+    if (!expiresAt) return true;
+    
+    return Date.now() >= parseInt(expiresAt);
+  },
+
+  // Get stored access token
+  getAccessToken: (): string | null => {
+    return localStorage.getItem('access_token');
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: (): boolean => {
+    const token = authService.getAccessToken();
+    return token !== null && !authService.isTokenExpired();
+  }
 };

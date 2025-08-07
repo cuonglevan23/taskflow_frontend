@@ -4,6 +4,7 @@
 import React from 'react';
 import { RoleBasedUIExamples } from '@/components/examples/RoleBasedUIExamples';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
+import { TokenInspector } from '@/components/dev/TokenInspector';
 
 export default function RoleDemoPage() {
   return (
@@ -22,8 +23,9 @@ export default function RoleDemoPage() {
         <RoleBasedUIExamples />
       </div>
 
-      {/* Development Role Switcher */}
+      {/* Development Tools */}
       <DevRoleSwitcher />
+      <TokenInspector />
     </div>
   );
 }

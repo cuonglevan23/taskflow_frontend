@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
+import { useMockAuth } from "@/providers/MockAuthProvider";
 import {
   LayoutContextValue,
   LayoutActions,
@@ -13,6 +14,8 @@ import {
 
 export function usePrivateLayout() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user: authUser, logout } = useMockAuth();
 
   // Layout state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -24,21 +27,29 @@ export function usePrivateLayout() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock user data
-  const user = useMemo(
-    () => ({
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      role: UserRole.OWNER,
+  // Use real user from auth context
+  const user = useMemo(() => {
+    if (!authUser) return null;
+    
+    const userData = {
+      id: authUser.id,
+      name: authUser.name,
+      email: authUser.email,
+      role: authUser.role as UserRole,
       permissions: [],
       avatar: "",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }),
-    []
-  );
+    };
+
+    // Console log current role for debugging
+    console.log('🔐 Current User Role:', authUser.role.toUpperCase());
+    console.log('👤 Current User:', authUser.name, `(${authUser.email})`);
+    console.log('📋 User Data:', userData);
+    
+    return userData;
+  }, [authUser]);
 
   // Mock navigation
   const navigation = useMemo(
@@ -49,9 +60,9 @@ export function usePrivateLayout() {
         icon: "home",
         items: [
           {
-            key: "dashboard",
-            title: "Dashboard",
-            href: "/dashboard",
+            key: "home",
+            title: "Home",
+            href: "/home",
             icon: "home",
           },
         ],
@@ -188,16 +199,22 @@ export function usePrivateLayout() {
     setBreadcrumbs(newBreadcrumbs);
   }, []);
 
-  const signOut = useCallback(() => {
-    console.log("Signing out...");
-  }, []);
+  const signOut = useCallback(async () => {
+    try {
+      await logout();
+      // Redirect to login page after successful logout
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }, [logout, router]);
 
   // Auto-generate breadcrumbs
   useEffect(() => {
     const generateBreadcrumbs = (): BreadcrumbItem[] => {
       const segments = pathname.split("/").filter(Boolean);
       const breadcrumbs: BreadcrumbItem[] = [
-        { title: "Dashboard", href: "/dashboard", icon: "home" },
+        { title: "Home", href: "/home", icon: "home" },
       ];
 
       let currentPath = "";
