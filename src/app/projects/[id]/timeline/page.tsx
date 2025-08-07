@@ -1,11 +1,13 @@
 "use client";
 
-import React from 'react';
-import { Timeline } from '@/components/Timeline';
+import React, { useState } from 'react';
+import { TimelineGantt } from '@/components/TimelineGantt';
 import { TaskListHeader } from '@/components/TaskList';
+import { TaskConnection } from '@/components/TimelineGantt/hooks/useWorkflowConnection'; // ✅ Add import
 import { ProjectTimelineProvider, useProjectTimeline } from './context/ProjectTimelineContext';
 import { useProjectTimelineActions } from './hooks/useProjectTimelineActions';
 import { useTheme } from '@/layouts/hooks/useTheme';
+import { ViewMode, VIEW_MODES } from '@/components/Timeline/ZoomControls';
 
 interface ProjectTimelinePageProps {
   searchValue?: string;
@@ -13,16 +15,51 @@ interface ProjectTimelinePageProps {
 
 function ProjectTimelineContent({ searchValue = "" }: ProjectTimelinePageProps) {
   const { theme } = useTheme();
+  const [viewMode, setViewMode] = useState<ViewMode>('resourceTimelineWeek');
+  const [connections, setConnections] = useState<TaskConnection[]>([]);
+
   const {
-    timelineTasks,
+    ganttTasks,
+    tasksBySection,
     loading,
     error,
     projectName,
     handleTaskClick,
-    handleTaskUpdate,
-    viewMode,
-    setViewMode
+    handleSectionToggle,
+    handleAddSection
   } = useProjectTimeline();
+
+  // Create demo connections after ganttTasks are loaded  
+  React.useEffect(() => {
+    if (ganttTasks.length >= 3 && connections.length === 0) {
+      const demoConnections: TaskConnection[] = [
+        {
+          id: 'demo-conn-1',
+          fromTaskId: ganttTasks[0].id, // First task
+          toTaskId: ganttTasks[1].id,   // Second task
+          type: 'finish-to-start',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          id: 'demo-conn-2', 
+          fromTaskId: ganttTasks[1].id, // Second task
+          toTaskId: ganttTasks[2].id,   // Third task
+          type: 'finish-to-start',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
+      
+      console.log('🎯 Setting demo connections with real task IDs:', demoConnections);
+      setConnections(demoConnections);
+      console.log('📊 Demo connections set, should trigger TimelineGantt re-render');
+    }
+  }, [ganttTasks, connections.length]);
+
+  const handleViewChange = (newView: ViewMode) => {
+    setViewMode(newView);
+  };
 
   if (error) {
     return (
@@ -51,29 +88,110 @@ function ProjectTimelineContent({ searchValue = "" }: ProjectTimelinePageProps) 
   }
 
   return (
-    <div className="h-full relative" style={{ backgroundColor: theme.background.secondary }}>
+    <div className="h-screen flex flex-col" style={{ backgroundColor: theme.background.secondary }}>
       {/* Task List Header */}
-      <TaskListHeader
-        searchValue={searchValue}
-        onSearchChange={() => {}}
-        onCreateTask={() => {}}
-        showSearch={true}
-        showFilters={true}
-        showSort={true}
-        showGroup={true}
-        showOptions={true}
-      />
+      <div className="flex-shrink-0">
+        <TaskListHeader
+          searchValue={searchValue}
+          onSearchChange={() => {}}
+          onCreateTask={() => {}}
+          showSearch={true}
+          showFilters={true}
+          showSort={true}
+          showGroup={true}
+          showOptions={true}
+        />
+      </div>
       
-      {/* Timeline */}
-      <div className="h-[calc(100%-80px)]">
-        <Timeline
-          tasks={timelineTasks}
+      {/* Timeline Gantt - Full remaining height */}
+      <div className="flex-1 min-h-0">
+        <TimelineGantt
+          key={`timeline-${connections.length}`} // ✅ Force re-render when connections change
+          tasks={ganttTasks}
+          tasksBySection={tasksBySection}
           onTaskClick={handleTaskClick}
-          onTaskUpdate={handleTaskUpdate}
+          onSectionToggle={handleSectionToggle}
+          enableWorkflow={true}
+          initialConnections={connections} // ✅ Use actual connections state
+          workflowConfig={{
+            allowSelfConnection: false,
+            allowCircularDependencies: false,
+            maxConnectionsPerTask: 3,
+            validateConnection: async (fromTask, toTask) => {
+              // Business logic validation
+              if (fromTask.priority === 'low' && toTask.priority === 'urgent') {
+                return { valid: false, error: 'Cannot connect low priority task to urgent task' };
+              }
+              return { valid: true };
+            }
+          }}
+          onConnectionCreate={async (connection) => {
+            console.log('🎉 Connection handler called with:', connection);
+            console.log('📊 Current connections before add:', connections.length);
+            
+            // ✅ Add to state immediately for UI update
+            setConnections(prev => {
+              const newConnections = [...prev, connection];
+              console.log('📊 Connections after add:', newConnections.length);
+              return newConnections;
+            });
+            
+            // Here you would save to your API/database
+            try {
+              // await api.createTaskConnection(connection);
+              console.log('✅ Connection saved to database');
+            } catch (error) {
+              console.error('❌ Failed to save connection:', error);
+              // Rollback on API failure
+              setConnections(prev => prev.filter(c => c.id !== connection.id));
+            }
+          }}
+          onConnectionDelete={async (connectionId) => {
+            console.log('🗑️ Connection deleted:', connectionId);
+            // ✅ Remove from state immediately for UI update
+            const deletedConnection = connections.find(c => c.id === connectionId);
+            setConnections(prev => prev.filter(c => c.id !== connectionId));
+            
+            try {
+              // await api.deleteTaskConnection(connectionId);
+              console.log('✅ Connection deleted from database');
+            } catch (error) {
+              console.error('❌ Failed to delete connection:', error);
+              // Rollback on API failure
+              if (deletedConnection) {
+                setConnections(prev => [...prev, deletedConnection]);
+              }
+            }
+          }}
+          onConnectionUpdate={async (connectionId, updates) => {
+            console.log('📝 Connection updated:', connectionId, updates);
+            // ✅ Update state immediately for UI update
+            const originalConnection = connections.find(c => c.id === connectionId);
+            setConnections(prev => prev.map(c => 
+              c.id === connectionId 
+                ? { ...c, ...updates, updatedAt: new Date() }
+                : c
+            ));
+            
+            try {
+              // await api.updateTaskConnection(connectionId, updates);
+              console.log('✅ Connection updated in database');
+            } catch (error) {
+              console.error('❌ Failed to update connection:', error);
+              // Rollback on API failure
+              if (originalConnection) {
+                setConnections(prev => prev.map(c => 
+                  c.id === connectionId ? originalConnection : c
+                ));
+              }
+            }
+          }}
           loading={loading}
           error={error}
-          viewMode={viewMode}
           className="h-full"
+          slotMinWidth={VIEW_MODES[viewMode].slotWidth}
+          viewMode={viewMode}
+          onViewModeChange={handleViewChange}
         />
       </div>
     </div>

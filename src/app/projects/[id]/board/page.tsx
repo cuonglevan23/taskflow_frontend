@@ -3,6 +3,7 @@
 import React from 'react';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { TaskDetailPanel } from '@/components/TaskDetailPanel';
+import { TaskListHeader } from '@/components/TaskList';
 import { ProjectBoardProvider, useProjectBoard } from './context/ProjectBoardContext';
 import { useProjectBoardActions } from './hooks/useProjectBoardActions';
 import { useTheme } from '@/layouts/hooks/useTheme';
@@ -59,8 +60,20 @@ function ProjectBoardContent({ searchValue = "" }: ProjectBoardPageProps) {
 
   return (
     <div className="h-full relative" style={{ backgroundColor: theme.background.secondary }}>
+      {/* Task List Header */}
+      <TaskListHeader
+        searchValue={searchValue}
+        onSearchChange={() => {}}
+        onCreateTask={() => boardActions.onCreateTask?.()}
+        showSearch={true}
+        showFilters={true}
+        showSort={true}
+        showGroup={true}
+        showOptions={true}
+      />
+      
       {/* Kanban Board */}
-      <div className="h-full">
+      <div className="h-[calc(100%-80px)]">
         <KanbanBoard
           tasks={tasks}
           tasksByAssignmentDate={tasksByAssignmentDate}

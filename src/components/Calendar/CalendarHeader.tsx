@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, Plus, Settings, Filter, Download, Upload } from 'lucide-react';
+import ZoomControls, { ViewMode } from '@/components/Timeline/ZoomControls';
 
 export type UserRole = 'admin' | 'manager' | 'member' | 'viewer';
 
@@ -30,6 +31,10 @@ export interface CalendarHeaderProps {
   
   // Simple header mode
   simpleHeader?: boolean;
+  
+  // View mode controls
+  viewMode?: ViewMode;
+  onViewModeChange?: (viewMode: ViewMode) => void;
 }
 
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -46,7 +51,9 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   weekendsEnabled = true,
   onWeekendsToggle,
   customActions,
-  simpleHeader = false
+  simpleHeader = false,
+  viewMode,
+  onViewModeChange
 }) => {
   
   // Role-based permissions
@@ -84,8 +91,18 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </button>
           </div>
 
-          {/* Right side - Today button only */}
-          <div className="flex items-center">
+          {/* Right side - Zoom controls and Today button */}
+          <div className="flex items-center gap-3">
+            {viewMode && onViewModeChange && (
+              <>
+                <ZoomControls
+                  currentView={viewMode}
+                  onViewChange={onViewModeChange}
+                  className="text-white"
+                />
+                <div className="h-4 w-px bg-gray-600"></div>
+              </>
+            )}
             <button
               onClick={onToday}
               className="px-4 py-2 hover:bg-gray-800 rounded transition-colors text-sm text-white font-medium"
@@ -134,8 +151,18 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           </button>
         </div>
 
-        {/* Right side - Just Today button */}
-        <div className="flex items-center">
+        {/* Right side - Zoom controls and Today button */}
+        <div className="flex items-center gap-3">
+          {viewMode && onViewModeChange && (
+            <>
+              <ZoomControls
+                currentView={viewMode}
+                onViewChange={onViewModeChange}
+                className="text-white"
+              />
+              <div className="h-4 w-px bg-gray-600"></div>
+            </>
+          )}
           <button
             onClick={onToday}
             className="px-4 py-2 hover:bg-gray-800 rounded transition-colors text-sm text-white font-medium"

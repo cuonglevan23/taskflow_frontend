@@ -86,6 +86,33 @@ This installs FullCalendar with all necessary plugins for:
 - List view
 - Multi-month year view
 
+### FullCalendar Timeline Installation (for Gantt Charts)
+```bash
+npm install @fullcalendar/timeline @fullcalendar/resource-timeline @fullcalendar/resource-common
+```
+
+This installs additional FullCalendar timeline plugins for:
+- Timeline views (Gantt chart style)
+- Resource timeline (tasks grouped by resources/sections)
+- Resource management functionality
+- Professional timeline layouts with collapsible sections
+
+**Usage Example:**
+```tsx
+import FullCalendar from '@fullcalendar/react';
+import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
+import interactionPlugin from '@fullcalendar/interaction';
+
+<FullCalendar
+  plugins={[resourceTimelinePlugin, interactionPlugin]}
+  initialView="resourceTimelineMonth"
+  resources={sections}
+  events={tasks}
+  editable={true}
+  eventDrop={(info) => handleTaskMove(info)}
+/>
+```
+
 ### React Icons Installation
 ```bash
 npm install react-icons
@@ -99,6 +126,42 @@ This installs react-icons package for using professional icon sets like:
 
 **Common Error:** `Module not found: Can't resolve 'react-icons/gi'`
 **Solution:** Run the installation command above.
+
+### React Flow Installation
+```bash
+npm install reactflow
+npm install dagre
+```
+
+This installs React Flow - the professional workflow/dependency graph library for:
+- **Node-based workflows** - Visual task connections with drag & drop
+- **Dependency graphs** - Professional project management UI like MS Project, Asana
+- **Custom nodes & edges** - Fully customizable task boxes and connection lines  
+- **Auto-layout algorithms** - Automatic positioning with dagre library
+- **Advanced features** - Zoom, pan, minimap, controls, background patterns
+
+**Usage Example:**
+```tsx
+import ReactFlowWorkflow from '@/components/ReactFlowWorkflow';
+
+<ReactFlowWorkflow
+  tasks={tasks}
+  sections={sections}
+  onTaskUpdate={handleTaskUpdate}
+  onTaskClick={handleTaskClick}
+  onDependencyChange={handleDependencyChange}
+  showMiniMap={true}
+  showControls={true}
+  height="600px"
+/>
+```
+
+**Features:**
+- **Professional UI** - Task nodes with progress bars, assignees, priorities
+- **Dependency Types** - Finish-to-start, Start-to-start, Finish-to-finish, Start-to-finish  
+- **Validation** - Circular dependency detection, conflict resolution
+- **Layout Options** - Auto-layout, manual positioning, section grouping
+- **Reusable Hooks** - useReactFlowWorkflow for easy integration
 
 ### Drag and Drop Installation
 ```bash

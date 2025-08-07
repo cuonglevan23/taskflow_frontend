@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, User, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, Flag, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTheme } from '@/layouts/hooks/useTheme';
+import TimelineSection from './TimelineSection';
 
-interface TimelineTask {
+export interface TimelineTask {
   id: string;
   title: string;
   startDate: Date;
@@ -21,7 +22,13 @@ interface TimelineTask {
   dependencies?: string[];
 }
 
-interface TimelineProps {
+export interface TimelineSection {
+  id: string;
+  title: string;
+  collapsed: boolean;
+}
+
+export interface TimelineProps {
   tasks: TimelineTask[];
   onTaskClick?: (task: TimelineTask) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<TimelineTask>) => void;
@@ -42,6 +49,12 @@ const Timeline: React.FC<TimelineProps> = ({
 }) => {
   const { theme } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [sections, setSections] = useState<TimelineSection[]>([
+    { id: 'todo', title: 'To do', collapsed: false },
+    { id: 'in_progress', title: 'Doing', collapsed: false },
+    { id: 'done', title: 'Done', collapsed: false },
+    { id: 'later', title: 'Do later', collapsed: false }
+  ]);
 
   // Get priority color
   const getPriorityColor = (priority: string) => {
@@ -103,6 +116,37 @@ const Timeline: React.FC<TimelineProps> = ({
     
     return columns;
   }, [timelineRange]);
+
+  // Group tasks by sections
+  const tasksBySection = useMemo(() => {
+    const grouped: Record<string, TimelineTask[]> = {
+      'todo': [],
+      'in_progress': [],
+      'done': [],
+      'later': []
+    };
+
+    tasks.forEach(task => {
+      switch (task.status) {
+        case 'todo':
+          grouped['todo'].push(task);
+          break;
+        case 'in_progress':
+          grouped['in_progress'].push(task);
+          break;
+        case 'review':
+        case 'done':
+          grouped['done'].push(task);
+          break;
+        case 'cancelled':
+        default:
+          grouped['later'].push(task);
+          break;
+      }
+    });
+
+    return grouped;
+  }, [tasks]);
 
   // Calculate task position and width
   const getTaskPosition = (task: TimelineTask) => {
@@ -172,6 +216,31 @@ const Timeline: React.FC<TimelineProps> = ({
     }
   };
 
+  const handleSectionToggle = (sectionId: string) => {
+    setSections(prev => {
+      const newSections = prev.map(section => 
+        section.id === sectionId 
+          ? { ...section, collapsed: !section.collapsed }
+          : section
+      );
+      return newSections;
+    });
+  };
+
+  const handleCollapseAll = () => {
+    const allCollapsed = sections.every(section => section.collapsed);
+    const newCollapsedState = !allCollapsed;
+    
+    setSections(prev => prev.map(section => ({ 
+      ...section, 
+      collapsed: newCollapsedState 
+    })));
+  };
+
+  // Check if all sections are collapsed for UI state
+  const allSectionsCollapsed = sections.every(section => section.collapsed);
+  const anySectionCollapsed = sections.some(section => section.collapsed);
+
   if (loading) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`} style={{ backgroundColor: theme.background.primary }}>
@@ -201,20 +270,44 @@ const Timeline: React.FC<TimelineProps> = ({
       <div className="timeline-header border-b" style={{ borderColor: theme.border.default, backgroundColor: theme.background.secondary }}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
-            <button onClick={handlePrevious} className="p-2 hover:bg-gray-100 rounded" style={{ color: theme.text.secondary }}>
+            <button onClick={handlePrevious} className="p-2 hover:bg-gray-100 rounded transition-colors" style={{ color: theme.text.secondary }}>
               <ChevronLeft className="w-5 h-5" />
             </button>
             <h2 className="text-lg font-semibold" style={{ color: theme.text.primary }}>
               {formatHeaderDate()}
             </h2>
-            <button onClick={handleNext} className="p-2 hover:bg-gray-100 rounded" style={{ color: theme.text.secondary }}>
+            <button onClick={handleNext} className="p-2 hover:bg-gray-100 rounded transition-colors" style={{ color: theme.text.secondary }}>
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="text-sm" style={{ color: theme.text.secondary }}>
-            {tasks.length} tasks
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCollapseAll();
+              }}
+              className="p-2 hover:bg-gray-100 rounded transition-colors flex items-center gap-1 border"
+              style={{ 
+                color: theme.text.secondary,
+                borderColor: theme.border.default,
+                backgroundColor: allSectionsCollapsed ? theme.background.tertiary : 'transparent'
+              }}
+              title={allSectionsCollapsed ? "Expand all sections" : "Collapse all sections"}
+            >
+              <ChevronUp 
+                className={`w-4 h-4 transition-transform duration-200 ${allSectionsCollapsed ? 'rotate-180' : ''}`} 
+              />
+              <span className="text-xs font-medium">
+                {allSectionsCollapsed ? "Expand All" : "Collapse All"}
+              </span>
+            </button>
+            <div className="text-sm" style={{ color: theme.text.secondary }}>
+              {tasks.length} tasks
+            </div>
           </div>
+
         </div>
         
         {/* Date Headers */}
@@ -243,83 +336,20 @@ const Timeline: React.FC<TimelineProps> = ({
 
       {/* Timeline Content */}
       <div className="timeline-content flex-1 overflow-y-auto">
-        {tasks.map((task, index) => {
-          const position = getTaskPosition(task);
-          
-          return (
-            <div
-              key={task.id}
-              className="timeline-row flex border-b hover:bg-gray-50 transition-colors"
-              style={{ borderColor: theme.border.default }}
-            >
-              {/* Task Info */}
-              <div className="w-64 p-3 border-r" style={{ borderColor: theme.border.default }}>
-                <div className="flex items-start gap-2">
-                  {task.milestone && <Flag className="w-4 h-4 text-orange-500 mt-0.5" />}
-                  <div className="flex-1 min-w-0">
-                    <div 
-                      className="font-medium text-sm truncate cursor-pointer hover:text-blue-600"
-                      style={{ color: theme.text.primary }}
-                      onClick={() => onTaskClick?.(task)}
-                    >
-                      {task.title}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex -space-x-1">
-                        {task.assignees.slice(0, 3).map((assignee) => (
-                          <div
-                            key={assignee.id}
-                            className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center border-2 border-white"
-                            title={assignee.name}
-                          >
-                            {assignee.avatar || assignee.name.charAt(0)}
-                          </div>
-                        ))}
-                        {task.assignees.length > 3 && (
-                          <div className="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center border-2 border-white">
-                            +{task.assignees.length - 3}
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: getStatusColor(task.status) }}
-                        title={task.status}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline Bar */}
-              <div className="flex-1 relative p-3">
-                <div
-                  className="absolute top-1/2 h-6 rounded transform -translate-y-1/2 cursor-pointer hover:opacity-80 transition-opacity"
-                  style={{
-                    left: position.left,
-                    width: position.width,
-                    backgroundColor: getPriorityColor(task.priority),
-                    opacity: task.status === 'done' ? 0.6 : 1,
-                  }}
-                  onClick={() => onTaskClick?.(task)}
-                >
-                  {/* Progress Bar */}
-                  <div
-                    className="h-full bg-white bg-opacity-30 rounded"
-                    style={{ width: `${task.progress}%` }}
-                  />
-                  
-                  {/* Task Label */}
-                  <div className="absolute inset-0 flex items-center px-2">
-                    <span className="text-white text-xs font-medium truncate">
-                      {task.title}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {sections.map((section) => (
+          <TimelineSection
+            key={section.id}
+            section={section}
+            tasks={tasksBySection[section.id] || []}
+            dateColumns={dateColumns}
+            timelineRange={timelineRange}
+            onSectionToggle={handleSectionToggle}
+            onTaskClick={onTaskClick}
+            getPriorityColor={getPriorityColor}
+            getStatusColor={getStatusColor}
+            getTaskPosition={getTaskPosition}
+          />
+        ))}
       </div>
 
       <style jsx global>{`

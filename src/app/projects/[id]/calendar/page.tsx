@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SimpleCalendar } from '@/components/Calendar';
+import { TaskListHeader } from '@/components/TaskList';
 import { ProjectCalendarProvider, useProjectCalendar } from './context/ProjectCalendarContext';
 import { useProjectCalendarActions } from './hooks/useProjectCalendarActions';
 import { useTheme } from '@/layouts/hooks/useTheme';
@@ -51,8 +52,20 @@ function ProjectCalendarContent({ searchValue = "" }: ProjectCalendarPageProps) 
 
   return (
     <div className="h-full relative" style={{ backgroundColor: theme.background.secondary }}>
+      {/* Task List Header */}
+      <TaskListHeader
+        searchValue={searchValue}
+        onSearchChange={() => {}}
+        onCreateTask={() => handleCreateTask()}
+        showSearch={true}
+        showFilters={true}
+        showSort={true}
+        showGroup={true}
+        showOptions={true}
+      />
+      
       {/* Simple Calendar */}
-      <div className="h-full">
+      <div className="h-[calc(100%-80px)]">
         <SimpleCalendar
           height="100vh"
           initialTasks={calendarTasks}
@@ -64,7 +77,7 @@ function ProjectCalendarContent({ searchValue = "" }: ProjectCalendarPageProps) 
           showCreateButton={true}
           showImportExport={false}
           showSettings={false}
-          showFilters={true}
+          showFilters={false}
           simpleHeader={false}
         />
       </div>

@@ -42,11 +42,11 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
     <div>
       {/* Section Header */}
       <div 
-        className="section-header flex border-b py-1 px-3 hover:bg-gray-50 transition-colors cursor-pointer"
+        className="section-header flex border-b py-3 px-4 hover:bg-gray-50 transition-colors cursor-pointer"
         style={{ 
           borderColor: theme.border.default, 
           backgroundColor: theme.background.secondary,
-          minHeight: '40px'
+          minHeight: '56px'
         }}
         onClick={(e) => {
           e.preventDefault();
@@ -60,24 +60,24 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
             className="p-1 hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
             style={{ 
               color: theme.text.secondary,
-              minWidth: '20px',
-              minHeight: '20px'
+              minWidth: '24px',
+              minHeight: '24px'
             }}
           >
             {section.collapsed ? (
               <ChevronRight 
-                className="w-3 h-3 transition-transform duration-200"
+                className="w-4 h-4 transition-transform duration-200"
                 style={{ color: theme.text.secondary }}
               />
             ) : (
               <ChevronDown 
-                className="w-3 h-3 transition-transform duration-200"
+                className="w-4 h-4 transition-transform duration-200"
                 style={{ color: theme.text.secondary }}
               />
             )}
           </div>
           <span 
-            className="font-medium text-sm select-none" 
+            className="font-medium text-base select-none" 
             style={{ color: theme.text.primary }}
           >
             {section.title} ({tasks.length})

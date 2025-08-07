@@ -1,108 +1,105 @@
 "use client";
 
 import React from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 import { useTheme } from '@/layouts/hooks/useTheme';
 
-export type ZoomLevel = 'compact' | 'normal' | 'comfortable' | 'spacious';
+export type ViewMode = 'resourceTimelineDay' | 'resourceTimelineWeek' | 'resourceTimelineMonth' | 'resourceTimelineQuarter' | 'resourceTimelineHalfYear';
 
 interface ZoomControlsProps {
-  currentZoom: ZoomLevel;
-  onZoomChange: (zoom: ZoomLevel) => void;
+  currentView: ViewMode;
+  onViewChange: (view: ViewMode) => void;
   className?: string;
 }
 
-const ZOOM_LEVELS: { [key in ZoomLevel]: { label: string; slotWidth: number } } = {
-  compact: { label: 'Compact', slotWidth: 60 },
-  normal: { label: 'Normal', slotWidth: 80 },
-  comfortable: { label: 'Comfortable', slotWidth: 120 },
-  spacious: { label: 'Spacious', slotWidth: 160 }
+const VIEW_MODES: { [key in ViewMode]: { label: string; shortLabel: string; slotWidth: number } } = {
+  resourceTimelineHalfYear: { label: 'Half Year View', shortLabel: 'Half Year', slotWidth: 20 },
+  resourceTimelineQuarter: { label: 'Quarter View', shortLabel: 'Quarter', slotWidth: 30 },
+  resourceTimelineMonth: { label: 'Month View', shortLabel: 'Month', slotWidth: 40 },
+  resourceTimelineWeek: { label: 'Week View', shortLabel: 'Week', slotWidth: 80 },
+  resourceTimelineDay: { label: 'Day View', shortLabel: 'Day', slotWidth: 120 }
 };
 
 const ZoomControls: React.FC<ZoomControlsProps> = ({
-  currentZoom,
-  onZoomChange,
+  currentView,
+  onViewChange,
   className = ''
 }) => {
   const { theme } = useTheme();
 
-  const zoomLevels = Object.keys(ZOOM_LEVELS) as ZoomLevel[];
-  const currentIndex = zoomLevels.indexOf(currentZoom);
+  const viewModes = Object.keys(VIEW_MODES) as ViewMode[];
+  const currentIndex = viewModes.indexOf(currentView);
 
   const handleZoomIn = () => {
-    const nextIndex = Math.min(currentIndex + 1, zoomLevels.length - 1);
-    onZoomChange(zoomLevels[nextIndex]);
+    // Zoom in = more detailed view: Month -> Week -> Day
+    const nextIndex = Math.min(currentIndex + 1, viewModes.length - 1);
+    onViewChange(viewModes[nextIndex]);
   };
 
   const handleZoomOut = () => {
+    // Zoom out = less detailed view: Day -> Week -> Month  
     const prevIndex = Math.max(currentIndex - 1, 0);
-    onZoomChange(zoomLevels[prevIndex]);
+    onViewChange(viewModes[prevIndex]);
   };
 
-  const handleFitToScreen = () => {
-    onZoomChange('normal');
-  };
+  const isHeaderMode = className?.includes('text-white');
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {/* Zoom Out */}
+    <div className={`flex items-center gap-1 ${className}`}>
+      {/* Zoom Out (to broader view) */}
       <button
         onClick={handleZoomOut}
         disabled={currentIndex === 0}
-        className="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className={`p-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+          isHeaderMode 
+            ? 'hover:bg-gray-800 text-white' 
+            : 'hover:bg-gray-100'
+        }`}
         style={{ 
-          color: theme.text.secondary,
+          color: isHeaderMode ? 'white' : theme.text.secondary,
           backgroundColor: 'transparent'
         }}
-        title="Zoom Out"
+        title="Zoom Out (Broader View)"
       >
         <ZoomOut className="w-4 h-4" />
       </button>
 
-      {/* Current Zoom Level */}
-      <div className="flex items-center gap-2 px-3 py-1 rounded border min-w-[100px]" 
-           style={{ 
-             borderColor: theme.border.default,
-             backgroundColor: theme.background.primary,
-             color: theme.text.primary
-           }}>
+      {/* Current View Mode */}
+      <div 
+        className={`flex items-center px-2 py-1 rounded border min-w-[70px] ${
+          isHeaderMode ? 'border-gray-600 bg-gray-800' : ''
+        }`}
+        style={{ 
+          borderColor: isHeaderMode ? '#4b5563' : theme.border.default,
+          backgroundColor: isHeaderMode ? '#1f2937' : theme.background.primary,
+          color: isHeaderMode ? 'white' : theme.text.primary
+        }}
+      >
         <span className="text-sm font-medium">
-          {ZOOM_LEVELS[currentZoom].label}
-        </span>
-        <span className="text-xs opacity-60">
-          {ZOOM_LEVELS[currentZoom].slotWidth}px
+          {VIEW_MODES[currentView].shortLabel}
         </span>
       </div>
 
-      {/* Zoom In */}
+      {/* Zoom In (to detailed view) */}
       <button
         onClick={handleZoomIn}
-        disabled={currentIndex === zoomLevels.length - 1}
-        className="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        disabled={currentIndex === viewModes.length - 1}
+        className={`p-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+          isHeaderMode 
+            ? 'hover:bg-gray-800 text-white' 
+            : 'hover:bg-gray-100'
+        }`}
         style={{ 
-          color: theme.text.secondary,
+          color: isHeaderMode ? 'white' : theme.text.secondary,
           backgroundColor: 'transparent'
         }}
-        title="Zoom In"
+        title="Zoom In (Detailed View)"
       >
         <ZoomIn className="w-4 h-4" />
-      </button>
-
-      {/* Fit to Screen */}
-      <button
-        onClick={handleFitToScreen}
-        className="p-2 rounded hover:bg-gray-100 transition-colors"
-        style={{ 
-          color: theme.text.secondary,
-          backgroundColor: 'transparent'
-        }}
-        title="Fit to Screen"
-      >
-        <Maximize2 className="w-4 h-4" />
       </button>
     </div>
   );
 };
 
 export default ZoomControls;
-export { ZOOM_LEVELS };
+export { VIEW_MODES };

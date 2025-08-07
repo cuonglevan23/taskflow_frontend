@@ -2,14 +2,16 @@ import React from 'react'
 import Overview from './overview/page'
 
 interface ProjectPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-const ProjectPage = ({ params }: ProjectPageProps) => {
+const ProjectPage = async ({ params }: ProjectPageProps) => {
+  const { id } = await params;
+  
   return (
-    <Overview projectId={params.id} />
+    <Overview projectId={id} />
   )
 }
 

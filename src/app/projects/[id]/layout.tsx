@@ -5,20 +5,23 @@ import { DynamicProjectProvider } from './components/DynamicProjectProvider'
 
 interface ProjectLayoutProps {
   children: React.ReactNode
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // Generate metadata for dynamic project pages
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   try {
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { id } = await params;
+    
     // In a real app, you'd fetch from your API
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/projects`, {
       cache: 'no-store'
     });
     const projects = await response.json();
-    const project = projects.find((p: any) => p.id === params.id);
+    const project = projects.find((p: any) => p.id === id);
     
     return {
       title: project ? `${project.name} - TaskManager` : 'Project - TaskManager',

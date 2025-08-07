@@ -5,8 +5,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 export const TIMELINE_CONFIG = {
   // Time range constants
   DATE_RANGE: {
-    START: '2025-07-01',
-    END: '2025-09-30'
+    START: '2025-01-01',
+    END: '2025-12-31'
   },
   
   // Layout constants
@@ -41,6 +41,34 @@ export const createCalendarOptions = (
     end: TIMELINE_CONFIG.DATE_RANGE.END
   },
   
+  // Force date progression - Remove restrictive visible range
+  // visibleRange: {
+  //   start: TIMELINE_CONFIG.DATE_RANGE.START,
+  //   end: TIMELINE_CONFIG.DATE_RANGE.END
+  // },
+
+  // Custom view definitions
+  views: {
+    resourceTimelineQuarter: {
+      type: 'resourceTimeline',
+      duration: { months: 3 },
+      slotDuration: { weeks: 1 },
+      slotLabelInterval: { weeks: 2 },
+      slotLabelFormat: [
+        { month: 'short', day: 'numeric' }
+      ]
+    },
+    resourceTimelineHalfYear: {
+      type: 'resourceTimeline', 
+      duration: { months: 6 },
+      slotDuration: { weeks: 2 },
+      slotLabelInterval: { weeks: 4 },
+      slotLabelFormat: [
+        { month: 'short', year: 'numeric' }
+      ]
+    }
+  },
+  
   // Header configuration
   headerToolbar: {
     left: '',
@@ -66,14 +94,17 @@ export const createCalendarOptions = (
   // Layout
   height: "100%",
   contentHeight: "100%",
-  slotDuration: "1 day",
-  slotMinTime: "00:00:00",
-  slotMaxTime: "24:00:00",
+  slotDuration: { days: 1 },
+  slotLabelInterval: { days: 1 },
   slotLabelFormat: {
     month: 'short',
     day: 'numeric'
   },
   slotMinWidth: TIMELINE_CONFIG.LAYOUT.SLOT_MIN_WIDTH,
+  
+  // Ensure proper date progression
+  titleFormat: { year: 'numeric', month: 'long' },
+  dayHeaderFormat: { month: 'short', day: 'numeric', omitCommas: true },
   
   // Behavior
   businessHours: false,
@@ -82,12 +113,12 @@ export const createCalendarOptions = (
   scrollTime: "08:00:00",
   editable: true,
   eventResizableFromStart: true,
-  resourceOrder: "id",
+  resourceOrder: "",
   dayMaxEvents: false,
   eventOverlap: false,
   slotEventOverlap: false,
   aspectRatio: 3,
-  expandRows: true,
+  expandRows: false,
   
   // Event handlers
   eventClick: onEventClick,

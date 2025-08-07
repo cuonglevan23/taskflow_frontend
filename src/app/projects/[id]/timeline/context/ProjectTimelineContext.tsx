@@ -2,30 +2,31 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TaskListItem, TaskStatus, TaskPriority, TaskAssignee } from '@/components/TaskList';
-import { TimelineTask } from '@/components/Timeline';
+import { GanttTask } from '@/components/TimelineGantt';
 import { useProject } from '../../components/DynamicProjectProvider';
 
 interface ProjectTimelineContextValue {
   // Original TaskListItem format for internal management
   tasks: TaskListItem[];
-  // Converted format for Timeline
-  timelineTasks: TimelineTask[];
+  // Converted format for Gantt timeline
+  ganttTasks: GanttTask[];
+  // Grouped by sections for Gantt
+  tasksBySection: Record<string, GanttTask[]>;
   loading: boolean;
   error: string | null;
-  
-  // View controls
-  viewMode: 'week' | 'month' | 'quarter';
-  setViewMode: (mode: 'week' | 'month' | 'quarter') => void;
   
   // Task operations
   addTask: (task: Omit<TaskListItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  moveTask: (taskId: string, sectionId: string) => Promise<void>;
   bulkUpdateTasks: (taskIds: string[], updates: Partial<TaskListItem>) => Promise<void>;
   
   // Timeline-specific handlers
-  handleTaskClick: (task: TimelineTask) => void;
-  handleTaskUpdate: (taskId: string, updates: Partial<TimelineTask>) => void;
+  handleTaskClick: (task: GanttTask) => void;
+  handleTaskMove: (taskId: string, newStartDate: Date, newEndDate: Date) => void;
+  handleSectionToggle: (sectionId: string) => void;
+  handleAddSection: () => void;
   
   // Project context
   projectId: string;
@@ -38,144 +39,140 @@ interface ProjectTimelineProviderProps {
   children: ReactNode;
 }
 
-// Helper function to convert TaskListItem to TimelineTask
-const convertToTimelineTask = (task: TaskListItem): TimelineTask => {
-  // Get primary assignee
+// Helper function to convert TaskListItem to GanttTask
+const convertToGanttTask = (task: TaskListItem): GanttTask => {
+  // Get assignees
   const assignees = task.assignees?.map(assignee => ({
     id: assignee.id,
     name: assignee.name,
     avatar: assignee.avatar || assignee.name.substring(0, 2).toUpperCase()
   })) || [];
 
-  // Convert dates
+  // Convert dates - use proper timeline dates
   const getTaskDate = (dateStr?: string): Date => {
     if (dateStr) {
       return new Date(dateStr);
     }
-    return new Date(); // Default to today
+    return new Date(2025, 6, 28); // Default to July 28, 2025
   };
 
   const startDate = getTaskDate(task.startDate || task.dueDate);
   const endDate = getTaskDate(task.endDate || task.dueDate);
 
-  // Calculate progress based on status
-  const getProgress = (status: TaskStatus): number => {
-    switch (status) {
-      case 'done': return 100;
-      case 'review': return 90;
-      case 'in_progress': return 50;
-      case 'todo': return 0;
-      case 'cancelled': return 0;
-      default: return 0;
-    }
-  };
+  // Determine section based on status
+  let section = 'todo';
+  if (task.status === 'in_progress') section = 'in_progress';
+  else if (task.status === 'done' || task.status === 'review') section = 'done';
+  else if (!task.dueDate) section = 'later';
 
   return {
     id: task.id,
     title: task.name,
     startDate,
     endDate,
-    progress: getProgress(task.status),
     priority: task.priority,
     status: task.status,
     assignees,
-    milestone: task.tags?.includes('milestone') || false,
-    dependencies: [] // Could be enhanced later
+    section
   };
 };
 
-// Helper function to convert TimelineTask back to TaskListItem updates
-const convertFromTimelineTask = (timelineTask: TimelineTask, originalTask: TaskListItem): Partial<TaskListItem> => {
-  return {
-    name: timelineTask.title,
-    startDate: timelineTask.startDate.toISOString().split('T')[0],
-    endDate: timelineTask.endDate.toISOString().split('T')[0],
-    dueDate: timelineTask.endDate.toISOString().split('T')[0],
+// Helper function to group Gantt tasks by section
+const groupTasksBySection = (ganttTasks: GanttTask[]): Record<string, GanttTask[]> => {
+  const groups: Record<string, GanttTask[]> = {
+    'todo': [],
+    'in_progress': [],
+    'done': [],
+    'later': []
   };
+
+  ganttTasks.forEach(task => {
+    if (groups[task.section]) {
+      groups[task.section].push(task);
+    } else {
+      groups['todo'].push(task);
+    }
+  });
+
+  return groups;
 };
 
 // Mock tasks data - in real app, this would come from API based on projectId
 const generateMockTasks = (projectId: string, projectName: string): TaskListItem[] => [
   {
     id: `${projectId}-task-1`,
-    name: `Design System Setup for ${projectName}`,
-    description: 'Create comprehensive design system and component library',
+    name: `Schedule kickoff`,
+    description: 'Initial project kickoff meeting with stakeholders',
     status: 'in_progress' as TaskStatus,
     priority: 'high' as TaskPriority,
-    assignees: [{ id: 'sarah.wilson', name: 'Sarah Wilson', avatar: 'SW' }],
-    startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tags: ['design', 'frontend', 'milestone'],
+    assignees: [{ id: 'vl', name: 'VL', avatar: 'VL' }],
+    startDate: '2025-08-05', // W32: 4-10
+    endDate: '2025-08-08',
+    dueDate: '2025-08-08',
+    tags: ['kickoff', 'meeting'],
     project: projectName,
-    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: `${projectId}-task-2`,
-    name: `API Development for ${projectName}`,
-    description: 'Build RESTful APIs and database integration',
+    name: `Share timeline with`,
+    description: 'Share project timeline with team members',
     status: 'todo' as TaskStatus,
-    priority: 'high' as TaskPriority,
-    assignees: [
-      { id: 'john.doe', name: 'John Doe', avatar: 'JD' },
-      { id: 'mike.chen', name: 'Mike Chen', avatar: 'MC' }
-    ],
-    startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tags: ['backend', 'api', 'database'],
+    priority: 'medium' as TaskPriority,
+    assignees: [{ id: 'team', name: 'Team', avatar: 'T' }],
+    startDate: '2025-08-12', // W33: 11-17
+    endDate: '2025-08-16',
+    dueDate: '2025-08-16',
+    tags: ['timeline', 'communication'],
     project: projectName,
-    createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: `${projectId}-task-3`,
-    name: `Frontend Implementation for ${projectName}`,
+    name: `Frontend Development Phase`,
     description: 'Build user interface components and pages',
-    status: 'todo' as TaskStatus,
-    priority: 'medium' as TaskPriority,
-    assignees: [{ id: 'emma.davis', name: 'Emma Davis', avatar: 'ED' }],
-    startDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tags: ['frontend', 'ui', 'react'],
+    status: 'done' as TaskStatus,
+    priority: 'high' as TaskPriority,
+    assignees: [{ id: 'dev1', name: 'Developer 1', avatar: 'D1' }],
+    startDate: '2025-07-15',
+    endDate: '2025-07-25',
+    dueDate: '2025-07-25',
+    tags: ['frontend', 'development'],
     project: projectName,
-    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: `${projectId}-task-4`,
-    name: `Testing & QA for ${projectName}`,
-    description: 'Comprehensive testing and quality assurance',
+    name: `Backend API Integration`,
+    description: 'Integrate backend APIs with frontend',
     status: 'todo' as TaskStatus,
-    priority: 'medium' as TaskPriority,
-    assignees: [{ id: 'alex.taylor', name: 'Alex Taylor', avatar: 'AT' }],
-    startDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tags: ['testing', 'qa', 'automation'],
+    priority: 'high' as TaskPriority,
+    assignees: [{ id: 'be1', name: 'Backend Dev', avatar: 'BE' }],
+    startDate: '2025-09-02', // W36: 1-7
+    endDate: '2025-09-05',
+    dueDate: '2025-09-05',
+    tags: ['backend', 'api'],
     project: projectName,
-    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: `${projectId}-task-5`,
-    name: `Deployment & Launch for ${projectName}`,
-    description: 'Production deployment and go-live activities',
-    status: 'todo' as TaskStatus,
-    priority: 'urgent' as TaskPriority,
-    assignees: [
-      { id: 'lisa.park', name: 'Lisa Park', avatar: 'LP' },
-      { id: 'john.doe', name: 'John Doe', avatar: 'JD' }
-    ],
-    startDate: new Date(Date.now() + 38 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tags: ['deployment', 'production', 'milestone'],
+    name: `Testing & Quality Assurance`,
+    description: 'Comprehensive testing of all features',
+    status: 'later' as TaskStatus,
+    priority: 'medium' as TaskPriority,
+    assignees: [{ id: 'qa1', name: 'QA Tester', avatar: 'QA' }],
+    startDate: '2025-09-10',
+    endDate: '2025-09-20',
+    dueDate: '2025-09-20',
+    tags: ['testing', 'qa'],
     project: projectName,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
 ];
 
@@ -184,12 +181,15 @@ export function ProjectTimelineProvider({ children }: ProjectTimelineProviderPro
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'week' | 'month' | 'quarter'>('month');
-
-  // Convert tasks to timeline format
-  const timelineTasks = React.useMemo(() => {
-    return tasks.map(convertToTimelineTask);
+  // Convert tasks to gantt format
+  const ganttTasks = React.useMemo(() => {
+    return tasks.map(convertToGanttTask);
   }, [tasks]);
+
+  // Group gantt tasks by section
+  const tasksBySection = React.useMemo(() => {
+    return groupTasksBySection(ganttTasks);
+  }, [ganttTasks]);
 
   // Load tasks when project changes
   useEffect(() => {
@@ -311,44 +311,89 @@ export function ProjectTimelineProvider({ children }: ProjectTimelineProviderPro
     }
   };
 
-  // Timeline event handlers
-  const handleTaskClick = (timelineTask: TimelineTask) => {
-    console.log('Timeline task clicked:', timelineTask);
+  const moveTask = async (taskId: string, sectionId: string) => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Calculate new due date based on section (same logic as board)
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      const later = new Date(today);
+      later.setDate(today.getDate() + 14);
+
+      let newDueDate: string | undefined;
+      
+      switch (sectionId) {
+        case 'do-today':
+          newDueDate = today.toISOString().split('T')[0];
+          break;
+        case 'do-next-week':
+          newDueDate = nextWeek.toISOString().split('T')[0];
+          break;
+        case 'do-later':
+          newDueDate = later.toISOString().split('T')[0];
+          break;
+        case 'recently-assigned':
+          newDueDate = undefined; // Remove due date
+          break;
+      }
+
+      // Update task with new due date
+      await updateTask(taskId, { dueDate: newDueDate });
+      
+    } catch (err) {
+      setError('Failed to move task');
+      console.error('Error moving task:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gantt timeline event handlers
+  const handleTaskClick = (task: GanttTask) => {
+    console.log('Gantt task clicked:', task);
     // Could open task detail panel or modal here
   };
 
-  const handleTaskUpdate = async (taskId: string, updates: Partial<TimelineTask>) => {
-    const originalTask = tasks.find(t => t.id === taskId);
-    if (originalTask) {
-      // Convert timeline updates back to TaskListItem format
-      const taskUpdates: Partial<TaskListItem> = {};
-      
-      if (updates.title) taskUpdates.name = updates.title;
-      if (updates.startDate) taskUpdates.startDate = updates.startDate.toISOString().split('T')[0];
-      if (updates.endDate) {
-        taskUpdates.endDate = updates.endDate.toISOString().split('T')[0];
-        taskUpdates.dueDate = updates.endDate.toISOString().split('T')[0];
-      }
-      if (updates.priority) taskUpdates.priority = updates.priority;
-      if (updates.status) taskUpdates.status = updates.status;
-      
-      await updateTask(taskId, taskUpdates);
-    }
+  const handleTaskMove = async (taskId: string, newStartDate: Date, newEndDate: Date) => {
+    const startDateStr = newStartDate.toISOString().split('T')[0];
+    const endDateStr = newEndDate.toISOString().split('T')[0];
+    
+    await updateTask(taskId, { 
+      startDate: startDateStr,
+      endDate: endDateStr,
+      dueDate: endDateStr
+    });
+  };
+
+  const handleSectionToggle = (sectionId: string) => {
+    console.log('Section toggle:', sectionId);
+    // Could implement section collapse/expand state
+  };
+
+  const handleAddSection = () => {
+    console.log('Add section clicked');
+    // Could open add section modal
   };
 
   const contextValue: ProjectTimelineContextValue = {
     tasks,
-    timelineTasks,
+    ganttTasks,
+    tasksBySection,
     loading: loading || projectLoading,
     error,
-    viewMode,
-    setViewMode,
     addTask,
     updateTask,
     deleteTask,
+    moveTask,
     bulkUpdateTasks,
     handleTaskClick,
-    handleTaskUpdate,
+    handleTaskMove,
+    handleSectionToggle,
+    handleAddSection,
     projectId: project?.id || '',
     projectName: project?.name || '',
   };
