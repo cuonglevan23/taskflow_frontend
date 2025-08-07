@@ -7,18 +7,66 @@ export interface BaseProps {
 }
 
 // Button variants and sizes
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 
+  // Primary variants
+  | 'primary' 
+  | 'primary-gradient'
+  // Secondary variants  
+  | 'secondary'
+  | 'secondary-solid'
+  // Color variants
+  | 'success'
+  | 'success-gradient'
+  | 'danger'
+  | 'destructive'
+  | 'danger-gradient'
+  | 'warning'
+  | 'warning-gradient'
+  | 'info'
+  | 'info-gradient'
+  // Ghost variants
+  | 'ghost'
+  | 'ghost-colored'
+  // Outline variants
+  | 'outline'
+  | 'outline-primary'
+  | 'outline-success'
+  | 'outline-danger'
+  | 'outline-warning'
+  // Soft variants
+  | 'soft-primary'
+  | 'soft-success'
+  | 'soft-danger'
+  | 'soft-warning'
+  // Special variants
+  | 'link';
+
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type ButtonShape = 'default' | 'rounded' | 'square' | 'pill';
+export type ButtonState = 'default' | 'selected' | 'active' | 'loading';
 
 export interface ButtonProps extends BaseProps {
+  // Core button props
   variant?: ButtonVariant;
   size?: ButtonSize;
+  shape?: ButtonShape;
+  state?: ButtonState;
+  
+  // Behavior props
   disabled?: boolean;
   loading?: boolean;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  type?: 'button' | 'submit' | 'reset';
-  icon?: ReactNode;
   fullWidth?: boolean;
+  
+  // Event handlers
+  onClick?: (event?: MouseEvent<HTMLButtonElement>) => void;
+  
+  // Button attributes
+  type?: 'button' | 'submit' | 'reset';
+  
+  // Icon props
+  icon?: ReactNode;          // Legacy support
+  leftIcon?: ReactNode;      // Left side icon
+  rightIcon?: ReactNode;     // Right side icon
 }
 
 // Input types

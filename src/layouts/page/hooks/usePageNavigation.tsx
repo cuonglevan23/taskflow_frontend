@@ -10,6 +10,8 @@ import {
   HEADER_ICONS,
   PROJECT_ICONS,
   COMMUNICATION_ICONS,
+  DATA_ICONS,
+  NAVIGATION_ICONS,
 } from "@/constants/icons";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
@@ -63,6 +65,62 @@ export interface PageNavigationConfig {
 export const usePageNavigation = (): PageNavigationConfig | null => {
   const pathname = usePathname();
   const teamSettingsDropdown = useDisclosure(false);
+
+  // Reporting Navigation
+  if (pathname.startsWith("/reporting")) {
+    return {
+      title: "Reporting",
+      navItems: [
+        {
+          label: "Dashboards",
+          href: "/reporting/dashboards",
+          icon: <DATA_ICONS.chart className="w-4 h-4" />,
+        },
+      ],
+      actions: [],
+      headerInfo: {
+        avatar: (
+          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+            <DATA_ICONS.chart className="w-6 h-6 text-white" />
+          </div>
+        ),
+      },
+      showTabsPlus: false,
+    };
+  }
+
+  // Goals Navigation
+  if (pathname.startsWith("/goals")) {
+    return {
+      title: "Goals",
+      navItems: [
+        {
+          label: "Strategy map",
+          href: "/goals/strategy-map",
+          icon: <NAVIGATION_ICONS.goals className="w-4 h-4" />,
+        },
+        {
+          label: "Team goals",
+          href: "/goals/team-goals",
+          icon: <USER_ICONS.users className="w-4 h-4" />,
+        },
+        {
+          label: "My goals",
+          href: "/goals/my-goals",
+          icon: <USER_ICONS.user className="w-4 h-4" />,
+        },
+      ],
+      actions: [],
+      headerInfo: {
+        avatar: (
+          <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+            <NAVIGATION_ICONS.goals className="w-6 h-6 text-white" />
+          </div>
+        ),
+      },
+      showTabsPlus: false,
+    };
+  }
 
   // MyTask Navigation
   if (pathname.startsWith("/mytask")) {
@@ -252,6 +310,32 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
         },
       ],
       actions: [],
+      showTabsPlus: false,
+    };
+  }
+
+  // Portfolios Navigation
+  if (pathname.startsWith("/portfolios")) {
+    return {
+      title: "Portfolios",
+      navItems: [
+        {
+          label: "Recent and starred",
+          href: "/portfolios",
+        },
+        {
+          label: "Browse all", 
+          href: "/portfolios/browse-all",
+        },
+      ],
+      actions: [],
+      headerInfo: {
+        avatar: (
+          <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+            <PROJECT_ICONS.star className="w-6 h-6 text-white" />
+          </div>
+        ),
+      },
       showTabsPlus: false,
     };
   }

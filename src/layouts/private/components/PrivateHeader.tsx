@@ -10,6 +10,7 @@ import Dropdown, {
   DropdownSeparator,
 } from "@/components/ui/Dropdown/Dropdown";
 import SearchPanel from "./SearchPanel";
+import UserMenu from "./UserMenu";
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { HiChevronDoubleLeft, HiChevronDoubleRight } from "react-icons/hi";
@@ -223,80 +224,17 @@ export default function PrivateHeader({
         </div>
 
         {/* User Menu */}
-        <div className="relative">
-          <Dropdown
-            trigger={
-              <button className="flex items-center p-1 rounded hover:bg-gray-700 transition-colors ml-1">
-                <Avatar
-                  name={user.name}
-                  src={user.avatar}
-                  size="sm"
-                  className="ring-1 ring-gray-600"
-                />
-              </button>
-            }
-            placement="bottom-right"
-            usePortal={false}
-            contentClassName="w-64 max-w-xs"
-          >
-          <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
-            <div className="flex items-center space-x-3">
-              <Avatar
-                name={user.name}
-                src={user.avatar}
-                size="md"
-                className="ring-2 ring-gray-600"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-white text-sm truncate">{user.name}</p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="py-1">
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">My Profile Settings</span>
-            </DropdownItem>
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">My Display Picture</span>
-            </DropdownItem>
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">My Notification Settings</span>
-            </DropdownItem>
-          </div>
-
-          <DropdownSeparator />
-
-          <div className="py-1">
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">Switch Teams</span>
-            </DropdownItem>
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">Create Team</span>
-            </DropdownItem>
-          </div>
-
-          <DropdownSeparator />
-
-          <div className="py-1">
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">Admin Console</span>
-            </DropdownItem>
-            <DropdownItem>
-              <span className="text-gray-200 text-sm">Invite Members</span>
-            </DropdownItem>
-          </div>
-
-          <DropdownSeparator />
-
-          <div className="py-1">
-            <DropdownItem>
-              <span className="text-red-400 text-sm font-medium">Log out</span>
-            </DropdownItem>
-          </div>
-        </Dropdown>
-        </div>
+        <UserMenu 
+          user={user}
+          onProfileSettings={() => console.log('Profile Settings')}
+          onDisplayPicture={() => console.log('Display Picture')}
+          onNotificationSettings={() => console.log('Notification Settings')}
+          onSwitchTeams={() => console.log('Switch Teams')}
+          onCreateTeam={() => console.log('Create Team')}
+          onAdminConsole={() => console.log('Admin Console')}
+          onInviteMembers={() => console.log('Invite Members')}
+          onLogout={() => console.log('Logout')}
+        />
       </div>
     </header>
   );

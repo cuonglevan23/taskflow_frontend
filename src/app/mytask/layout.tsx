@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
 import { TaskManagementProvider } from './context/TaskManagementContext';
+import { Button } from '@/components/ui';
 
 interface MyTaskLayoutProps {
   children: React.ReactNode;
@@ -77,28 +78,17 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 No date ({tasks.filter(t => !t.dueDateISO).length})
               </span>
               
-              <button 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   console.log('Button clicked! Current pathname:', pathname);
                   handleCalendarViewChange();
                 }}
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-                style={{
-                  color: theme.text.secondary,
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
-                }}
+                leftIcon={<Clock className="w-4 h-4" />}
               >
-                <Clock className="w-4 h-4" />
-                <span>{calendarView === 'dayGridMonth' ? 'Month' : 'Week'}</span>
-              </button>
+                {calendarView === 'dayGridMonth' ? 'Month' : 'Week'}
+              </Button>
               
               <TaskListHeader
                 searchValue={searchValue}

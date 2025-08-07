@@ -1,0 +1,19 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="48" height="48" rx="8" fill="url(#zipGradient)"/>
+  <rect x="12" y="8" width="24" height="32" rx="2" fill="white" fill-opacity="0.9"/>
+  <rect x="18" y="12" width="2" height="2" fill="#F59E0B"/>
+  <rect x="22" y="12" width="2" height="2" fill="#F59E0B"/>
+  <rect x="26" y="12" width="2" height="2" fill="#F59E0B"/>
+  <rect x="20" y="16" width="2" height="2" fill="#F59E0B"/>
+  <rect x="24" y="16" width="2" height="2" fill="#F59E0B"/>
+  <rect x="18" y="20" width="2" height="2" fill="#F59E0B"/>
+  <rect x="22" y="20" width="2" height="2" fill="#F59E0B"/>
+  <rect x="26" y="20" width="2" height="2" fill="#F59E0B"/>
+  <text x="24" y="36" text-anchor="middle" fill="#F59E0B" font-family="system-ui" font-size="8" font-weight="600">ZIP</text>
+  <defs>
+    <linearGradient id="zipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+  </defs>
+</svg>

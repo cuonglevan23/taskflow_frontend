@@ -309,40 +309,46 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
               const dayEl = info.el;
               const date = info.date;
               
-              // Create add task button
+              // Create add task button using theme-aware styling
               const addTaskBtn = document.createElement('button');
               addTaskBtn.innerHTML = '+ Add task';
               addTaskBtn.className = 'fc-add-task-btn';
-              addTaskBtn.style.cssText = `
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                right: 10px;
-                padding: 8px;
-                background: #1f2937;
-                border: 1px dashed #4b5563;
-                color: #9ca3af;
-                font-size: 11px;
-                border-radius: 4px;
-                cursor: pointer;
-                z-index: 100;
-                display: block;
-                opacity: 0.7;
-                text-align: center;
-                font-family: inherit;
-              `;
               
-              // Add hover effect to show button
+              // Apply theme-aware styles
+              Object.assign(addTaskBtn.style, {
+                position: 'absolute',
+                bottom: '10px',
+                left: '10px',
+                right: '10px',
+                padding: '8px',
+                background: theme.background.secondary,
+                border: `1px dashed ${theme.border.default}`,
+                color: theme.text.secondary,
+                fontSize: '11px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                zIndex: '100',
+                opacity: '0.7',
+                textAlign: 'center',
+                fontFamily: 'inherit',
+                transition: 'all 0.2s ease'
+              });
+              
+              // Add hover effect using theme colors
               dayEl.addEventListener('mouseenter', () => {
                 console.log('Day cell mouse enter - showing button');
                 addTaskBtn.style.opacity = '1';
-                addTaskBtn.style.background = '#374151';
+                addTaskBtn.style.background = theme.background.primary;
+                addTaskBtn.style.borderColor = theme.text.secondary;
+                addTaskBtn.style.color = theme.text.primary;
               });
               
               dayEl.addEventListener('mouseleave', () => {
                 console.log('Day cell mouse leave - hiding button');
                 addTaskBtn.style.opacity = '0.7';
-                addTaskBtn.style.background = '#1f2937';
+                addTaskBtn.style.background = theme.background.secondary;
+                addTaskBtn.style.borderColor = theme.border.default;
+                addTaskBtn.style.color = theme.text.secondary;
               });
               
               // Add click handler

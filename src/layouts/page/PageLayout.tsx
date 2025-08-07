@@ -113,7 +113,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
 
   // Determine navigation style based on page type - only after mount to prevent hydration mismatch
   const isInboxStyle = mounted && pathname.startsWith("/inbox");
-  const isMyTaskStyle = mounted && (pathname.startsWith("/mytask") || pathname.startsWith("/project") || pathname.startsWith("/owner"));
+  const isMyTaskStyle = mounted && (pathname.startsWith("/mytask") || pathname.startsWith("/project") || pathname.startsWith("/owner") || pathname.startsWith("/portfolios") || pathname.startsWith("/reporting") || pathname.startsWith("/goals"));
   const isTeamsStyle = mounted && pathname.startsWith("/teams");
 
   // Prevent hydration mismatch by not rendering sticky styles until mounted

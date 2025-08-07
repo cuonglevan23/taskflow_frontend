@@ -1,0 +1,7 @@
+<svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="160" fill="#F9FAFB"/>
+  <path d="M60 60h80v8H60v-8zM60 76h60v8H60v-8zM60 92h40v8H60v-8z" fill="#E5E7EB"/>
+  <rect x="40" y="40" width="120" height="80" rx="8" stroke="#D1D5DB" stroke-width="2" fill="none"/>
+  <path d="M100 50l10 10-10 10-10-10 10-10z" fill="#9CA3AF"/>
+  <text x="100" y="140" text-anchor="middle" fill="#6B7280" font-family="system-ui" font-size="14">No files uploaded yet</text>
+</svg>
