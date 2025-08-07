@@ -123,33 +123,33 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
   }
 
   // MyTask Navigation
-  if (pathname.startsWith("/mytask")) {
+  if (pathname.startsWith("/my-tasks")) {
     return {
       title: "My tasks",
       navItems: [
         {
           label: "List",
-          href: "/mytask/list",
+          href: "/my-tasks/list",
           icon: <LAYOUT_ICONS.list className="w-4 h-4" />,
         },
         {
           label: "Board", 
-          href: "/mytask/board",
+          href: "/my-tasks/board",
           icon: <LAYOUT_ICONS.board className="w-4 h-4" />,
         },
         {
           label: "Calendar",
-          href: "/mytask/calendar",
+          href: "/my-tasks/calendar",
           icon: <LAYOUT_ICONS.calendar className="w-4 h-4" />,
         },
         {
           label: "Dashboard",
-          href: "/mytask/dashboard", 
+          href: "/my-tasks/dashboard", 
           icon: <LAYOUT_ICONS.timeline className="w-4 h-4" />,
         },
         {
           label: "File",
-          href: "/mytask/file",
+          href: "/my-tasks/file",
           icon: <FILE_ICONS.document className="w-4 h-4" />,
         },
       ],

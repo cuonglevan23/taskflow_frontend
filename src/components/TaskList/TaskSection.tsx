@@ -7,7 +7,7 @@ import { TaskSection as TaskSectionType, TaskListItem, TaskListActions, TaskStat
 import TaskRow from './TaskRow';
 import TaskCard from './TaskCard';
 import DueDatePicker from '@/app/project/list/components/DueDatePicker';
-import { EnhancedCalendar } from '@/components/EnhancedCalendar';
+import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 
 interface TaskSectionProps {
   section: TaskSectionType;

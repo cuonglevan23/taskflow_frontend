@@ -252,11 +252,11 @@ export function getContextualNavigation(
   }
 
   // Task context navigation
-  if (currentPath.startsWith('/tasks') || currentPath.startsWith('/mytask')) {
+  if (currentPath.startsWith('/tasks') || currentPath.startsWith('/my-tasks')) {
     const taskNavigation = [
-      { key: 'task-list', title: 'My Tasks', href: '/mytask', icon: 'check-square' },
-      { key: 'task-board', title: 'Board View', href: '/mytask/board', icon: 'trello' },
-      { key: 'task-calendar', title: 'Calendar', href: '/mytask/calendar', icon: 'calendar' },
+      { key: 'task-list', title: 'My Tasks', href: '/my-tasks', icon: 'check-square' },
+      { key: 'task-board', title: 'Board View', href: '/my-tasks/board', icon: 'trello' },
+      { key: 'task-calendar', title: 'Calendar', href: '/my-tasks/calendar', icon: 'calendar' },
     ];
 
     navigation.push(...taskNavigation.filter(item => 

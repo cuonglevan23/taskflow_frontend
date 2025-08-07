@@ -67,9 +67,9 @@ export const navigationConfig: NavigationConfig = {
         {
           id: "my-tasks",
           label: "My tasks",
-          href: "/mytask/list",
+          href: "/my-tasks/list",
           icon: <CheckSquare size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/mytask",
+          activePattern: "/my-tasks",
           badge: {
             count: 2,
             color: "default",

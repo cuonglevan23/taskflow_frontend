@@ -15,7 +15,7 @@ import { groupTasks, sortTasks, filterTasks } from './utils';
 import TaskListHeader from './TaskListHeader';
 import TaskTable from './TaskTable';
 import TaskSection from './TaskSection';
-import { EnhancedCalendar } from '@/components/EnhancedCalendar';
+import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 import EmptySearchState from '@/components/ui/EmptySearchState';
 
 interface TaskListProps {

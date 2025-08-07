@@ -5,7 +5,7 @@ import { X, Calendar, User, CheckCircle, Plus, MessageCircle, Paperclip, MoreHor
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskListItem, TaskStatus, TaskPriority } from '@/components/TaskList/types';
 import DueDatePicker from '@/app/project/list/components/DueDatePicker';
-import { EnhancedCalendar } from '@/components/EnhancedCalendar';
+import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 
 interface TaskDetailPanelProps {
   task: TaskListItem | null;

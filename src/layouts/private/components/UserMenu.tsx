@@ -11,7 +11,7 @@ import {
   LogOut,
   Monitor
 } from "lucide-react";
-import SettingsModal from "@/components/SettingsModal";
+import { SettingsModal } from "@/components/features/Settings/SettingsModal";
 
 // User interface
 export interface User {

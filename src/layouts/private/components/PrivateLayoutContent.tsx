@@ -7,7 +7,7 @@ import {
   useLayoutContext,
   useLayoutActions,
 } from "../context/PrivateLayoutContext";
-import { DetailPanel } from "@/components/DetailPanel";
+import { DetailPanel } from "@/components/features/DetailPanel";
 
 interface PrivateLayoutContentProps {
   children: React.ReactNode;

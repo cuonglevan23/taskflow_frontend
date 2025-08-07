@@ -3,10 +3,10 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import FullCalendar from '@fullcalendar/react';
-import CalendarHeader from '@/components/Calendar/CalendarHeader';
+import CalendarHeader from '@/components/features/Calendar/CalendarHeader';
 import { useTimelineEvents } from './TimelineEvents';
 import { createCalendarOptions, createEventContent } from './timelineConfig';
-import { ViewMode } from '@/components/Timeline/ZoomControls';
+import { ViewMode } from '@/components/features/Timeline/ZoomControls';
 import WorkflowConnectionManager from './components/WorkflowConnectionManager';
 import { WorkflowConnectionConfig, TaskConnection } from './hooks/useWorkflowConnection';
 import { createReactEventContent } from './components/TaskEventContent_new';

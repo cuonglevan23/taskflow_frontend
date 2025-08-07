@@ -142,7 +142,7 @@ This installs React Flow - the professional workflow/dependency graph library fo
 
 **Usage Example:**
 ```tsx
-import ReactFlowWorkflow from '@/components/ReactFlowWorkflow';
+import ReactFlowWorkflow from '@/components/features/ReactFlowWorkflow';
 
 <ReactFlowWorkflow
   tasks={tasks}
