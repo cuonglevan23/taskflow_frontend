@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { 
   useNodesState, 
   useEdgesState, 
@@ -9,7 +9,8 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
   NodeChange,
-  EdgeChange
+  EdgeChange,
+  MarkerType
 } from 'reactflow';
 import { TaskNode, DependencyEdge, WorkflowTask, WorkflowSection, DependencyType } from '../types';
 import { layoutNodes } from '../utils/layoutUtils';
@@ -67,12 +68,12 @@ export const useReactFlowWorkflow = ({
   }, [tasks, sections, selectedNodeId, connectingFrom, onTaskClick, onTaskUpdate, initialLayout]);
 
   // Convert dependencies to React Flow edges
-  const initialEdges: DependencyEdge[] = useMemo(() => {
-    const edges: DependencyEdge[] = [];
+  const initialEdges: Edge[] = useMemo(() => {
+    const edges: Edge[] = [];
     
     tasks.forEach(task => {
       task.dependencies?.forEach(depId => {
-        edges.push({
+        const edge: Edge = {
           id: `${depId}-${task.id}`,
           source: depId,
           target: task.id,
@@ -83,15 +84,16 @@ export const useReactFlowWorkflow = ({
             strokeWidth: 2
           },
           markerEnd: {
-            type: 'arrowclosed',
+            type: MarkerType.ArrowClosed,
             color: '#6B7280'
           },
           data: {
-            dependencyType: 'finish-to-start',
+            dependencyType: 'finish-to-start' as DependencyType,
             onEdgeUpdate: handleEdgeUpdate,
             onEdgeDelete: handleEdgeDelete
           }
-        } as DependencyEdge);
+        };
+        edges.push(edge);
       });
     });
     
@@ -103,13 +105,13 @@ export const useReactFlowWorkflow = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   // Update nodes when external data changes
-  useState(() => {
+  useEffect(() => {
     setNodes(initialNodes);
-  });
+  }, [initialNodes, setNodes]);
 
-  useState(() => {
+  useEffect(() => {
     setEdges(initialEdges);
-  });
+  }, [initialEdges, setEdges]);
 
   // Handle new connections
   const onConnect = useCallback((connection: Connection) => {
@@ -134,9 +136,10 @@ export const useReactFlowWorkflow = ({
       return;
     }
 
-    const newEdge: DependencyEdge = {
-      ...connection,
+    const newEdge: Edge = {
       id: `${connection.source}-${connection.target}`,
+      source: connection.source!,
+      target: connection.target!,
       type: 'dependencyEdge',
       animated: true,
       style: { 
@@ -144,15 +147,15 @@ export const useReactFlowWorkflow = ({
         strokeWidth: 2
       },
       markerEnd: {
-        type: 'arrowclosed',
+        type: MarkerType.ArrowClosed,
         color: '#3B82F6'
       },
       data: {
-        dependencyType: 'finish-to-start',
+        dependencyType: 'finish-to-start' as DependencyType,
         onEdgeUpdate: handleEdgeUpdate,
         onEdgeDelete: handleEdgeDelete
       }
-    } as DependencyEdge;
+    };
 
     setEdges(eds => addEdge(newEdge, eds));
     
@@ -205,7 +208,7 @@ export const useReactFlowWorkflow = ({
   }, []);
 
   // Handle edge updates
-  function handleEdgeUpdate(edgeId: string, updates: Partial<DependencyEdge>) {
+  function handleEdgeUpdate(edgeId: string, updates: Partial<Edge>) {
     setEdges(eds => eds.map(edge => 
       edge.id === edgeId ? { ...edge, ...updates } : edge
     ));

@@ -383,6 +383,5 @@ export class CalendarService {
 // Export singleton instance
 export const calendarService = new CalendarService();
 
-// Export individual services
-export { eventsService, teamsService, projectsService, usersService };
+// Export error class
 export { CalendarServiceError };

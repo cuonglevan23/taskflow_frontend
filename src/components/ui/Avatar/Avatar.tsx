@@ -12,6 +12,8 @@ export interface AvatarProps {
   className?: string;
   status?: "online" | "offline" | "away" | "busy";
   showStatus?: boolean;
+  style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
 const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
@@ -25,6 +27,8 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       className,
       status,
       showStatus = false,
+      style,
+      onClick,
       ...props
     },
     ref
@@ -68,6 +72,8 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
           variantClasses[variant],
           className
         )}
+        style={style}
+        onClick={onClick}
         {...props}
       >
         {src ? (

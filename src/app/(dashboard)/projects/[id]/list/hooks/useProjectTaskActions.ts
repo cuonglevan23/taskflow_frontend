@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from 'react';
-import { TaskListActions, TaskListItem } from '@/components/TaskList';
+import { TaskListActions, TaskListItem, TaskStatus, TaskPriority } from '@/components/TaskList';
 import { useProjectTasks } from '../context/ProjectTasksContext';
 
 /**
@@ -32,11 +32,11 @@ export function useProjectTaskActions(): TaskListActions {
   }, [deleteTask]);
 
   const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
-    await updateTask(taskId, { status: status as any });
+    await updateTask(taskId, { status: status as TaskStatus });
   }, [updateTask]);
 
   const handleTaskPriorityChange = useCallback(async (taskId: string, priority: string) => {
-    await updateTask(taskId, { priority: priority as any });
+    await updateTask(taskId, { priority: priority as TaskPriority });
   }, [updateTask]);
 
   const handleTaskAssign = useCallback(async (taskId: string, assignedTo: string) => {

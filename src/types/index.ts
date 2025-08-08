@@ -11,4 +11,7 @@ export * from './api';
 export * from './ui';
 
 // Task types
-export * from './task'; 
+export * from './task';
+
+// Project types
+export * from './project'; 

@@ -17,7 +17,27 @@ interface MockAuthContextValue {
   // JWT Demo features
   accessToken: string | null;
   refreshToken: string | null;
-  tokenInfo: any;
+  tokenInfo: {
+    hasAccessToken: boolean;
+    hasRefreshToken: boolean;
+    isExpired: boolean;
+    expiresAt: Date | null;
+    accessTokenPayload: {
+      sub: string;
+      email: string;
+      name: string;
+      role: UserRole;
+      iat: number;
+      exp: number;
+      projectRoles?: Record<string, UserRole>;
+    } | null;
+    refreshTokenPayload: {
+      sub: string;
+      type?: string;
+      iat: number;
+      exp: number;
+    } | null;
+  };
   refreshAccessToken: () => Promise<void>;
 }
 
@@ -138,34 +158,74 @@ export const MockAuthProvider: React.FC<MockAuthProviderProps> = ({
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if we're in development mode and should use mock auth
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const useBackend = process.env.NEXT_PUBLIC_API_URL && !role; // Use backend if API URL is set and no specific role requested
 
-      // Find user by email or role
-      let mockUser: UserWithRole;
-      
-      if (role) {
-        mockUser = MOCK_USERS.find(u => u.role === role) || MOCK_USERS[4];
+      if (useBackend && !isDevelopment) {
+        // Real backend authentication
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Login failed');
+        }
+
+        const { accessToken, refreshToken, userInfo } = await response.json();
+        
+        // Transform backend user data to frontend format
+        const user = {
+          id: userInfo.id.toString(),
+          email: userInfo.email,
+          name: `${userInfo.firstName} ${userInfo.lastName}`.trim() || userInfo.email,
+          role: 'member', // Default role, can be enhanced based on backend roles
+          avatar: userInfo.avatarUrl,
+          isFirstLogin: userInfo.isFirstLogin
+        };
+        
+        setUser(user);
+        setAccessToken(accessToken);
+        setRefreshToken(refreshToken);
+        
+        localStorage.setItem('mock_auth_user', JSON.stringify(user));
+        localStorage.setItem('access_token', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('refresh_token', refreshToken);
+        }
       } else {
-        mockUser = MOCK_USERS.find(u => u.email === email) || MOCK_USERS[4];
-      }
+        // Mock authentication for development
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Simulate login validation
-      if (email === 'fail@test.com') {
-        throw new Error('Invalid credentials');
-      }
+        let mockUser: UserWithRole;
+        
+        if (role) {
+          mockUser = MOCK_USERS.find(u => u.role === role) || MOCK_USERS[4];
+        } else {
+          mockUser = MOCK_USERS.find(u => u.email === email) || MOCK_USERS[4];
+        }
 
-      // Generate JWT tokens for the user
-      const tokens = await DemoJWTService.generateTokenPair(mockUser);
-      
-      setUser(mockUser);
-      setAccessToken(tokens.accessToken);
-      setRefreshToken(tokens.refreshToken);
-      
-      localStorage.setItem('mock_auth_user', JSON.stringify(mockUser));
-      DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
+        if (email === 'fail@test.com') {
+          throw new Error('Invalid credentials');
+        }
+
+        const tokens = await DemoJWTService.generateTokenPair(mockUser);
+        
+        setUser(mockUser);
+        setAccessToken(tokens.accessToken);
+        setRefreshToken(tokens.refreshToken);
+        
+        localStorage.setItem('mock_auth_user', JSON.stringify(mockUser));
+        DemoTokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
       throw err;
     } finally {
       setIsLoading(false);

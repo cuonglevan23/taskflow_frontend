@@ -274,6 +274,15 @@ export type ThemeConfig = {
       border: string;
     };
   };
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    success?: string;
+    warning?: string;
+    error?: string;
+    info?: string;
+    [key: string]: string | undefined;
+  };
 };
 
 export type Theme = ThemeConfig;

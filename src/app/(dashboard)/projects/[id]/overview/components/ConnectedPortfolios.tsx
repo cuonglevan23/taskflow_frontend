@@ -1,5 +1,6 @@
 "use client";
 
+import { Folder } from 'lucide-react';
 import { NAVIGATION_ICONS, ACTION_ICONS } from '@/constants/icons';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { useProjectOverview } from '../context/ProjectOverviewContext';

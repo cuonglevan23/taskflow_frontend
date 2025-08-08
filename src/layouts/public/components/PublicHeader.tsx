@@ -77,7 +77,7 @@ export default function PublicHeader({
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/dashboard">
+            <Link href="/home">
               <Button variant="ghost" size="sm">
                 Dashboard
               </Button>
@@ -151,7 +151,7 @@ export default function PublicHeader({
                 Contact
               </Link>
               <div className="pt-4 space-y-2">
-                <Link href="/dashboard" className="block">
+                <Link href="/home" className="block">
                   <Button variant="ghost" size="sm" fullWidth>
                     Dashboard
                   </Button>

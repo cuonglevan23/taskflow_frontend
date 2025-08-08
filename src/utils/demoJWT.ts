@@ -43,9 +43,10 @@ async function createSignature(data: string, secret: string): Promise<string> {
 
 interface JWTPayload {
   sub: string; // user id
-  email: string;
-  name: string;
-  role: UserRole;
+  email?: string;
+  name?: string;
+  role?: UserRole;
+  type?: string; // token type (access/refresh)
   iat: number; // issued at
   exp: number; // expires at
   projectRoles?: Record<string, UserRole>;
@@ -268,6 +269,6 @@ export class DemoTokenStorage {
 
 // Make forceLogout globally available for debugging
 if (typeof window !== 'undefined') {
-  (window as any).forceLogout = DemoTokenStorage.forceLogout;
+  (window as unknown as Window & { forceLogout: () => void }).forceLogout = DemoTokenStorage.forceLogout;
   console.log('🔧 Debug: Use forceLogout() in console to clear all auth data');
 }

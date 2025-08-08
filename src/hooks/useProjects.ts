@@ -112,31 +112,3 @@ export const useProjects = (config: UseProjectsConfig = {}) => {
   };
 };
 
-// Custom Hook Return Type
-interface UseProjectsReturn {
-  // Data
-  projects: Project[];
-  featuredProject: Project | undefined;
-  regularProjects: Project[];
-  displayedProjects: Project[];
-  
-  // State
-  showAllProjects: boolean;
-  isLoading: boolean;
-  hasMoreProjects: boolean;
-  
-  // Actions
-  toggleShowAll: () => void;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateProject: (id: number, updates: Partial<Project>) => void;
-  deleteProject: (id: number) => void;
-  setFeaturedProject: (id: number) => void;
-  
-  // Computed
-  projectStats: {
-    total: number;
-    active: number;
-    completed: number;
-    withTasksDue: number;
-  };
-}

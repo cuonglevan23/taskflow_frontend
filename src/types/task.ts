@@ -28,6 +28,36 @@ export interface EditableTask extends Omit<Task, 'status'> {
   }
 }
 
+// DTO interfaces for API operations
+export interface CreateTaskDTO {
+  name: string;
+  description?: string;
+  assignee?: string[];
+  dueDate?: string | Date;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  priority?: 'Low' | 'Medium' | 'High' | 'Urgent';
+  status?: TaskStatus;
+  projectId?: string;
+  tags?: string[];
+  estimatedHours?: number;
+}
+
+export interface UpdateTaskDTO {
+  name?: string;
+  description?: string;
+  assignee?: string[];
+  dueDate?: string | Date;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  priority?: 'Low' | 'Medium' | 'High' | 'Urgent';
+  status?: TaskStatus;
+  projectId?: string;
+  tags?: string[];
+  estimatedHours?: number;
+  completedAt?: string | Date;
+}
+
 export interface Assignee {
   id: string
   name: string

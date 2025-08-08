@@ -159,17 +159,15 @@ export function FileCard({ file, isSelected, onSelect, actions }: FileCardProps)
         <div className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
           <div className="flex gap-1">
             <DownloadButton
-              onClick={(e) => {
-                e?.stopPropagation();
+              onClick={() => {
                 actions.onFileDownload(file);
               }}
               size="xs"
-              variant="ghost"
+              variant="secondary"
             />
             
             <ShareButton
-              onClick={(e) => {
-                e?.stopPropagation();
+              onClick={() => {
                 actions.onFileShare(file);
               }}
               size="xs"
@@ -177,12 +175,11 @@ export function FileCard({ file, isSelected, onSelect, actions }: FileCardProps)
             />
             
             <DeleteButton
-              onClick={(e) => {
-                e?.stopPropagation();
+              onClick={() => {
                 actions.onFileDelete(file);
               }}
               size="xs"
-              variant="ghost"
+              variant="secondary"
               confirmText={`Are you sure you want to delete "${file.name}"?`}
             />
           </div>

@@ -6,7 +6,17 @@ import { X, User, Mail, Lock, Building, Shield } from "lucide-react";
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (userData: any) => void;
+  onSubmit: (userData: {
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    roleId: number;
+    organizationId: number;
+    status: 'active' | 'inactive';
+    createdAt: string;
+    updatedAt: string;
+  }) => void;
 }
 
 interface UserFormData {

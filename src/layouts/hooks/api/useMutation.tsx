@@ -8,7 +8,7 @@ export function useMutation<TData = unknown, TVariables = unknown>(
 ): MutationHookReturn<TData, TVariables> {
   const [data, setData] = useState<TData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | string | null>(null);
 
   const mutate = useCallback(
     async (variables: TVariables): Promise<TData> => {

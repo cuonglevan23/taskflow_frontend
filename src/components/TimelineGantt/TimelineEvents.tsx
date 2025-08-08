@@ -12,7 +12,15 @@ export interface TimelineEventsProps {
 export const useTimelineEvents = ({ tasks, tasksBySection, sections }: TimelineEventsProps) => {
   // Convert tasks to FullCalendar events
   const calendarEvents = useMemo(() => {
-    const events: any[] = [];
+    const events: Array<{
+      id: string;
+      title: string;
+      start: string;
+      end?: string;
+      resourceId?: string;
+      color?: string;
+      [key: string]: unknown;
+    }> = [];
     
     sections.forEach(section => {
       if (!section.collapsed && tasksBySection[section.id]) {

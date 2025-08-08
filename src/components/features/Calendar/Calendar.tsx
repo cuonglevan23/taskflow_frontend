@@ -16,15 +16,68 @@ interface Task {
 }
 
 interface AsanaCalendarProps {
-  events?: any[];
-  onEventCreate?: (eventInfo: any) => void;
-  onEventClick?: (event: any) => void;
-  onEventDrop?: (info: any) => void;
-  onEventResize?: (info: any) => void;
+  events?: Array<{
+    id: string;
+    title: string;
+    start: string | Date;
+    end?: string | Date;
+    color?: string;
+    [key: string]: unknown;
+  }>;
+  onEventCreate?: (eventInfo: {
+    start: Date;
+    end: Date;
+    allDay: boolean;
+    [key: string]: unknown;
+  }) => void;
+  onEventClick?: (event: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => void;
+  onEventDrop?: (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    oldEvent: {
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => void;
+  onEventResize?: (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    oldEvent: {
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => void;
   currentDate?: Date;
   onDateChange?: (date: Date) => void;
   initialView?: string;
-  headerToolbar?: any;
+  headerToolbar?: {
+    left?: string;
+    center?: string;
+    right?: string;
+  } | false;
   height?: string | number;
   editable?: boolean;
   droppable?: boolean;
@@ -433,7 +486,11 @@ const Calendar: React.FC<AsanaCalendarProps> = ({
                     {/* Add Task Button */}
                     <button 
                       className="absolute bottom-2 right-2 w-6 h-6 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
-                      onClick={() => onEventCreate && onEventCreate({ date: date.toISOString(), allDay: true })}
+                      onClick={() => onEventCreate && onEventCreate({ 
+                        start: date, 
+                        end: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
+                        allDay: true 
+                      })}
                     >
                       <Plus className="w-3 h-3 text-gray-300" />
                     </button>

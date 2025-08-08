@@ -311,7 +311,7 @@ const WorkflowConnectionManager: React.FC<WorkflowConnectionManagerProps> = ({
           </defs>
           
           {/* Render existing connections using React components */}
-          {connectionPositions.map(({ connection, fromPoint, toPoint }) => (
+          {connectionPositions.filter((pos): pos is { connection: TaskConnection; fromPoint: { x: number; y: number; }; toPoint: { x: number; y: number; }; } => pos !== null).map(({ connection, fromPoint, toPoint }) => (
             <ConnectionLine
               key={connection.id}
               connection={connection}

@@ -16,7 +16,10 @@ export default function TasksBoardPage() {
         </p>
       </div>
 
-      <KanbanBoard />
+        <KanbanBoard
+            tasks={[]}
+            tasksByAssignmentDate={{}}
+        />
     </div>
   );
 }

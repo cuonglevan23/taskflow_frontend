@@ -1,40 +1,43 @@
 @import "tailwindcss";
 
-/* Prevent elastic/bounce scrolling and overscroll behavior */
-html, body {
-  overscroll-behavior: none !important;
-  overscroll-behavior-x: none !important;
-  overscroll-behavior-y: none !important;
-  
-  /* Prevent pull-to-refresh and elastic scrolling on iOS/macOS */
-  -webkit-overflow-scrolling: touch !important;
-  overflow-anchor: none !important;
-  
-  /* Ensure no white space appears */
-  background-color: #0f172a !important;
-  min-height: 100vh !important;
-  height: 100% !important;
+@layer base {
+  /* Prevent elastic/bounce scrolling and overscroll behavior */
+  html, body {
+    overscroll-behavior: none !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
+    
+    /* Prevent pull-to-refresh and elastic scrolling on iOS/macOS */
+    -webkit-overflow-scrolling: touch !important;
+    overflow-anchor: none !important;
+    
+    /* Ensure no white space appears */
+    background-color: #0f172a !important;
+    min-height: 100vh !important;
+    height: 100% !important;
+  }
+
+  /* Prevent overscroll on all scrollable elements */
+  * {
+    overscroll-behavior: none !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
+  }
+
+  /* Specific fixes for main scroll containers */
+  [class*="overflow-auto"], 
+  [class*="overflow-scroll"],
+  [class*="overflow-y-auto"],
+  [class*="overflow-x-auto"] {
+    overscroll-behavior: none !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
+  }
 }
 
-/* Prevent overscroll on all scrollable elements */
-* {
-  overscroll-behavior: none !important;
-  overscroll-behavior-x: none !important;
-  overscroll-behavior-y: none !important;
-}
-
-/* Specific fixes for main scroll containers */
-[class*="overflow-auto"], 
-[class*="overflow-scroll"],
-[class*="overflow-y-auto"],
-[class*="overflow-x-auto"] {
-  overscroll-behavior: none !important;
-  overscroll-behavior-x: none !important;
-  overscroll-behavior-y: none !important;
-}
-
-/* Hỗ trợ Chrome, Safari, Edge */
-.scrollbar-hide::-webkit-scrollbar {
+@layer utilities {
+  /* Hỗ trợ Chrome, Safari, Edge */
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
   
@@ -43,4 +46,44 @@ html, body {
     -ms-overflow-style: none;  
     scrollbar-width: none;     
   }
+}
+
+@layer components {
+  /* Force dark theme cho search components - Đảm bảo đồng bộ 100% */
+  input[type="text"] {
+    background-color: #1f2937 !important; /* gray-800 */
+    border-color: #4b5563 !important; /* gray-600 */
+    color: #ffffff !important;
+  }
+
+  input[type="text"]:focus {
+    background-color: #374151 !important; /* gray-700 */
+    border-color: #60a5fa !important; /* blue-400 */
+  }
+
+  input[type="text"]::placeholder {
+    color: #9ca3af !important; /* gray-400 */
+  }
+
+  /* Force dark theme cho dropdown components - Đảm bảo đồng bộ 100% */
+  [class*="bg-white"] {
+    background-color: #111827 !important; /* gray-900 */
+  }
+
+  [class*="bg-gray-50"] {
+    background-color: #1f2937 !important; /* gray-800 */
+  }
+
+  [class*="border-gray-200"] {
+    border-color: #374151 !important; /* gray-700 */
+  }
+
+  [class*="text-gray-900"] {
+    color: #ffffff !important;
+  }
+
+  [class*="text-gray-600"] {
+    color: #d1d5db !important; /* gray-300 */
+  }
+}
   

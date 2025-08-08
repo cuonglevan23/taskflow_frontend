@@ -14,7 +14,7 @@ export const useTaskManagement = (initialTasks: EditableTask[]) => {
   })
   const [editingNewTaskField, setEditingNewTaskField] = useState<'name' | 'assignee' | 'dueDate' | 'priority' | 'status' | null>(null)
 
-  const handleEdit = (taskId: string, field: 'name' | 'assignee' | 'dueDate' | 'priority' | 'status', value: any) => {
+  const handleEdit = (taskId: string, field: 'name' | 'assignee' | 'dueDate' | 'priority' | 'status', value: string | Date) => {
     setTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         return {
@@ -86,7 +86,7 @@ export const useTaskManagement = (initialTasks: EditableTask[]) => {
     setEditingNewTaskField(null)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent, taskId: string, field: 'name' | 'assignee' | 'dueDate' | 'priority' | 'status', value: any) => {
+  const handleKeyPress = (e: React.KeyboardEvent, taskId: string, field: 'name' | 'assignee' | 'dueDate' | 'priority' | 'status', value: string | Date) => {
     if (e.key === 'Enter') {
       handleEdit(taskId, field, value)
     } else if (e.key === 'Escape') {

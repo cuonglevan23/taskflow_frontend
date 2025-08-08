@@ -23,13 +23,13 @@ const InboxActionButtons: React.FC<InboxActionButtonsProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const handleMoreActions = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleMoreActions = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
     actions.showMoreActions(notification.id);
   };
 
-  const handleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleBookmark = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
     if (notification.isBookmarked) {
       actions.unbookmark(notification.id);
     } else {
@@ -37,8 +37,8 @@ const InboxActionButtons: React.FC<InboxActionButtonsProps> = ({
     }
   };
 
-  const handleArchive = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleArchive = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
     actions.archive(notification.id);
   };
 

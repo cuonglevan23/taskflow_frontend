@@ -42,7 +42,7 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     if (React.isValidElement(child) && typeof child.type !== 'string') {
       // Only clone component elements, not DOM elements
       try {
-        return React.cloneElement(child, { searchValue });
+        return React.cloneElement(child, { searchValue } as any);
       } catch (error) {
         console.warn('Failed to clone element:', error);
         return child;

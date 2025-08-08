@@ -40,7 +40,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
   editTask
 }) => {
   // Helper function to ensure valid date
-  const ensureValidDate = (date: any): Date => {
+  const ensureValidDate = (date: string | Date | null | undefined): Date => {
     if (date instanceof Date && !isNaN(date.getTime())) {
       return date;
     }

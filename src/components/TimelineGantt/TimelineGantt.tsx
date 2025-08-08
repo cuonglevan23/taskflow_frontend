@@ -166,21 +166,58 @@ const TimelineGantt: React.FC<TimelineGanttProps> = ({
   };
 
   // Event handlers for FullCalendar
-  const handleEventClick = (info: any) => {
+  const handleEventClick = (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => {
     const task = info.event.extendedProps.task;
     if (task) {
       onTaskClick?.(task);
     }
   };
 
-  const handleEventDrop = (info: any) => {
+  const handleEventDrop = (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    oldEvent: {
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => {
     const task = info.event.extendedProps.task;
     if (task && onTaskMove) {
       onTaskMove(task.id, info.event.start!, info.event.end!);
     }
   };
 
-  const handleEventResize = (info: any) => {
+  const handleEventResize = (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    oldEvent: {
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => {
     const task = info.event.extendedProps.task;
     if (task && onTaskMove) {
       onTaskMove(task.id, info.event.start!, info.event.end!);

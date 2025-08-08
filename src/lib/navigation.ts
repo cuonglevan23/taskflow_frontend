@@ -1,11 +1,11 @@
 import { UserRole, Permission } from '@/constants/auth';
 import { 
   ROUTES, 
-  ROUTE_GROUPS, 
+  SIDEBAR_GROUPS, 
   RouteConfig, 
   RouteGroup,
   getRoutesByRole,
-  getNavRoutes,
+  getSidebarNavigation,
   hasRouteAccess,
   generateRoutePath
 } from '@/config/routes';
@@ -45,17 +45,17 @@ export function generateNavigation(
   const sections: SidebarSection[] = [];
 
   // Get route groups that the user has access to
-  const accessibleGroups = ROUTE_GROUPS.filter(group => 
-    group.routes.some(route => hasRouteAccess(route, userRole, userPermissions))
+  const accessibleGroups = Object.values(SIDEBAR_GROUPS).filter((group: RouteGroup) => 
+    group.routes.some((route: RouteConfig) => hasRouteAccess(route, userRole, userPermissions))
   );
 
-  accessibleGroups.forEach(group => {
-    const accessibleRoutes = group.routes.filter(route => 
+  accessibleGroups.forEach((group: RouteGroup) => {
+    const accessibleRoutes = group.routes.filter((route: RouteConfig) => 
       hasRouteAccess(route, userRole, userPermissions) && route.isNavItem
     );
 
     if (accessibleRoutes.length > 0) {
-      const items: NavigationItem[] = accessibleRoutes.map(route => ({
+      const items: NavigationItem[] = accessibleRoutes.map((route: RouteConfig) => ({
         key: route.path,
         title: route.title,
         href: route.path,
@@ -85,12 +85,12 @@ function getChildNavigationItems(
   userPermissions: Permission[],
   currentPath: string
 ): NavigationItem[] {
-  const childRoutes = Object.values(ROUTES).filter(route => 
+  const childRoutes = Object.values(ROUTES).filter((route: RouteConfig) => 
     route.parent === getRouteKey(parentRoute.path) &&
     hasRouteAccess(route, userRole, userPermissions)
   );
 
-  return childRoutes.map(route => ({
+  return childRoutes.map((route: RouteConfig) => ({
     key: route.path,
     title: route.title,
     href: route.path,
@@ -109,7 +109,7 @@ export function generateBreadcrumbs(currentPath: string): BreadcrumbItem[] {
   // Add home/dashboard as first item
   breadcrumbs.push({
     title: 'Dashboard',
-    href: '/dashboard',
+    href: '/home',
   });
 
   // Build breadcrumbs from path segments
@@ -207,11 +207,12 @@ export function generateMobileNavigation(
   userPermissions: Permission[],
   currentPath: string
 ): NavigationItem[] {
-  const navRoutes = getNavRoutes(userRole).filter(route =>
-    hasRouteAccess(route, userRole, userPermissions)
+  const navGroups = getSidebarNavigation(userRole);
+  const navRoutes = navGroups.flatMap((group: RouteGroup) => 
+    group.routes.filter((route: RouteConfig) => hasRouteAccess(route, userRole, userPermissions))
   );
 
-  return navRoutes.map(route => ({
+  return navRoutes.map((route: RouteConfig) => ({
     key: route.path,
     title: route.title,
     href: route.path,

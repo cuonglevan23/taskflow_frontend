@@ -1,7 +1,8 @@
 import { UserRole, Permission, ROLE_PERMISSIONS } from '@/constants/auth';
+import { User } from '@/types/auth';
 import { redirect } from 'next/navigation';
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<User | null> {
   // Implement your user fetching logic here
   // This is just a placeholder
   return null;

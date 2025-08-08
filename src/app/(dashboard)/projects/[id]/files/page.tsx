@@ -78,10 +78,11 @@ function ProjectFilesContent({ searchValue = "" }: ProjectFilesPageProps) {
   const getBreadcrumbs = () => {
     const breadcrumbs = [];
     let current = currentFolder;
-    
+
     while (current) {
       breadcrumbs.unshift(current);
-      current = current.parentId ? folders.find(f => f.id === current.parentId) : null;
+      const parentId = current.parentId;
+      current = parentId ? folders.find(f => f.id === parentId) ?? null : null;
     }
     
     return breadcrumbs;

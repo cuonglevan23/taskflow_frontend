@@ -228,8 +228,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     repeatDays: string[];
   }) => {
     // Convert dd/mm/yy format to proper date
-    const parseDate = (dateStr: string) => {
-      if (!dateStr) return null;
+    const parseDate = (dateStr: string): string | undefined => {
+      if (!dateStr) return undefined;
       const [day, month, year] = dateStr.split('/');
       return `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     };
@@ -267,9 +267,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     // Create enhanced task data
     const enhancedTaskData = {
       name: 'New Task',
-      dueDate: defaultDueDate,
-      startDate: startDateFormatted,
-      endDate: endDateFormatted,
+      dueDate: defaultDueDate || undefined,
+      startDate: startDateFormatted || undefined,
+      endDate: endDateFormatted || undefined,
       startTime: data.startTime,
       endTime: data.endTime,
       hasStartTime: !!data.startTime,
@@ -342,8 +342,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {!hasSearchResults && searchValue.trim() ? (
         <EmptySearchState
           searchQuery={searchValue}
-          onClearSearch={handleClearSearch}
-          onAdvancedSearch={() => {/* Handle advanced search */}}
+          onReset={handleClearSearch}
         />
       ) : (
         <DragAndDropContext

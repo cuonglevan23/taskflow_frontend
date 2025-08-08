@@ -9,7 +9,7 @@ export function useApi<T = unknown>(
 ): ApiHookReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

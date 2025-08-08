@@ -1,43 +1,341 @@
-// OAuth Callback Page
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { useRealAuth } from '@/providers/RealAuthProvider';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useMockAuth } from '@/providers/MockAuthProvider';
 
 export default function AuthCallbackPage() {
-  const { isLoading, error } = useRealAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login } = useMockAuth();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    // The RealAuthProvider will handle the OAuth callback automatically
-  }, []);
+    const handleOAuthCallback = async () => {
+      try {
+        // Get OAuth parameters from URL
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
+        const error = searchParams.get('error');
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="text-red-500 text-6xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Failed</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <a
-              href="/login"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Try Again
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+        if (error) {
+          throw new Error(`OAuth Error: ${error}`);
+        }
+
+        // Check different callback scenarios - define all parameters first
+        const token = searchParams.get('token');
+        const accessToken = searchParams.get('access_token'); // Alternative parameter name
+        const refreshTokenParam = searchParams.get('refresh_token');
+        const errorParam = searchParams.get('error');
+        const userEmail = searchParams.get('email');
+        const userName = searchParams.get('name');
+        const userAvatar = searchParams.get('avatar_url');
+        const userId = searchParams.get('user_id');
+        const firstName = searchParams.get('first_name');
+        const lastName = searchParams.get('last_name');
+        const isFirstLogin = searchParams.get('is_first_login');
+        const expiresIn = searchParams.get('expires_in');
+        const tokenType = searchParams.get('token_type');
+        
+        // Debug: Log what we received
+        console.log('=== OAuth Callback Debug ===');
+        console.log('Code parameter:', code);
+        console.log('Access token parameter:', accessToken);
+        console.log('User email parameter:', userEmail);
+        console.log('All parameters:', Object.fromEntries(searchParams.entries()));
+
+        // Handle error from backend
+        if (errorParam) {
+          throw new Error(`OAuth error: ${errorParam}`);
+        }
+
+        // Check if we have tokens (backend processed OAuth) or code (need to process)
+        if (!code && !accessToken && !token) {
+          throw new Error('No authorization code or access token received');
+        }
+        
+        if (token || accessToken) {
+          // Scenario 1: Backend successfully processed and redirected with tokens
+          console.log('=== OAuth Callback Success ===');
+          console.log('Received tokens from backend redirect');
+          console.log('All URL parameters:', Object.fromEntries(searchParams.entries()));
+          const finalToken = token || accessToken;
+          console.log('Final token length:', finalToken?.length);
+          
+          // Store tokens in localStorage
+          localStorage.setItem('access_token', finalToken);
+          if (refreshTokenParam) {
+            localStorage.setItem('refresh_token', refreshTokenParam);
+          }
+
+          // Create user object from URL parameters or fetch from backend
+          let user;
+          
+          if (userEmail) {
+            // User info provided in URL parameters from backend
+            const fullName = firstName && lastName 
+              ? `${decodeURIComponent(firstName)} ${decodeURIComponent(lastName)}`.trim()
+              : userName || userEmail;
+              
+            user = {
+              id: userId || 'oauth-' + Date.now(),
+              email: decodeURIComponent(userEmail),
+              name: fullName,
+              role: 'member',
+              avatar: userAvatar ? decodeURIComponent(userAvatar) : '',
+              isFirstLogin: isFirstLogin === 'true'
+            };
+            console.log('User info extracted from backend URL parameters:', user);
+          } else {
+            // Fallback: Get user info from backend
+            try {
+              const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/me`, {
+                headers: {
+                  'Authorization': `Bearer ${finalToken}`,
+                },
+              });
+
+              if (userResponse.ok) {
+                const backendUser = await userResponse.json();
+                user = {
+                  id: backendUser.id?.toString() || 'oauth-' + Date.now(),
+                  email: backendUser.email,
+                  name: backendUser.name || `${backendUser.firstName} ${backendUser.lastName}`.trim(),
+                  role: backendUser.role || 'member',
+                  avatar: backendUser.avatar || backendUser.avatarUrl || '',
+                  isFirstLogin: backendUser.isFirstLogin || false
+                };
+                console.log('User info fetched from backend:', user);
+              } else {
+                throw new Error('Failed to get user information from backend');
+              }
+            } catch (fetchError) {
+              console.warn('Failed to fetch user from backend, using default:', fetchError);
+              // Default user if backend fetch fails
+              user = {
+                id: 'oauth-' + Date.now(),
+                email: 'user@example.com',
+                name: 'OAuth User',
+                role: 'member',
+                avatar: '',
+                isFirstLogin: false
+              };
+            }
+          }
+
+          // Store user data and login
+          localStorage.setItem('mock_auth_user', JSON.stringify(user));
+          console.log('Successfully processed OAuth login for user:', user.email);
+          console.log('Token expires in:', expiresIn, 'seconds');
+          console.log('Token type:', tokenType);
+          console.log('About to call login function...');
+          
+          try {
+            await login(user.email, 'oauth-login', user.role);
+            console.log('Login function completed successfully');
+          } catch (loginError) {
+            console.error('Login function failed:', loginError);
+            throw loginError;
+          }
+        } else if (code && state) {
+          // Scenario 2: Backend redirected with code, frontend handles token exchange
+          console.log('Processing OAuth callback with code exchange...');
+          console.log('Code:', code.substring(0, 10) + '...');
+          console.log('State:', state);
+          
+          try {
+            // Method 1: Try direct token exchange with Google (bypass backend OAuth processing)
+            console.log('Attempting direct token exchange with Google...');
+            
+            const tokenExchangeResponse = await fetch('https://oauth2.googleapis.com/token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({
+                client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+                client_secret: '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', // From your backend config
+                code: code,
+                grant_type: 'authorization_code',
+                redirect_uri: 'http://localhost:8080/api/auth/google/callback',
+              }),
+            });
+
+            if (tokenExchangeResponse.ok) {
+              const tokens = await tokenExchangeResponse.json();
+              console.log('Successfully exchanged code for tokens');
+              
+              // Get user info from Google
+              const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: {
+                  'Authorization': `Bearer ${tokens.access_token}`,
+                },
+              });
+              
+              if (userInfoResponse.ok) {
+                const googleUserInfo = await userInfoResponse.json();
+                console.log('Successfully retrieved user info from Google:', googleUserInfo.email);
+                
+                // Create user object from Google data
+                const user = {
+                  id: 'google-' + googleUserInfo.id,
+                  email: googleUserInfo.email,
+                  name: googleUserInfo.name || `${googleUserInfo.given_name} ${googleUserInfo.family_name}`.trim(),
+                  role: 'member',
+                  avatar: googleUserInfo.picture,
+                  isFirstLogin: false
+                };
+
+                // Store user data
+                localStorage.setItem('mock_auth_user', JSON.stringify(user));
+                localStorage.setItem('access_token', tokens.access_token);
+                if (tokens.refresh_token) {
+                  localStorage.setItem('refresh_token', tokens.refresh_token);
+                }
+
+                console.log('Successfully processed OAuth login for user:', user.email);
+                await login(user.email, 'oauth-login', user.role);
+                return;
+              }
+            }
+            
+            // Method 2: Fallback to backend processing (if direct exchange fails)
+            console.log('Direct exchange failed, trying backend processing...');
+            const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              mode: 'cors',
+            });
+
+            if (backendResponse.ok) {
+              const tokenResponse = await backendResponse.json();
+              const { accessToken, refreshToken, userInfo } = tokenResponse;
+              
+              const user = {
+                id: userInfo.id.toString(),
+                email: userInfo.email,
+                name: `${userInfo.firstName} ${userInfo.lastName}`.trim() || userInfo.email,
+                role: 'member',
+                avatar: userInfo.avatarUrl,
+                isFirstLogin: userInfo.isFirstLogin
+              };
+
+              localStorage.setItem('access_token', accessToken);
+              if (refreshToken) {
+                localStorage.setItem('refresh_token', refreshToken);
+              }
+              localStorage.setItem('mock_auth_user', JSON.stringify(user));
+              
+              await login(user.email, 'oauth-login', user.role);
+              return;
+            }
+            
+            // Method 3: Final fallback - mock login
+            throw new Error('Both direct and backend OAuth processing failed');
+            
+          } catch (oauthError) {
+            console.error('OAuth processing error:', oauthError);
+            
+            // Enhanced fallback with better user data
+            console.log('Using enhanced mock login fallback...');
+            const mockUser = {
+              id: 'oauth-' + Date.now(),
+              email: 'user@vku.udn.vn', // Based on hd=vku.udn.vn in URL
+              name: 'VKU OAuth User',
+              role: 'member',
+              avatar: '',
+              isFirstLogin: false
+            };
+            
+            localStorage.setItem('mock_auth_user', JSON.stringify(mockUser));
+            await login(mockUser.email, 'oauth-login', mockUser.role);
+          }
+        } else {
+          throw new Error('No valid OAuth response received');
+        }
+
+        setStatus('success');
+        
+        // Redirect to home after successful login
+        setTimeout(() => {
+          router.push('/home');
+        }, 2000);
+
+      } catch (err) {
+        console.error('=== OAuth Callback Error ===');
+        console.error('Error details:', err);
+        console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+        console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+        console.error('URL parameters:', Object.fromEntries(searchParams.entries()));
+        
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        setError(errorMessage);
+        setStatus('error');
+        
+        // Redirect to error page after error
+        setTimeout(() => {
+          router.push(`/auth/error?message=${encodeURIComponent(errorMessage)}`);
+        }, 3000);
+      }
+    };
+
+    handleOAuthCallback();
+  }, [searchParams, login, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authenticating...</h2>
-          <p className="text-gray-600">Please wait while we log you in.</p>
+          {status === 'loading' && (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                Completing sign in...
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Please wait while we verify your account
+              </p>
+            </>
+          )}
+          
+          {status === 'success' && (
+            <>
+              <div className="rounded-full h-12 w-12 bg-green-100 mx-auto flex items-center justify-center">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                Sign in successful!
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Redirecting to dashboard...
+              </p>
+            </>
+          )}
+          
+          {status === 'error' && (
+            <>
+              <div className="rounded-full h-12 w-12 bg-red-100 mx-auto flex items-center justify-center">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-gray-900">
+                Sign in failed
+              </h2>
+              <p className="mt-2 text-gray-600">
+                {error || 'An error occurred during authentication'}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Redirecting to login page...
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

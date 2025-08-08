@@ -7,7 +7,15 @@ import { User as UserType } from "@/types/user";
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (userData: any) => void;
+  onSubmit: (userData: {
+    id: number | undefined;
+    updatedAt: string;
+    username: string;
+    email: string;
+    roleId: number;
+    organizationId: number;
+    status: 'active' | 'inactive';
+  }) => void;
   user: UserType | null;
 }
 

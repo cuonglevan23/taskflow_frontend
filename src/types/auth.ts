@@ -1,33 +1,6 @@
-// Auth related enums
-export enum UserRole {
-  ADMIN = 'admin',
-  OWNER = 'owner',
-  MANAGER = 'manager',
-  MEMBER = 'member',
-  VIEWER = 'viewer'
-}
-
-export enum Permission {
-  // Project permissions
-  CREATE_PROJECT = 'create_project',
-  EDIT_PROJECT = 'edit_project',
-  DELETE_PROJECT = 'delete_project',
-  VIEW_PROJECT = 'view_project',
-  
-  // Task permissions
-  CREATE_TASK = 'create_task',
-  EDIT_TASK = 'edit_task',
-  DELETE_TASK = 'delete_task',
-  VIEW_TASK = 'view_task',
-  ASSIGN_TASK = 'assign_task',
-  
-  // User management
-  MANAGE_USERS = 'manage_users',
-  INVITE_USERS = 'invite_users',
-  
-  // System permissions
-  ADMIN_ACCESS = 'admin_access'
-}
+// Import enums from constants to avoid duplication
+import { UserRole, Permission } from '@/constants/auth';
+export { UserRole, Permission };
 
 // Base user interface
 export interface User {
@@ -62,6 +35,21 @@ export interface LoginFormData {
 }
 
 export interface RegisterFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role?: UserRole;
+}
+
+// Credentials interfaces (aliases for compatibility)
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RegisterCredentials {
   name: string;
   email: string;
   password: string;

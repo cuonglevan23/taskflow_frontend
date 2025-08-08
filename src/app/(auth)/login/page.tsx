@@ -2,7 +2,9 @@
 'use client';
 
 import React from 'react';
-import { MockGoogleLoginButton } from '@/components/auth/MockGoogleLoginButton';
+import { LoginForm } from '@/features/auth/components/LoginForm';
+import { BackendTestPanel } from '@/components/dev/BackendTestPanel';
+import { ApiDebugger } from '@/components/dev/ApiDebugger';
 import { useMockAuth } from '@/providers/MockAuthProvider';
 
 export default function LoginPage() {
@@ -21,13 +23,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8 space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <MockGoogleLoginButton />
+          <LoginForm />
 
           <div className="text-center">
             <p className="text-xs text-gray-500">
@@ -36,6 +32,10 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      
+      {/* Development Test Panel */}
+      <BackendTestPanel />
+      <ApiDebugger />
     </div>
   );
 }

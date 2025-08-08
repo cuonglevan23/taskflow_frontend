@@ -12,7 +12,10 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 interface DependencyEdgeData {
   dependencyType: DependencyType;
   lag?: number;
-  onEdgeUpdate?: (edgeId: string, updates: any) => void;
+  onEdgeUpdate?: (edgeId: string, updates: {
+    type?: 'finish-to-start' | 'start-to-start' | 'finish-to-finish' | 'start-to-finish';
+    [key: string]: unknown;
+  }) => void;
   onEdgeDelete?: (edgeId: string) => void;
 }
 

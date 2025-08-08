@@ -21,10 +21,11 @@ type SettingsTab = 'profile' | 'notifications' | 'email-forwarding' | 'account' 
 // SettingsModal Props
 interface SettingsModalProps {
   isOpen: boolean;
-  onClose: () => void;f
+  onClose: () => void;
   user: User;
   backdropColor?: 'black' | 'white';
   backdropOpacity?: number;
+  customBackdrop?: string;
 }
 
 // SettingsModal Component
@@ -33,7 +34,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose, 
   user, 
   backdropColor = 'white',
-  backdropOpacity = 0.8 
+  backdropOpacity = 0.8,
+  customBackdrop
 }) => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');

@@ -35,13 +35,12 @@ export const MockGoogleLoginButton: React.FC = () => {
         
         <div className="grid grid-cols-1 gap-2">
           {roles.map((role) => (
-            <Button
-              key={role}
-              onClick={() => handleRoleLogin(role)}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 text-white"
-              style={{ backgroundColor: getRoleColor(role) }}
-            >
+              <Button
+                  key={role}
+                  onClick={() => handleRoleLogin(role)}
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-3 text-white bg-[${getRoleColor(role)}]`}
+              >
               <span className="text-lg">
                 {role === 'admin' && '👑'}
                 {role === 'owner' && '🏢'}

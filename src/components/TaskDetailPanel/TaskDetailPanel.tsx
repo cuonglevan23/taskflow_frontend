@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { X, Calendar, User, CheckCircle, Plus, MessageCircle, Paperclip, MoreHorizontal } from 'lucide-react';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskListItem, TaskStatus, TaskPriority } from '@/components/TaskList/types';
-import DueDatePicker from '@/app/project/list/components/DueDatePicker';
+
 import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 
 interface TaskDetailPanelProps {
@@ -179,9 +179,9 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
         }}
       >
         {/* Header */}
-        <div 
+        <div
           className="flex items-center justify-between p-6 border-b"
-          style={{ 
+          style={{
             backgroundColor: theme.background.primary,
             borderColor: theme.border.default
           }}
@@ -203,34 +203,26 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               {task.status === 'done' ? 'Completed' : 'Mark complete'}
             </button>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button 
-              className="p-2 rounded transition-colors"
-              style={{ 
-                color: theme.text.secondary,
-                ':hover': { backgroundColor: theme.background.secondary }
-              }}
+            <button
+                className="p-2 rounded transition-colors text-secondary hover:bg-secondary"
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4"/>
             </button>
             <button
-              onClick={onClose}
-              className="p-2 rounded transition-colors"
-              style={{ 
-                color: theme.text.secondary,
-                ':hover': { backgroundColor: theme.background.secondary }
-              }}
+                onClick={onClose}
+                className="p-2 rounded transition-colors text-secondary hover:bg-secondary"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4"/>
             </button>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Task visibility notice */}
-          <div 
+        {/* Task visibility notice */}
+          <div
             className="flex items-start gap-3 p-4 rounded-lg"
             style={{ backgroundColor: theme.background.secondary }}
           >
@@ -254,22 +246,19 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           {/* Task Title */}
           <div>
             <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleSave}
-              className="w-full text-2xl font-bold bg-transparent border-none outline-none resize-none"
-              style={{ 
-                color: theme.text.primary,
-                '::placeholder': { color: theme.text.secondary }
-              }}
-              placeholder="Task name"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={handleSave}
+                className="w-full text-2xl font-bold bg-transparent border-none outline-none resize-none placeholder:text-gray-400"
+                style={{color: theme.text.primary}}
+                placeholder="Task name"
             />
           </div>
 
           {/* Assignees */}
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>
+            <label className="text-sm font-medium" style={{color: theme.text.secondary}}>
               Assignees
             </label>
             <div className="flex items-center gap-3 flex-wrap">
@@ -406,46 +395,43 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               Description
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={handleSave}
-              className="w-full h-24 bg-transparent border-none outline-none resize-none"
-              style={{ 
-                color: theme.text.primary,
-                '::placeholder': { color: theme.text.secondary }
-              }}
-              placeholder="What is this task about?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={handleSave}
+                className="w-full h-24 bg-transparent border-none outline-none resize-none placeholder:text-gray-400"
+                style={{color: theme.text.primary}}
+                placeholder="What is this task about?"
             />
           </div>
 
           {/* Comments */}
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+              <div
+                  className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                 {task.assignees[0]?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
               </div>
               <input
-                type="text"
-                value={comment || ''}
-                onChange={(e) => setComment(e.target.value)}
-                className="flex-1 px-3 py-2 rounded border-none outline-none"
-                style={{ 
-                  backgroundColor: theme.background.secondary,
-                  color: theme.text.primary,
-                  '::placeholder': { color: theme.text.secondary }
-                }}
-                placeholder="Add a comment"
+                  type="text"
+                  value={comment || ''}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded border-none outline-none placeholder:text-gray-400"
+                  style={{
+                    backgroundColor: theme.background.secondary,
+                    color: theme.text.primary
+                  }}
+                  placeholder="Add a comment"
               />
             </div>
           </div>
 
           {/* Tags */}
           {task.tags && task.tags.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>
-                Tags
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" style={{color: theme.text.secondary}}>
+                  Tags
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
                 {task.tags.map((tag, index) => (
                   <span
                     key={index}
@@ -529,11 +515,11 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                 startDate: startDateFormatted,
                 endDate: endDateFormatted,
               });
-              
-              onSave(task.id, { 
-                dueDate: endDateFormatted || startDateFormatted, // ✅ Fix: dueDate = end date
-                startDate: startDateFormatted,
-                endDate: endDateFormatted,
+
+              onSave(task.id, {
+                dueDate: (endDateFormatted ?? startDateFormatted) ?? undefined,
+                startDate: startDateFormatted ?? undefined,
+                endDate: endDateFormatted ?? undefined,
                 startTime: data.startTime || startTime,
                 endTime: data.endTime || endTime,
                 hasStartTime: !!(data.startTime || startTime),

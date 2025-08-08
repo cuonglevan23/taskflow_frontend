@@ -115,7 +115,16 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
   };
 
   // FullCalendar event handlers
-  const handleEventClick = (info: any) => {
+  const handleEventClick = (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => {
     const originalTask = info.event.extendedProps.originalTask;
     if (originalTask) {
       taskActions.onTaskClick?.(originalTask);
@@ -140,7 +149,21 @@ const MyTaskCalendarPage: React.FC<MyTaskCalendarPageProps> = ({
     taskActions.onCreateTask?.(taskData);
   };
 
-  const handleEventDrop = (info: any) => {
+  const handleEventDrop = (info: {
+    event: {
+      id: string;
+      title: string;
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    oldEvent: {
+      start: Date | null;
+      end: Date | null;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  }) => {
     // Update task with new date
     const taskId = info.event.id;
     const newStart = info.event.start;
