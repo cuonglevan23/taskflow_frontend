@@ -8,7 +8,7 @@ Hệ thống RBAC hoàn chỉnh với 5 roles: **Admin**, **Owner**, **Project M
 
 ### 1. **Truy cập Role Demo**
 ```
-http://localhost:3001/role-demo
+http://localhost:3000/role-demo
 ```
 
 ### 2. **Sử dụng DevRoleSwitcher**
