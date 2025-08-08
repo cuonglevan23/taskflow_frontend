@@ -16,6 +16,10 @@ import {
   Archive,
   Star,
   Clock,
+  CreditCard,
+  Building,
+  User,
+  Wrench,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -50,10 +54,10 @@ export interface NavigationConfig {
 const ICON_SIZE = 20;
 const ICON_CLASS = "text-gray-300";
 
-// Main navigation configuration
+// Main navigation configuration - Role-based menu structure
 export const navigationConfig: NavigationConfig = {
   sections: [
-    // Main section (no title, always visible)
+    // Main section (always visible for all roles)
     {
       id: "main",
       items: [
@@ -66,7 +70,7 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           id: "my-tasks",
-          label: "My tasks",
+          label: "My Task",
           href: "/my-tasks/list",
           icon: <CheckSquare size={ICON_SIZE} className={ICON_CLASS} />,
           activePattern: "/my-tasks",
@@ -89,7 +93,7 @@ export const navigationConfig: NavigationConfig = {
       ],
     },
     
-    // Insights section
+    // Insights section (contains Goals, Reports, Portfolios)
     {
       id: "insights",
       title: "Insights",
@@ -97,8 +101,15 @@ export const navigationConfig: NavigationConfig = {
       defaultExpanded: true,
       items: [
         {
-          id: "reporting",
-          label: "Reporting",
+          id: "goals",
+          label: "Goals",
+          href: "/goals",
+          icon: <Target size={ICON_SIZE} className={ICON_CLASS} />,
+          activePattern: "/goals",
+        },
+        {
+          id: "reports",
+          label: "Reports",
           href: "/reporting",
           icon: <BarChart3 size={ICON_SIZE} className={ICON_CLASS} />,
           activePattern: "/reporting",
@@ -110,145 +121,65 @@ export const navigationConfig: NavigationConfig = {
           icon: <Briefcase size={ICON_SIZE} className={ICON_CLASS} />,
           activePattern: "/portfolios",
         },
-        {
-          id: "goals",
-          label: "Goals",
-          href: "/goals",
-          icon: <Target size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/goals",
-        },
       ],
     },
 
-    // Projects section
+    // Projects section (contains actual projects - scope varies by role)
     {
       id: "projects",
       title: "Projects",
       collapsible: true,
       defaultExpanded: true,
       items: [
+        // Dummy item to prevent section from being filtered out
+        // Real projects will be loaded dynamically by PrivateSidebar
         {
-          id: "cross-functional",
-          label: "Cross-functional project plan",
-          href: "/project/list",
+          id: "projects-placeholder",
+          label: "Loading...",
+          href: "/projects",
           icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/project",
-        },
-        {
-          id: "marketing",
-          label: "Marketing Campaign",
-          href: "/projects/marketing",
-          icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/projects/marketing",
-        },
-        {
-          id: "website-redesign",
-          label: "Website Redesign",
-          href: "/projects/website",
-          icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/projects/website",
+          activePattern: "/projects",
         },
       ],
     },
 
-    // Team & Collaboration section
+    // Managements section (contains Project, Team and User Management)
     {
-      id: "collaboration",
-      title: "Team & Collaboration",
+      id: "managements",
+      title: "Managements",
       collapsible: true,
-      defaultExpanded: false,
+      defaultExpanded: true,
       items: [
         {
-          id: "members",
-          label: "Members",
-          href: "/owner/Members",
+          id: "project-management",
+          label: "Project Management",
+          href: "/project-management",
+          icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
+          activePattern: "/project-management",
+          permission: "project_management", // Custom permission for project management (Owner only)
+        },
+        {
+          id: "team-management",
+          label: "Team Management",
+          href: "/team-management",
           icon: <Users size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/owner/Members",
-          permission: "admin", // Only admins can see this
+          activePattern: "/team-management",
+          permission: "team_management", // Custom permission for team management
         },
         {
-          id: "messages",
-          label: "Messages",
-          href: "/messages",
-          icon: <MessageSquare size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/messages",
-          badge: {
-            count: 3,
-            color: "success",
-          },
-        },
-        {
-          id: "calendar",
-          label: "Calendar",
-          href: "/calendar",
-          icon: <Calendar size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/calendar",
+          id: "user-management",
+          label: "User Management",
+          href: "/user-management",
+          icon: <User size={ICON_SIZE} className={ICON_CLASS} />,
+          activePattern: "/user-management",
+          permission: "user_management", // Custom permission for user management
         },
       ],
     },
 
-    // Tools section
-    {
-      id: "tools",
-      title: "Tools",
-      collapsible: true,
-      defaultExpanded: false,
-      items: [
-        {
-          id: "search",
-          label: "Search",
-          href: "/search",
-          icon: <Search size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/search",
-        },
-        {
-          id: "archive",
-          label: "Archive",
-          href: "/archive",
-          icon: <Archive size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/archive",
-        },
-        {
-          id: "starred",
-          label: "Starred",
-          href: "/starred",
-          icon: <Star size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/starred",
-        },
-        {
-          id: "recent",
-          label: "Recent",
-          href: "/recent",
-          icon: <Clock size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/recent",
-        },
-      ],
-    },
 
-    // Settings section
-    {
-      id: "settings",
-      title: "Settings",
-      collapsible: true,
-      defaultExpanded: false,
-      items: [
-        {
-          id: "workspace-settings",
-          label: "Workspace Settings",
-          href: "/settings/workspace",
-          icon: <Settings size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/settings",
-          permission: "admin",
-        },
-        {
-          id: "notifications",
-          label: "Notifications",
-          href: "/settings/notifications",
-          icon: <Bell size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/settings/notifications",
-        },
-      ],
-    },
+
+
   ],
 };
 
@@ -284,9 +215,13 @@ export const getVisibleSections = (userPermissions: string[] = []): NavigationSe
     .filter(section => !section.permission || userPermissions.includes(section.permission))
     .map(section => ({
       ...section,
-      items: section.items.filter(item => 
-        !item.permission || userPermissions.includes(item.permission)
-      ),
+      items: section.items.filter(item => {
+        // If no permission required, show item
+        if (!item.permission) return true;
+        
+        // Check if user has the required permission
+        return userPermissions.includes(item.permission);
+      }),
     }))
     .filter(section => section.items.length > 0);
 };

@@ -26,6 +26,7 @@ import {
 // Import global context hooks for data synchronization
 import { useProjectsContext, useTasksContext } from "@/contexts";
 import { GrProjects } from "react-icons/gr";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Using types from navigation config
 
@@ -51,8 +52,22 @@ export default function PrivateSidebar({
   const { projects } = useProjectsContext();
   const { taskStats } = useTasksContext();
 
-  // Get user permissions (you can customize this based on your auth system)
-  const userPermissions = ["admin"]; // Example: get from user context
+  // Get user permissions from usePermissions hook
+  const { user: currentUser, role, can, is } = usePermissions();
+
+  // Create role-based permissions array for navigation filtering
+  const userPermissions = [
+    // Always include basic permissions
+    "basic",
+    
+    // Role-based permissions
+    ...(is.owner ? ["project_management", "team_management", "user_management"] : []),
+    ...(is.projectManager ? ["project_management", "team_management", "user_management"] : []),
+    ...(is.leader ? ["team_management"] : []),
+    
+    // Legacy admin permission for backward compatibility
+    ...(is.owner ? ["admin"] : []),
+  ];
 
   // Get visible sections based on permissions and merge with dynamic data
   const baseSections = getVisibleSections(userPermissions);
@@ -80,9 +95,25 @@ export default function PrivateSidebar({
     
     // Replace static projects section with dynamic projects from global context
     if (section.id === "projects") {
+      // For now, show all projects for all roles (since Project model doesn't have members/managerId yet)
+      // TODO: Update Project model to include members, managerId, teamId for proper role-based filtering
+      let filteredProjects = projects;
+      
+      // Simple role-based filtering based on available data
+      if (is.member || is.leader) {
+        // Member & Leader: Show active projects (they participate in)
+        filteredProjects = projects.filter(project => project.status === 'active');
+      } else if (is.projectManager) {
+        // PM: Show active and completed projects they can manage
+        filteredProjects = projects.filter(project => 
+          project.status === 'active' || project.status === 'completed'
+        );
+      }
+      // Owner: All projects (no filter needed)
+      
       return {
         ...section,
-        items: projects.slice(0, 5).map(project => ({
+        items: filteredProjects.slice(0, 5).map(project => ({
           id: `project-${project.id}`,
           label: project.name,
           href: `/projects/${project.id}`,

@@ -162,6 +162,116 @@ switchRole('project_manager');
 switchUser('2'); // Switch to Owner user
 ```
 
+## 📋 **Sidebar Menu Structure by Role**
+
+### **Owner Role**
+```
+📊 Home
+✅ My Task
+📥 Inbox
+📈 Insights
+  ├── 🎯 Goals (toàn org)
+  ├── 📈 Reports (toàn org)
+  └── 💼 Portfolios (toàn org)
+📁 Projects (toàn org)
+  ├── Project A
+  ├── Project B
+  └── Project C...
+⚙️ Managements
+  ├── 📁 Project Management
+  ├── 👥 Team Management
+  └── 👤 User Management
+```
+
+### **Project Manager (PM) Role**
+```
+📊 Home
+✅ My Task
+📥 Inbox
+📈 Insights
+  ├── 🎯 Goals (dự án/team)
+  ├── 📈 Reports (dự án/team)
+  └── 💼 Portfolios (dự án/team)
+📁 Projects (quản lý)
+  ├── Managed Project A
+  ├── Managed Project B
+  └── Managed Project C...
+⚙️ Managements
+  ├── 📁 Project Management
+  ├── 👥 Team Management
+  └── 👤 User Management (dự án/team)
+```
+
+### **Leader Role**
+```
+📊 Home
+✅ My Task
+📥 Inbox
+📈 Insights
+  ├── 🎯 Goals (team)
+  ├── 📈 Reports (team)
+  └── 💼 Portfolios (team)
+📁 Projects (team)
+  ├── Team Project A
+  ├── Team Project B
+  └── Team Project C...
+⚙️ Managements
+  └── 👥 Team Management (team)
+👥 Teams (tham gia)
+  ├── Team A
+  ├── Team B
+  └── Team C...
+```
+
+### **Member Role**
+```
+📊 Home
+✅ My Task
+📥 Inbox
+📈 Insights
+  ├── 🎯 Goals (cá nhân)
+  ├── 📈 Reports (cá nhân)
+  └── 💼 Portfolios (cá nhân)
+📁 Projects (tham gia)
+  ├── Assigned Project A
+  ├── Assigned Project B
+  └── Assigned Project C...
+👥 Teams (tham gia)
+  ├── Team A
+  ├── Team B
+  └── Team C...
+```
+
+## 🔍 **Menu Scope Details**
+
+### **Scope Definitions**
+- **Toàn org**: Toàn bộ tổ chức/công ty
+- **Dự án/team**: Các dự án và team được quản lý
+- **Team**: Chỉ team được lãnh đạo
+- **Tham gia**: Các team/project mà user là thành viên
+- **Cá nhân**: Chỉ dữ liệu cá nhân của user
+
+### **Access Level Matrix**
+| Menu Item | Owner | PM | Leader | Member |
+|-----------|-------|----|---------| -------|
+| Home | ✅ | ✅ | ✅ | ✅ |
+| My Task | ✅ | ✅ | ✅ | ✅ |
+| Inbox | ✅ | ✅ | ✅ | ✅ |
+| **Insights** | ✅ | ✅ | ✅ | ✅ |
+| ├── Goals | Toàn org | Dự án/team | Team | Cá nhân |
+| ├── Reports | Toàn org | Dự án/team | Team | Cá nhân |
+| └── Portfolios | Toàn org | Dự án/team | Team | Cá nhân |
+| **Projects** | ✅ | ✅ | ✅ | ✅ |
+| ├── Project Scope | Toàn org | Quản lý | Team | Tham gia |
+| └── Project Actions | Full CRUD | Manage assigned | View/Edit team | View/Task only |
+| **Managements** | ✅ | ✅ | ✅ | ❌ |
+| ├── Project Management | ✅ | ✅ | ❌ | ❌ |
+| ├── Team Management | ✅ | ✅ | Team only | ❌ |
+| └── User Management | ✅ | Dự án/team | ❌ | ❌ |
+| **Teams** | ✅ | ✅ | ✅ | ✅ |
+| ├── Team Scope | Toàn org | Dự án/team | Tham gia | Tham gia |
+| └── Team Actions | Full CRUD | Manage assigned | View only | View only |
+
 ## 📊 **Permission Matrix**
 
 | Feature | Admin | Owner | PM | Leader | Member |
@@ -333,6 +443,77 @@ export const authService = {
 ✅ **Production-ready** architecture  
 ✅ **Zero backend dependency** for development  
 
+## 🚨 **Recent Changes & Important Notes**
+
+### **⚠️ Removed Features (Tách riêng quản lý)**
+- **Billing** - Đã xóa khỏi sidebar, sẽ quản lý riêng
+- **Organization Settings** - Đã xóa khỏi sidebar, sẽ quản lý riêng  
+- **Profile & Settings** - Đã xóa khỏi sidebar, sẽ xử lý qua user menu
+
+### **🔧 Current Implementation Status**
+- **Reports Link**: `/reporting` (NOT `/reports`)
+- **Project Management**: Available for Owner AND PM roles
+- **Projects Section**: Dynamic loading with role-based filtering
+- **Teams Section**: Member & Leader can view teams they participate in
+
+### **📝 Development Notes for New Team Members**
+
+#### **1. Adding New Menu Items**
+```tsx
+// 1. Add to src/config/navigation.tsx
+{
+  id: "new-feature",
+  label: "New Feature", 
+  href: "/new-feature",
+  icon: <Icon />,
+  permission: "custom_permission", // Optional
+}
+
+// 2. Add permission to src/layouts/private/components/PrivateSidebar.tsx
+...(is.owner ? ["custom_permission"] : []),
+
+// 3. Create page at src/app/new-feature/page.tsx
+```
+
+#### **2. Role-based Project Filtering**
+```tsx
+// Current logic in PrivateSidebar.tsx:
+// Member: project.status === 'active' (participate in)
+// Leader: project.status === 'active' (team projects)  
+// PM: project.status === 'active' || 'completed' (manage)
+// Owner: All projects (no filter)
+
+// TODO: Update Project model to include:
+// - members: User[] 
+// - managerId: string
+// - teamId: string
+```
+
+#### **3. Navigation Architecture**
+```
+src/config/navigation.tsx          // Menu structure & permissions
+src/layouts/private/components/    // Sidebar implementation
+  ├── PrivateSidebar.tsx          // Main sidebar with role logic
+src/hooks/usePermissions.ts        // Permission checking
+```
+
+#### **4. Testing Roles**
+```bash
+# 1. Enable DevMode in src/app/layout.tsx
+<MockAuthProvider enableDevMode={true}>
+
+# 2. Use DevRoleSwitcher (bottom-right corner)
+# 3. Or visit http://localhost:3001/role-demo
+```
+
+### **🎯 TODO for Production**
+- [ ] Update Project model with members/managerId/teamId
+- [ ] Implement proper role-based project filtering
+- [ ] Create Billing management interface (separate)
+- [ ] Create Organization Settings interface (separate)
+- [ ] Implement user menu for Profile & Settings
+- [ ] Replace MockAuthProvider with real authentication
+
 ## 🔗 **Key Files**
 
 - `src/types/roles.ts` - Role definitions and permissions
@@ -343,5 +524,7 @@ export const authService = {
 - `src/components/dev/DevRoleSwitcher.tsx` - Development role switcher
 - `src/utils/roleUtils.ts` - Role utility functions
 - `src/app/(dashboard)/role-demo/page.tsx` - Demo page
+- `src/config/navigation.tsx` - **Sidebar menu structure**
+- `src/layouts/private/components/PrivateSidebar.tsx` - **Sidebar implementation**
 
 **Ready to use! 🚀 Visit `/role-demo` to see it in action!**
