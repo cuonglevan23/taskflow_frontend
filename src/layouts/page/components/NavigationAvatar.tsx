@@ -1,0 +1,86 @@
+"use client";
+
+import React, { memo } from 'react';
+import { useTheme } from '@/layouts/hooks/useTheme';
+import { useAuth } from '@/hooks/use-auth';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import type { RouteConfig } from '../configs/routeNavigationConfig';
+
+interface NavigationAvatarProps {
+  config: NonNullable<RouteConfig['avatarConfig']>;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const NavigationAvatar: React.FC<NavigationAvatarProps> = memo(({ config, size = 'md' }) => {
+  const { theme } = useTheme();
+  const { user } = useAuth();
+  
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12'
+  };
+
+  const iconSizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8'
+  };
+
+  // Get theme-aware colors
+  const getBgColor = (color: string) => {
+    if (theme === 'dark') {
+      // Darker variants for dark theme
+      return color.replace('500', '600').replace('300', '500');
+    }
+    return color;
+  };
+
+  const getTextColor = () => {
+    if (config.bgColor === 'gray-300' && theme === 'dark') {
+      return 'text-gray-800';
+    }
+    return 'text-white';
+  };
+
+  // Handle user avatar type - use real backend user data
+  if (config.type === 'user') {
+    return (
+      <UserAvatar
+        user={user}
+        size={size}
+        showTooltip={true}
+        fallbackColor={`bg-${getBgColor(config.bgColor)}`}
+      />
+    );
+  }
+
+  if (config.type === 'custom' && config.customContent) {
+    return <>{config.customContent()}</>;
+  }
+
+  if (config.type === 'initial' && config.initial) {
+    return (
+      <div 
+        className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold text-xl shadow-sm bg-${getBgColor(config.bgColor)} ${getTextColor()}`}
+      >
+        {config.initial}
+      </div>
+    );
+  }
+
+  if (config.type === 'icon' && config.icon) {
+    const IconComponent = config.icon;
+    return (
+      <div className={`${sizeClasses[size]} rounded-full bg-${getBgColor(config.bgColor)} flex items-center justify-center`}>
+        <IconComponent className={`${iconSizeClasses[size]} ${getTextColor()}`} />
+      </div>
+    );
+  }
+
+  return null;
+});
+
+NavigationAvatar.displayName = 'NavigationAvatar';
+
+export { NavigationAvatar };

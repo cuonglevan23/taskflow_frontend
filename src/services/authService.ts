@@ -1,18 +1,16 @@
-// Real Auth Service - Spring Boot + JWT + Google OAuth
+// Real Auth Service - Spring Boot + JWT + Google OAuth with HttpOnly Secure Cookies
 import { api } from './api';
 import type { User, UserWithRole } from '@/types/roles';
 
 interface GoogleAuthResponse {
   user: UserWithRole;
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  // Tokens are now handled via HttpOnly cookies, not returned in response
+  success: boolean;
 }
 
 interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  success: boolean;
+  // Tokens are now handled via HttpOnly cookies
 }
 
 export const authService = {
@@ -21,80 +19,68 @@ export const authService = {
     const response = await api.post<GoogleAuthResponse>('/auth/google', {
       code: authorizationCode,
       redirectUri: `${window.location.origin}/auth/callback`
+    }, {
+      // Ensure cookies are included in requests
+      withCredentials: true
     });
     
-    const { accessToken, refreshToken } = response.data;
-    
-    // Store tokens
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
-    localStorage.setItem('token_expires_at', 
-      (Date.now() + response.data.expiresIn * 1000).toString()
-    );
+    // Tokens are now automatically stored in HttpOnly Secure cookies by the server
+    // No client-side token storage needed
     
     return response.data;
   },
 
   // Get current user
   getCurrentUser: async (): Promise<UserWithRole> => {
-    const response = await api.get<UserWithRole>('/auth/me');
+    const response = await api.get<UserWithRole>('/auth/me', {
+      // Ensure cookies are included in requests
+      withCredentials: true
+    });
     return response.data;
   },
 
   // Refresh token
   refreshToken: async (): Promise<AuthTokens> => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await api.post<AuthTokens>('/auth/refresh', {
-      refreshToken
+    // Refresh token is automatically sent via HttpOnly cookie
+    const response = await api.post<AuthTokens>('/auth/refresh', {}, {
+      // Ensure cookies are included in requests
+      withCredentials: true
     });
 
-    const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
-    
-    // Update stored tokens
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', newRefreshToken);
-    localStorage.setItem('token_expires_at', 
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    // New tokens are automatically stored in HttpOnly Secure cookies by the server
+    // No client-side token storage needed
 
     return response.data;
   },
 
   // Logout
   logout: async (): Promise<void> => {
-    try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        await api.post('/auth/logout', { refreshToken });
-      }
-    } finally {
-      // Always clear local storage
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('token_expires_at');
-    }
-  },
-
-  // Check if token is expired
-  isTokenExpired: (): boolean => {
-    const expiresAt = localStorage.getItem('token_expires_at');
-    if (!expiresAt) return true;
-    
-    return Date.now() >= parseInt(expiresAt);
-  },
-
-  // Get stored access token
-  getAccessToken: (): string | null => {
-    return localStorage.getItem('access_token');
+    // Send logout request - server will clear HttpOnly cookies
+    await api.post('/auth/logout', {}, {
+      withCredentials: true
+    });
+    // HttpOnly cookies are automatically cleared by the server
+    // No client-side storage to clear
   },
 
   // Check if user is authenticated
-  isAuthenticated: (): boolean => {
-    const token = authService.getAccessToken();
-    return token !== null && !authService.isTokenExpired();
+  isAuthenticated: async (): Promise<boolean> => {
+    try {
+      // Check authentication status by calling a protected endpoint
+      await api.get('/auth/verify', {
+        withCredentials: true
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Verify authentication status (synchronous check for initial load)
+  hasValidSession: (): boolean => {
+    // Since we can't access HttpOnly cookies from JavaScript,
+    // we need to rely on server-side verification
+    // This method is mainly for initial state - use isAuthenticated() for actual checks
+    return true; // Will be verified by server on first API call
   }
 };

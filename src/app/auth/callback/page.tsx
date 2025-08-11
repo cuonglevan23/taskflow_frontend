@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { signIn } from 'next-auth/react';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useMockAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string>('');
 
@@ -62,6 +61,23 @@ export default function AuthCallbackPage() {
           console.log('All URL parameters:', Object.fromEntries(searchParams.entries()));
           const finalToken = token || accessToken;
           console.log('Final token length:', finalToken?.length);
+
+          // Helper function to decode JWT and extract role
+          const decodeJWT = (token: string) => {
+            try {
+              const base64Payload = token.split('.')[1];
+              const payload = JSON.parse(atob(base64Payload));
+              console.log('Decoded JWT payload:', payload);
+              return payload;
+            } catch (error) {
+              console.error('Failed to decode JWT:', error);
+              return null;
+            }
+          };
+
+          // Decode JWT to get role from backend
+          const jwtPayload = decodeJWT(finalToken);
+          const backendRole = jwtPayload?.roles?.[0] || jwtPayload?.role;
           
           // Store tokens in localStorage
           localStorage.setItem('access_token', finalToken);
@@ -74,16 +90,21 @@ export default function AuthCallbackPage() {
           
           if (userEmail) {
             // User info provided in URL parameters from backend
-            const fullName = firstName && lastName 
-              ? `${decodeURIComponent(firstName)} ${decodeURIComponent(lastName)}`.trim()
-              : userName || userEmail;
+            const decodedEmail = decodeURIComponent(userEmail);
+            const decodedFirstName = firstName ? decodeURIComponent(firstName.replace(/\+/g, ' ')) : '';
+            const decodedLastName = lastName ? decodeURIComponent(lastName.replace(/\+/g, ' ')) : '';
+            const decodedAvatar = userAvatar ? decodeURIComponent(userAvatar) : '';
+            
+            const fullName = decodedFirstName && decodedLastName 
+              ? `${decodedFirstName} ${decodedLastName}`.trim()
+              : userName || decodedEmail;
               
             user = {
               id: userId || 'oauth-' + Date.now(),
-              email: decodeURIComponent(userEmail),
+              email: decodedEmail,
               name: fullName,
-              role: 'member',
-              avatar: userAvatar ? decodeURIComponent(userAvatar) : '',
+              role: backendRole || 'MEMBER', // Use role from JWT payload
+              avatar: decodedAvatar,
               isFirstLogin: isFirstLogin === 'true'
             };
             console.log('User info extracted from backend URL parameters:', user);
@@ -102,7 +123,7 @@ export default function AuthCallbackPage() {
                   id: backendUser.id?.toString() || 'oauth-' + Date.now(),
                   email: backendUser.email,
                   name: backendUser.name || `${backendUser.firstName} ${backendUser.lastName}`.trim(),
-                  role: backendUser.role || 'member',
+                  role: backendRole || backendUser.role || 'MEMBER', // Prioritize JWT role
                   avatar: backendUser.avatar || backendUser.avatarUrl || '',
                   isFirstLogin: backendUser.isFirstLogin || false
                 };
@@ -117,25 +138,55 @@ export default function AuthCallbackPage() {
                 id: 'oauth-' + Date.now(),
                 email: 'user@example.com',
                 name: 'OAuth User',
-                role: 'member',
+                role: backendRole || 'MEMBER', // Use JWT role even in fallback
                 avatar: '',
                 isFirstLogin: false
               };
             }
           }
 
-          // Store user data and login
-          localStorage.setItem('mock_auth_user', JSON.stringify(user));
-          console.log('Successfully processed OAuth login for user:', user.email);
-          console.log('Token expires in:', expiresIn, 'seconds');
-          console.log('Token type:', tokenType);
-          console.log('About to call login function...');
+          // Store user data in cookies (not localStorage)
+          const setCookie = (name: string, value: string, days: number = 7) => {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            // URL encode the value to handle special characters
+            const encodedValue = encodeURIComponent(value);
+            document.cookie = `${name}=${encodedValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+          };
           
+          // Set user data cookies - match middleware expectation
+          setCookie('access_token', finalToken);
+          setCookie('userRole', user.role || 'member');
+          setCookie('userId', user.id);
+          setCookie('userName', user.name);
+          setCookie('userEmail', user.email);
+          if (user.avatar) {
+            setCookie('userAvatar', user.avatar);
+          }
+          
+          // Also store refresh token if available
+          if (refreshTokenParam) {
+            setCookie('refresh_token', refreshTokenParam);
+          }
+          
+          // Sign in with NextAuth using backend OAuth data
           try {
-            await login(user.email, 'oauth-login', user.role);
-            console.log('Login function completed successfully');
+            const result = await signIn('backend-oauth', {
+              token: finalToken,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              avatar: user.avatar,
+              redirect: false,
+            });
+
+            if (result?.error) {
+              throw new Error(`NextAuth sign in failed: ${result.error}`);
+            }
+
+            console.log('NextAuth sign in successful');
           } catch (loginError) {
-            console.error('Login function failed:', loginError);
+            console.error('NextAuth sign in failed:', loginError);
             throw loginError;
           }
         } else if (code && state) {
@@ -194,8 +245,21 @@ export default function AuthCallbackPage() {
                   localStorage.setItem('refresh_token', tokens.refresh_token);
                 }
 
+                // Sign in with NextAuth
+                const result = await signIn('backend-oauth', {
+                  token: tokens.access_token,
+                  email: user.email,
+                  name: user.name,
+                  role: user.role,
+                  avatar: user.avatar,
+                  redirect: false,
+                });
+
+                if (result?.error) {
+                  throw new Error(`NextAuth sign in failed: ${result.error}`);
+                }
+
                 console.log('Successfully processed OAuth login for user:', user.email);
-                await login(user.email, 'oauth-login', user.role);
                 return;
               }
             }
@@ -228,9 +292,20 @@ export default function AuthCallbackPage() {
               if (refreshToken) {
                 localStorage.setItem('refresh_token', refreshToken);
               }
-              localStorage.setItem('mock_auth_user', JSON.stringify(user));
+              // Sign in with NextAuth
+              const result = await signIn('backend-oauth', {
+                token: accessToken,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                avatar: user.avatar,
+                redirect: false,
+              });
+
+              if (result?.error) {
+                throw new Error(`NextAuth sign in failed: ${result.error}`);
+              }
               
-              await login(user.email, 'oauth-login', user.role);
               return;
             }
             
@@ -251,8 +326,19 @@ export default function AuthCallbackPage() {
               isFirstLogin: false
             };
             
-            localStorage.setItem('mock_auth_user', JSON.stringify(mockUser));
-            await login(mockUser.email, 'oauth-login', mockUser.role);
+            // Sign in with NextAuth using mock data
+            const result = await signIn('backend-oauth', {
+              token: 'mock-token-' + Date.now(),
+              email: mockUser.email,
+              name: mockUser.name,
+              role: mockUser.role,
+              avatar: mockUser.avatar,
+              redirect: false,
+            });
+
+            if (result?.error) {
+              console.error('NextAuth mock sign in failed:', result.error);
+            }
           }
         } else {
           throw new Error('No valid OAuth response received');
@@ -284,7 +370,7 @@ export default function AuthCallbackPage() {
     };
 
     handleOAuthCallback();
-  }, [searchParams, login, router]);
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

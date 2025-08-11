@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar } from "@/components/ui";
+import { UserAvatar } from "@/components/ui";
 import Dropdown, { DropdownItem, DropdownSeparator } from "@/components/ui/Dropdown/Dropdown";
 import { 
   Settings, 
@@ -174,11 +174,11 @@ const UserMenu: React.FC<UserMenuProps> = ({
         <Dropdown
           trigger={
             <button className="flex items-center p-1 rounded hover:bg-gray-700 transition-colors ml-1">
-              <Avatar
-                name={user.name}
-                src={user.avatar}
+              <UserAvatar
+                user={user}
                 size="sm"
                 className="ring-1 ring-gray-600"
+                showTooltip
               />
             </button>
           }
@@ -189,9 +189,8 @@ const UserMenu: React.FC<UserMenuProps> = ({
           {/* User Info Header */}
           <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
             <div className="flex items-center space-x-3">
-              <Avatar
-                name={user.name}
-                src={user.avatar}
+              <UserAvatar
+                user={user}
                 size="md"
                 className="ring-2 ring-orange-500"
               />

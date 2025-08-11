@@ -2,13 +2,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui';
 import { UserRole } from '@/types/roles';
 import { getRoleDisplayName, getRoleColor } from '@/utils/roleUtils';
 
 export const MockGoogleLoginButton: React.FC = () => {
-  const { login, isLoading } = useMockAuth();
+  const { login, isLoading } = useAuth();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
 
   const roles: UserRole[] = ['admin', 'owner', 'project_manager', 'leader', 'member'];

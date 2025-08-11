@@ -1,19 +1,21 @@
-// Login Form Component
+// Legacy Login Form Component - DEPRECATED
+// This file is kept for backward compatibility but should not be used
+// Use @/components/auth/LoginForm instead
 'use client';
 
 import React, { useState } from 'react';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui';
 import type { LoginCredentials } from '@/types';
 
-export const LoginForm: React.FC = () => {
+export const LegacyLoginForm: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, error } = useMockAuth();
+  const { login, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

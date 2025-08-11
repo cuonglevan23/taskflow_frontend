@@ -84,7 +84,7 @@ export const RealAuthProvider: React.FC<RealAuthProviderProps> = ({ children }) 
           const response = await authService.loginWithGoogle(code);
           setUser(response.user);
           setError(null);
-          
+
           // Clear URL parameters and redirect
           window.history.replaceState({}, document.title, '/home');
           router.push('/home');

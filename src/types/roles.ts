@@ -242,6 +242,8 @@ export interface UserWithRole {
   role: UserRole;
   permissions?: Permission[];
   projectRoles?: Record<string, UserRole>; // Different roles per project
+  avatar?: string; // Avatar URL from OAuth or backend
+  isFirstLogin?: boolean; // OAuth first login flag
 }
 
 // Context-specific permissions (e.g., project-level roles)

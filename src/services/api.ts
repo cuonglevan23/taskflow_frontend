@@ -11,16 +11,15 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Enable cookies for HttpOnly Secure Cookie authentication
+  withCredentials: true,
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add JWT token if available
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Tokens are automatically included via HttpOnly cookies
+    // No need to manually add Authorization header
     return config;
   },
   (error) => {
@@ -41,31 +40,17 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Try to refresh token
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken
-          });
+        // Try to refresh token using HttpOnly cookies
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+          withCredentials: true // Include HttpOnly cookies
+        });
 
-          const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
-          
-          // Update tokens
-          localStorage.setItem('access_token', accessToken);
-          localStorage.setItem('refresh_token', newRefreshToken);
-          localStorage.setItem('token_expires_at', 
-            (Date.now() + expiresIn * 1000).toString()
-          );
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return apiClient(originalRequest);
-        }
+        // New tokens are automatically stored in HttpOnly cookies by the server
+        // Retry original request - cookies will be automatically included
+        return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('token_expires_at');
+        // Server will clear HttpOnly cookies on failed refresh
         window.location.href = '/login';
       }
     }

@@ -1,6 +1,6 @@
 // Permission Management Hook
 import { useMemo } from 'react';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   UserRole, 
   ROLE_CONFIGS, 
@@ -16,7 +16,7 @@ interface UsePermissionsProps {
 }
 
 export const usePermissions = ({ contextType, contextId }: UsePermissionsProps = {}) => {
-  const { user } = useMockAuth();
+  const { user } = useAuth();
 
   // Get effective role (global or context-specific)
   const effectiveRole = useMemo((): UserRole => {

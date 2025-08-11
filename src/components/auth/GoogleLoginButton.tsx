@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui';
 
 interface GoogleLoginButtonProps {
@@ -14,7 +14,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   className = '',
   disabled = false
 }) => {
-  const { login, isLoading } = useMockAuth();
+  const { login, isLoading } = useAuth();
 
   const handleGoogleLogin = () => {
     // In mock mode, simulate Google login

@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/layouts/hooks/useTheme";
 import "./globals.css";
 import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { AppProvider } from "@/contexts/AppProvider";
-import { MockAuthProvider } from "@/providers/MockAuthProvider";
+import { NextAuthProvider } from "@/providers/NextAuthProvider";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -32,15 +32,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
-          <AppProvider>
-            <DetailPanelProvider>
-              <MockAuthProvider defaultRole="member" enableDevMode={true}>
+        <NextAuthProvider>
+          <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
+            <AppProvider>
+              <DetailPanelProvider>
                 {children}
-              </MockAuthProvider>
-            </DetailPanelProvider>
-          </AppProvider>
-        </ThemeProvider>
+              </DetailPanelProvider>
+            </AppProvider>
+          </ThemeProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

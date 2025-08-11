@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
-import { useMockAuth } from "@/providers/MockAuthProvider";
+import { useAuth } from "@/hooks/use-auth";
+import { useUserData } from "@/hooks/useUserData";
 import {
   LayoutContextValue,
   LayoutActions,
@@ -15,7 +16,8 @@ import {
 export function usePrivateLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user: authUser, logout } = useMockAuth();
+  const { user: authUser, logout } = useAuth();
+  const { user: backendUser, isLoading: userDataLoading } = useUserData();
 
   // Layout state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -27,29 +29,31 @@ export function usePrivateLayout() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use real user from auth context
+  // Use user data with priority: backend -> auth context -> null
   const user = useMemo(() => {
+    // Prioritize backend user data if available
+    if (backendUser) {
+      return backendUser;
+    }
+    
+    // Use auth user (includes OAuth data)
     if (!authUser) return null;
     
+    // Convert authUser to User format for compatibility
     const userData = {
       id: authUser.id,
       name: authUser.name,
       email: authUser.email,
       role: authUser.role as UserRole,
       permissions: [],
-      avatar: "",
+      avatar: authUser.avatar || "",
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
-    // Console log current role for debugging
-    console.log('🔐 Current User Role:', authUser.role.toUpperCase());
-    console.log('👤 Current User:', authUser.name, `(${authUser.email})`);
-    console.log('📋 User Data:', userData);
     
     return userData;
-  }, [authUser]);
+  }, [backendUser, authUser]);
 
   // Mock navigation
   const navigation = useMemo(

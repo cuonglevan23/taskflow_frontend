@@ -1,6 +1,20 @@
+// DEPRECATED: Legacy Google OAuth route
+// This route is disabled to prevent conflicts with NextAuth.js
+// NextAuth.js handles OAuth at /api/auth/[...nextauth]
+
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'This OAuth endpoint is deprecated. Use NextAuth.js at /api/auth/signin/google instead.',
+      redirect: '/api/auth/signin/google'
+    },
+    { status: 410 } // Gone
+  );
+}
+
+export async function LEGACY_POST(request: NextRequest) {
   try {
     const { code, state } = await request.json();
 

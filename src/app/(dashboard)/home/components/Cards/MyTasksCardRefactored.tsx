@@ -2,7 +2,9 @@
 
 import React from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import { useAuth } from "@/hooks/use-auth";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
+import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasks, type Task } from "@/hooks";
@@ -10,6 +12,7 @@ import { useTasks, type Task } from "@/hooks";
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   
   // Use the custom hook for data management
   const hookData = useTasks({
@@ -166,16 +169,15 @@ const MyTasksCard = () => {
 
   // Debug tab changes
   const handleTabChange = (tabKey: string) => {
-    console.log('🔄 Tab clicked:', tabKey);
+
     setActiveTab(tabKey);
-    console.log('✅ Tab set to:', tabKey);
+
   };
 
   return (
     <BaseCard
       title="My tasks"
-      avatar="👤"
-      lockIcon={true}
+      avatar={<UserAvatar user={user} size="sm" />}
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={handleTabChange}

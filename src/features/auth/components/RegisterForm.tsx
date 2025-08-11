@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMockAuth } from '@/providers/MockAuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui';
 import type { RegisterCredentials } from '@/types';
 
@@ -15,7 +15,7 @@ export const RegisterForm: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, error } = useMockAuth();
+  const { register, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

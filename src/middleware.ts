@@ -1,6 +1,6 @@
-// Next.js Middleware for Route Protection
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
+import { UserRole } from "@/constants/auth"
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -19,35 +19,65 @@ const protectedRoutes = [
 // Routes that should redirect to dashboard if authenticated
 const authRoutes = ['/login', '/register'];
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get('access_token')?.value;
-  const isAuthenticated = !!accessToken;
+// Admin-only routes
+const adminRoutes = ['/admin'];
+
+// Owner-only routes
+const ownerRoutes = ['/admin/system'];
+
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
+  const userRole = req.auth?.user?.role
 
   // Check if route is protected
   const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
+    nextUrl.pathname.startsWith(route)
   );
 
   // Check if route is auth route
   const isAuthRoute = authRoutes.some(route => 
-    pathname.startsWith(route)
+    nextUrl.pathname.startsWith(route)
+  );
+
+  // Check if route requires admin access
+  const isAdminRoute = adminRoutes.some(route => 
+    nextUrl.pathname.startsWith(route)
+  );
+
+  // Check if route requires owner access
+  const isOwnerRoute = ownerRoutes.some(route => 
+    nextUrl.pathname.startsWith(route)
   );
 
   // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  if (isProtectedRoute && !isLoggedIn) {
+    const loginUrl = new URL('/login', nextUrl)
+    loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Redirect authenticated users from auth routes
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/home', request.url));
+  if (isAuthRoute && isLoggedIn) {
+    return NextResponse.redirect(new URL('/home', nextUrl))
   }
 
-  return NextResponse.next();
-}
+  // Check admin access
+  if (isAdminRoute && isLoggedIn) {
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN && userRole !== UserRole.OWNER) {
+      return NextResponse.redirect(new URL('/home', nextUrl))
+    }
+  }
+
+  // Check owner access
+  if (isOwnerRoute && isLoggedIn) {
+    if (userRole !== UserRole.OWNER && userRole !== UserRole.SUPER_ADMIN) {
+      return NextResponse.redirect(new URL('/home', nextUrl))
+    }
+  }
+
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [
@@ -57,8 +87,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - auth/callback (OAuth callback)
+     * - public files
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|auth/callback).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
   ],
-};
+}

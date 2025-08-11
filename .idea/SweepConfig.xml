@@ -8,9 +8,10 @@
         <option value="search_files" />
         <option value="find_usages" />
         <option value="get_errors" />
+        <option value="bash" />
+        <option value="powershell" />
         <option value="str_replace" />
         <option value="create_file" />
-        <option value="bash" />
       </set>
     </option>
     <option name="debounceThresholdMs" value="300" />

@@ -6,6 +6,10 @@
 export { default as Avatar } from './Avatar/Avatar';
 export { default as AvatarGroup } from './Avatar/AvatarGroup';
 
+// User Avatar Components - Backend integrated avatars
+export * from './UserAvatar';
+export * from './UserAvatarGroup';
+
 // Button Components - All button related functionality
 export * from './Button';
 
