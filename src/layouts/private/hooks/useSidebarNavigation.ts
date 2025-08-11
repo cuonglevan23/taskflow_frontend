@@ -5,7 +5,8 @@
 
 import { useMemo, useCallback } from 'react';
 import { useRBAC } from '@/hooks/useRBAC';
-import { useProjectsContext, useTasksContext } from '@/contexts';
+import { useProjectsContext } from '@/contexts';
+import { useTaskStats } from '@/hooks/useTasks';
 import { 
   getVisibleNavigationSections,
   type NavigationSection 
@@ -29,7 +30,9 @@ export function useSidebarNavigation() {
   // Get RBAC data and contexts
   const rbac = useRBAC();
   const { projects } = useProjectsContext();
-  const { taskStats } = useTasksContext();
+  
+  // Use SWR hook for task stats instead of context
+  const { stats: taskStats } = useTaskStats();
 
   // Create role checks object (memoized)
   const roleChecks = useMemo(() => createRoleChecks(rbac), [rbac]);
@@ -51,7 +54,7 @@ export function useSidebarNavigation() {
               return {
                 ...item,
                 badge: {
-                  count: taskStats.pending || 0,
+                  count: taskStats?.byStatus?.pending || 0,
                   color: "default" as const,
                 }
               };
@@ -94,7 +97,7 @@ export function useSidebarNavigation() {
       
       return section;
     });
-  }, [baseNavigationSections, roleChecks, taskStats.pending, projects]);
+  }, [baseNavigationSections, roleChecks, taskStats?.byStatus?.pending, projects]);
 
   // Check if item is active (memoized with useCallback)
   const checkItemActive = useCallback((item: any, pathname: string) => {

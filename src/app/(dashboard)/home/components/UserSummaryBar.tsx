@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, ChevronDown, Users } from "lucide-react";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import { useTasks } from "@/hooks/useTasks";
 
 const options = ["My week", "My month"];
 
@@ -11,8 +12,20 @@ export default function UserSummaryBar() {
   const [selected, setSelected] = useState("My week");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const completedTasks = 0;
+  // Get tasks directly and calculate completed count in real-time
+  const { tasks } = useTasks();
+  const [completedTasks, setCompletedTasks] = useState(0);
   const collaborators = 0;
+
+  // Update completed tasks count whenever tasks change
+  useEffect(() => {
+    if (tasks && Array.isArray(tasks)) {
+      const completed = tasks.filter(task => 
+        task.completed || task.status === 'completed'
+      ).length;
+      setCompletedTasks(completed);
+    }
+  }, [tasks]);
 
   return (
     <div className="flex items-center justify-center mt-4">

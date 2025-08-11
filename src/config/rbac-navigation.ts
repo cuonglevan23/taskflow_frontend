@@ -1,8 +1,3 @@
-/**
- * Role-Based Navigation Configuration
- * Cấu hình navigation dựa trên roles và permissions từ backend
- */
-
 import { UserRole, Permission } from '@/constants/auth';
 import React from 'react';
 import {

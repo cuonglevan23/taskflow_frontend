@@ -3,14 +3,7 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { UserRole, Permission } from "@/constants/auth"
 
-export interface AuthUser {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: UserRole
-  permissions: string[]
-}
+import type { AuthUser } from "@/lib/auth/types"
 
 export interface UseAuthReturn {
   user: AuthUser | null
@@ -46,18 +39,15 @@ export function useAuth(): UseAuthReturn {
   }
 
   const hasPermission = (permission: Permission): boolean => {
-    if (!user?.permissions) return false
-    return user.permissions.includes(permission)
+    return require("@/lib/utils/auth").hasPermission(user, permission)
   }
 
   const hasRole = (role: UserRole): boolean => {
-    if (!user?.role) return false
-    return user.role === role
+    return require("@/lib/utils/auth").hasRole(user, role)
   }
 
   const hasAnyRole = (roles: UserRole[]): boolean => {
-    if (!user?.role) return false
-    return roles.includes(user.role)
+    return require("@/lib/utils/auth").hasAnyRole(user, roles)
   }
 
   return {

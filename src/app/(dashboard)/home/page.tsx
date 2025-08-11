@@ -27,13 +27,14 @@ import {
 } from "react-icons/bs";
 
 // Import Refactored Cards using BaseCard
-import RefactoredMyTasksCard from "./components/Cards/MyTasksCardRefactored";
-import RefactoredProjectsCard from "./components/Cards/ProjectsCardRefactored";
-import RefactoredTasksAssignedCard from "./components/Cards/TasksAssignedCardRefactored";
-import RefactoredGoalsCard from "./components/Cards/GoalsCardRefactored";
+import RefactoredMyTasksCard from "./components/Cards/MyTasksCard";
+import RefactoredProjectsCard from "./components/Cards/ProjectsCard";
+import RefactoredTasksAssignedCard from "./components/Cards/TasksAssignedCard";
+import RefactoredGoalsCard from "./components/Cards/GoalsCard";
 
 // Import Global Context
 import { useTasksContext } from "@/contexts";
+import { useTaskStats } from "@/hooks/useTasks";
 
 // Base Card Types & Interfaces
 interface TabConfig {
@@ -297,7 +298,7 @@ const AchievementsWidget = () => {
   const { theme } = useTheme();
   
   // Use global context for real-time task statistics
-  const { taskStats } = useTasksContext();
+  const { stats: taskStats } = useTaskStats();
   
   return (
     <div className="flex justify-center mb-8">
@@ -329,7 +330,7 @@ const AchievementsWidget = () => {
             className="text-sm"
             style={{ color: theme.text.primary }}
           >
-            {taskStats.completed} task{taskStats.completed !== 1 ? 's' : ''} completed
+            {taskStats?.byStatus?.completed || 0} task{(taskStats?.byStatus?.completed || 0) !== 1 ? 's' : ''} completed
           </span>
         </div>
 

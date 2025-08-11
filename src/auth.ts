@@ -53,6 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
+
         // Verify token with backend
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/me`, {

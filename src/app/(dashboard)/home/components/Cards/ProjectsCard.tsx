@@ -11,7 +11,7 @@ import { useProjects, type Project } from "@/hooks";
 // Professional ProjectsCard using BaseCard & useProjects Hook - Senior Product Code
 const ProjectsCard = () => {
   const { theme } = useTheme();
-  
+
   // Use the custom hook for data management
   const {
     featuredProject,
@@ -31,9 +31,9 @@ const ProjectsCard = () => {
   // Project Item Component - Professional Implementation
   const ProjectItem = ({ project }: { project: Project }) => {
     const IconComponent = project.icon || GrProjects;
-    
+
     return (
-      <div 
+      <div
         className="flex items-center gap-2 p-1.5 rounded-lg transition-colors cursor-pointer group"
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.background.secondary;
@@ -43,17 +43,17 @@ const ProjectsCard = () => {
         }}
       >
         {/* Project Icon with Professional Styling */}
-        <div 
+        <div
           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-105"
           style={{ backgroundColor: project.color }}
         >
-          <IconComponent 
+          <IconComponent
             className="w-4 h-4 text-white"
           />
         </div>
-        
+
         {/* Project Name */}
-        <span 
+        <span
           className="text-sm font-medium truncate"
           style={{ color: theme.text.primary }}
         >
@@ -66,35 +66,35 @@ const ProjectsCard = () => {
   // Featured Project Component - Professional Implementation
   const FeaturedProject = ({ project }: { project: Project }) => {
     const IconComponent = project.icon || GrProjects;
-    
+
     return (
-      <div 
+      <div
         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105"
-        style={{ 
+        style={{
           backgroundColor: project.color + '20', // 20% opacity
           border: `1px solid ${project.color}40` // 40% opacity border
         }}
       >
         {/* Featured Project Icon */}
-        <div 
+        <div
           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
           style={{ backgroundColor: project.color }}
         >
-          <IconComponent 
+          <IconComponent
             className="w-5 h-5 text-white"
           />
         </div>
-        
+
         {/* Project Details */}
         <div className="min-w-0 flex-1">
-          <div 
+          <div
             className="font-semibold text-sm truncate mb-1"
             style={{ color: theme.text.primary }}
           >
             {project.name}
           </div>
           {project.tasksDue && (
-            <div 
+            <div
               className="text-xs flex items-center gap-1"
               style={{ color: theme.text.secondary }}
             >
@@ -109,7 +109,7 @@ const ProjectsCard = () => {
 
   // Create Project Button Component
   const CreateProjectButton = () => (
-    <button 
+    <button
       className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl h-12 transition-colors"
       style={{
         borderColor: theme.border.default,
@@ -121,11 +121,11 @@ const ProjectsCard = () => {
         e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      <FaPlus 
+      <FaPlus
         className="w-3 h-3 mb-1"
         style={{ color: theme.text.secondary }}
       />
-      <span 
+      <span
         className="text-xs"
         style={{ color: theme.text.secondary }}
       >
@@ -138,7 +138,7 @@ const ProjectsCard = () => {
   const ProjectsHeader = () => (
     <div className="flex items-center gap-2 mb-3">
       <button className="flex items-center gap-1">
-        <span 
+        <span
           className="text-xs"
           style={{ color: theme.text.secondary }}
         >
@@ -191,10 +191,10 @@ const ProjectsCard = () => {
         <div className={`grid grid-cols-2 gap-3 ${showAllProjects ? 'auto-rows-fr' : ''}`}>
           {/* Create Project Button */}
           <CreateProjectButton />
-          
+
           {/* Featured Project */}
           {featuredProject && <FeaturedProject project={featuredProject} />}
-          
+
           {/* Regular Projects - From Hook */}
           {displayedProjects.map((project) => (
             <ProjectItem key={project.id} project={project} />

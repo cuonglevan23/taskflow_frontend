@@ -167,16 +167,7 @@ export class ApiClient {
 // Create singleton instance
 export const apiClient = new ApiClient();
 
-// Utility functions
-export const getGoogleOAuthUrl = async () => {
-  try {
-    const response = await apiClient.getGoogleAuthUrl();
-    return response.authUrl;
-  } catch (error) {
-    console.error('Failed to get Google OAuth URL:', error);
-    throw new Error('Failed to initialize Google OAuth');
-  }
-};
+
 
 // Token management
 export const tokenManager = {

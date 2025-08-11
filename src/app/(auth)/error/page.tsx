@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 

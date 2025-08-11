@@ -93,7 +93,7 @@ export const useTaskActions = ({
     onTaskDelete: handleTaskDelete,
     onTaskStatusChange: handleTaskStatusChange,
     onTaskAssign: handleTaskAssign,
-    onCreateTask,
+    // onCreateTask,
     onBulkAction: handleBulkAction,
   };
 };

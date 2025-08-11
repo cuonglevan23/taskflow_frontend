@@ -163,6 +163,58 @@ This installs react-icons package for using professional icon sets like:
 **Common Error:** `Module not found: Can't resolve 'react-icons/gi'`
 **Solution:** Run the installation command above.
 
+### SWR Installation and Setup
+```bash
+npm install swr
+```
+
+This installs SWR - the data fetching library for React with features like:
+- **Caching** - Automatic request deduplication and caching
+- **Revalidation** - Background updates and focus revalidation
+- **Error Handling** - Built-in error retry and handling
+- **Mutations** - Optimistic updates and cache invalidation
+- **TypeScript** - Full TypeScript support
+
+**Architecture Pattern:**
+```typescript
+// 1. Service Layer → Pure API calls
+export const taskService = {
+  getTasks: (params) => api.get('/tasks', { params }),
+  createTask: (data) => api.post('/tasks', data),
+};
+
+// 2. SWR Hooks → Data fetching + caching
+export const useTasks = (filter) => {
+  return useSWR(['tasks', filter], () => taskService.getTasks(filter));
+};
+
+export const useCreateTask = () => {
+  return useSWRMutation('tasks', taskService.createTask);
+};
+
+// 3. Context → UI state only (NOT data)
+const AppContext = createContext({
+  sidebarOpen: boolean,     // ✅ UI state
+  selectedTaskId: string,   // ✅ UI state
+  // ❌ NO tasks data here
+});
+
+// 4. Components → Use SWR hooks directly
+const TaskList = () => {
+  const { tasks, isLoading } = useTasks(filter);  // ✅ SWR hook
+  const { sidebarOpen } = useAppContext();        // ✅ UI state
+  
+  return <div>{/* render tasks */}</div>;
+};
+```
+
+**Key Benefits:**
+- **Separation of Concerns** - Data fetching separate from UI state
+- **Automatic Caching** - No manual cache management needed
+- **Background Updates** - Data stays fresh automatically
+- **Optimistic Updates** - Instant UI feedback with rollback on error
+- **Error Boundaries** - Built-in error handling and retry logic
+
 ### React Flow Installation
 ```bash
 npm install reactflow

@@ -2,10 +2,10 @@
 
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-import type { User } from "@/types/auth";
+import type { AuthUser } from "@/lib/auth/types";
 
 export interface UserAvatarProps {
-  user?: User | null;
+  user?: AuthUser | null;
   name?: string;
   email?: string;
   avatar?: string;

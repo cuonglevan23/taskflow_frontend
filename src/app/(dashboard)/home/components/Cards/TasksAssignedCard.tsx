@@ -5,22 +5,47 @@ import { useTheme } from "@/layouts/hooks/useTheme";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
-import { useTasksContext, type AssignedTask } from "@/contexts";
+import { useTasksContext, type Task } from "@/contexts";
+import { useTasks, useTaskStats } from "@/hooks/useTasks";
 
 // Professional TasksAssignedCard using BaseCard & Direct Context - Senior Product Code
 const TasksAssignedCard = () => {
   const { theme } = useTheme();
   
   // Use direct context to avoid activeTab conflicts with MyTasksCard
-  const {
-    assignedTasks,
-    isLoading,
-    taskStats,
-    assignTask
-  } = useTasksContext();
+  // Get UI state from context
+  const { globalFilters, globalSort } = useTasksContext();
+  
+  // Use SWR hook for tasks data (filter for assigned tasks)
+  const { tasks, isLoading, error } = useTasks({
+    filter: { ...globalFilters, assigneeId: 'current-user' }, // Filter for assigned tasks
+    sort: globalSort
+  });
+  
+  // Use SWR hook for task stats
+  const { stats: taskStats } = useTaskStats();
 
   // Local activeTab state for this component only
   const [activeTab, setActiveTab] = React.useState("upcoming");
+
+  // Filter tasks based on active tab
+  const filteredTasks = React.useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return [];
+    
+    switch (activeTab) {
+      case "upcoming":
+        return tasks.filter(task => !task.completed && task.status !== 'completed');
+      case "overdue":
+        return tasks.filter(task => {
+          const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !task.completed && task.status !== 'completed';
+          return isOverdue;
+        });
+      case "completed":
+        return tasks.filter(task => task.completed || task.status === 'completed');
+      default:
+        return tasks;
+    }
+  }, [tasks, activeTab]);
 
   // Business Logic
   const getDueDateColor = (dueDate: string): string => {
@@ -31,7 +56,7 @@ const TasksAssignedCard = () => {
   };
 
   // Assigned Task Item Component  
-  const AssignedTaskItem = ({ task }: { task: AssignedTask }) => {
+  const AssignedTaskItem = ({ task }: { task: Task }) => {
     // Check both completion mechanisms for proper synchronization
     const isCompleted = task.completed || task.status === 'completed';
     
@@ -94,9 +119,11 @@ const TasksAssignedCard = () => {
             {/* Assignee Avatar */}
             <div 
               className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: task.assignee.color }}
+              style={{ backgroundColor: "#3b82f6" }}
             >
-              <span className="text-white text-xs">{task.assignee.avatar}</span>
+              <span className="text-white text-xs">
+                {task.assigneeId ? task.assigneeId.charAt(0).toUpperCase() : "U"}
+              </span>
             </div>
           </div>
         </div>
@@ -106,7 +133,7 @@ const TasksAssignedCard = () => {
 
   // Business Logic using Direct Context
   const handleAssignTask = () => {
-    console.log("Assign new task - Total assigned tasks:", assignedTasks.length);
+    console.log("Assign new task - Total assigned tasks:", tasks?.length || 0);
     // Could integrate with a task assignment modal here
   };
 
@@ -117,8 +144,8 @@ const TasksAssignedCard = () => {
   // BaseCard Configuration
   const tabs: TabConfig[] = [
     { key: "upcoming", label: "Upcoming", count: null },
-    { key: "overdue", label: "Overdue", count: taskStats.overdue || null },
-    { key: "completed", label: "Completed", count: taskStats.completed || null }
+    { key: "overdue", label: "Overdue", count: taskStats?.overdue || null },
+    { key: "completed", label: "Completed", count: taskStats?.byStatus?.completed || null }
   ];
 
   const createAction: ActionButtonConfig = {
@@ -137,9 +164,11 @@ const TasksAssignedCard = () => {
       onMenuClick={handleMenuClick}
     >
       <div className="space-y-0">
-        {assignedTasks.map((task) => (
+        {filteredTasks && filteredTasks.length > 0 ? filteredTasks.map((task) => (
           <AssignedTaskItem key={task.id} task={task} />
-        ))}
+        )) : (
+          <div className="text-gray-500 text-sm py-4">No assigned tasks found</div>
+        )}
         {isLoading && (
           <div className="flex items-center justify-center py-4">
             <span className="text-sm" style={{ color: theme.text.secondary }}>

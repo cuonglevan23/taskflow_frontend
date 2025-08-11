@@ -1,4 +1,3 @@
-// Providers exports
-export { AuthProvider, useAuthContext } from './AuthProvider';
-export { ThemeProvider, useThemeContext } from './ThemeProvider';
-export { AuthProvider, useAuth } from './AuthProvider';
+// Centralized providers export
+export { NextAuthProvider } from "./NextAuthProvider"
+export { ThemeProvider } from "./ThemeProvider"

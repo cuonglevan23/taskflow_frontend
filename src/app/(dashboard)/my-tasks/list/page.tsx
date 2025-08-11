@@ -5,6 +5,7 @@ import { TaskList, TaskListItem, TaskStatus } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useTaskActions } from "../hooks";
 import { useTasksContext, type Task } from "@/contexts";
+import { useTasks, useUpdateTask, useDeleteTask, useCreateTask } from "@/hooks/useTasks";
 
 interface MyTaskListPageProps {
   searchValue?: string;
@@ -38,29 +39,62 @@ const transformTasksToTaskListItems = (tasks: Task[]): TaskListItem[] => {
 };
 
 const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => {
-  // Use global context for data synchronization with home cards
-  const { tasks, updateTask, deleteTask, addTask } = useTasksContext();
+  // Get UI state from context
+  const { globalFilters, globalSort } = useTasksContext();
+  
+  // Use SWR hook for tasks data
+  const { tasks, isLoading, error } = useTasks({
+    filter: globalFilters,
+    sort: globalSort
+  });
+  
+  // SWR mutation hooks
+  const { updateTask } = useUpdateTask();
+  const { deleteTask } = useDeleteTask();
+  const { createTask } = useCreateTask();
   
   // State for task panel
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   
   // Transform tasks to TaskListItem format for compatibility
-  const taskListItems = useMemo(() => transformTasksToTaskListItems(tasks), [tasks]);
-  
+  const taskListItems = useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return [];
+    return transformTasksToTaskListItems(tasks);
+  }, [tasks]);
+
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading tasks...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">
+          Error loading tasks: {error?.message || 'Unknown error'}
+        </div>
+      </div>
+    );
+  }
+
   // Selected task for detail panel
   const selectedTask = useMemo(() => 
     taskListItems.find(task => task.id === selectedTaskId), 
     [taskListItems, selectedTaskId]
   );
-
+  
   // Task management functions - Complete interface implementation
   const taskManagement = useMemo(() => ({
     tasks: taskListItems,
     selectedTask,
     isPanelOpen,
-    isLoading: false,
-    error: null,
+    isLoading,
+    error: error?.message || null,
     openTaskPanel: (taskIdOrTask: string | TaskListItem) => {
       const taskId = typeof taskIdOrTask === 'string' ? taskIdOrTask : taskIdOrTask.id;
       setSelectedTaskId(taskId);
@@ -86,8 +120,8 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
           tags: newTaskData.tags || []
         };
         
-        // FIX: Properly await the async addTask operation
-        await addTask(taskData);
+
+        await createTask(taskData);
         console.log('✅ Task added successfully to global context');
       } catch (error) {
         console.error('❌ Failed to add task:', error);
@@ -117,13 +151,12 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
         updateData.priority = updates.priority as Task['priority'];
       }
       
-      console.log('📝 Calling global updateTask with:', { numericId, updateData });
-      await updateTask(numericId, updateData);
+      console.log('📝 Calling global updateTask with:', { taskId, updateData });
+      await updateTask({ id: taskId, data: updateData });
       console.log('✅ Global updateTask completed');
     },
     deleteTask: async (taskId: string) => {
-      const numericId = parseInt(taskId);
-      await deleteTask(numericId);
+      await deleteTask(taskId);
     },
     bulkUpdateTasks: async (taskIds: string[], updates: Partial<TaskListItem>) => {
       // Process bulk updates by calling updateTask for each task
@@ -149,7 +182,7 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
           updateData.priority = updates.priority as Task['priority'];
         }
         
-        await updateTask(numericId, updateData);
+        await updateTask({ id: taskId, data: updateData });
       });
       await Promise.all(promises);
     },
@@ -186,7 +219,7 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
     setError: (error: string | null) => {
       console.log('Error state:', error);
     }
-  }), [taskListItems, selectedTask, isPanelOpen, updateTask, deleteTask, addTask]);
+  }), [taskListItems, selectedTask, isPanelOpen, updateTask, deleteTask, createTask]);
 
   // Initialize task actions with unified management
   const taskActions = useTaskActions({ 

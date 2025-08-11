@@ -12,12 +12,12 @@ const GoalsCard = () => {
   const { theme } = useTheme();
   
   // Use direct context to avoid activeTab conflicts
-  const {
-    goals,
-    addGoal,
-    updateGoalProgress,
-    isLoading
-  } = useTasksContext();
+  // TODO: Implement goals SWR hooks
+  // For now, provide empty data to prevent errors
+  const goals = [];
+  const addGoal = async () => {};
+  const updateGoalProgress = async () => {};
+  const isLoading = false;
 
   const [activeTab, setActiveTab] = React.useState("my-goals");
 

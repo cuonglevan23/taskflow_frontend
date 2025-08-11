@@ -1,21 +1,13 @@
-// Custom Hooks - Senior Product Code
-export { useProjects, PROJECT_COLORS } from './useProjects';
-export { usePortfolios, PORTFOLIO_COLORS } from './usePortfolios';
-export { useTasks } from './useTasks';
+// Centralized hooks export
+export { useAuth } from "./use-auth"
+export { useRBAC } from "./useRBAC"
+export { usePermissions } from "./usePermissions"
+export { useProjects } from "./useProjects"
+export { useTasks } from "./useTasks"
+export { useUserData } from "./useUserData"
+export { usePortfolios } from "./usePortfolios"
 
-// Type Exports
-export type { 
-  Project, 
-  ProjectColorKey 
-} from './useProjects';
-
-export type { 
-  Portfolio, 
-  PortfolioColorKey 
-} from './usePortfolios';
-
-export type { 
-  Task, 
-  AssignedTask, 
-  Goal 
-} from './useTasks';
+// Re-export types
+export type { UseAuthReturn, AuthUser } from "./use-auth"
+export type { Project, ProjectColorKey } from "./useProjects"
+export type { Portfolio, PortfolioColorKey, UsePortfoliosReturn } from "./usePortfolios"

@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/layouts/hooks/useTheme";
 import "./globals.css";
 import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { AppProvider } from "@/contexts/AppProvider";
-import { NextAuthProvider } from "@/providers/NextAuthProvider";
+import { NextAuthProvider } from "@/providers";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { API_BASE_URL } from "@/lib/constants"
 import { FcGoogle } from "react-icons/fc"
 import { Loader2 } from "lucide-react"
 
@@ -14,7 +15,7 @@ export function LoginForm() {
       setIsGoogleLoading(true)
       
       // Use backend OAuth flow
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+      const apiUrl = API_BASE_URL
       console.log('Redirecting to backend OAuth:', `${apiUrl}/api/auth/google/url`)
       
       // Get Google OAuth URL from backend

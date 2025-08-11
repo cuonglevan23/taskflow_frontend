@@ -27,7 +27,7 @@ export default function GreetingHeader() {
         className="text-2xl font-semibold"
         style={{ color: theme.text.primary }}
       >
-        {getGreeting()}, Alienn704
+        {getGreeting()},
       </h1>
     </div>
   );

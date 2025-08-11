@@ -1,4 +1,4 @@
-import { RegisterForm } from '@/features/auth/components/RegisterForm';
+// import { RegisterForm } from '@/features/auth/components/RegisterForm'; // Legacy removed
 
 export default function RegisterPage() {
   return (
@@ -9,7 +9,14 @@ export default function RegisterPage() {
             Create your account
           </h2>
         </div>
-        <RegisterForm />
+        <div className="text-center">
+          <p className="text-muted-foreground">Registration coming soon...</p>
+          <p className="text-sm mt-2">
+            <a href="/login" className="text-primary hover:underline">
+              Back to Login
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

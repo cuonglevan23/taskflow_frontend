@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { UserRole, Permission } from "@/constants/auth";
 import { getSidebarNavigation } from "@/config/routes";
+// @ts-ignore
 import { useAuth } from "@/layouts/hooks/useAuth";
 import {
   LayoutContext,

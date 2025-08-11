@@ -3,6 +3,7 @@
 import React, { ReactNode } from "react";
 import { ProjectsProvider } from "./ProjectsContext";
 import { TasksProvider } from "./TasksContext";
+import { NotificationProvider } from "./NotificationContext";
 
 // Global App Provider - Senior Product Code
 interface AppProviderProps {
@@ -16,11 +17,13 @@ interface AppProviderProps {
  */
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return (
-    <ProjectsProvider>
-      <TasksProvider>
-        {children}
-      </TasksProvider>
-    </ProjectsProvider>
+    <NotificationProvider>
+      <ProjectsProvider>
+        <TasksProvider>
+          {children}
+        </TasksProvider>
+      </ProjectsProvider>
+    </NotificationProvider>
   );
 };
 

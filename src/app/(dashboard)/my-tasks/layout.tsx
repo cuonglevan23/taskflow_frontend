@@ -7,6 +7,7 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 import { usePathname } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
+import { useTaskStats } from '@/hooks/useTasks';
 import { TaskManagementProvider } from './context/TaskManagementContext';
 import { Button } from '@/components/ui';
 
@@ -17,7 +18,8 @@ interface MyTaskLayoutProps {
 const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { theme } = useTheme();
   const pathname = usePathname();
-  const { tasks, taskStats } = useTasksContext();
+  const { tasks } = useTasksContext();
+  const { stats: taskStats } = useTaskStats();
   const [searchValue, setSearchValue] = useState("");
   const [calendarView, setCalendarView] = useState<'dayGridMonth' | 'dayGridWeek'>('dayGridMonth');
 
@@ -37,15 +39,21 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     setCalendarView(newView);
   };
 
-  // Clone children with search value prop
+  // Safe props passing - avoid unsafe cloning
   const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child) && typeof child.type !== 'string') {
-      // Only clone component elements, not DOM elements
-      try {
-        return React.cloneElement(child, { searchValue } as any);
-      } catch (error) {
-        console.warn('Failed to clone element:', error);
-        return child;
+    if (React.isValidElement(child)) {
+      // Check if component accepts searchValue prop
+      const childType = child.type as any;
+      const hasSearchValueProp = childType?.propTypes?.searchValue || 
+                                childType?.defaultProps?.hasOwnProperty?.('searchValue');
+      
+      if (hasSearchValueProp) {
+        try {
+          return React.cloneElement(child, { searchValue });
+        } catch (error) {
+          console.warn('Failed to clone element with searchValue:', error);
+          return child;
+        }
       }
     }
     return child;
