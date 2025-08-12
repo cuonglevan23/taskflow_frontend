@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import SimpleCalendar from "@/components/features/Calendar/SimpleCalendar";
+
 
 // Simple Teams Calendar Page
 export default function CalendarPage() {
@@ -11,6 +11,10 @@ export default function CalendarPage() {
 
   const handleTaskDrop = (task: any, newDate: Date) => {
     console.log('Task dropped:', task.title, 'to', newDate.toDateString());
+  };
+
+  const handleTaskResize = (task: any, newStartDate: Date, newEndDate: Date) => {
+    console.log('Task resized:', task.title, 'from', newStartDate.toDateString(), 'to', newEndDate.toDateString());
   };
 
   const handleDateClick = (date: Date) => {
@@ -24,17 +28,7 @@ export default function CalendarPage() {
 
   return (
     <div className="h-full w-full">
-      <SimpleCalendar 
-        onTaskClick={handleTaskClick}
-        onTaskDrop={handleTaskDrop}
-        onDateClick={handleDateClick}
-        userRole="member"
-        showCreateButton={true}
-        showImportExport={false}
-        showSettings={false}
-        showFilters={false}
-        simpleHeader={true}
-      />
+
     </div>
   );
 }

@@ -1,80 +1,216 @@
-// API Service - Centralized API configuration and utilities
+// Professional API Client - Centralized HTTP Configuration
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { CookieAuth } from '@/utils/cookieAuth';
+import { SafeLogger } from '@/utils/safeLogger';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-// Create axios instance
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+const API_CONFIG = {
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
-  // Enable cookies for HttpOnly Secure Cookie authentication
-  withCredentials: true,
-});
+  withCredentials: false, // JWT-only authentication
+};
 
-// Request interceptor
+// Create main API instance
+const apiClient: AxiosInstance = axios.create(API_CONFIG);
+
+// Request Interceptor - Authentication & Logging
 apiClient.interceptors.request.use(
-  (config) => {
-    // Tokens are automatically included via HttpOnly cookies
-    // No need to manually add Authorization header
+  (config: AxiosRequestConfig): AxiosRequestConfig => {
+    const token = CookieAuth.getAccessToken();
+    
+    if (token && config.headers) {
+      // Add Bearer token to Authorization header
+      config.headers['Authorization'] = `Bearer ${token}`;
+      
+      // Add user context headers for backend compatibility
+      const payload = CookieAuth.getTokenPayload();
+      if (payload) {
+        config.headers['X-User-ID'] = payload.userId?.toString();
+        config.headers['X-User-Email'] = payload.email;
+        
+        if (payload.roles) {
+          config.headers['X-User-Roles'] = JSON.stringify(payload.roles);
+          config.headers['X-User-Role'] = payload.roles[0]; // Primary role
+          config.headers['X-User-Authorities'] = JSON.stringify(payload.roles.map((role: string) => `ROLE_${role}`));
+        }
+      }
+    } else {
+      console.warn('⚠️ No access token found for request:', config.url);
+    }
+    
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor with token refresh
+// Response Interceptor - Error Handling & Logging
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: AxiosResponse): AxiosResponse => {
     return response;
   },
-  async (error) => {
-    const originalRequest = error.config;
+  (error) => {
+    // Simple, safe error handling - no over-engineering
+    const method = error?.config?.method?.toUpperCase() || 'REQUEST';
+    const url = error?.config?.url || 'unknown';
+    const status = error?.response?.status;
+    const statusText = error?.response?.statusText || '';
 
-    // Handle 401 errors (token expired)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Try to refresh token using HttpOnly cookies
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
-          withCredentials: true // Include HttpOnly cookies
-        });
-
-        // New tokens are automatically stored in HttpOnly cookies by the server
-        // Retry original request - cookies will be automatically included
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        // Server will clear HttpOnly cookies on failed refresh
-        window.location.href = '/login';
-      }
+    // Use safe logger to prevent all crashes
+    if (status) {
+      SafeLogger.error('❌ API Error:', method, url, '→', status, statusText || '');
+    } else {
+      SafeLogger.error('❌ Network Error:', method, url, '→ Cannot reach server');
     }
 
+    // Handle specific error cases
+    if (status === 401) {
+      console.error('🚨 401 Unauthorized - Clearing auth and redirecting...');
+      try {
+        CookieAuth.clearAuth();
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      } catch (authError) {
+        // Silent fail - don't cause more errors
+      }
+    } else if (status === 403) {
+      console.error('🚨 403 Forbidden - Check user permissions');
+    } else if (status >= 500) {
+      console.error('🚨 Server Error - Backend issue');
+    } else if (!status) {
+      console.error('🚨 Network Error - Backend unreachable');
+    }
+
+    // Return simple rejected promise
     return Promise.reject(error);
   }
 );
 
-// Generic API methods
+// API Helper Functions
 export const api = {
-  get: <T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.get(url, config),
-  
-  post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.post(url, data, config),
-  
-  put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.put(url, data, config),
-  
-  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.patch(url, data, config),
-  
-  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.delete(url, config),
+  // GET request
+  get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    return apiClient.get<T>(url, config);
+  },
+
+  // POST request
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    return apiClient.post<T>(url, data, config);
+  },
+
+  // PUT request
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    return apiClient.put<T>(url, data, config);
+  },
+
+  // PATCH request
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    return apiClient.patch<T>(url, data, config);
+  },
+
+  // DELETE request
+  delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    return apiClient.delete<T>(url, config);
+  },
+
+  // Upload file with progress
+  upload: <T = any>(
+    url: string,
+    formData: FormData,
+    onUploadProgress?: (progressEvent: any) => void
+  ): Promise<AxiosResponse<T>> => {
+    return apiClient.post<T>(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress,
+    });
+  },
+
+  // Download file
+  download: (url: string, filename?: string): Promise<void> => {
+    return apiClient.get(url, {
+      responseType: 'blob',
+    }).then((response) => {
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    });
+  },
 };
 
+// Health Check Function
+export const healthCheck = async (): Promise<boolean> => {
+  try {
+    console.log('🏥 Performing health check...');
+    const response = await api.get('/actuator/health');
+    console.log('✅ Backend is healthy:', response.status);
+    return true;
+  } catch (error) {
+    console.error('❌ Backend health check failed:', error);
+    return false;
+  }
+};
+
+// Authentication Test Function
+export const testAuthentication = async (): Promise<boolean> => {
+  try {
+    console.log('🧪 Testing authentication...');
+    
+    // Try multiple endpoints to find one that works
+    const testEndpoints = [
+      '/api/user/me',
+      '/api/users/me',
+      '/api/auth/verify',
+      '/api/tasks',
+    ];
+    
+    for (const endpoint of testEndpoints) {
+      try {
+        const response = await api.get(endpoint);
+        console.log(`✅ Authentication test successful on ${endpoint}:`, response.status);
+        return true;
+      } catch (error: any) {
+        console.log(`❌ Failed ${endpoint}:`, error.response?.status);
+      }
+    }
+    
+    console.error('❌ All authentication endpoints failed');
+    return false;
+  } catch (error) {
+    console.error('❌ Authentication test failed:', error);
+    return false;
+  }
+};
+
+// Update API base URL (useful for environment switching)
+export const updateBaseURL = (newBaseURL: string): void => {
+  apiClient.defaults.baseURL = newBaseURL;
+  console.log('🔧 API base URL updated to:', newBaseURL);
+};
+
+// Get current API configuration
+export const getApiConfig = () => ({
+  baseURL: apiClient.defaults.baseURL,
+  timeout: apiClient.defaults.timeout,
+  headers: apiClient.defaults.headers,
+});
+
+// Export the axios instance for advanced usage
+export { apiClient };
+
+// Default export
 export default api;

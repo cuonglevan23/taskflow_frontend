@@ -44,24 +44,24 @@ export function normalizeRole(roleString: string): UserRole {
     return UserRole.MEMBER;
   }
 
-  console.log('🔍 Normalizing role:', roleString);
+  // console.log('🔍 Normalizing role:', roleString); // Disabled to prevent spam
   
   // Try direct match first (uppercase)
   if (Object.values(UserRole).includes(roleString as UserRole)) {
-    console.log('✅ Direct role match:', roleString);
+    // console.log('✅ Direct role match:', roleString); // Disabled to prevent spam
     return roleString as UserRole;
   }
   
   // Try legacy mapping (both case-sensitive và case-insensitive)
   const exactMatch = LEGACY_ROLE_MAPPING[roleString];
   if (exactMatch) {
-    console.log('✅ Exact legacy mapping:', roleString, '->', exactMatch);
+    // console.log('✅ Exact legacy mapping:', roleString, '->', exactMatch); // Disabled to prevent spam
     return exactMatch;
   }
 
   const lowercaseMatch = LEGACY_ROLE_MAPPING[roleString.toLowerCase()];
   if (lowercaseMatch) {
-    console.log('✅ Lowercase legacy mapping:', roleString, '->', lowercaseMatch);
+    // console.log('✅ Lowercase legacy mapping:', roleString, '->', lowercaseMatch); // Disabled to prevent spam
     return lowercaseMatch;
   }
   

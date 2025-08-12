@@ -95,8 +95,8 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   }, [task]);
 
   const handleSave = () => {
-    if (task && onSave) {
-      onSave(task.id, {
+    if (onSave) {
+      onSave(task?.id || 'new', {
         name: title,
         description: description,
         startDate: (startDate && !isNaN(startDate.getTime())) ? startDate.toISOString().split('T')[0] : undefined,
@@ -167,7 +167,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
     }
   };
 
-  if (!isOpen || !task) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-end z-[60]">
@@ -187,21 +187,28 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           }}
         >
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleStatusChange}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                task.status === 'done'
-                  ? 'bg-green-600 text-white' 
-                  : 'hover:opacity-80'
-              }`}
-              style={{
-                backgroundColor: task.status === 'done' ? '#059669' : theme.background.secondary,
-                color: task.status === 'done' ? 'white' : theme.text.primary
-              }}
-            >
-              <CheckCircle className="w-4 h-4" />
-              {task.status === 'done' ? 'Completed' : 'Mark complete'}
-            </button>
+            {task && (
+              <button
+                onClick={handleStatusChange}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  task.status === 'done'
+                    ? 'bg-green-600 text-white' 
+                    : 'hover:opacity-80'
+                }`}
+                style={{
+                  backgroundColor: task.status === 'done' ? '#059669' : theme.background.secondary,
+                  color: task.status === 'done' ? 'white' : theme.text.primary
+                }}
+              >
+                <CheckCircle className="w-4 h-4" />
+                {task.status === 'done' ? 'Completed' : 'Mark complete'}
+              </button>
+            )}
+            {!task && (
+              <h2 className="text-xl font-semibold" style={{ color: theme.text.primary }}>
+                Create New Task
+              </h2>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -262,15 +269,15 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               Assignees
             </label>
             <div className="flex items-center gap-3 flex-wrap">
-              {task.assignees.map((assignee, index) => (
+              {task?.assignees?.map((assignee, index) => (
                 <div key={assignee.id} className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {assignee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    {assignee.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                   </div>
-                  <span style={{ color: theme.text.primary }}>{assignee.name}</span>
+                  <span style={{ color: theme.text.primary }}>{assignee.name || 'Unknown'}</span>
                 </div>
               ))}
-              {task.assignees.length === 0 && (
+              {(!task?.assignees || (task?.assignees && task.assignees.length === 0)) && (
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-8 h-8 rounded-full flex items-center justify-center"
@@ -322,7 +329,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                   }
                   
                   // Fallback to task.dueDate with time if available
-                  if (task.dueDate) {
+                  if (task?.dueDate) {
                     let display = formatDateRange(task.dueDate, task.dueDate);
                     if (hasStartTime && (startTime || endTime)) {
                       const timeStr = [];
@@ -351,7 +358,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span style={{ color: theme.text.primary }}>
-                {task.project || 'No project assigned'}
+                {task?.project || 'No project assigned'}
               </span>
             </div>
           </div>
@@ -370,8 +377,8 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                 ></div>
                 <span style={{ color: theme.text.primary }}>Priority</span>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                {task.priority}
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task?.priority || 'medium')}`}>
+                {task?.priority || 'medium'}
               </span>
             </div>
             
@@ -383,8 +390,8 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                 ></div>
                 <span style={{ color: theme.text.primary }}>Status</span>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-                {task.status.replace('_', ' ')}
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task?.status || 'todo')}`}>
+                {(task?.status || 'todo').replace('_', ' ')}
               </span>
             </div>
           </div>
@@ -409,7 +416,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             <div className="flex items-center gap-3">
               <div
                   className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {task.assignees[0]?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
+                {task?.assignees?.[0]?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
               </div>
               <input
                   type="text"
@@ -426,13 +433,13 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           </div>
 
           {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
+          {task?.tags?.length && task.tags.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium" style={{color: theme.text.secondary}}>
                   Tags
                 </label>
                 <div className="flex items-center gap-2 flex-wrap">
-                {task.tags.map((tag, index) => (
+                {task.tags?.map((tag, index) => (
                   <span
                     key={index}
                     className="px-2 py-1 rounded text-xs"
@@ -459,14 +466,14 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               </button>
             </div>
             <div className="flex items-center gap-2">
-              {task.assignees.map((assignee) => (
+              {task?.assignees?.map((assignee) => (
                 <div 
                   key={assignee.id}
                   className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
                 >
-                  {assignee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {assignee.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                 </div>
-              ))}
+              )) || null}
               <div 
                 className="w-6 h-6 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: theme.background.secondary }}
@@ -516,7 +523,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                 endDate: endDateFormatted,
               });
 
-              onSave(task.id, {
+              onSave(task?.id || 'new', {
                 dueDate: (endDateFormatted ?? startDateFormatted) ?? undefined,
                 startDate: startDateFormatted ?? undefined,
                 endDate: endDateFormatted ?? undefined,

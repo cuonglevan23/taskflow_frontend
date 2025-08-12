@@ -258,7 +258,7 @@ export const usersService = {
    * Get current user
    */
   async getCurrentUser(): Promise<CalendarUser> {
-    return apiClient.get<CalendarUser>('/auth/me');
+    return apiClient.get<CalendarUser>('/api/auth/me');
   },
 
   /**

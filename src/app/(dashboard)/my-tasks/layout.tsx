@@ -7,8 +7,8 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 import { usePathname } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
-import { useTaskStats } from '@/hooks/useTasks';
-import { TaskManagementProvider } from './context/TaskManagementContext';
+import { useTasks, useTaskStats } from '@/hooks/useTasks';
+
 import { Button } from '@/components/ui';
 
 interface MyTaskLayoutProps {
@@ -18,10 +18,10 @@ interface MyTaskLayoutProps {
 const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { theme } = useTheme();
   const pathname = usePathname();
-  const { tasks } = useTasksContext();
+  const { tasks } = useTasks(); // Use SWR hook for actual data
   const { stats: taskStats } = useTaskStats();
   const [searchValue, setSearchValue] = useState("");
-  const [calendarView, setCalendarView] = useState<'dayGridMonth' | 'dayGridWeek'>('dayGridMonth');
+  // Removed calendarView state since Week button is removed - always use Month view
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value);
@@ -32,12 +32,7 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     console.log('Create task from header');
   };
 
-  const handleCalendarViewChange = () => {
-    console.log('Current view:', calendarView);
-    const newView = calendarView === 'dayGridMonth' ? 'dayGridWeek' : 'dayGridMonth';
-    console.log('Changing view from', calendarView, 'to', newView);
-    setCalendarView(newView);
-  };
+  // Removed calendar view change handler since Week button is removed
 
   // Safe props passing - avoid unsafe cloning
   const childrenWithProps = React.Children.map(children, (child) => {
@@ -83,20 +78,10 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap" 
                 style={{ color: theme.text.secondary }}
               >
-                No date ({tasks.filter(t => !t.dueDateISO).length})
+                No date ({tasks?.filter(t => !t.dueDateISO).length || 0})
               </span>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  console.log('Button clicked! Current pathname:', pathname);
-                  handleCalendarViewChange();
-                }}
-                leftIcon={<Clock className="w-4 h-4" />}
-              >
-                {calendarView === 'dayGridMonth' ? 'Month' : 'Week'}
-              </Button>
+
               
               <TaskListHeader
                 searchValue={searchValue}
@@ -145,13 +130,11 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 const MyTaskLayout: React.FC<MyTaskLayoutProps> = ({ children }) => {
   return (
-    <TaskManagementProvider>
-      <PageLayout>
-        <MyTaskContent>
-          {children}
-        </MyTaskContent>
-      </PageLayout>
-    </TaskManagementProvider>
+    <PageLayout>
+      <MyTaskContent>
+        {children}
+      </MyTaskContent>
+    </PageLayout>
   );
 };
 

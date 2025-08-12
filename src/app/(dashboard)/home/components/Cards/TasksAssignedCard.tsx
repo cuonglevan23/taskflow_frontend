@@ -6,7 +6,7 @@ import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import { useTasks, useTaskStats } from "@/hooks/useTasks";
+import { useTasks, useTaskStats, useMyTasksSummary, useMyTasksStats } from "@/hooks/useTasks";
 
 // Professional TasksAssignedCard using BaseCard & Direct Context - Senior Product Code
 const TasksAssignedCard = () => {
@@ -16,14 +16,37 @@ const TasksAssignedCard = () => {
   // Get UI state from context
   const { globalFilters, globalSort } = useTasksContext();
   
-  // Use SWR hook for tasks data (filter for assigned tasks)
-  const { tasks, isLoading, error } = useTasks({
-    filter: { ...globalFilters, assigneeId: 'current-user' }, // Filter for assigned tasks
-    sort: globalSort
+  // Use new My Tasks Summary API - it already filters for participating tasks
+  const { tasks, isLoading, error } = useMyTasksSummary({
+    page: 0,
+    size: 20,
+    sortBy: 'updatedAt',
+    sortDir: 'desc'
   });
   
-  // Use SWR hook for task stats
-  const { stats: taskStats } = useTaskStats();
+  // Use new My Tasks Stats API
+  const { stats: myTasksStats } = useMyTasksStats();
+  
+  // Transform stats for compatibility with real API data
+  const taskStats = myTasksStats && tasks ? {
+    total: myTasksStats.totalParticipatingTasks,
+    overdue: tasks.filter(t => t.isOverdue === true).length,
+    byStatus: {
+      todo: tasks.filter(t => t.status === 'pending').length,
+      in_progress: tasks.filter(t => t.status === 'in-progress').length,
+      completed: tasks.filter(t => t.status === 'completed').length
+    },
+    byParticipationType: {
+      assignee: tasks.filter(t => t.participationType === 'ASSIGNEE').length,
+      team_member: tasks.filter(t => t.participationType === 'TEAM_MEMBER').length,
+      project_member: tasks.filter(t => t.participationType === 'PROJECT_MEMBER').length
+    }
+  } : {
+    total: 0,
+    overdue: 0,
+    byStatus: { todo: 0, in_progress: 0, completed: 0 },
+    byParticipationType: { assignee: 0, team_member: 0, project_member: 0 }
+  };
 
   // Local activeTab state for this component only
   const [activeTab, setActiveTab] = React.useState("upcoming");
@@ -47,8 +70,12 @@ const TasksAssignedCard = () => {
     }
   }, [tasks, activeTab]);
 
-  // Business Logic
-  const getDueDateColor = (dueDate: string): string => {
+  // Business Logic - Safe date handling
+  const getDueDateColor = (dueDate?: string): string => {
+    if (!dueDate || typeof dueDate !== 'string') {
+      return theme.text.secondary;
+    }
+    
     const normalizedDate = dueDate.toLowerCase();
     return ['today', 'tomorrow'].includes(normalizedDate) 
       ? '#10b981' 
@@ -98,6 +125,31 @@ const TasksAssignedCard = () => {
           </span>
           
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Creator Info */}
+            {task.creatorName && (
+              <span 
+                className="px-2 py-1 text-xs rounded-md font-medium bg-blue-100 text-blue-800"
+              >
+                By: {task.creatorName}
+              </span>
+            )}
+            
+            {/* Participation Type Badge */}
+            {task.participationType && (
+              <span 
+                className={`px-2 py-1 text-xs rounded-md font-medium ${
+                  task.participationType === 'ASSIGNEE' 
+                    ? 'bg-green-100 text-green-800' 
+                    : task.participationType === 'TEAM_MEMBER'
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-orange-100 text-orange-800'
+                }`}
+              >
+                {task.participationType === 'ASSIGNEE' ? 'Direct' : 
+                 task.participationType === 'TEAM_MEMBER' ? 'Team' : 'Project'}
+              </span>
+            )}
+
             {/* Project Tag */}
             {task.hasTag && task.tagText && (
               <span 
@@ -108,23 +160,34 @@ const TasksAssignedCard = () => {
               </span>
             )}
 
-            {/* Due Date */}
+            {/* Progress indicator */}
+            {task.completionPercentage !== undefined && (
+              <div className="flex items-center gap-1">
+                <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-green-500 transition-all duration-300"
+                    style={{ width: `${task.completionPercentage}%` }}
+                  />
+                </div>
+                <span className="text-xs text-gray-500">{task.completionPercentage}%</span>
+              </div>
+            )}
+
+            {/* Due Date with overdue styling */}
             <span 
-              className="text-sm font-medium"
-              style={{ color: getDueDateColor(task.dueDate) }}
+              className={`text-sm font-medium ${task.isOverdue ? 'text-red-600 font-bold' : ''}`}
+              style={{ color: task.isOverdue ? '#dc2626' : getDueDateColor(task.dueDate) }}
             >
               {task.dueDate}
+              {task.isOverdue && ' ⚠️'}
             </span>
 
-            {/* Assignee Avatar */}
-            <div 
-              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "#3b82f6" }}
-            >
-              <span className="text-white text-xs">
-                {task.assigneeId ? task.assigneeId.charAt(0).toUpperCase() : "U"}
+            {/* Team size indicator */}
+            {task.assigneeCount && task.assigneeCount > 1 && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                👥 {task.assigneeCount}
               </span>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -141,11 +204,23 @@ const TasksAssignedCard = () => {
     console.log("Tasks assigned menu clicked - Stats:", taskStats);
   };
 
-  // BaseCard Configuration
+  // BaseCard Configuration with real counts
   const tabs: TabConfig[] = [
-    { key: "upcoming", label: "Upcoming", count: null },
-    { key: "overdue", label: "Overdue", count: taskStats?.overdue || null },
-    { key: "completed", label: "Completed", count: taskStats?.byStatus?.completed || null }
+    { 
+      key: "upcoming", 
+      label: "Upcoming", 
+      count: taskStats ? taskStats.byStatus.todo + taskStats.byStatus.in_progress : null 
+    },
+    { 
+      key: "overdue", 
+      label: "Overdue", 
+      count: taskStats?.overdue || null 
+    },
+    { 
+      key: "completed", 
+      label: "Completed", 
+      count: taskStats?.byStatus?.completed || null 
+    }
   ];
 
   const createAction: ActionButtonConfig = {

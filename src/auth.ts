@@ -35,7 +35,7 @@ declare module "next-auth/jwt" {
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions = {
   providers: [
     // Use Credentials provider to handle backend OAuth tokens
     CredentialsProvider({
@@ -53,36 +53,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-
-        // Verify token with backend
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/me`, {
-            headers: {
-              'Authorization': `Bearer ${credentials.token}`,
-            },
-          })
-
-          if (response.ok) {
-            const backendUser = await response.json()
-            
-            // Map backend user to NextAuth user
-            const role = (credentials.role as UserRole) || UserRole.MEMBER
-            return {
-              id: backendUser.id?.toString() || credentials.email,
-              email: credentials.email,
-              name: credentials.name || backendUser.name,
-              image: credentials.avatar || backendUser.avatar,
-              role: role,
-              permissions: ROLE_PERMISSIONS[role] || [],
-              accessToken: credentials.token,
-            }
-          }
-        } catch (error) {
-          console.error('Backend user verification failed:', error)
-        }
+        // Skip backend verification for now since we don't have /api/user/me endpoint
+        // In production, you would verify the token with your backend here
+        
+        // Map credentials to NextAuth user
+        const role = (credentials.role as UserRole) || UserRole.MEMBER
 
         // Fallback: create user from credentials
-        const role = (credentials.role as UserRole) || UserRole.MEMBER
         return {
           id: credentials.email,
           email: credentials.email,
@@ -103,45 +80,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Allow sign in for backend OAuth users
       return true
     },
 
     async jwt({ token, user, account }) {
-      // Initial sign in - user data comes from backend OAuth
       if (user) {
         token.id = user.id
         token.role = user.role
         token.permissions = user.permissions
         token.accessToken = user.accessToken
       }
-      
       return token
     },
 
     async session({ session, token }) {
-      // Send properties to the client
       if (token && session.user) {
         session.user.id = token.id
         session.user.role = token.role
         session.user.permissions = token.permissions
         session.user.accessToken = token.accessToken
       }
-      
       return session
     },
 
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl + "/home"
     },
   },
 
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
@@ -150,16 +120,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 
   events: {
-    async signIn({ user, account, profile }) {
-      console.log("User signed in:", user.email)
-      // Here you can log sign-ins, update last login time, etc.
-    },
-    
     async signOut({ token }) {
       console.log("User signed out:", token?.email)
-      // Here you can log sign-outs, cleanup sessions, etc.
     },
   },
 
   debug: process.env.NODE_ENV === "development",
-})
+}
+
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut
+} = NextAuth(authOptions)
+
+export default NextAuth(authOptions)

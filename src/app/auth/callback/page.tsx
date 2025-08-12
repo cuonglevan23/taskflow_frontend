@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { CookieAuth } from '@/utils/cookieAuth';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -37,12 +38,12 @@ export default function AuthCallbackPage() {
         const expiresIn = searchParams.get('expires_in');
         const tokenType = searchParams.get('token_type');
         
-        // Debug: Log what we received
-        console.log('=== OAuth Callback Debug ===');
-        console.log('Code parameter:', code);
-        console.log('Access token parameter:', accessToken);
-        console.log('User email parameter:', userEmail);
-        console.log('All parameters:', Object.fromEntries(searchParams.entries()));
+        // Debug: Log what we received (disabled to prevent spam)
+        // console.log('=== OAuth Callback Debug ===');
+        // console.log('Code parameter:', code);
+        // console.log('Access token parameter:', accessToken);
+        // console.log('User email parameter:', userEmail);
+        // console.log('All parameters:', Object.fromEntries(searchParams.entries()));
 
         // Handle error from backend
         if (errorParam) {
@@ -79,10 +80,10 @@ export default function AuthCallbackPage() {
           const jwtPayload = decodeJWT(finalToken);
           const backendRole = jwtPayload?.roles?.[0] || jwtPayload?.role;
           
-          // Store tokens in localStorage
-          localStorage.setItem('access_token', finalToken);
+          // Store tokens in cookies (secure)
+          CookieAuth.setAccessToken(finalToken);
           if (refreshTokenParam) {
-            localStorage.setItem('refresh_token', refreshTokenParam);
+            CookieAuth.setRefreshToken(refreshTokenParam);
           }
 
           // Create user object from URL parameters or fetch from backend

@@ -1,106 +1,216 @@
-// API Response types
-export interface ApiResponse<T = unknown> {
+// Common API Types - Reusable across all services
+
+// Standard API Response wrapper
+export interface ApiResponse<T = any> {
   data: T;
-  message?: string;
   success: boolean;
-  timestamp: string;
+  message?: string;
+  timestamp?: string;
+  requestId?: string;
 }
 
+// Paginated API Response
+export interface PaginatedResponse<T = any> {
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  success: boolean;
+  message?: string;
+}
+
+// API Error Response
 export interface ApiError {
-  message: string;
-  code: string;
-  status: number;
-  errors?: Record<string, string[]>;
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+    field?: string;
+    timestamp: string;
+  };
+  success: false;
+  requestId?: string;
 }
 
-// Pagination
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
+// HTTP Methods
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
+
+// API Configuration
+export interface ApiConfig {
+  baseURL: string;
+  timeout: number;
+  headers: Record<string, string>;
+  withCredentials: boolean;
+  retryAttempts?: number;
+  retryDelay?: number;
 }
 
-export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
-  meta: PaginationMeta;
-}
-
-// Common API request types
-export interface CreateRequest<T = Record<string, unknown>> {
-  data: T;
-}
-
-export interface UpdateRequest<T = Record<string, unknown>> {
-  id: string;
-  data: Partial<T>;
-}
-
-export interface DeleteRequest {
-  id: string;
-}
-
-export interface GetByIdRequest {
-  id: string;
-}
-
-export interface ListRequest {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters?: Record<string, unknown>;
-}
-
-// HTTP methods
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
-// API request configuration
-export interface ApiRequestConfig {
-  method?: HttpMethod;
+// Request configuration
+export interface RequestConfig {
+  url: string;
+  method: HttpMethod;
   headers?: Record<string, string>;
   params?: Record<string, any>;
-  body?: any;
+  data?: any;
   timeout?: number;
   retries?: number;
 }
 
-// API hook return type
-export interface ApiHookReturn<T = any> {
-  data: T | null;
-  loading: boolean;
-  error: ApiError | null;
-  refetch: () => Promise<void>;
-  mutate: (newData: T) => void;
+// Upload progress callback
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
 }
 
-// Mutation hook return type
-export interface MutationHookReturn<TData = any, TVariables = any> {
-  mutate: (variables: TVariables) => Promise<TData>;
-  data: TData | null;
-  loading: boolean;
-  error: ApiError | null;
-  reset: () => void;
+// Download options
+export interface DownloadOptions {
+  filename?: string;
+  mimeType?: string;
+  openInNewTab?: boolean;
 }
 
-// Query parameters for lists
-export interface ListQueryParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  filters?: Record<string, any>;
+// Health check response
+export interface HealthCheckResponse {
+  status: 'UP' | 'DOWN' | 'UNKNOWN';
+  components?: Record<string, {
+    status: 'UP' | 'DOWN';
+    details?: any;
+  }>;
+  timestamp: string;
 }
 
-// File upload types
-export interface FileUploadResponse {
+// Authentication token payload (JWT)
+export interface TokenPayload {
+  sub: string;
+  email: string;
+  userId: number;
+  roles: string[];
+  authorities?: string[];
+  iat: number;
+  exp: number;
+  iss?: string;
+  aud?: string;
+}
+
+// User context (from token)
+export interface UserContext {
   id: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  isAuthenticated: boolean;
+  expiresAt: Date;
+}
+
+// API endpoints configuration
+export interface ApiEndpoints {
+  auth: {
+    login: string;
+    logout: string;
+    refresh: string;
+    verify: string;
+    me: string;
+  };
+  tasks: {
+    list: string;
+    create: string;
+    detail: (id: string) => string;
+    update: (id: string) => string;
+    delete: (id: string) => string;
+    assign: (id: string) => string;
+    status: (id: string) => string;
+    bulk: string;
+    stats: string;
+  };
+  projects: {
+    list: string;
+    detail: (id: string) => string;
+    tasks: (id: string) => string;
+  };
+  users: {
+    list: string;
+    profile: (id: string) => string;
+    me: string;
+  };
+  health: string;
+}
+
+// Request interceptor context
+export interface RequestInterceptorContext {
+  token?: string;
+  userContext?: UserContext;
+  requestId: string;
+  timestamp: Date;
+}
+
+// Response interceptor context  
+export interface ResponseInterceptorContext {
+  requestId: string;
+  duration: number;
+  success: boolean;
+  status: number;
   url: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: Date;
-} 
+  method: HttpMethod;
+}
+
+// API client interface
+export interface ApiClient {
+  get<T = any>(url: string, config?: any): Promise<T>;
+  post<T = any>(url: string, data?: any, config?: any): Promise<T>;
+  put<T = any>(url: string, data?: any, config?: any): Promise<T>;
+  patch<T = any>(url: string, data?: any, config?: any): Promise<T>;
+  delete<T = any>(url: string, config?: any): Promise<T>;
+  upload<T = any>(url: string, file: File | FormData, onProgress?: (progress: UploadProgress) => void): Promise<T>;
+  download(url: string, options?: DownloadOptions): Promise<void>;
+}
+
+// Error codes
+export enum ApiErrorCode {
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TIMEOUT = 'TIMEOUT',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+  RATE_LIMITED = 'RATE_LIMITED',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+}
+
+// Cache configuration
+export interface CacheConfig {
+  enabled: boolean;
+  ttl: number; // Time to live in seconds
+  maxSize: number;
+  strategy: 'memory' | 'localStorage' | 'sessionStorage';
+}
+
+// Rate limiting configuration
+export interface RateLimitConfig {
+  enabled: boolean;
+  maxRequests: number;
+  timeWindow: number; // in seconds
+  retryAfter?: number; // in seconds
+}
+
+// Service configuration combining all aspects
+export interface ServiceConfig {
+  api: ApiConfig;
+  cache?: CacheConfig;
+  rateLimit?: RateLimitConfig;
+  endpoints: ApiEndpoints;
+  debug: boolean;
+}
+
+// Export utility types
+export type ApiMethod<T = any> = (...args: any[]) => Promise<T>;
+export type ApiMethodWithParams<P, T> = (params: P) => Promise<T>;
+export type ApiMethodWithBody<B, T> = (body: B) => Promise<T>;
+export type ApiMethodWithParamsAndBody<P, B, T> = (params: P, body: B) => Promise<T>;

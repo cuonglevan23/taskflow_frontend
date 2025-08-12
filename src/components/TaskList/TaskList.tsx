@@ -52,7 +52,7 @@ const TaskList: React.FC<TaskListProps> = ({
   // Local state
   const [searchValue, setSearchValue] = useState('');
   const [filters, setFilters] = useState<TaskListFilters>({});
-  const [sort, setSort] = useState<TaskListSort>({ field: 'createdAt', direction: 'desc' });
+  const [sort, setSort] = useState<TaskListSort>({ field: 'startDate', direction: 'desc' });
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [groupBy, setGroupBy] = useState<TaskGroupBy>(finalConfig.defaultGroupBy || 'status');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');

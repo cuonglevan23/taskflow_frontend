@@ -5,8 +5,9 @@
 "use client";
 
 import React, { ReactNode, useState, useMemo, useCallback } from "react";
-import { TasksContext, TasksContextType } from './TasksContext';
-import { Task, CreateTaskDTO, UpdateTaskDTO, TaskFilter, TaskSort } from '@/services/tasks/task.types';
+import { TasksContext, TasksContextType } from '@/contexts/tasks/Tasks.context';
+import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
+import { TaskFilter, TaskSort } from '@/services/task';
 import { 
   useTasks, 
   useCreateTask, 
@@ -26,7 +27,7 @@ interface TasksProviderProps {
 export const TasksProvider: React.FC<TasksProviderProps> = ({
   children,
   initialFilters = {},
-  initialSort = { field: 'createdAt', direction: 'desc' }
+  initialSort = { field: 'startDate', direction: 'desc' } // Sort by startDate instead of createdAt
 }) => {
   // Local state for filters and search
   const [filters, setFiltersState] = useState<TaskFilter>(initialFilters);
@@ -122,7 +123,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({
     const completed = tasks.filter(task => task.status === 'done').length;
     const inProgress = tasks.filter(task => task.status === 'in_progress').length;
     const overdue = tasks.filter(task => 
-      task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done'
+      task.dueDateISO && task.dueDateISO < new Date() && task.status !== 'done'
     ).length;
 
     const byPriority = tasks.reduce((acc, task) => {

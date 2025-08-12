@@ -35,9 +35,21 @@ export const useUserData = (): UseUserDataReturn => {
       setIsLoading(true);
       setError(null);
       
-      // Check if we're in development and backend is not available
-      const response = await api.get<User>('/auth/me');
-      setUser(response.data);
+      // Call NextJS API route directly (not through backend API)
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const userData = await response.json();
+      setUser(userData);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch user data';
       
@@ -57,10 +69,24 @@ export const useUserData = (): UseUserDataReturn => {
   const updateUser = useCallback(async (updates: Partial<User>) => {
     try {
       setError(null);
-      const response = await api.patch<User>('/users/profile', updates);
-      setUser(response.data);
+      // This should call backend API for user updates
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+      
+      const updatedUser = await response.json();
+      setUser(updatedUser);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update user');
+      setError(err.message || 'Failed to update user');
       throw err;
     }
   }, []);
@@ -71,19 +97,25 @@ export const useUserData = (): UseUserDataReturn => {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
       
-      const response = await api.post<{ avatarUrl: string }>('/users/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await fetch('/api/users/avatar', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update avatar');
+      }
+      
+      const result = await response.json();
       
       // Update user with new avatar URL
       if (user) {
-        const updatedUser = { ...user, avatar: response.data.avatarUrl };
+        const updatedUser = { ...user, avatar: result.avatarUrl };
         setUser(updatedUser);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update avatar');
+      setError(err.message || 'Failed to update avatar');
       throw err;
     }
   }, [user]);
@@ -114,11 +146,14 @@ export const useUsers = (): UseUsersReturn => {
     try {
       setIsLoading(true);
       setError(null);
+      // This can still use backend API for fetching multiple users
       const response = await api.get<User[]>('/users');
       setUsers(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch users');
       console.error('Failed to fetch users:', err);
+      // Fallback to empty array instead of crashing
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +204,8 @@ export const useUser = (userId: string | null): { user: User | null; isLoading: 
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch user');
         console.error('Failed to fetch user:', err);
+        // Fallback to null instead of crashing
+        setUser(null);
       } finally {
         setIsLoading(false);
       }

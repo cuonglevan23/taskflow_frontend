@@ -30,9 +30,9 @@ export const authService = {
     return response.data;
   },
 
-  // Get current user
+  // Get current user - Using NextAuth.js API route
   getCurrentUser: async (): Promise<UserWithRole> => {
-    const response = await api.get<UserWithRole>('/auth/me', {
+    const response = await api.get<UserWithRole>('/api/auth/me', {
       // Ensure cookies are included in requests
       withCredentials: true
     });

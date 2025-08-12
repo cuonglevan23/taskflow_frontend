@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { SimpleCalendar } from '@/components/features/Calendar';
+import { SimpleCalendar } from '@/components/Calendar';
 
 export default function TasksCalendarPage() {
   return (

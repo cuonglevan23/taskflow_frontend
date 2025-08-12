@@ -8,7 +8,7 @@ import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import { useTasks, useTaskStats, useUpdateTask, useCreateTask } from "@/hooks/useTasks";
+import { useTasks, useTaskStats, useUpdateTask, useCreateTask, useMyTasksSummary, useMyTasksStats } from "@/hooks/useTasks";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
@@ -18,14 +18,37 @@ const MyTasksCard = () => {
   // Get UI state from context
   const { globalFilters, globalSort } = useTasksContext();
   
-  // Use SWR hook for tasks data
-  const { tasks, isLoading, error } = useTasks({
-    filter: globalFilters,
-    sort: globalSort
+  // Use new My Tasks Summary API for better performance
+  const { tasks, isLoading, error } = useMyTasksSummary({
+    page: 0,
+    size: 20,
+    sortBy: 'priority',
+    sortDir: 'desc'
   });
   
-  // Use SWR hook for task stats
-  const { stats: globalTaskStats } = useTaskStats();
+  // Use new My Tasks Stats API
+  const { stats: myTasksStats } = useMyTasksStats();
+  
+  // Transform stats to match expected format - Use real data from API
+  const globalTaskStats = myTasksStats && tasks ? {
+    total: myTasksStats.totalParticipatingTasks,
+    byStatus: {
+      todo: tasks.filter(t => t.status === 'pending').length,
+      in_progress: tasks.filter(t => t.status === 'in-progress').length, 
+      completed: tasks.filter(t => t.status === 'completed').length
+    },
+    overdue: tasks.filter(t => t.isOverdue === true).length,
+    byPriority: {
+      high: tasks.filter(t => t.priority === 'high').length,
+      medium: tasks.filter(t => t.priority === 'medium').length,
+      low: tasks.filter(t => t.priority === 'low').length
+    }
+  } : {
+    total: 0,
+    byStatus: { todo: 0, in_progress: 0, completed: 0 },
+    overdue: 0,
+    byPriority: { high: 0, medium: 0, low: 0 }
+  };
   
   // SWR mutation hooks
   const { updateTask } = useUpdateTask();
@@ -102,12 +125,12 @@ const MyTasksCard = () => {
       const task = tasks.find(t => t.id === numericId);
       if (task) {
         const newCompleted = !task.completed;
-        const newStatus = newCompleted ? 'completed' : 'pending';
+        // Map to correct backend status format
+        const backendStatus = newCompleted ? 'DONE' : 'TODO';
         await updateTask({
           id: task.id.toString(),
           data: {
-            completed: newCompleted,
-            status: newStatus
+            status: backendStatus  // Only send status, backend doesn't expect 'completed' field
           }
         });
       }
@@ -126,15 +149,15 @@ const MyTasksCard = () => {
     }
   };
 
-  // Debug hook data
-  console.log('🏠 MyTasksCardRefactored hook data:', {
-    displayedTasksCount: displayedTasks?.length || 0,
-    activeTab,
-    taskStatsCompleted: globalTaskStats?.byStatus?.completed || 0,
-    tasksTotal: tasks?.length || 0,
-    isLoading,
-    error
-  });
+  // Debug hook data (disabled to prevent spam)
+  // console.log('🏠 MyTasksCardRefactored hook data:', {
+  //   displayedTasksCount: displayedTasks?.length || 0,
+  //   activeTab,
+  //   taskStatsCompleted: globalTaskStats?.byStatus?.completed || 0,
+  //   tasksTotal: tasks?.length || 0,
+  //   isLoading,
+  //   error
+  // });
 
   // Business Logic
   const getDueDateColor = (task: Task): string => {
@@ -145,8 +168,8 @@ const MyTasksCard = () => {
       return '#dc2626'; // Red for overdue
     }
 
-    // Handle undefined or null dueDate
-    if (!task.dueDate) {
+    // Handle undefined, null, or non-string dueDate
+    if (!task.dueDate || typeof task.dueDate !== 'string') {
       return theme.text.secondary;
     }
 
@@ -200,6 +223,31 @@ const MyTasksCard = () => {
           </span>
 
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Creator Info */}
+            {task.creatorName && (
+              <span 
+                className="px-2 py-1 text-xs rounded-md font-medium bg-blue-100 text-blue-800"
+              >
+                By: {task.creatorName}
+              </span>
+            )}
+            
+            {/* Participation Type */}
+            {task.participationType && (
+              <span 
+                className={`px-2 py-1 text-xs rounded-md font-medium ${
+                  task.participationType === 'ASSIGNEE' 
+                    ? 'bg-green-100 text-green-800' 
+                    : task.participationType === 'TEAM_MEMBER'
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-orange-100 text-orange-800'
+                }`}
+              >
+                {task.participationType === 'ASSIGNEE' ? 'Assigned' : 
+                 task.participationType === 'TEAM_MEMBER' ? 'Team' : 'Project'}
+              </span>
+            )}
+
             {/* Project Tag */}
             {task.hasTag && task.tagText && (
               <span
@@ -210,17 +258,33 @@ const MyTasksCard = () => {
               </span>
             )}
 
-            {/* Due Date */}
+            {/* Completion Percentage */}
+            {task.completionPercentage !== undefined && task.completionPercentage > 0 && (
+              <span className="text-xs text-gray-500">
+                {task.completionPercentage}%
+              </span>
+            )}
+
+            {/* Due Date with overdue indicator */}
             <span
               className={`text-sm font-medium ${
+                task.isOverdue ? 'text-red-600 font-bold' : 
                 task.dueDateISO && task.dueDateISO < new Date() && !task.completed && task.status !== 'completed' 
                   ? 'font-semibold' 
                   : ''
               }`}
-              style={{ color: getDueDateColor(task) }}
+              style={{ color: task.isOverdue ? '#dc2626' : getDueDateColor(task) }}
             >
               {task.dueDate || 'No due date'}
+              {task.isOverdue && ' (Overdue)'}
             </span>
+
+            {/* Assignee Count */}
+            {task.assigneeCount && task.assigneeCount > 1 && (
+              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                +{task.assigneeCount}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -245,9 +309,21 @@ const MyTasksCard = () => {
 
   // BaseCard Configuration
   const tabs: TabConfig[] = [
-    { key: "upcoming", label: "Upcoming", count: null },
-    { key: "overdue", label: "Overdue", count: taskStats.overdue || null },
-    { key: "completed", label: "Completed", count: taskStats.completed || null }
+    { 
+      key: "upcoming", 
+      label: "Upcoming", 
+      count: globalTaskStats ? globalTaskStats.byStatus.todo + globalTaskStats.byStatus.in_progress : null 
+    },
+    { 
+      key: "overdue", 
+      label: "Overdue", 
+      count: globalTaskStats?.overdue || null 
+    },
+    { 
+      key: "completed", 
+      label: "Completed", 
+      count: globalTaskStats?.byStatus?.completed || null 
+    }
   ];
 
   const createAction: ActionButtonConfig = {
@@ -283,7 +359,7 @@ const MyTasksCard = () => {
         {error && (
           <div className="flex items-center justify-center py-4">
             <span className="text-sm text-red-500">
-              Error: {error}
+              Error: {error?.message || String(error)}
             </span>
           </div>
         )}

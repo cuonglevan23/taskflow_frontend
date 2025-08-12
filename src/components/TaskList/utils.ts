@@ -291,8 +291,8 @@ export const groupTasksByAssignmentDate = (tasks: TaskListItem[]): TaskSection[]
 
   // Categorize tasks based on due dates first, then assignment date
   tasks.forEach(task => {
-    const createdDate = new Date(task.createdAt);
-    const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+    const startDate = new Date(task.startDate || task.createdAt);
+    const daysSinceCreated = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (task.dueDate) {
       const dueDate = new Date(task.dueDate);

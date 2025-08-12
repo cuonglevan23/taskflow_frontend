@@ -6,7 +6,8 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
-import { Task, CreateTaskDTO, UpdateTaskDTO, TaskFilter, TaskSort } from '@/services/tasks/task.types';
+import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
+import { TaskFilter, TaskSort } from '@/services/task';
 
 // Context Interface - Clean and focused
 interface TasksContextType {

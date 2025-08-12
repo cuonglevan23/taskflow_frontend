@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { CookieAuth } from '@/utils/cookieAuth';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -37,12 +38,12 @@ export default function AuthCallbackPage() {
         const expiresIn = searchParams.get('expires_in');
         const tokenType = searchParams.get('token_type');
         
-        // Debug: Log what we received
-        console.log('=== OAuth Callback Debug ===');
-        console.log('Code parameter:', code);
-        console.log('Access token parameter:', accessToken);
-        console.log('User email parameter:', userEmail);
-        console.log('All parameters:', Object.fromEntries(searchParams.entries()));
+        // Debug: Log what we received (disabled to prevent spam)
+        // console.log('=== OAuth Callback Debug ===');
+        // console.log('Code parameter:', code);
+        // console.log('Access token parameter:', accessToken);
+        // console.log('User email parameter:', userEmail);
+        // console.log('All parameters:', Object.fromEntries(searchParams.entries()));
 
         // Handle error from backend
         if (errorParam) {
@@ -56,18 +57,18 @@ export default function AuthCallbackPage() {
         
         if (token || accessToken) {
           // Scenario 1: Backend successfully processed and redirected with tokens
-          console.log('=== OAuth Callback Success ===');
-          console.log('Received tokens from backend redirect');
-          console.log('All URL parameters:', Object.fromEntries(searchParams.entries()));
+          // console.log('=== OAuth Callback Success ==='); // Disabled to prevent spam
+          // console.log('Received tokens from backend redirect');
+          // console.log('All URL parameters:', Object.fromEntries(searchParams.entries()));
           const finalToken = token || accessToken;
-          console.log('Final token length:', finalToken?.length);
+          // console.log('Final token length:', finalToken?.length);
 
           // Helper function to decode JWT and extract role
           const decodeJWT = (token: string) => {
             try {
               const base64Payload = token.split('.')[1];
               const payload = JSON.parse(atob(base64Payload));
-              console.log('Decoded JWT payload:', payload);
+              // console.log('Decoded JWT payload:', payload); // Disabled to prevent spam
               return payload;
             } catch (error) {
               console.error('Failed to decode JWT:', error);
@@ -79,10 +80,10 @@ export default function AuthCallbackPage() {
           const jwtPayload = decodeJWT(finalToken);
           const backendRole = jwtPayload?.roles?.[0] || jwtPayload?.role;
           
-          // Store tokens in localStorage
-          localStorage.setItem('access_token', finalToken);
+          // Store tokens in cookies (secure)
+          CookieAuth.setAccessToken(finalToken);
           if (refreshTokenParam) {
-            localStorage.setItem('refresh_token', refreshTokenParam);
+            CookieAuth.setRefreshToken(refreshTokenParam);
           }
 
           // Create user object from URL parameters or fetch from backend
