@@ -122,15 +122,18 @@ export const formatDate = (dateString: string | Date): string => {
 
 export const formatTaskDate = (task: {
   dueDate?: string | Date | null;
+  deadline?: string | Date | null;
   startDate?: string | Date | null;
   endDate?: string | Date | null;
   startTime?: string;
   endTime?: string;
 }): string => {
-  // Check if task has start/end dates and times from enhanced calendar
-  if (task.startDate && task.endDate) {
+  // Check if task has start/deadline dates and times from enhanced calendar
+  // Use correct backend fields: startDate and deadline
+  const taskEndDate = task.deadline || task.endDate;
+  if (task.startDate && taskEndDate) {
     const startDate = new Date(task.startDate);
-    const endDate = new Date(task.endDate);
+    const endDate = new Date(taskEndDate);
     
     // Validate dates
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
@@ -187,15 +190,16 @@ export const formatTaskDate = (task: {
     return result;
   }
   
-  // Fallback to regular dueDate formatting with consistent format
-  if (task.dueDate) {
-    const date = new Date(task.dueDate);
+  // Fallback to regular deadline/dueDate formatting with consistent format
+  const fallbackDate = task.deadline || task.dueDate;
+  if (fallbackDate) {
+    const date = new Date(fallbackDate);
     if (!isNaN(date.getTime())) {
       // Use consistent format: "25 jan" instead of "Jan 25" 
       return `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
     }
     // If date parsing fails, use original formatDate function
-    return formatDate(task.dueDate as string | Date);
+    return formatDate(fallbackDate as string | Date);
   }
   
   return '-';

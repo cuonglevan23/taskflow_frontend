@@ -5,7 +5,6 @@ import { X, Calendar, User, CheckCircle, Plus, MessageCircle, Paperclip, MoreHor
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskListItem, TaskStatus, TaskPriority } from '@/components/TaskList/types';
 
-import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 
 interface TaskDetailPanelProps {
   task: TaskListItem | null;
@@ -484,57 +483,6 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           </div>
         </div>
 
-        {/* Enhanced Calendar Modal */}
-        <EnhancedCalendar
-          isOpen={isEnhancedCalendarOpen}
-          onClose={() => setIsEnhancedCalendarOpen(false)}
-          onSave={(data) => {
-            console.log('Calendar data saved:', data);
-            
-            // Convert dd/mm/yy format to proper date
-            const parseDate = (dateStr: string) => {
-              if (!dateStr) return null;
-              const [day, month, year] = dateStr.split('/');
-              return `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            };
-            
-            const startDateFormatted = parseDate(data.startDate);
-            const endDateFormatted = parseDate(data.endDate);
-            
-            // Update local state immediately for UI sync
-            if (startDateFormatted) setStartDate(new Date(startDateFormatted));
-            if (endDateFormatted) setEndDate(new Date(endDateFormatted));
-            
-            // Update time state if provided
-            if (data.startTime) {
-              setStartTime(data.startTime);
-              setHasStartTime(true);
-            }
-            if (data.endTime) {
-              setEndTime(data.endTime);
-              setHasEndTime(true);
-            }
-            
-            // Save to task data with complete sync
-            if (onSave) {
-              console.log('TaskDetailPanel saving:', {
-                dueDate: endDateFormatted || startDateFormatted, // dueDate should be end date
-                startDate: startDateFormatted,
-                endDate: endDateFormatted,
-              });
-
-              onSave(task?.id || 'new', {
-                dueDate: (endDateFormatted ?? startDateFormatted) ?? undefined,
-                startDate: startDateFormatted ?? undefined,
-                endDate: endDateFormatted ?? undefined,
-                startTime: data.startTime || startTime,
-                endTime: data.endTime || endTime,
-                hasStartTime: !!(data.startTime || startTime),
-                hasEndTime: !!(data.endTime || endTime)
-              });
-            }
-          }}
-        />
       </div>
     </div>
   );

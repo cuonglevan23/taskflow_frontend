@@ -51,6 +51,16 @@ const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({
 
   // Convert Task to TaskListItem for TaskDetailPanel compatibility - Memoized
   const convertTaskToTaskListItem = React.useCallback((task: Task): TaskListItem => {
+    // Use the correct startDate and endDate from Task object (from transformMyTasksSummary)
+    const formatDate = (date: Date | string | null | undefined) => {
+      if (!date) return undefined;
+      if (typeof date === 'string') return date;
+      if (date instanceof Date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+      return undefined;
+    };
+
     return {
       id: task.id.toString(),
       name: task.title,
@@ -61,8 +71,8 @@ const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({
         email: '',
       }] : [],
       dueDate: task.dueDate,
-      startDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : undefined,
-      endDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : undefined,
+      startDate: formatDate(task.startDate), // Use actual startDate from backend
+      deadline: formatDate(task.endDate),    // Map endDate to deadline for backend compatibility
       priority: (task.priority as any) || 'medium',
       status: task.status === 'completed' ? 'done' : 
               task.status === 'in-progress' ? 'in_progress' : 

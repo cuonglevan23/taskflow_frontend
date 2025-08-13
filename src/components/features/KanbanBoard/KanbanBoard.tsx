@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { TaskListItem, TaskStatus, TaskListActions } from "@/components/TaskList/types";
 import { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
-import { EnhancedCalendar } from "@/components/features/EnhancedCalendar";
+
 import EmptySearchState from "@/components/ui/EmptySearchState";
 import DragAndDropContext from "./DragAndDropContext";
 import DroppableColumn from "./DroppableColumn";
@@ -407,12 +407,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </DragAndDropContext>
       )}
 
-      {/* Enhanced Calendar Modal */}
-      <EnhancedCalendar
-        isOpen={isEnhancedCalendarOpen}
-        onClose={() => setIsEnhancedCalendarOpen(false)}
-        onSave={handleEnhancedCalendarSave}
-      />
     </div>
   );
 };

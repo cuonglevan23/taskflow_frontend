@@ -8,7 +8,7 @@ import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import { useTasks, useTaskStats, useUpdateTask, useCreateTask, useMyTasksSummary, useMyTasksStats } from "@/hooks/useTasks";
+import { useTasks, useTaskStats, useUpdateTask, useCreateTask, useMyTasksSummary } from "@/hooks/useTasks";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
@@ -18,26 +18,43 @@ const MyTasksCard = () => {
   // Get UI state from context
   const { globalFilters, globalSort } = useTasksContext();
   
-  // Use new My Tasks Summary API for better performance
+  // Simple local task grouping function (without backend dependency)
+  const getTaskCountsByGroup = (tasks: Task[]) => {
+    const groups = { todo: 0, in_progress: 0, completed: 0, other: 0, total: tasks.length };
+    tasks.forEach(task => {
+      if (task.completed || task.status === 'DONE' || task.status === 'completed') {
+        groups.completed++;
+      } else if (task.status === 'IN_PROGRESS' || task.status === 'in-progress' || 
+                 task.status === 'TESTING' || task.status === 'REVIEW') {
+        groups.in_progress++;
+      } else if (task.status === 'TODO' || task.status === 'pending') {
+        groups.todo++;
+      } else {
+        groups.other++;
+      }
+    });
+    return groups;
+  };
+  
+  // Use correct API for user's personal tasks
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
-    size: 20,
-    sortBy: 'priority',
+    size: 50,
+    sortBy: 'startDate',
     sortDir: 'desc'
   });
   
-  // Use new My Tasks Stats API
-  const { stats: myTasksStats } = useMyTasksStats();
+  // Remove stats API call due to 403 error - calculate from tasks instead
+  // const { stats: myTasksStats } = useMyTasksStats();
   
-  // Transform stats to match expected format - Use real data from API
-  const globalTaskStats = myTasksStats && tasks ? {
-    total: myTasksStats.totalParticipatingTasks,
-    byStatus: {
-      todo: tasks.filter(t => t.status === 'pending').length,
-      in_progress: tasks.filter(t => t.status === 'in-progress').length, 
-      completed: tasks.filter(t => t.status === 'completed').length
-    },
-    overdue: tasks.filter(t => t.isOverdue === true).length,
+  // Calculate stats directly from tasks data to avoid 403 API errors
+  const globalTaskStats = tasks && Array.isArray(tasks) ? {
+    total: tasks.length,
+    byStatus: getTaskCountsByGroup(tasks),
+    overdue: tasks.filter(t => {
+      // Calculate overdue from dueDateISO since isOverdue might not be available
+      return t.dueDateISO && t.dueDateISO < new Date() && !t.completed && t.status !== 'completed';
+    }).length,
     byPriority: {
       high: tasks.filter(t => t.priority === 'high').length,
       medium: tasks.filter(t => t.priority === 'medium').length,
@@ -45,7 +62,7 @@ const MyTasksCard = () => {
     }
   } : {
     total: 0,
-    byStatus: { todo: 0, in_progress: 0, completed: 0 },
+    byStatus: { todo: 0, in_progress: 0, completed: 0, other: 0 },
     overdue: 0,
     byPriority: { high: 0, medium: 0, low: 0 }
   };
@@ -65,17 +82,25 @@ const MyTasksCard = () => {
 
     let filteredTasks = tasks;
 
+    // Helper function to check if task is completed
+    const isTaskCompleted = (task: Task) => {
+      return task.completed || 
+             task.status === 'completed' || 
+             task.status === 'DONE' ||     // Backend format
+             taskStates[task.id];
+    };
+
     // Filter by active tab
     if (activeTab === "completed") {
-      filteredTasks = tasks.filter(task => task.completed || task.status === 'completed' || taskStates[task.id]);
+      filteredTasks = tasks.filter(task => isTaskCompleted(task));
     } else if (activeTab === "overdue") {
       filteredTasks = tasks.filter(task => {
-        const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !task.completed && task.status !== 'completed' && !taskStates[task.id];
+        const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isTaskCompleted(task);
         return isOverdue;
       });
     } else {
-      // upcoming
-      filteredTasks = tasks.filter(task => !task.completed && task.status !== 'completed' && !taskStates[task.id]);
+      // upcoming - show all non-completed tasks
+      filteredTasks = tasks.filter(task => !isTaskCompleted(task));
     }
 
     // Limit display if not showing all
@@ -125,7 +150,7 @@ const MyTasksCard = () => {
       const task = tasks.find(t => t.id === numericId);
       if (task) {
         const newCompleted = !task.completed;
-        // Map to correct backend status format
+        // Map to correct backend status format using dynamic configuration
         const backendStatus = newCompleted ? 'DONE' : 'TODO';
         await updateTask({
           id: task.id.toString(),
@@ -356,28 +381,36 @@ const MyTasksCard = () => {
       onMenuClick={handleMenuClick}
     >
       <div className="space-y-0">
-        {error && (
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-4">
+            <span className="text-sm" style={{ color: theme.text.secondary }}>
+              Loading...
+            </span>
+          </div>
+        )}
+        
+        {/* Error state */}
+        {!isLoading && error && (
           <div className="flex items-center justify-center py-4">
             <span className="text-sm text-red-500">
               Error: {error?.message || String(error)}
             </span>
           </div>
         )}
-        {!error && displayedTasks && displayedTasks.length > 0 ? (
+        
+        {/* Tasks display */}
+        {!isLoading && !error && displayedTasks && displayedTasks.length > 0 && (
           displayedTasks.map((task) => (
             <TaskItem key={task.id} task={task} />
           ))
-        ) : !isLoading && !error ? (
+        )}
+        
+        {/* No tasks found */}
+        {!isLoading && !error && (!displayedTasks || displayedTasks.length === 0) && (
           <div className="flex items-center justify-center py-4">
             <span className="text-sm" style={{ color: theme.text.secondary }}>
               No tasks found
-            </span>
-          </div>
-        ) : null}
-        {isLoading && (
-          <div className="flex items-center justify-center py-4">
-            <span className="text-sm" style={{ color: theme.text.secondary }}>
-              Loading...
             </span>
           </div>
         )}

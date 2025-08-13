@@ -13,11 +13,11 @@ import {
 } from './types';
 import { groupTasks, sortTasks, filterTasks } from './utils';
 import TaskListHeader from './TaskListHeader';
-import TaskTable from './TaskTable';
-import TaskSection from './TaskSection';
+import EnhancedTaskSection from './EnhancedTaskSection';
+
 import EmptySearchState from '@/components/ui/EmptySearchState';
 
-interface TaskListProps {
+interface GroupedTaskListProps {
   tasks: TaskListItem[];
   config?: Partial<TaskListConfig>;
   actions?: TaskListActions;
@@ -25,6 +25,7 @@ interface TaskListProps {
   error?: string;
   className?: string;
   hideHeader?: boolean;
+  groupBy?: TaskGroupBy;
 }
 
 const DEFAULT_CONFIG: TaskListConfig = {
@@ -32,11 +33,82 @@ const DEFAULT_CONFIG: TaskListConfig = {
   showFilters: true,
   showSort: true,
   enableGrouping: true,
-  defaultGroupBy: 'status',
+  defaultGroupBy: 'assignmentDate', // Default to Asana-style grouping
   showSelection: true,
 };
 
-const TaskList: React.FC<TaskListProps> = ({
+// Define Asana/ClickUp style default sections
+const createDefaultSections = (tasks: TaskListItem[]): TaskSectionType[] => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+
+  // Filter tasks based on assignment date and due date
+  const recentlyAssigned = tasks.filter(task => {
+    const createdAt = new Date(task.createdAt);
+    const daysDiff = (today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+    return daysDiff <= 7; // Tasks created in last 7 days
+  });
+
+  const doToday = tasks.filter(task => {
+    if (!task.dueDate) return false;
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate.getTime() === today.getTime();
+  });
+
+  const doNextWeek = tasks.filter(task => {
+    if (!task.dueDate) return false;
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate > today && dueDate <= nextWeek;
+  });
+
+  const doLater = tasks.filter(task => {
+    if (!task.dueDate) return true; // Tasks without due date go to "Do later"
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate > nextWeek;
+  });
+
+  return [
+    {
+      id: 'recently-assigned',
+      title: 'Recently assigned',
+      tasks: recentlyAssigned,
+      collapsible: true,
+      collapsed: false,
+    },
+    {
+      id: 'do-today',
+      title: 'Do today',
+      tasks: doToday,
+      collapsible: true,
+      collapsed: false,
+    },
+    {
+      id: 'do-next-week',
+      title: 'Do next week',
+      tasks: doNextWeek,
+      collapsible: true,
+      collapsed: false,
+    },
+    {
+      id: 'do-later',
+      title: 'Do later',
+      tasks: doLater,
+      collapsible: true,
+      collapsed: false,
+    },
+  ];
+};
+
+const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   tasks,
   config = {},
   actions,
@@ -44,6 +116,7 @@ const TaskList: React.FC<TaskListProps> = ({
   error,
   className = '',
   hideHeader = false,
+  groupBy: propGroupBy,
 }) => {
   const { theme } = useTheme();
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
@@ -53,8 +126,9 @@ const TaskList: React.FC<TaskListProps> = ({
   const [filters, setFilters] = useState<TaskListFilters>({});
   const [sort, setSort] = useState<TaskListSort>({ field: 'startDate', direction: 'desc' });
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [groupBy, setGroupBy] = useState<TaskGroupBy>(finalConfig.defaultGroupBy || 'status');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [groupBy, setGroupBy] = useState<TaskGroupBy>(
+    propGroupBy || finalConfig.defaultGroupBy || 'assignmentDate'
+  );
   
   // Enhanced calendar state
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
@@ -85,6 +159,13 @@ const TaskList: React.FC<TaskListProps> = ({
         collapsed: false,
       }];
     }
+
+    // Use default Asana/ClickUp style grouping if assignmentDate is selected
+    if (groupBy === 'assignmentDate') {
+      return createDefaultSections(processedTasks);
+    }
+
+    // Use other grouping methods from utils
     return groupTasks(processedTasks, groupBy);
   }, [processedTasks, groupBy, finalConfig.enableGrouping]);
 
@@ -198,7 +279,7 @@ const TaskList: React.FC<TaskListProps> = ({
       className={`w-full ${className}`}
       style={{ backgroundColor: theme.background.primary }}
     >
-      {/* Header - Fixed Position within container with solid background */}
+      {/* Header */}
       {!hideHeader && (
         <div 
           className="sticky top-0 z-30 shadow-sm border-b" 
@@ -206,7 +287,6 @@ const TaskList: React.FC<TaskListProps> = ({
             backgroundColor: theme.background.primary,
             borderColor: theme.border.default,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            width: '100%'
           }}
         >
           <TaskListHeader
@@ -227,29 +307,22 @@ const TaskList: React.FC<TaskListProps> = ({
         </div>
       )}
 
-      {/* Table Column Headers - Always visible when grouped and tasks exist */}
+      {/* Table Column Headers - Sticky */}
       {finalConfig.enableGrouping && processedTasks.length > 0 && (
         <div 
-          className="sticky top-0 z-30 shadow-sm border-b" 
+          className="sticky top-0 z-40 bg-gray-50 border-b border-gray-200 shadow-sm" 
           style={{ 
-            backgroundColor: theme.background.primary,
+            backgroundColor: theme.background.secondary,
             borderColor: theme.border.default,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            width: '100%',
-            isolation: 'auto' // Ensure this doesn't create a new stacking context
+            top: hideHeader ? '0' : '72px', // Offset for layout header when present
           }}
         >
           <div
-            className="flex items-center py-3 border-b text-sm font-medium w-full"
+            className="flex items-center py-3 text-sm font-medium w-full"
             style={{
-              backgroundColor: theme.background.secondary,
-              borderColor: theme.border.default,
               color: theme.text.secondary,
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              width: '100%',
-              minWidth: '100%',
               paddingLeft: '64px',
-              paddingRight: '96px'
+              paddingRight: '24px'
             }}
           >
             <div className="flex-1 min-w-[300px] px-2">Name</div>
@@ -257,7 +330,6 @@ const TaskList: React.FC<TaskListProps> = ({
             <div className="w-[150px] px-2">Collaborators</div>
             <div className="w-[150px] px-2">Projects</div>
             <div className="w-[140px] px-2">Task visibility</div>
-
           </div>
         </div>
       )}
@@ -265,7 +337,7 @@ const TaskList: React.FC<TaskListProps> = ({
       {/* Bulk Actions */}
       {selectedTasks.length > 0 && (
         <div
-          className="flex items-center justify-between p-3 rounded-lg mb-4"
+          className="flex items-center justify-between p-3 rounded-lg mx-6 mt-4"
           style={{ backgroundColor: theme.background.secondary }}
         >
           <span className="text-sm" style={{ color: theme.text.primary }}>
@@ -308,35 +380,40 @@ const TaskList: React.FC<TaskListProps> = ({
         ) : (
           <>
             {finalConfig.enableGrouping ? (
-              groupedTasks.map((section) => (
-                <TaskSection
-                  key={section.id}
-                  section={section}
-                  actions={actions}
-                  selectedTasks={selectedTasks}
-                  onSelectTask={handleSelectTask}
-                  onSelectAll={handleSelectAll}
-                  viewMode={viewMode}
-                />
-              ))
+              groupedTasks
+                .filter(section => section.tasks.length > 0) // Only show sections with tasks
+                .map((section) => (
+                  <EnhancedTaskSection
+                    key={section.id}
+                    section={section}
+                    actions={actions}
+                    selectedTasks={selectedTasks}
+                    onSelectTask={handleSelectTask}
+                    onSelectAll={handleSelectAll}
+                  />
+                ))
             ) : (
-              <TaskTable
-                tasks={processedTasks}
-                columns={finalConfig.columns}
-                actions={actions}
-                selectedTasks={selectedTasks}
-                onSelectTask={finalConfig.showSelection ? handleSelectTask : undefined}
-                onSelectAll={finalConfig.showSelection ? handleSelectAll : undefined}
-                onSort={handleSort}
-                sortField={sort.field}
-                sortDirection={sort.direction}
-              />
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <tbody>
+                    {processedTasks.map((task) => (
+                      <EnhancedTaskRow
+                        key={task.id}
+                        task={task}
+                        actions={actions}
+                        isSelected={selectedTasks.includes(task.id)}
+                        onSelect={finalConfig.showSelection ? handleSelectTask : undefined}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </>
         )}
       </div>
 
-      {/* Empty State - Only show when no search/filters are active */}
+      {/* Empty State */}
       {processedTasks.length === 0 && !loading && !searchValue && Object.keys(filters).length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4 opacity-50">📋</div>
@@ -364,10 +441,8 @@ const TaskList: React.FC<TaskListProps> = ({
           </button>
         </div>
       )}
-
-
     </div>
   );
 };
 
-export default TaskList;
+export default GroupedTaskList;

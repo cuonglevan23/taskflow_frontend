@@ -39,7 +39,7 @@ export interface FullCalendarViewProps {
 }
 
 // Convert tasks to FullCalendar events
-const convertTasksToEvents = (tasks: Task[]): CalendarEvent[] => {
+const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => any): CalendarEvent[] => {
   if (!tasks || !Array.isArray(tasks)) {
     return [];
   }
@@ -65,11 +65,6 @@ const convertTasksToEvents = (tasks: Task[]): CalendarEvent[] => {
         if (Array.isArray(task.dueDate) && task.dueDate.length >= 3) {
           const [year, month, day] = task.dueDate.map(Number);
           startDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          console.log('✅ Using dueDate array:', {
-            input: task.dueDate,
-            parsed: startDate,
-            title: task.title
-          });
         } else if (task.dueDate !== 'No deadline') {
           const date = new Date(task.dueDate);
           const year = date.getFullYear();
@@ -113,41 +108,15 @@ const convertTasksToEvents = (tasks: Task[]): CalendarEvent[] => {
         endDate = `${year}-${month}-${day}`;
       }
 
-      // Determine colors based on task status
-      const isCompleted = task.completed || task.status === 'completed';
-      const isOverdue = task.isOverdue === true;
+      // Get colors using local function
+      const { backgroundColor, borderColor } = getTaskColorsFunc(task);
       
-      let backgroundColor = '#6b7280'; // Default gray
-      let borderColor = '#4b5563';
-      
-      if (isCompleted) {
-        backgroundColor = '#10b981'; // Green
-        borderColor = '#059669';
-      } else if (isOverdue) {
-        backgroundColor = '#dc2626'; // Red
-        borderColor = '#991b1b';
-      } else if (task.priority === 'high') {
-        backgroundColor = '#ef4444'; // Red
-        borderColor = '#dc2626';
-      } else if (task.priority === 'medium') {
-        backgroundColor = '#f59e0b'; // Orange
-        borderColor = '#d97706';
-      } else {
-        backgroundColor = '#3b82f6'; // Blue
-        borderColor = '#1d4ed8';
-      }
-      
+      // Check task status
+      const isCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+      const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
       const isMultiDay = !!endDate && endDate !== startDate;
 
-      console.log('🔍 Task conversion debug:', {
-        taskId: task.id,
-        title: task.title,
-        startDate,
-        endDate,
-        isMultiDay,
-        taskStartDate: task.startDate,
-        taskEndDate: task.endDate
-      });
+
 
       return {
         id: task.id?.toString() || Math.random().toString(),
@@ -186,10 +155,54 @@ export const FullCalendarView: React.FC<FullCalendarViewProps> = ({
 }) => {
   const { theme } = useTheme();
   const calendarRef = useRef<FullCalendar>(null);
+  
+  // Simple local color function (no backend dependency)
+  const getTaskColors = (task: Task) => {
+    const isCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+    const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
+    
+    // Priority: completed > overdue > status > priority > default
+    if (isCompleted) {
+      return { backgroundColor: '#10b981', borderColor: '#059669' }; // Green
+    }
+    
+    if (isOverdue) {
+      return { backgroundColor: '#dc2626', borderColor: '#991b1b' }; // Red
+    }
+    
+    // Status-based colors
+    if (task.status === 'IN_PROGRESS' || task.status === 'in-progress') {
+      return { backgroundColor: '#f59e0b', borderColor: '#d97706' }; // Orange
+    }
+    
+    if (task.status === 'TESTING') {
+      return { backgroundColor: '#3b82f6', borderColor: '#1d4ed8' }; // Blue
+    }
+    
+    if (task.status === 'REVIEW') {
+      return { backgroundColor: '#8b5cf6', borderColor: '#7c3aed' }; // Purple
+    }
+    
+    if (task.status === 'BLOCKED') {
+      return { backgroundColor: '#dc2626', borderColor: '#991b1b' }; // Red
+    }
+    
+    // Priority-based colors (fallback)
+    if (task.priority === 'high') {
+      return { backgroundColor: '#ef4444', borderColor: '#dc2626' }; // Red
+    }
+    
+    if (task.priority === 'medium') {
+      return { backgroundColor: '#f59e0b', borderColor: '#d97706' }; // Orange
+    }
+    
+    // Default
+    return { backgroundColor: '#6b7280', borderColor: '#4b5563' }; // Gray
+  };
 
   // Convert tasks to calendar events
   const calendarEvents = useMemo(() => {
-    const events = convertTasksToEvents(tasks);
+    const events = convertTasksToEvents(tasks, getTaskColors);
     console.log('📅 FullCalendar events:', events.length, events.slice(0, 3));
     return events;
   }, [tasks]);
