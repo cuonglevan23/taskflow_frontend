@@ -14,7 +14,16 @@ import UserMenu from "./UserMenu";
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { HiChevronDoubleLeft, HiChevronDoubleRight } from "react-icons/hi";
-import { CheckSquare, Folder, MessageSquare, Briefcase, Target, Users } from "lucide-react";
+import {
+  CheckSquare,
+  Folder,
+  MessageSquare,
+  Briefcase,
+  Target,
+  Users,
+} from "lucide-react";
+import CreateProjectModal from "@/components/modals/CreateProjectModal";
+import { InviteModal } from "@/components/modals";
 
 interface PrivateHeaderProps {
   user: User;
@@ -31,10 +40,12 @@ export default function PrivateHeader({
   isSidebarCollapsed,
   onLogout,
 }: PrivateHeaderProps) {
-  // Use useDisclosure for dropdowns
+  // Use useDisclosure for dropdowns and modals
   const notificationDropdown = useDisclosure(false);
   const userDropdown = useDisclosure(false);
-
+  const createProjectModal = useDisclosure(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const inviteModal = useDisclosure(false);
   const handleSearch = (query: string) => {
     // Handle search logic here
     console.log("Searching for:", query);
@@ -72,8 +83,6 @@ export default function PrivateHeader({
     </svg>
   );
 
-
-
   const HelpIcon = () => (
     <svg
       className="h-5 w-5"
@@ -89,10 +98,6 @@ export default function PrivateHeader({
       />
     </svg>
   );
-
-
-
-
 
   return (
     <header className="h-12 bg-gray-800 flex items-center justify-between px-4 border-b border-gray-700">
@@ -126,31 +131,57 @@ export default function PrivateHeader({
           placement="right"
           usePortal={false}
           contentClassName="w-48"
+          isOpen={isCreateOpen}
+          onOpenChange={setIsCreateOpen}
         >
           <div className="py-2">
-            <DropdownItem icon={<CheckSquare className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<CheckSquare className="w-4 h-4" />}
+              onClick={() => setIsCreateOpen(false)}
+            >
               Task
             </DropdownItem>
 
-            <DropdownItem icon={<Folder className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<Folder className="w-4 h-4" />}
+              onClick={() => {
+                setIsCreateOpen(false);
+                createProjectModal.onOpen();
+              }}
+            >
               Project
             </DropdownItem>
 
-            <DropdownItem icon={<MessageSquare className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<MessageSquare className="w-4 h-4" />}
+              onClick={() => setIsCreateOpen(false)}
+            >
               Message
             </DropdownItem>
 
-            <DropdownItem icon={<Briefcase className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<Briefcase className="w-4 h-4" />}
+              onClick={() => setIsCreateOpen(false)}
+            >
               Portfolio
             </DropdownItem>
 
-            <DropdownItem icon={<Target className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<Target className="w-4 h-4" />}
+              onClick={() => setIsCreateOpen(false)}
+            >
               Goal
             </DropdownItem>
 
             <DropdownSeparator />
 
-            <DropdownItem icon={<Users className="w-4 h-4" />}>
+            <DropdownItem
+              icon={<Users className="w-4 h-4" />}
+              onClick={() => {
+                setIsCreateOpen(false);
+                inviteModal.onOpen();
+              }}
+            >
               Invite
             </DropdownItem>
           </div>
@@ -168,7 +199,7 @@ export default function PrivateHeader({
         <div className="hidden md:flex items-center space-x-2">
           <span className="text-xs text-gray-400">Role:</span>
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
-            {user.role?.toUpperCase() || 'UNKNOWN'}
+            {user.role?.toUpperCase() || "UNKNOWN"}
           </span>
         </div>
 
@@ -190,62 +221,86 @@ export default function PrivateHeader({
             usePortal={false}
             contentClassName="w-80 max-w-sm"
           >
-          <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
-            <h3 className="font-semibold text-white text-sm">Notifications</h3>
-          </div>
-          <div className="max-h-64 overflow-y-auto">
-            <DropdownItem>
-              <div className="flex items-start space-x-3 py-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm text-gray-200">New task assigned</p>
-                  <p className="text-xs text-gray-400 truncate">Cross-functional project plan</p>
-                  <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+            <div className="p-4 border-b" style={{ borderColor: "#374151" }}>
+              <h3 className="font-semibold text-white text-sm">
+                Notifications
+              </h3>
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              <DropdownItem>
+                <div className="flex items-start space-x-3 py-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-gray-200">
+                      New task assigned
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      Cross-functional project plan
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+                  </div>
                 </div>
-              </div>
-            </DropdownItem>
-            <DropdownItem>
-              <div className="flex items-start space-x-3 py-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm text-gray-200">Project completed</p>
-                  <p className="text-xs text-gray-400 truncate">Marketing Campaign</p>
-                  <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
+              </DropdownItem>
+              <DropdownItem>
+                <div className="flex items-start space-x-3 py-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-gray-200">
+                      Project completed
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      Marketing Campaign
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
+                  </div>
                 </div>
-              </div>
-            </DropdownItem>
-            <DropdownItem>
-              <div className="flex items-start space-x-3 py-2">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm text-gray-200">Meeting reminder</p>
-                  <p className="text-xs text-gray-400 truncate">Team standup in 15 minutes</p>
-                  <p className="text-xs text-gray-500 mt-1">5 minutes ago</p>
+              </DropdownItem>
+              <DropdownItem>
+                <div className="flex items-start space-x-3 py-2">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-gray-200">
+                      Meeting reminder
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      Team standup in 15 minutes
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">5 minutes ago</p>
+                  </div>
                 </div>
-              </div>
-            </DropdownItem>
-          </div>
-          <div className="p-3 border-t" style={{ borderColor: '#374151' }}>
-            <button className="w-full text-center text-sm text-blue-400 hover:text-blue-300 transition-colors">
-              View all notifications
-            </button>
-          </div>
-        </Dropdown>
+              </DropdownItem>
+            </div>
+            <div className="p-3 border-t" style={{ borderColor: "#374151" }}>
+              <button className="w-full text-center text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                View all notifications
+              </button>
+            </div>
+          </Dropdown>
         </div>
 
         {/* User Menu */}
-        <UserMenu 
+        <UserMenu
           user={user}
-          onProfileSettings={() => console.log('Profile Settings')}
-          onDisplayPicture={() => console.log('Display Picture')}
-          onNotificationSettings={() => console.log('Notification Settings')}
-          onSwitchTeams={() => console.log('Switch Teams')}
-          onCreateTeam={() => console.log('Create Team')}
-          onAdminConsole={() => console.log('Admin Console')}
-          onInviteMembers={() => console.log('Invite Members')}
+          onProfileSettings={() => console.log("Profile Settings")}
+          onDisplayPicture={() => console.log("Display Picture")}
+          onNotificationSettings={() => console.log("Notification Settings")}
+          onSwitchTeams={() => console.log("Switch Teams")}
+          onCreateTeam={() => console.log("Create Team")}
+          onAdminConsole={() => console.log("Admin Console")}
+          onInviteMembers={() => console.log("Invite Members")}
           onLogout={onLogout}
         />
       </div>
-    </header>
+
+      {/* Modals */}
+      <CreateProjectModal
+        isOpen={createProjectModal.isOpen}
+        onClose={createProjectModal.onClose}
+      />
+      <InviteModal
+        isOpen={inviteModal.isOpen}
+        onClose={inviteModal.onClose}
+      />
+      </header>
   );
 }
