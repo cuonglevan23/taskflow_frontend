@@ -18,11 +18,11 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
+export function ThemeProvider({ 
   children, 
   defaultTheme = 'dark',
   storageKey = 'theme'
-}) => {
+}: ThemeProviderProps) {
   const themeHook = useTheme();
 
   return (

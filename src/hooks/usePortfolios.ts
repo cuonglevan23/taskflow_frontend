@@ -151,7 +151,7 @@ export const usePortfolios = (config: UsePortfoliosConfig = {}) => {
 
   // Mock data - In real app, this would come from context or API
   const [allPortfolios] = useState<Portfolio[]>(() => generateMockPortfolios(userId));
-  const [isLoading] = useState(false);
+  const [_isLoading] = useState(false);
   const [showAllPortfolios, setShowAllPortfolios] = useState(false);
 
   // Computed Values with Filtering and Sorting

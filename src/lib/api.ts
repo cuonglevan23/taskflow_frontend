@@ -1,203 +1,288 @@
-// API Configuration and Utilities for Backend Integration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// Centralized API Client - Professional HTTP wrapper with interceptors
+import axios, { 
+  AxiosInstance, 
+  AxiosRequestConfig, 
+  AxiosResponse, 
+  AxiosError,
+  InternalAxiosRequestConfig,
+  AxiosProgressEvent
+} from 'axios';
+import { CookieAuth } from '@/utils/cookieAuth';
+import { SafeLogger } from '@/utils/safeLogger';
 
-export class ApiClient {
-  private baseURL: string;
+// API Configuration
+interface ApiConfig {
+  baseURL: string;
+  timeout: number;
+  headers: Record<string, string>;
+  withCredentials: boolean;
+}
 
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+const DEFAULT_CONFIG: ApiConfig = {
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  withCredentials: false, // JWT-only authentication
+};
+
+// Error normalization interface
+interface NormalizedError {
+  message: string;
+  status?: number;
+  code?: string;
+  details?: Record<string, unknown>;
+}
+
+// Create main API instance
+class ApiClient {
+  private instance: AxiosInstance;
+  private config: ApiConfig;
+
+  constructor(config: Partial<ApiConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.instance = axios.create(this.config);
+    this.setupInterceptors();
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    // Get token from localStorage
-    const token = localStorage.getItem('access_token');
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
+  private setupInterceptors(): void {
+    // Request Interceptor - Authentication & Logging
+    this.instance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+        const token = CookieAuth.getAccessToken();
+        
+        if (token && config.headers) {
+          // Add Bearer token to Authorization header
+          config.headers['Authorization'] = `Bearer ${token}`;
+          
+          // Add user context headers for backend compatibility
+          const payload = CookieAuth.getTokenPayload();
+          if (payload) {
+            config.headers['X-User-ID'] = payload.userId?.toString();
+            config.headers['X-User-Email'] = payload.email;
+            
+            if (payload.roles) {
+              config.headers['X-User-Roles'] = JSON.stringify(payload.roles);
+              config.headers['X-User-Role'] = payload.roles[0]; // Primary role
+              config.headers['X-User-Authorities'] = JSON.stringify(
+                payload.roles.map((role: string) => `ROLE_${role}`)
+              );
+            }
+          }
+        }
+        
+        return config;
       },
-      ...options,
+      (error) => {
+        SafeLogger.error('❌ Request interceptor error:', error);
+        return Promise.reject(this.normalizeError(error));
+      }
+    );
+
+    // Response Interceptor - Error Handling & Token Refresh
+    this.instance.interceptors.response.use(
+      (response: AxiosResponse): AxiosResponse => {
+        return response;
+      },
+      async (error: AxiosError) => {
+        const normalizedError = this.normalizeError(error);
+        
+        // Handle specific error cases
+        if (normalizedError.status === 401) {
+          await this.handleUnauthorized();
+        } else if (normalizedError.status === 403) {
+          SafeLogger.error('🚨 403 Forbidden - Check user permissions');
+        } else if (normalizedError.status && normalizedError.status >= 500) {
+          SafeLogger.error('🚨 Server Error - Backend issue');
+        } else if (!normalizedError.status) {
+          SafeLogger.error('🚨 Network Error - Backend unreachable');
+        }
+
+        return Promise.reject(normalizedError);
+      }
+    );
+  }
+
+  private normalizeError(error: unknown): NormalizedError {
+    const axiosError = error as any; // Type assertion for axios error
+    const method = axiosError?.config?.method?.toUpperCase() || 'REQUEST';
+    const url = axiosError?.config?.url || 'unknown';
+    const status = axiosError?.response?.status;
+    const statusText = axiosError?.response?.statusText || '';
+    const data = axiosError?.response?.data;
+
+    // Log the error safely
+    if (status) {
+      SafeLogger.error('❌ API Error:', method, url, '→', status, statusText);
+    } else {
+      SafeLogger.error('❌ Network Error:', method, url, '→ Cannot reach server');
+    }
+
+    // Return normalized error structure
+    return {
+      message: data?.message || axiosError?.message || `${method} ${url} failed`,
+      status,
+      code: data?.code || axiosError?.code,
+      details: data?.details || data,
     };
+  }
 
+  private async handleUnauthorized(): Promise<void> {
+    SafeLogger.error('🚨 401 Unauthorized - Clearing auth and redirecting...');
+    
     try {
-      const response = await fetch(url, config);
-      
-      // Handle different response types
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorData}`);
-      }
-
-      // Check if response has content
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+      // Try to refresh token first
+      const refreshToken = CookieAuth.getRefreshToken();
+      if (refreshToken) {
+        // Implement token refresh logic here if needed
+        // For now, just clear auth
       }
       
-      return await response.text() as unknown as T;
-    } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
-      throw error;
+      CookieAuth.clearAuth();
+      
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    } catch (authError) {
+      // Silent fail - don't cause more errors
+      SafeLogger.error('Failed to handle unauthorized error:', authError);
     }
   }
 
-  // Auth endpoints
-  async login(email: string, password: string) {
-    return this.request('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
+  // HTTP Methods
+  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.get<T>(url, config);
+  }
+
+  async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.post<T>(url, data, config);
+  }
+
+  async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.put<T>(url, data, config);
+  }
+
+  async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.patch<T>(url, data, config);
+  }
+
+  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.instance.delete<T>(url, config);
+  }
+
+  // File upload with progress
+  async upload<T = any>(
+    url: string,
+    formData: FormData,
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+  ): Promise<AxiosResponse<T>> {
+    return this.instance.post<T>(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress,
     });
   }
 
-  async register(userData: {
-    name: string;
-    email: string;
-    password: string;
-  }) {
-    return this.request('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
+  // File download
+  async download(url: string, filename?: string): Promise<void> {
+    const response = await this.instance.get(url, {
+      responseType: 'blob',
     });
+    
+    const blob = new Blob([response.data]);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
   }
 
-  async refreshToken(refreshToken: string) {
-    return this.request('/api/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
+  // Health check
+  async healthCheck(): Promise<boolean> {
+    try {
+      console.log('🏥 Performing health check...');
+      const response = await this.get('/actuator/health');
+      console.log('✅ Backend is healthy:', response.status);
+      return true;
+    } catch (error) {
+      SafeLogger.error('❌ Backend health check failed:', error);
+      return false;
+    }
   }
 
-  async logout() {
-    return this.request('/api/auth/logout', {
-      method: 'POST',
-    });
+  // Authentication test
+  async testAuthentication(): Promise<boolean> {
+    try {
+      console.log('🧪 Testing authentication...');
+      
+      const testEndpoints = [
+        '/api/user/me',
+        '/api/users/me',
+        '/api/auth/verify',
+        '/api/tasks',
+      ];
+      
+      for (const endpoint of testEndpoints) {
+        try {
+          const response = await this.get(endpoint);
+          console.log(`✅ Authentication test successful on ${endpoint}:`, response.status);
+          return true;
+        } catch (error: any) {
+          console.log(`❌ Failed ${endpoint}:`, error.status);
+        }
+      }
+      
+      SafeLogger.error('❌ All authentication endpoints failed');
+      return false;
+    } catch (error) {
+      SafeLogger.error('❌ Authentication test failed:', error);
+      return false;
+    }
   }
 
-  // Google OAuth
-  async getGoogleAuthUrl() {
-    return this.request('/api/auth/google/url');
+  // Configuration methods
+  updateBaseURL(newBaseURL: string): void {
+    this.config.baseURL = newBaseURL;
+    this.instance.defaults.baseURL = newBaseURL;
+    console.log('🔧 API base URL updated to:', newBaseURL);
   }
 
-  async handleGoogleCallback(code: string, state?: string) {
-    return this.request('/api/auth/google/callback', {
-      method: 'POST',
-      body: JSON.stringify({ code, state }),
-    });
+  getConfig(): ApiConfig {
+    return { ...this.config };
   }
 
-  // Exchange OAuth code for tokens (fallback endpoint)
-  async exchangeGoogleCode(code: string, state: string) {
-    return this.request('/api/auth/google/exchange', {
-      method: 'POST',
-      body: JSON.stringify({ code, state }),
-    });
-  }
-
-  // User endpoints
-  async getCurrentUser() {
-    return this.request('/api/user/me');
-  }
-
-  async updateProfile(userData: any) {
-    return this.request('/api/user/profile', {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-  }
-
-  // Task endpoints
-  async getTasks(projectId?: string) {
-    const endpoint = projectId ? `/api/tasks?projectId=${projectId}` : '/api/tasks';
-    return this.request(endpoint);
-  }
-
-  async createTask(taskData: any) {
-    return this.request('/api/tasks', {
-      method: 'POST',
-      body: JSON.stringify(taskData),
-    });
-  }
-
-  async updateTask(taskId: string, taskData: any) {
-    return this.request(`/api/tasks/${taskId}`, {
-      method: 'PUT',
-      body: JSON.stringify(taskData),
-    });
-  }
-
-  async deleteTask(taskId: string) {
-    return this.request(`/api/tasks/${taskId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Project endpoints
-  async getProjects() {
-    return this.request('/api/projects');
-  }
-
-  async createProject(projectData: any) {
-    return this.request('/api/projects', {
-      method: 'POST',
-      body: JSON.stringify(projectData),
-    });
-  }
-
-  async updateProject(projectId: string, projectData: any) {
-    return this.request(`/api/projects/${projectId}`, {
-      method: 'PUT',
-      body: JSON.stringify(projectData),
-    });
-  }
-
-  async deleteProject(projectId: string) {
-    return this.request(`/api/projects/${projectId}`, {
-      method: 'DELETE',
-    });
+  // Get raw axios instance for advanced usage
+  getInstance(): AxiosInstance {
+    return this.instance;
   }
 }
 
-// Create singleton instance
-export const apiClient = new ApiClient();
+// Create default instance
+const apiClient = new ApiClient();
 
+// Export both class and instance
+export { ApiClient, apiClient };
 
-
-// Token management
-export const tokenManager = {
-  setTokens(accessToken: string, refreshToken?: string) {
-    localStorage.setItem('access_token', accessToken);
-    if (refreshToken) {
-      localStorage.setItem('refresh_token', refreshToken);
-    }
-  },
-
-  getAccessToken(): string | null {
-    return localStorage.getItem('access_token');
-  },
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem('refresh_token');
-  },
-
-  clearTokens() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_data');
-  },
-
-  isTokenExpired(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return Date.now() >= payload.exp * 1000;
-    } catch {
-      return true;
-    }
-  }
+// Export convenience methods
+export const api = {
+  get: apiClient.get.bind(apiClient),
+  post: apiClient.post.bind(apiClient),
+  put: apiClient.put.bind(apiClient),
+  patch: apiClient.patch.bind(apiClient),
+  delete: apiClient.delete.bind(apiClient),
+  upload: apiClient.upload.bind(apiClient),
+  download: apiClient.download.bind(apiClient),
+  healthCheck: apiClient.healthCheck.bind(apiClient),
+  testAuthentication: apiClient.testAuthentication.bind(apiClient),
+  updateBaseURL: apiClient.updateBaseURL.bind(apiClient),
+  getConfig: apiClient.getConfig.bind(apiClient),
 };
+
+// Default export
+export default api;

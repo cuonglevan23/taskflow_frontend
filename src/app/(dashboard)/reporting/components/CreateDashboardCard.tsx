@@ -14,13 +14,13 @@ export interface CreateDashboardCardProps {
 }
 
 // Create Dashboard Card Component - Reusable & Professional
-const CreateDashboardCard: React.FC<CreateDashboardCardProps> = ({
+export default function CreateDashboardCard({
   viewMode = 'tiles',
   onClick,
   className = '',
   label = 'Create dashboard',
   description,
-}) => {
+}: CreateDashboardCardProps) {
   const { theme } = useTheme();
 
   const handleClick = () => {
@@ -107,4 +107,3 @@ const CreateDashboardCard: React.FC<CreateDashboardCardProps> = ({
   );
 };
 
-export default CreateDashboardCard;

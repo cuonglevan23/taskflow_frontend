@@ -1,5 +1,12 @@
 // Professional API Client - Centralized HTTP Configuration
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { 
+  AxiosInstance, 
+  AxiosRequestConfig, 
+  AxiosResponse, 
+  InternalAxiosRequestConfig,
+  AxiosError,
+  AxiosProgressEvent
+} from 'axios';
 import { CookieAuth } from '@/utils/cookieAuth';
 import { SafeLogger } from '@/utils/safeLogger';
 
@@ -19,7 +26,7 @@ const apiClient: AxiosInstance = axios.create(API_CONFIG);
 
 // Request Interceptor - Authentication & Logging
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig): AxiosRequestConfig => {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token = CookieAuth.getAccessToken();
     
     if (token && config.headers) {
@@ -44,7 +51,7 @@ apiClient.interceptors.request.use(
     
     return config;
   },
-  (error) => {
+  (error: AxiosError) => {
     console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
@@ -55,7 +62,7 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     return response;
   },
-  (error) => {
+  (error: AxiosError) => {
     // Simple, safe error handling - no over-engineering
     const method = error?.config?.method?.toUpperCase() || 'REQUEST';
     const url = error?.config?.url || 'unknown';
@@ -77,15 +84,16 @@ apiClient.interceptors.response.use(
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }
-      } catch (authError) {
+      } catch (authError: unknown) {
         // Silent fail - don't cause more errors
+        console.warn('Auth cleanup failed:', authError);
       }
-    } else if (status === 403) {
+    } if (status === 403) {
       console.error('🚨 403 Forbidden - Check user permissions');
-    } else if (status >= 500) {
-      console.error('🚨 Server Error - Backend issue');
     } else if (!status) {
       console.error('🚨 Network Error - Backend unreachable');
+    } else if (status >= 500) {
+      console.error('🚨 Server Error - Backend issue');
     }
 
     // Return simple rejected promise
@@ -101,17 +109,17 @@ export const api = {
   },
 
   // POST request
-  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+  post: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     return apiClient.post<T>(url, data, config);
   },
 
   // PUT request
-  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+  put: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     return apiClient.put<T>(url, data, config);
   },
 
   // PATCH request
-  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+  patch: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     return apiClient.patch<T>(url, data, config);
   },
 
@@ -124,7 +132,7 @@ export const api = {
   upload: <T = any>(
     url: string,
     formData: FormData,
-    onUploadProgress?: (progressEvent: any) => void
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
   ): Promise<AxiosResponse<T>> => {
     return apiClient.post<T>(url, formData, {
       headers: {
@@ -183,8 +191,9 @@ export const testAuthentication = async (): Promise<boolean> => {
         const response = await api.get(endpoint);
         console.log(`✅ Authentication test successful on ${endpoint}:`, response.status);
         return true;
-      } catch (error: any) {
-        console.log(`❌ Failed ${endpoint}:`, error.response?.status);
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError;
+        console.log(`❌ Failed ${endpoint}:`, axiosError.response?.status);
       }
     }
     

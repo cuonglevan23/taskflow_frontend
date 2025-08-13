@@ -10,7 +10,7 @@ interface DragOverlayCardProps {
   task: TaskListItem;
 }
 
-const DragOverlayCard: React.FC<DragOverlayCardProps> = ({ task }) => {
+const DragOverlayCard = ({ task }: DragOverlayCardProps) => {
   const { theme } = useTheme();
 
   return (

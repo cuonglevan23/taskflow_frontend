@@ -49,7 +49,7 @@ interface ReactFlowWorkflowProps {
   initialLayout?: 'auto' | 'manual';
 }
 
-const ReactFlowWorkflowComponent: React.FC<ReactFlowWorkflowProps> = ({
+function ReactFlowWorkflowComponent({
   tasks,
   sections,
   onTaskUpdate,
@@ -61,7 +61,7 @@ const ReactFlowWorkflowComponent: React.FC<ReactFlowWorkflowProps> = ({
   showControls = true,
   showBackground = true,
   initialLayout = 'auto'
-}) => {
+}: ReactFlowWorkflowProps) => {
   const { theme } = useTheme();
   
   const workflow = useReactFlowWorkflow({
@@ -308,7 +308,7 @@ const ReactFlowWorkflowComponent: React.FC<ReactFlowWorkflowProps> = ({
 };
 
 // Wrapper with ReactFlowProvider
-const ReactFlowWorkflow: React.FC<ReactFlowWorkflowProps> = (props) => {
+export default function ReactFlowWorkflow(props: ReactFlowWorkflowProps) {
   return (
     <ReactFlowProvider>
       <ReactFlowWorkflowComponent {...props} />

@@ -52,7 +52,7 @@ export async function withRetry<T>(
       if (shouldRetry) {
         const delay = retryConfig.delay * Math.pow(retryConfig.backoffMultiplier, attempt - 1);
         console.warn(`❌ API call failed (attempt ${attempt}/${retryConfig.maxAttempts}), retrying in ${delay}ms...`);
-        console.warn('Error:', error.message);
+
         
         await sleep(delay);
       } else {
@@ -127,33 +127,38 @@ const globalCircuitBreaker = new CircuitBreaker();
 // Enhanced API wrapper with retry and circuit breaker
 export const resilientApi = {
   get: async <T>(url: string, config?: any): Promise<T> => {
-    return globalCircuitBreaker.execute(() => 
+    const response = await globalCircuitBreaker.execute(() => 
       withRetry(() => api.get<T>(url, config))
     );
+    return response.data;
   },
 
   post: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    return globalCircuitBreaker.execute(() => 
+    const response = await globalCircuitBreaker.execute(() => 
       withRetry(() => api.post<T>(url, data, config))
     );
+    return response.data;
   },
 
   put: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    return globalCircuitBreaker.execute(() => 
+    const response = await globalCircuitBreaker.execute(() => 
       withRetry(() => api.put<T>(url, data, config))
     );
+    return response.data;
   },
 
   patch: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    return globalCircuitBreaker.execute(() => 
+    const response = await globalCircuitBreaker.execute(() => 
       withRetry(() => api.patch<T>(url, data, config))
     );
+    return response.data;
   },
 
   delete: async <T>(url: string, config?: any): Promise<T> => {
-    return globalCircuitBreaker.execute(() => 
+    const response = await globalCircuitBreaker.execute(() => 
       withRetry(() => api.delete<T>(url, config))
     );
+    return response.data;
   }
 };
 
@@ -218,7 +223,7 @@ export async function safeApiCall<T>(
     }
   } catch (error) {
     if (logErrors) {
-      console.warn('🔄 API call failed, using fallback data:', error.message);
+      console.warn('🔄 API call failed, using fallback data', error);
     }
     return fallback();
   }

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const ReportingPage: React.FC = () => {
+const ReportingPage = () => {
   const router = useRouter();
 
   useEffect(() => {

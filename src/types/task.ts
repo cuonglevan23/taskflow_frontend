@@ -16,7 +16,7 @@ export interface BackendTask {
   projectId?: number;
   creatorId: number;
   assignedToIds?: number[];
-  checklists?: any[];
+  checklists?: ChecklistItem[];
 }
 
 // New My Tasks Response interfaces
@@ -119,10 +119,14 @@ export interface UpdateTaskDTO {
   description?: string;
   status?: string;
   priority?: string;
-  deadline?: string;
+  deadline?: string; // LocalDate format: YYYY-MM-DD
+  startDate?: string; // LocalDate format: YYYY-MM-DD - for calendar operations
+  dueDate?: string; // LocalDate format: YYYY-MM-DD - legacy support
   tags?: string[];
   assigneeId?: number;
   projectId?: number;
+  groupId?: number;
+  assignedToIds?: number[];
 }
 
 // API Response interfaces
@@ -268,8 +272,8 @@ export interface TaskActivity {
   userName: string;
   action: 'created' | 'updated' | 'assigned' | 'unassigned' | 'commented' | 'status_changed';
   description: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   createdAt: Date;
 }
 

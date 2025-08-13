@@ -3,63 +3,50 @@
 import React from "react";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { KanbanBoard } from "@/components/features/KanbanBoard";
-import { useTasksContext } from "@/contexts";
-import { useMyTasksSummary } from "@/hooks/useTasks";
+import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 
 interface MyTaskBoardPageProps {
   searchValue?: string;
 }
 
-const MyTaskBoardPage: React.FC<MyTaskBoardPageProps> = ({ searchValue = "" }) => {
-  // Use global hooks for data
-  const { tasks, isLoading, error } = useMyTasksSummary({
+const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
+  // Use shared hook for all data and actions
+  const {
+    taskListItems,
+    isLoading,
+    error,
+    actions
+  } = useMyTasksShared({
     page: 0,
     size: 1000,
     sortBy: 'startDate',
-    sortDir: 'desc'
+    sortDir: 'desc',
+    searchValue
   });
 
-  // Transform tasks to TaskListItem format
-  const taskListItems = React.useMemo(() => {
-    if (!tasks || !Array.isArray(tasks)) return [];
-    
-    return tasks.map(task => ({
-      id: task.id.toString(),
-      name: task.title,
-      dueDate: task.dueDate || 'No deadline',
-      status: task.status === 'completed' ? 'done' : 
-              task.status === 'in-progress' ? 'in_progress' : 'todo',
-      priority: task.priority || 'medium',
-    }));
-  }, [tasks]);
-
-  // Simple task management object
+  // Task management object for compatibility
   const taskManagement = {
     tasks: taskListItems,
     isLoading,
     error: error?.message || null,
-    updateTask: (taskId: string, updates: any) => {
-      console.log('Update task:', taskId, updates);
-    },
-    deleteTask: (taskId: string) => {
-      console.log('Delete task:', taskId);
-    },
+    updateTask: actions.onTaskEdit,
+    deleteTask: actions.onTaskDelete,
     tasksByAssignmentDate: {},
-  };
-
-  // Simple task actions
-  const taskActions = {
-    onTaskClick: (task: any) => console.log('Task clicked:', task),
-    onCreateTask: (taskData: any) => console.log('Create task:', taskData),
+    selectedTask: null,
+    isPanelOpen: false,
+    closeTaskPanel: () => {},
   };
 
   // Task detail panel logic
-  const handleTaskSave = (taskId: string, updates: Partial<typeof SAMPLE_TASKS[0]>) => {
-    taskManagement.updateTask(taskId, updates);
+  const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
+    const task = taskManagement.tasks.find(t => t.id === taskId);
+    if (task) {
+      actions.onTaskEdit({ ...task, ...updates });
+    }
   };
 
   const handleTaskDelete = (taskId: string) => {
-    taskManagement.deleteTask(taskId);
+    actions.onTaskDelete(taskId);
   };
 
   return (
@@ -69,7 +56,7 @@ const MyTaskBoardPage: React.FC<MyTaskBoardPageProps> = ({ searchValue = "" }) =
           searchValue={searchValue}
           tasks={taskManagement.tasks}
           tasksByAssignmentDate={taskManagement.tasksByAssignmentDate}
-          actions={taskActions}
+          actions={actions}
           onTaskMove={(taskId, sectionId) => {
             // Move task based on section, update due date accordingly
             const today = new Date();
@@ -78,7 +65,7 @@ const MyTaskBoardPage: React.FC<MyTaskBoardPageProps> = ({ searchValue = "" }) =
             const later = new Date(today);
             later.setDate(today.getDate() + 14);
 
-            let updates: Partial<typeof taskManagement.tasks[0]> = {};
+            let updates: Partial<TaskListItem> = {};
             
             switch (sectionId) {
               case 'do-today':
@@ -95,7 +82,7 @@ const MyTaskBoardPage: React.FC<MyTaskBoardPageProps> = ({ searchValue = "" }) =
                 break;
             }
             
-            taskManagement.updateTask(taskId, updates);
+            actions.onTaskEdit({ ...taskManagement.tasks.find(t => t.id === taskId)!, ...updates });
           }}
           loading={taskManagement.isLoading}
           error={taskManagement.error}

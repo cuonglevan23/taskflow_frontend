@@ -20,11 +20,11 @@ const VIEW_MODES: { [key in ViewMode]: { label: string; shortLabel: string; slot
   resourceTimelineDay: { label: 'Day View', shortLabel: 'Day', slotWidth: 120 }
 };
 
-const ZoomControls: React.FC<ZoomControlsProps> = ({
+const ZoomControls = ({
   currentView,
   onViewChange,
   className = ''
-}) => {
+}: ZoomControlsProps) => {
   const { theme } = useTheme();
 
   const viewModes = Object.keys(VIEW_MODES) as ViewMode[];

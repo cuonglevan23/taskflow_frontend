@@ -20,26 +20,26 @@ interface EnhancedTaskRowProps {
   className?: string;
 }
 
-const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
+const EnhancedTaskRow = ({
   task,
   actions,
   isSelected = false,
   onSelect,
   className = '',
-}) => {
+}: EnhancedTaskRowProps) => {
   const { theme } = useTheme();
   const [isHovered, setIsHovered] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [_startDate, setStartDate] = useState<Date | null>(null);
+  const [_endDate, setEndDate] = useState<Date | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
   
   const priorityConfig = getPriorityConfig(task.priority);
   const statusConfig = getStatusConfig(task.status);
-  const overdueDate = (task.deadline || task.dueDate) && isOverdue(task.deadline || task.dueDate!);
+  const overdueDate = (task.dueDate) && isOverdue(task.dueDate);
 
   useEffect(() => {
     if (editingField && (inputRef.current || selectRef.current)) {
@@ -220,7 +220,7 @@ const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
         {editingField === 'dueDate' ? (
           <div className="relative">
             <DatePicker
-              selected={startDate}
+              selected={_startDate}
               onChange={(dates) => {
                 if (Array.isArray(dates)) {
                   const [start, end] = dates;
@@ -233,18 +233,19 @@ const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
                     const updatedTask = {
                       ...task,
                       startDate: start.toISOString().split('T')[0],
-                      deadline: end.toISOString().split('T')[0],
+                      dueDate: end.toISOString().split('T')[0],
                     };
                     
                     actions?.onTaskEdit?.(updatedTask);
                     setEditingField(null);
                   }
-                } else if (dates) {
+                } else if (dates && typeof dates === 'object' && 'toISOString' in dates) {
                   // Single date selection fallback - set both start and deadline to same date
+                  const dateObj = dates as Date;
                   const updatedTask = {
                     ...task,
-                    startDate: dates.toISOString().split('T')[0],
-                    deadline: dates.toISOString().split('T')[0],
+                    startDate: dateObj.toISOString().split('T')[0],
+                    dueDate: dateObj.toISOString().split('T')[0],
                   };
                   
                   actions?.onTaskEdit?.(updatedTask);
@@ -253,21 +254,20 @@ const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
               }}
               onClickOutside={() => {
                 // Save when clicking outside, even if only start date is selected
-                if (startDate) {
+                if (_startDate) {
                   const updatedTask = {
                     ...task,
-                    startDate: startDate.toISOString().split('T')[0],
-                    deadline: endDate ? endDate.toISOString().split('T')[0] : startDate.toISOString().split('T')[0],
+                    startDate: _startDate.toISOString().split('T')[0],
+                    dueDate: _endDate ? _endDate.toISOString().split('T')[0] : _startDate.toISOString().split('T')[0],
                   };
                   
                   actions?.onTaskEdit?.(updatedTask);
                 }
                 setEditingField(null);
               }}
-              startDate={startDate}
-              endDate={endDate}
+              startDate={_startDate}
+              endDate={_endDate}
               selectsRange
-              rangeSeparator=" to "
               className="w-full text-sm bg-white border border-blue-500 rounded px-2 py-1 focus:outline-none shadow-sm"
               placeholderText="Select date range"
               dateFormat="yyyy-MM-dd"
@@ -282,14 +282,14 @@ const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
           <div
             className={`text-sm cursor-pointer transition-all duration-150 px-2 py-1 rounded min-h-[28px] flex items-center hover:bg-gray-100 hover:shadow-sm ${overdueDate ? 'text-red-600 font-medium' : ''}`}
             style={{ 
-              color: overdueDate ? '#dc2626' : (task.deadline || task.startDate) ? theme.text.primary : theme.text.secondary,
+              color: overdueDate ? '#dc2626' : (task.dueDate || task.startDate) ? theme.text.primary : theme.text.secondary,
               backgroundColor: editingField === 'dueDate' ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
             }}
             onClick={(e) => {
               e.stopPropagation();
               // Set current dates and start editing - use correct backend fields
               const taskStartDate = task.startDate ? new Date(task.startDate) : null;
-              const taskEndDate = task.deadline ? new Date(task.deadline) : null;
+              const taskEndDate = task.dueDate ? new Date(task.dueDate) : null;
               
               setStartDate(taskStartDate);
               setEndDate(taskEndDate);
@@ -297,7 +297,7 @@ const EnhancedTaskRow: React.FC<EnhancedTaskRowProps> = ({
             }}
             title="Click to set date range"
           >
-            {(task.deadline || task.startDate) ? formatTaskDate(task) : 'Set date'}
+            {(task.dueDate || task.startDate) ? formatTaskDate(task) : 'Set date'}
           </div>
         )}
       </td>

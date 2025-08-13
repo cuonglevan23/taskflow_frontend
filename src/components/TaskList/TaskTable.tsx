@@ -20,7 +20,7 @@ interface TaskTableProps {
   className?: string;
 }
 
-const TaskTable: React.FC<TaskTableProps> = ({
+const TaskTable = ({
   tasks,
   columns = DEFAULT_COLUMNS,
   actions,
@@ -31,7 +31,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
   sortField,
   sortDirection,
   className = '',
-}) => {
+}: TaskTableProps) => {
   const { theme } = useTheme();
 
   const handleSelectAll = () => {

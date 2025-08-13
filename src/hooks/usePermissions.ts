@@ -15,7 +15,7 @@ interface UsePermissionsProps {
   contextId?: string;
 }
 
-export const usePermissions = ({ contextType, contextId }: UsePermissionsProps = {}) => {
+export const usePermissions = ({ contextType, contextId }: UsePermissionsProps = {} as UsePermissionsProps) => {
   const { user } = useAuth();
 
   // Get effective role (global or context-specific)

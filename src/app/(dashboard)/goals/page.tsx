@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const GoalsPage: React.FC = () => {
+const GoalsPage = () => {
   const router = useRouter();
 
   useEffect(() => {

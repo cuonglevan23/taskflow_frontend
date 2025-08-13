@@ -11,7 +11,7 @@ interface ReportingLayoutProps {
   children: React.ReactNode;
 }
 
-const ReportingContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function ReportingContent({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const pathname = usePathname();
   const [dateRange, setDateRange] = useState("Last 30 days");
@@ -110,7 +110,7 @@ const ReportingContent: React.FC<{ children: React.ReactNode }> = ({ children })
   );
 };
 
-const ReportingLayout: React.FC<ReportingLayoutProps> = ({ children }) => {
+const ReportingLayout = ({ children }: ReportingLayoutProps) => {
   return (
     <PageLayout>
       <ReportingContent>

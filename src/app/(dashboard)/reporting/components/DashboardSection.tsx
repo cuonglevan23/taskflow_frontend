@@ -23,7 +23,7 @@ export interface DashboardSectionProps {
 }
 
 // Dashboard Section Component - Reusable & Professional
-const DashboardSection: React.FC<DashboardSectionProps> = ({
+export default function DashboardSection({
   title,
   dashboards,
   viewMode = 'tiles',
@@ -36,7 +36,7 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
   onViewModeChange,
   onDashboardClick,
   onCreateClick,
-}) => {
+}: DashboardSectionProps) {
   const { theme } = useTheme();
 
   const handleViewModeToggle = () => {
@@ -116,4 +116,3 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
   );
 };
 
-export default DashboardSection;

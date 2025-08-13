@@ -78,7 +78,7 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
   },
 ];
 
-export const RoleBasedNavigation: React.FC = () => {
+export function RoleBasedNavigation() {
   const pathname = usePathname();
   const { user } = usePermissions();
 

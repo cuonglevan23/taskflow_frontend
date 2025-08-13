@@ -330,7 +330,7 @@ const AchievementsWidget = () => {
             className="text-sm"
             style={{ color: theme.text.primary }}
           >
-            {taskStats?.byStatus?.completed || 0} task{(taskStats?.byStatus?.completed || 0) !== 1 ? 's' : ''} completed
+            {taskStats?.totalParticipatingTasks || 0} task{(taskStats?.totalParticipatingTasks || 0) !== 1 ? 's' : ''} completed
           </span>
         </div>
 

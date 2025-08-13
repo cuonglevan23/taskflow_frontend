@@ -12,7 +12,7 @@ export interface TaskEventContentProps {
   onConnectionClick: (taskId: string, type: 'source' | 'target', event: React.MouseEvent) => void;
 }
 
-const TaskEventContent: React.FC<TaskEventContentProps> = ({
+export default function TaskEventContent({
   task,
   arg,
   enableWorkflow,

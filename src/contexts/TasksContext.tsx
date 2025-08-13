@@ -41,7 +41,7 @@ interface TasksProviderProps {
   children: ReactNode;
 }
 
-export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
+export const TasksProvider = ({ children }: TasksProviderProps) => {
   // UI state only - NO data fetching here
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<'dayGridMonth' | 'dayGridWeek'>('dayGridMonth');

@@ -10,7 +10,7 @@ interface DetailPanelProps {
   className?: string;
 }
 
-const DetailPanel: React.FC<DetailPanelProps> = ({ className = "" }) => {
+const DetailPanel = ({ className = "" }) => {
   const { isOpen, data, closePanel } = useDetailPanel();
   const { theme } = useTheme();
 
@@ -58,9 +58,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({ className = "" }) => {
 };
 
 // Notification Detail Component
-const NotificationDetail: React.FC<{ data: NotificationDetailData }> = ({
+function NotificationDetail({
   data,
-}) => {
+}: { data: NotificationDetailData }) {
   const { theme } = useTheme();
 
   return (
@@ -76,7 +76,7 @@ const NotificationDetail: React.FC<{ data: NotificationDetailData }> = ({
 };
 
 // Task Detail Component
-const TaskDetail: React.FC<{ data: TaskDetailData }> = ({ data }) => {
+function TaskDetail({ data }: { data: TaskDetailData }) {
   const { theme } = useTheme();
 
   return (

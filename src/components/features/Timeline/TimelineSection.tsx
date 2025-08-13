@@ -25,7 +25,7 @@ export interface TimelineSectionProps {
   };
 }
 
-const TimelineSection: React.FC<TimelineSectionProps> = ({
+const TimelineSection = ({
   section,
   tasks,
   dateColumns,
@@ -35,7 +35,7 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({
   getPriorityColor,
   getStatusColor,
   getTaskPosition
-}) => {
+}: TimelineSectionProps) => {
   const { theme } = useTheme();
 
   return (

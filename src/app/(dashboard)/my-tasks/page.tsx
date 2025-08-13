@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const MyTaskPage: React.FC = () => {
+export default function MyTaskPage() {
   const router = useRouter();
 
   useEffect(() => {
@@ -14,4 +14,3 @@ const MyTaskPage: React.FC = () => {
   return null;
 };
 
-export default MyTaskPage;

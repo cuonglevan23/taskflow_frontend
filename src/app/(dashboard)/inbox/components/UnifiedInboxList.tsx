@@ -10,7 +10,7 @@ interface UnifiedInboxListProps {
   className?: string;
 }
 
-const UnifiedInboxList: React.FC<UnifiedInboxListProps> = ({ className = "" }) => {
+const UnifiedInboxList = ({ className = "" }: UnifiedInboxListProps) => {
   const { theme } = useTheme();
   const { notifications, actions, isLoading, stats } = useInboxNotifications();
   

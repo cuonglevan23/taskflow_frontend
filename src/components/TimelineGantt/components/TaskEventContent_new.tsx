@@ -10,14 +10,14 @@ export interface TaskEventContentProps {
   onConnectionClick: (taskId: string, type: 'source' | 'target', event: React.MouseEvent) => void;
 }
 
-const TaskEventContent: React.FC<TaskEventContentProps> = ({
+export default function TaskEventContent({
   task,
   arg,
   enableWorkflow,
   isConnecting,
   connectingFromTaskId,
   onConnectionClick
-}) => {
+}: TaskEventContentProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = useCallback(() => {
@@ -485,4 +485,3 @@ export const createReactEventContent = (
   };
 };
 
-export default TaskEventContent;

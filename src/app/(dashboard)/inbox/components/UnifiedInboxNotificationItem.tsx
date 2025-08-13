@@ -16,7 +16,7 @@ interface UnifiedInboxNotificationItemProps {
   onHideMoreActions?: () => void;
 }
 
-const UnifiedInboxNotificationItem: React.FC<UnifiedInboxNotificationItemProps> = ({
+const UnifiedInboxNotificationItem = ({
   notification,
   actions,
   isLoading = false,
@@ -24,7 +24,7 @@ const UnifiedInboxNotificationItem: React.FC<UnifiedInboxNotificationItemProps> 
   showMoreMenu = false,
   onToggleSelection,
   onHideMoreActions,
-}) => {
+}: UnifiedInboxNotificationItemProps) => {
   const { theme } = useTheme();
   const { openPanel } = useDetailPanel();
 

@@ -20,7 +20,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   onClose,
   onSave,
   onDelete
-}) => {
+}: TaskDetailPanelProps) => {
   const { theme } = useTheme();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

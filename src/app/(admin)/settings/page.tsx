@@ -9,7 +9,7 @@ import { Button } from "@/components/ui";
 type SettingsTab = 'profile' | 'notifications' | 'email-forwarding' | 'account' | 'display' | 'apps' | 'hacks';
 
 // Settings Page Component
-const SettingsPage: React.FC = () => {
+export default function SettingsPage() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [isOpen, setIsOpen] = useState(true);
@@ -467,4 +467,3 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-export default SettingsPage;

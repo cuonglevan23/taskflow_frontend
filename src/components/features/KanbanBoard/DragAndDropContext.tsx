@@ -30,13 +30,13 @@ interface DragAndDropContextProps {
   activeTask?: TaskListItem | null;
 }
 
-const DragAndDropContext: React.FC<DragAndDropContextProps> = ({
+const DragAndDropContext = ({
   children,
   onDragStart,
   onDragOver,
   onDragEnd,
   activeTask,
-}) => {
+}: DragAndDropContextProps) => {
   // Professional sensor configuration
   const sensors = useSensors(
     useSensor(PointerSensor, {

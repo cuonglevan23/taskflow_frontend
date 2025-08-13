@@ -38,7 +38,7 @@ export interface TimelineProps {
   viewMode?: 'week' | 'month' | 'quarter';
 }
 
-const Timeline: React.FC<TimelineProps> = ({
+const Timeline = ({
   tasks,
   onTaskClick,
   onTaskUpdate,
@@ -46,7 +46,7 @@ const Timeline: React.FC<TimelineProps> = ({
   error,
   className = '',
   viewMode = 'month'
-}) => {
+}: TimelineProps) => {
   const { theme } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sections, setSections] = useState<TimelineSection[]>([

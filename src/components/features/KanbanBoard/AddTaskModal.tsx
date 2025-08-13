@@ -11,12 +11,12 @@ interface AddTaskModalProps {
   columnTitle?: string;
 }
 
-const AddTaskModal: React.FC<AddTaskModalProps> = ({
+const AddTaskModal = ({
   isOpen,
   onClose,
   onSave,
   columnTitle = "task"
-}) => {
+}: AddTaskModalProps) => {
   const { theme } = useTheme();
   const [taskName, setTaskName] = useState("");
 

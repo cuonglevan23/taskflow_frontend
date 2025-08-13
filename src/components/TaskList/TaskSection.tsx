@@ -19,7 +19,7 @@ interface TaskSectionProps {
   className?: string;
 }
 
-const TaskSection: React.FC<TaskSectionProps> = ({
+const TaskSection = ({
   section,
   actions,
   selectedTasks = [],

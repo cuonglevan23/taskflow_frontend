@@ -15,7 +15,7 @@ interface AppProviderProps {
  * This ensures data synchronization across all components
  * including sidebar, home cards, and other parts of the app
  */
-export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
+export const AppProvider = ({ children }: AppProviderProps) => {
   return (
     <NotificationProvider>
       <ProjectsProvider>

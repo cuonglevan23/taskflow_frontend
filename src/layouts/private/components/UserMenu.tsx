@@ -54,7 +54,7 @@ export interface UserMenuProps {
 }
 
 // UserMenu Component - Professional & Reusable
-const UserMenu: React.FC<UserMenuProps> = ({
+const UserMenu = ({
   user,
   onProfileSettings,
   onDisplayPicture,
@@ -67,7 +67,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
   className = "",
   customMenuSections = [],
   showDefaultSections = true,
-}) => {
+}: UserMenuProps) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Don't render if user is null

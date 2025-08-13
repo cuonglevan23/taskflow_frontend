@@ -3,7 +3,9 @@ import DashboardCard from "../DashboardCard";
 import { FileText } from "lucide-react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 
-type Props = {};
+interface Props {
+  className?: string;
+}
 
 const StatusCard = (props: Props) => {
   const { theme } = useTheme();

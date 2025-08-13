@@ -166,7 +166,7 @@ interface ProjectsProviderProps {
 }
 
 // Professional Projects Provider - Senior Product Implementation
-export const ProjectsProvider: React.FC<ProjectsProviderProps> = ({ children }) => {
+export function ProjectsProvider({ children }: ProjectsProviderProps) {
   // State Management
   const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
   const [isLoading, setIsLoading] = useState(false);

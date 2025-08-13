@@ -32,14 +32,14 @@ export interface DashboardCardProps {
 }
 
 // Dashboard Card Component - Reusable & Professional
-const DashboardCard: React.FC<DashboardCardProps> = ({
+export default function DashboardCard({
   dashboard,
   viewMode = 'tiles',
   onClick,
   className = '',
   showOwner = true,
   showDescription = true,
-}) => {
+}: DashboardCardProps) {
   const { theme } = useTheme();
 
   const handleClick = () => {
@@ -157,4 +157,3 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   );
 };
 
-export default DashboardCard;

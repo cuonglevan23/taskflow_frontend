@@ -1,7 +1,9 @@
-// Task Service - Main CRUD Operations
+// Task Service - DEPRECATED - Use @/services/tasks instead
+// This file is kept for backward compatibility only
+
 import { CookieAuth } from '@/utils/cookieAuth';
-import { apiClient as taskApi } from '@/services/api';
-import { transformBackendTask, transformMyTasksSummary, transformMyTasksFull } from './transforms';
+import { api as taskApi } from '@/lib/api';
+import { transformBackendTask, transformMyTasksSummary, transformMyTasksFull } from '@/services/tasks';
 import type { 
   BackendTask, 
   Task, 
@@ -17,7 +19,7 @@ import type {
 // Service layer - Reliable API calls with safe error handling
 export const taskService = {
   // DEPRECATED: Old generic tasks endpoint - Use getMyTasks() instead
-  getTasks: async (params?: any): Promise<TasksResponse> => {
+  getTasks: async (params?: Record<string, unknown>): Promise<TasksResponse> => {
     // Return empty data to force migration to new endpoints
     return {
       data: [],
@@ -101,7 +103,7 @@ export const taskService = {
   // Update task - Enhanced to handle both deadline and startDate
   updateTask: async (id: string, data: UpdateTaskDTO): Promise<Task> => {
     try {
-      const backendData: any = {};
+      const backendData: Record<string, unknown> = {};
       if (data.title !== undefined) backendData.title = data.title;
       if (data.description !== undefined) backendData.description = data.description;
       if (data.status !== undefined) backendData.status = data.status.toUpperCase();
@@ -150,7 +152,7 @@ export const taskService = {
   },
 
   // DEPRECATED: Old task statistics - Use getMyTasksStats() instead
-  getTaskStats: async (filter?: any): Promise<any> => {
+  getTaskStats: async (filter?: Record<string, unknown>): Promise<Record<string, unknown>> => {
     // Return empty stats to force migration to new endpoint
     return {
       total: 0,

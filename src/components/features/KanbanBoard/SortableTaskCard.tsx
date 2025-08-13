@@ -14,11 +14,11 @@ interface SortableTaskCardProps {
   isDragging?: boolean;
 }
 
-const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ 
+const SortableTaskCard = ({ 
   task, 
   onClick,
   isDragging = false,
-}) => {
+}: SortableTaskCardProps) => {
   const { theme } = useTheme();
   const {
     attributes,

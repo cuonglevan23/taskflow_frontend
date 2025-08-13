@@ -6,6 +6,7 @@ export * from './useTasksFilter';
 export * from './useTasksActions';
 export * from './useTasksStats';
 export * from './useTasksUI';
+export * from './useMyTasksShared';
 
 // Import for backward compatibility aliases
 import { 

@@ -1,6 +1,10 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { UserRole, ROLE_PERMISSIONS } from "@/constants/auth"
+import type { NextAuthConfig } from "next-auth"
+import type { User, Account, Profile } from "next-auth"
+import type { AdapterUser } from "next-auth/adapters"
+import type { JWT } from "next-auth/jwt"
+import { UserRole, ROLE_PERMISSIONS, type Permission } from "@/constants/auth"
 
 declare module "next-auth" {
   interface Session {
@@ -10,7 +14,7 @@ declare module "next-auth" {
       email?: string | null
       image?: string | null
       role: UserRole
-      permissions: string[]
+      permissions: Permission[]
       accessToken?: string
     }
   }
@@ -21,7 +25,7 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     role: UserRole
-    permissions: string[]
+    permissions: Permission[]
     accessToken?: string
   }
 }
@@ -30,12 +34,12 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string
     role: UserRole
-    permissions: string[]
+    permissions: Permission[]
     accessToken?: string
   }
 }
 
-export const authOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     // Use Credentials provider to handle backend OAuth tokens
     CredentialsProvider({
@@ -61,13 +65,13 @@ export const authOptions = {
 
         // Fallback: create user from credentials
         return {
-          id: credentials.email,
-          email: credentials.email,
-          name: credentials.name || credentials.email,
-          image: credentials.avatar || null,
+          id: credentials.email as string,
+          email: credentials.email as string,
+          name: (credentials.name as string) || (credentials.email as string),
+          image: (credentials.avatar as string) || null,
           role: role,
           permissions: ROLE_PERMISSIONS[role] || [],
-          accessToken: credentials.token,
+          accessToken: credentials.token as string,
         }
       },
     }),
@@ -79,21 +83,32 @@ export const authOptions = {
   },
 
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: { 
+      user: User | AdapterUser; 
+      account?: Account | null; 
+      profile?: Profile; 
+    }) {
       return true
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account }: { 
+      token: JWT; 
+      user?: User | AdapterUser; 
+      account?: Account | null; 
+    }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
-        token.permissions = user.permissions
-        token.accessToken = user.accessToken
+        token.role = (user as User).role
+        token.permissions = (user as User).permissions
+        token.accessToken = (user as User).accessToken
       }
       return token
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: { 
+      session: any; 
+      token: JWT; 
+    }) {
       if (token && session.user) {
         session.user.id = token.id
         session.user.role = token.role
@@ -103,7 +118,10 @@ export const authOptions = {
       return session
     },
 
-    async redirect({ url, baseUrl }) {
+    async redirect({ url, baseUrl }: { 
+      url: string; 
+      baseUrl: string; 
+    }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl + "/home"
@@ -120,8 +138,10 @@ export const authOptions = {
   },
 
   events: {
-    async signOut({ token }) {
-      console.log("User signed out:", token?.email)
+    async signOut(message) {
+      if ('token' in message && message.token) {
+        console.log("User signed out:", message.token.email)
+      }
     },
   },
 

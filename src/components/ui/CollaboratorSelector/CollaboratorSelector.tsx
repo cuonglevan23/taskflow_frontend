@@ -25,7 +25,7 @@ export interface CollaboratorSelectorProps {
   availableUsers?: Collaborator[];
 }
 
-const CollaboratorSelector: React.FC<CollaboratorSelectorProps> = ({
+const CollaboratorSelector = ({
   selectedCollaborators = [],
   onCollaboratorsChange,
   onClose,
@@ -53,7 +53,7 @@ const CollaboratorSelector: React.FC<CollaboratorSelectorProps> = ({
       avatar: "JS"
     }
   ]
-}) => {
+}: CollaboratorSelectorProps) => {
   const { theme } = useTheme();
   const { user: currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);

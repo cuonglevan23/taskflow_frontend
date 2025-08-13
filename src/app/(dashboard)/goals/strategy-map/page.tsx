@@ -7,7 +7,7 @@ interface StrategyMapPageProps {
   timeframe?: string;
 }
 
-const StrategyMapPage: React.FC<StrategyMapPageProps> = ({ timeframe }) => {
+export default function StrategyMapPage({ timeframe }: StrategyMapPageProps) {
   const { theme } = useTheme();
 
   return (
@@ -50,4 +50,3 @@ const StrategyMapPage: React.FC<StrategyMapPageProps> = ({ timeframe }) => {
   );
 };
 
-export default StrategyMapPage;

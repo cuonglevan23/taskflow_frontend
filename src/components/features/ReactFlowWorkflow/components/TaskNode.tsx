@@ -14,7 +14,7 @@ interface TaskNodeProps {
   };
 }
 
-const TaskNode: React.FC<TaskNodeProps> = ({ data }) => {
+export default function TaskNode({ data }: TaskNodeProps) {
   const { theme } = useTheme();
   const { task, onTaskClick, isSelected, isConnecting } = data;
 

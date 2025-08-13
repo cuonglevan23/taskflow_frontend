@@ -9,9 +9,10 @@ export * from './api';
 
 // UI types
 export * from './ui';
-
-// Task types
+// task
+// @ts-ignore
 export * from './task';
+
 
 // Project types
 export * from './project'; 

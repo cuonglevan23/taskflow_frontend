@@ -11,7 +11,7 @@ interface GoalsLayoutProps {
   children: React.ReactNode;
 }
 
-const GoalsContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function GoalsContent({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const pathname = usePathname();
   const [timeframe, setTimeframe] = useState("This Quarter");
@@ -110,7 +110,7 @@ const GoalsContent: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
-const GoalsLayout: React.FC<GoalsLayoutProps> = ({ children }) => {
+const GoalsLayout = ({ children }: GoalsLayoutProps) => {
   return (
     <PageLayout>
       <GoalsContent>

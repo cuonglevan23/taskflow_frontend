@@ -116,7 +116,7 @@ const STORAGE_KEYS = {
   archived: 'archivedNotifications',
 } as const;
 
-const saveToStorage = (key: string, data: any) => {
+const saveToStorage = (key: string, data: unknown) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(key, JSON.stringify(data));
   }
@@ -183,7 +183,7 @@ interface NotificationProviderProps {
 }
 
 // Professional Notification Provider - Senior Product Implementation
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+export const NotificationProvider = ({ children }: NotificationProviderProps) => {
   // State Management
   const [notifications, setNotifications] = useState<BaseNotification[]>(() => {
     const stored = getFromStorage(STORAGE_KEYS.notifications, INITIAL_NOTIFICATIONS);

@@ -14,13 +14,13 @@ interface TaskRowProps {
   className?: string;
 }
 
-const TaskRow: React.FC<TaskRowProps> = ({
+const TaskRow = ({
   task,
   actions,
   isSelected = false,
   onSelect,
   className = '',
-}) => {
+}: TaskRowProps) => {
   const { theme } = useTheme();
   const priorityConfig = getPriorityConfig(task.priority);
   const statusConfig = getStatusConfig(task.status);

@@ -41,10 +41,10 @@ const DEFAULT_CONFIG: TaskListConfig = {
 const createDefaultSections = (tasks: TaskListItem[]): TaskSectionType[] => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  
+
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
 
@@ -108,7 +108,7 @@ const createDefaultSections = (tasks: TaskListItem[]): TaskSectionType[] => {
   ];
 };
 
-const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
+const GroupedTaskList = ({
   tasks,
   config = {},
   actions,
@@ -129,7 +129,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   const [groupBy, setGroupBy] = useState<TaskGroupBy>(
     propGroupBy || finalConfig.defaultGroupBy || 'assignmentDate'
   );
-  
+
   // Enhanced calendar state
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -182,8 +182,8 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   };
 
   const handleSelectTask = (taskId: string) => {
-    setSelectedTasks(prev => 
-      prev.includes(taskId) 
+    setSelectedTasks(prev =>
+      prev.includes(taskId)
         ? prev.filter(id => id !== taskId)
         : [...prev, taskId]
     );
@@ -219,10 +219,10 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
       const [day, month, year] = dateStr.split('/');
       return `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     };
-    
+
     const startDateFormatted = parseDate(data.startDate);
     const endDateFormatted = parseDate(data.endDate);
-    
+
     // Create enhanced task data
     const enhancedTaskData = {
       name: 'New Task',
@@ -236,7 +236,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
       project: '',
       status: 'todo' as const
     };
-    
+
     actions?.onCreateTask?.(enhancedTaskData);
     setIsCreatingTask(false);
   };
@@ -244,7 +244,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   // Loading state
   if (loading) {
     return (
-      <div 
+      <div
         className={`flex items-center justify-center h-64 ${className}`}
         style={{ backgroundColor: theme.background.primary }}
       >
@@ -259,7 +259,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   // Error state
   if (error) {
     return (
-      <div 
+      <div
         className={`flex items-center justify-center h-64 ${className}`}
         style={{ backgroundColor: theme.background.primary }}
       >
@@ -275,15 +275,15 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
   }
 
   return (
-    <div 
+    <div
       className={`w-full ${className}`}
       style={{ backgroundColor: theme.background.primary }}
     >
       {/* Header */}
       {!hideHeader && (
-        <div 
-          className="sticky top-0 z-30 shadow-sm border-b" 
-          style={{ 
+        <div
+          className="sticky top-0 z-30 shadow-sm border-b"
+          style={{
             backgroundColor: theme.background.primary,
             borderColor: theme.border.default,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
@@ -309,9 +309,9 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
 
       {/* Table Column Headers - Sticky */}
       {finalConfig.enableGrouping && processedTasks.length > 0 && (
-        <div 
-          className="sticky top-0 z-40 bg-gray-50 border-b border-gray-200 shadow-sm" 
-          style={{ 
+        <div
+          className="sticky top-0 z-40 bg-gray-50 border-b border-gray-200 shadow-sm"
+          style={{
             backgroundColor: theme.background.secondary,
             borderColor: theme.border.default,
             top: hideHeader ? '0' : '72px', // Offset for layout header when present
@@ -374,7 +374,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
         {searchValue && processedTasks.length === 0 ? (
           <EmptySearchState
             searchQuery={searchValue}
-            onClearSearch={() => setSearchValue("")}
+            onClearSearch={() => setSearchValue("")}  
             onAdvancedSearch={() => {/* Handle advanced search */}}
           />
         ) : (
@@ -396,15 +396,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <tbody>
-                    {processedTasks.map((task) => (
-                      <EnhancedTaskRow
-                        key={task.id}
-                        task={task}
-                        actions={actions}
-                        isSelected={selectedTasks.includes(task.id)}
-                        onSelect={finalConfig.showSelection ? handleSelectTask : undefined}
-                      />
-                    ))}
+
                   </tbody>
                 </table>
               </div>
@@ -413,34 +405,8 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
         )}
       </div>
 
-      {/* Empty State */}
-      {processedTasks.length === 0 && !loading && !searchValue && Object.keys(filters).length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4 opacity-50">📋</div>
-          <h3 className="text-lg font-medium mb-2" style={{ color: theme.text.primary }}>
-            No tasks yet
-          </h3>
-          <p className="text-sm mb-4" style={{ color: theme.text.secondary }}>
-            Create your first task to get started
-          </p>
-          <button
-            onClick={handleCreateTask}
-            className="px-4 py-2 rounded-lg transition-colors"
-            style={{
-              backgroundColor: theme.button.primary.background,
-              color: theme.button.primary.text,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme.button.primary.hover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme.button.primary.background;
-            }}
-          >
-            Create Task
-          </button>
-        </div>
-      )}
+
+
     </div>
   );
 };

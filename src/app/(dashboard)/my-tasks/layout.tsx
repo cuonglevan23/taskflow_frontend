@@ -15,7 +15,7 @@ interface MyTaskLayoutProps {
   children: React.ReactNode;
 }
 
-const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function MyTaskContent({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const pathname = usePathname();
   const { tasks } = useTasks(); // Use SWR hook for actual data
@@ -128,7 +128,7 @@ const MyTaskContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   );
 };
 
-const MyTaskLayout: React.FC<MyTaskLayoutProps> = ({ children }) => {
+export default function MyTaskLayout({ children }: MyTaskLayoutProps) {
   return (
     <PageLayout>
       <MyTaskContent>
@@ -138,4 +138,3 @@ const MyTaskLayout: React.FC<MyTaskLayoutProps> = ({ children }) => {
   );
 };
 
-export default MyTaskLayout;

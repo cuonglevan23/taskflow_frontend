@@ -15,11 +15,11 @@ export interface TimelineSectionProps {
   onToggle: (sectionId: string) => void;
 }
 
-const TimelineSection: React.FC<TimelineSectionProps> = ({
+const TimelineSection = ({
   section,
   taskCount,
   onToggle
-}) => {
+}: TimelineSectionProps) => {
   const { theme } = useTheme();
 
   const handleClick = (e: React.MouseEvent) => {

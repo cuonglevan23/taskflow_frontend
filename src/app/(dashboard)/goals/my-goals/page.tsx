@@ -7,7 +7,7 @@ interface MyGoalsPageProps {
   timeframe?: string;
 }
 
-const MyGoalsPage: React.FC<MyGoalsPageProps> = ({ timeframe }) => {
+export default function MyGoalsPage({ timeframe }: MyGoalsPageProps) {
   const { theme } = useTheme();
 
   return (
@@ -50,4 +50,3 @@ const MyGoalsPage: React.FC<MyGoalsPageProps> = ({ timeframe }) => {
   );
 };
 
-export default MyGoalsPage;

@@ -52,10 +52,13 @@ export interface SearchDropdownProps {
   position?: "center" | "left" | "right";
 }
 
-const SearchResultItem: React.FC<{
+const SearchResultItem = ({
+  item,
+  onClick,
+}: {
   item: SearchResult;
   onClick: () => void;
-}> = ({ item, onClick }) => {
+}) => {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "task":
@@ -101,11 +104,15 @@ const SearchResultItem: React.FC<{
   );
 };
 
-const TabButton: React.FC<{
+const TabButton = ({
+  tab,
+  isActive,
+  onClick,
+}: {
   tab: SearchTab;
   isActive: boolean;
   onClick: () => void;
-}> = ({ tab, isActive, onClick }) => {
+}) => {
   const IconComponent = tab.icon;
   return (
     <button
@@ -122,7 +129,7 @@ const TabButton: React.FC<{
   );
 };
 
-const SearchDropdown: React.FC<SearchDropdownProps> = ({
+const SearchDropdown = ({
   isOpen,
   searchQuery,
   searchResults,

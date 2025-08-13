@@ -19,7 +19,7 @@ interface DroppableColumnProps {
   newTaskInput?: React.ReactNode;
 }
 
-const DroppableColumn: React.FC<DroppableColumnProps> = ({
+const DroppableColumn = ({
   id,
   title,
   color,
@@ -28,7 +28,7 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
   onAddTask,
   isAddingTask = false,
   newTaskInput,
-}) => {
+}: DroppableColumnProps) => {
   const { theme } = useTheme();
   const { setNodeRef, isOver } = useDroppable({
     id,

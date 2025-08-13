@@ -16,7 +16,7 @@ interface RoleGuardProps {
   contextId?: string;
 }
 
-export const RoleGuard: React.FC<RoleGuardProps> = ({
+export const RoleGuard = ({
   children,
   roles,
   minimumRole,
@@ -25,7 +25,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   fallback = null,
   contextType,
   contextId,
-}) => {
+}: RoleGuardProps) => {
   const { hasRole, hasMinimumRole, hasPermission } = usePermissions({
     contextType,
     contextId,
@@ -49,67 +49,3 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   return <>{children}</>;
 };
 
-// Convenience components for common role checks
-export const AdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard roles="admin" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-export const OwnerOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard roles="owner" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-export const ManagerAndAbove: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard minimumRole="project_manager" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-export const LeaderAndAbove: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard minimumRole="leader" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-// Permission-based guards
-export const CanCreateProjects: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard resource="projects" action="create" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-export const CanManageUsers: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard resource="users" action="manage" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);
-
-export const CanAssignTasks: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
-  children, 
-  fallback 
-}) => (
-  <RoleGuard resource="tasks" action="assign" fallback={fallback}>
-    {children}
-  </RoleGuard>
-);

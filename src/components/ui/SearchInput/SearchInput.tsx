@@ -15,7 +15,7 @@ export interface SearchInputProps {
   variant?: "default" | "minimal" | "bordered";
 }
 
-const SearchInput: React.FC<SearchInputProps> = ({
+const SearchInput = ({
   value,
   onChange,
   onFocus,
@@ -25,7 +25,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   className = "",
   size = "md",
   variant = "default",
-}) => {
+}: SearchInputProps) => {
   const handleClear = useCallback(() => {
     onChange("");
   }, [onChange]);

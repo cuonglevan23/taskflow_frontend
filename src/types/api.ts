@@ -1,7 +1,7 @@
 // Common API Types - Reusable across all services
 
 // Standard API Response wrapper
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   success: boolean;
   message?: string;
@@ -10,7 +10,7 @@ export interface ApiResponse<T = any> {
 }
 
 // Paginated API Response
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[];
   pagination: {
     total: number;
@@ -55,8 +55,8 @@ export interface RequestConfig {
   url: string;
   method: HttpMethod;
   headers?: Record<string, string>;
-  params?: Record<string, any>;
-  data?: any;
+  params?: Record<string, unknown>;
+  data?: Record<string, unknown>;
   timeout?: number;
   retries?: number;
 }
@@ -80,7 +80,7 @@ export interface HealthCheckResponse {
   status: 'UP' | 'DOWN' | 'UNKNOWN';
   components?: Record<string, {
     status: 'UP' | 'DOWN';
-    details?: any;
+    details?: Record<string, unknown>;
   }>;
   timestamp: string;
 }
@@ -161,12 +161,12 @@ export interface ResponseInterceptorContext {
 
 // API client interface
 export interface ApiClient {
-  get<T = any>(url: string, config?: any): Promise<T>;
-  post<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  put<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  patch<T = any>(url: string, data?: any, config?: any): Promise<T>;
-  delete<T = any>(url: string, config?: any): Promise<T>;
-  upload<T = any>(url: string, file: File | FormData, onProgress?: (progress: UploadProgress) => void): Promise<T>;
+  get<T = unknown>(url: string, config?: Record<string, unknown>): Promise<T>;
+  post<T = unknown>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T>;
+  put<T = unknown>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T>;
+  patch<T = unknown>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T>;
+  delete<T = unknown>(url: string, config?: Record<string, unknown>): Promise<T>;
+  upload<T = unknown>(url: string, file: File | FormData, onProgress?: (progress: UploadProgress) => void): Promise<T>;
   download(url: string, options?: DownloadOptions): Promise<void>;
 }
 
@@ -210,7 +210,7 @@ export interface ServiceConfig {
 }
 
 // Export utility types
-export type ApiMethod<T = any> = (...args: any[]) => Promise<T>;
+export type ApiMethod<T = unknown> = (...args: unknown[]) => Promise<T>;
 export type ApiMethodWithParams<P, T> = (params: P) => Promise<T>;
 export type ApiMethodWithBody<B, T> = (body: B) => Promise<T>;
 export type ApiMethodWithParamsAndBody<P, B, T> = (params: P, body: B) => Promise<T>;

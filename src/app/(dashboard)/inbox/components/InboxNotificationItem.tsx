@@ -14,13 +14,13 @@ interface InboxNotificationItemProps {
   onHideMoreActions?: () => void;
 }
 
-const InboxNotificationItem: React.FC<InboxNotificationItemProps> = ({
+const InboxNotificationItem = ({
   notification,
   actions,
   isLoading = false,
   showMoreMenu = false,
   onHideMoreActions,
-}) => {
+}: InboxNotificationItemProps) => {
   const { theme } = useTheme();
   const { openPanel } = useDetailPanel();
 

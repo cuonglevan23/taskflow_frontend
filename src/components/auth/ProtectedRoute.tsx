@@ -19,7 +19,7 @@ interface ProtectedRouteProps {
   contextId?: string;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+export const ProtectedRoute = ({
   children,
   roles,
   minimumRole,
@@ -29,7 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback,
   contextType,
   contextId,
-}) => {
+}: ProtectedRouteProps) => {
   const router = useRouter();
   const { user, hasRole, hasMinimumRole, hasPermission } = usePermissions({
     contextType,
@@ -92,25 +92,29 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 
 // Convenience components for route protection
-export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  return (
   <ProtectedRoute roles="admin">
     {children}
   </ProtectedRoute>
 );
 
-export const OwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export function OwnerRoute({ children }: { children: React.ReactNode }) {
+  return (
   <ProtectedRoute roles="owner">
     {children}
   </ProtectedRoute>
 );
 
-export const ManagerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export function ManagerRoute({ children }: { children: React.ReactNode }) {
+  return (
   <ProtectedRoute minimumRole="project_manager">
     {children}
   </ProtectedRoute>
 );
 
-export const LeaderRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export function LeaderRoute({ children }: { children: React.ReactNode }) {
+  return (
   <ProtectedRoute minimumRole="leader">
     {children}
   </ProtectedRoute>

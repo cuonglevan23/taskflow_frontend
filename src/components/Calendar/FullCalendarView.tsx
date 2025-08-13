@@ -144,7 +144,7 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
   }).filter(Boolean) as CalendarEvent[];
 };
 
-export const FullCalendarView: React.FC<FullCalendarViewProps> = ({
+export const FullCalendarView = ({
   tasks,
   onEventClick,
   onDateClick,
@@ -152,7 +152,7 @@ export const FullCalendarView: React.FC<FullCalendarViewProps> = ({
   onEventResize,
   height = "100%",
   className = ""
-}) => {
+}: FullCalendarViewProps) => {
   const { theme } = useTheme();
   const calendarRef = useRef<FullCalendar>(null);
   

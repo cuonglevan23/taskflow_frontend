@@ -14,9 +14,9 @@ interface FilterSortControlsProps {
   className?: string;
 }
 
-const FilterSortControls: React.FC<FilterSortControlsProps> = ({
+const FilterSortControls = ({
   className = "",
-}) => {
+}: FilterSortControlsProps) => {
   const { theme } = useTheme();
   const {
     // Filter

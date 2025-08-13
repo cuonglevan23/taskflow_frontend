@@ -11,7 +11,7 @@ interface NavigationAvatarProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const NavigationAvatar: React.FC<NavigationAvatarProps> = memo(({ config, size = 'md' }) => {
+const NavigationAvatar = memo(({ config, size = 'md' }: NavigationAvatarProps) => {
   const { theme } = useTheme();
   const { user } = useAuth();
   

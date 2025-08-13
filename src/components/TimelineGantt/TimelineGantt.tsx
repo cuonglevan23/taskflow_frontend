@@ -63,7 +63,7 @@ const DEFAULT_SECTIONS: TimelineSection[] = [
   { id: 'later', title: 'Do later', collapsed: false }
 ];
 
-const TimelineGantt: React.FC<TimelineGanttProps> = ({
+const TimelineGantt = ({
   tasks,
   tasksBySection,
   onTaskClick,

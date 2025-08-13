@@ -14,13 +14,13 @@ interface TaskCardProps {
   className?: string;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
+const TaskCard = ({
   task,
   actions,
   isSelected = false,
   onSelect,
   className = '',
-}) => {
+}: TaskCardProps) => {
   const { theme } = useTheme();
   const priorityConfig = getPriorityConfig(task.priority);
   const statusConfig = getStatusConfig(task.status);

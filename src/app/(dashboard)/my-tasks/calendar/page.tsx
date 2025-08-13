@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { useTasks, useUpdateTask, useCreateTask, useDeleteTask, useMyTasksSummary } from "@/hooks/useTasks";
-import { useTasksContext } from "@/contexts/TasksContext";;
+import React, { useState } from "react";
+import { useTasksContext } from "@/contexts/TasksContext";
 import { FullCalendarView } from "@/components/Calendar";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import type { Task, CreateTaskDTO } from "@/types";
+import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
+import type { Task } from "@/types";
 import type { TaskListItem } from "@/components/TaskList/types";
-import { CookieAuth } from '@/utils/cookieAuth';
 
 // Clean TypeScript interfaces
 interface CalendarPageProps {
@@ -22,9 +21,9 @@ interface CalendarState {
   isPanelOpen: boolean;
 }
 
-const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({ 
+const MyTaskCalendarPage = ({ 
   searchValue = ""
-}) => {
+}: CalendarPageProps) => {
   const { theme } = useTheme();
   const { selectedTaskId, setSelectedTaskId } = useTasksContext();
   
@@ -36,62 +35,27 @@ const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({
     isPanelOpen: false
   });
 
-  // Data fetching with new My Tasks Summary API to get ALL tasks including completed
-  const { tasks, isLoading, error, revalidate } = useMyTasksSummary({
+  // Use shared hook for all data and actions
+  const {
+    tasks,
+    filteredTasks,
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    error,
+    actions,
+    revalidate,
+    convertTaskToTaskListItem
+  } = useMyTasksShared({
     page: 0,
-    size: 1000, // Get all tasks for calendar view
+    size: 1000,
     sortBy: 'startDate',
-    sortDir: 'desc'
+    sortDir: 'desc',
+    searchValue
   });
 
-  // Mutations
-  const { updateTask, isUpdating } = useUpdateTask();
-  const { createTask, isCreating } = useCreateTask();
-  const { deleteTask, isDeleting } = useDeleteTask();
-
-  // Convert Task to TaskListItem for TaskDetailPanel compatibility - Memoized
-  const convertTaskToTaskListItem = React.useCallback((task: Task): TaskListItem => {
-    // Use the correct startDate and endDate from Task object (from transformMyTasksSummary)
-    const formatDate = (date: Date | string | null | undefined) => {
-      if (!date) return undefined;
-      if (typeof date === 'string') return date;
-      if (date instanceof Date) {
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      }
-      return undefined;
-    };
-
-    return {
-      id: task.id.toString(),
-      name: task.title,
-      description: task.description || '',
-      assignees: task.creatorName ? [{
-        id: 'creator',
-        name: task.creatorName,
-        email: '',
-      }] : [],
-      dueDate: task.dueDate,
-      startDate: formatDate(task.startDate), // Use actual startDate from backend
-      deadline: formatDate(task.endDate),    // Map endDate to deadline for backend compatibility
-      priority: (task.priority as any) || 'medium',
-      status: task.status === 'completed' ? 'done' : 
-              task.status === 'in-progress' ? 'in_progress' : 
-              'todo',
-      tags: task.tags || [],
-      project: task.tagText || 'Default Project',
-      createdAt: task.createdAt.toISOString(),
-      updatedAt: task.updatedAt.toISOString(),
-    };
-  }, []);
-
-  // Filter tasks based on search - INCLUDE ALL TASKS including completed
-  const filteredTasks = useMemo(() => {
-    if (!searchValue.trim()) return tasks; // Show ALL tasks including completed
-    return tasks.filter(task => 
-      task.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  }, [tasks, searchValue]);
+  // Calendar-specific event handlers using shared actions
 
   // Calendar navigation handlers
   const handlePrevious = () => {
@@ -118,7 +82,7 @@ const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({
     setCalendarState(prev => ({ ...prev, currentDate: new Date() }));
   };
 
-  // Task event handlers
+  // Task event handlers using shared actions
   const handleEventClick = (task: Task) => {
     setSelectedTaskId(task.id.toString());
     setCalendarState(prev => ({ 
@@ -131,198 +95,76 @@ const MyTaskCalendarPage: React.FC<CalendarPageProps> = ({
   const handleDateClick = React.useCallback(async (dateStr: string) => {
     if (isCreating) return; // Prevent multiple clicks
     
-    // Get user ID from token for backend format
-    const tokenPayload = CookieAuth.getTokenPayload();
-    const userInfo = CookieAuth.getUserInfo();
-    
-    // Parse the date string to create proper Date object
-    const dateParts = dateStr.split('-');
-    const selectedDate = new Date(
-      parseInt(dateParts[0]), 
-      parseInt(dateParts[1]) - 1, // Month is 0-indexed
-      parseInt(dateParts[2]),
-      12, 0, 0, 0 // Set to noon to avoid timezone issues
-    );
-    
-
-    
-    // Create task with default name immediately
-    const taskData: CreateTaskDTO = {
-      title: 'New Task',     // Default task name
-      description: '',
-      status: 'TODO',        // Backend format
-      priority: 'MEDIUM',    // Backend format  
-      startDate: dateStr,    // Primary field for calendar display (camelCase)
-      deadline: dateStr,     // Backend expects 'deadline' for compatibility
-      dueDate: dateStr,      // Also set dueDate field to ensure proper handling
-      dueDateISO: selectedDate, // Add ISO date object
-      creatorId: tokenPayload?.userId || parseInt(userInfo.id || '1'),
-      assignedToIds: [],
-      projectId: null,
-      groupId: null,
-    };
-    
-    console.log('📤 Calendar Page: Creating default task:', {
-      taskData: taskData,
-      date: dateStr
-    });
-    
     try {
-      await createTask(taskData);
+      await actions.onDateClick(dateStr);
       console.log('✅ Calendar: Default task created successfully');
     } catch (error) {
       console.error('❌ Calendar: Failed to create task:', error);
       alert('Failed to create task. Please try again.');
     }
-  }, [isCreating, createTask]);
+  }, [isCreating, actions]);
 
   // Memoized date click handler for SimpleCalendar
   const handleSimpleDateClick = React.useCallback((date: Date) => {
-    // Create task directly, no panel
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     handleDateClick(dateStr);
   }, [handleDateClick]);
 
-  // Enhanced task drop handler with optimistic updates
-  const handleTaskDrop = async (task: Task, newDate: Date) => {
-    // Create a local date at noon to avoid timezone edge cases
-    const localDate = new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(), 12, 0, 0, 0);
-    
-    // Format as simple YYYY-MM-DD
-    const simpleDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-    
-    try {
-      // Optimistic update - immediately update UI
-      const updatedTask = { ...task, dueDate: simpleDate };
-      
-      await updateTask({ 
-        id: task.id.toString(), 
-        data: {
-          deadline: simpleDate,
-        }
-      });
-      
-      // Force refresh calendar data after successful update
-      setTimeout(() => revalidate(), 100);
-    } catch (error) {
-      console.error('❌ Calendar Page: Task drop update failed:', error);
-      // Revert optimistic update on error
-      revalidate();
-    }
-  };
-
-  // Task resize handler for multi-day tasks
-  const handleTaskResize = async (task: Task, newStartDate: Date, newEndDate: Date) => {
-    // Format dates
-    const formatDate = (date: Date) => {
-      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
-      return `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
-    };
-
-    const startDateStr = formatDate(newStartDate);
-    const endDateStr = formatDate(newEndDate);
-
-    try {
-      await updateTask({ 
-        id: task.id.toString(), 
-        data: {
-          startDate: startDateStr, // Start date of multi-day task
-          deadline: endDateStr,    // End date of multi-day task
-        }
-      });
-    } catch (error) {
-      console.error('❌ Calendar Page: Task resize update failed:', error);
-      revalidate();
-    }
-  };
-
-  // FullCalendar event drop handler - Send exact date
+  // FullCalendar event drop handler - Use shared action
   const handleEventDrop = async (taskId: string, newDateStr: string) => {
     try {
-      // Parse the date and ensure it's in local timezone
       const [year, month, day] = newDateStr.split('-').map(Number);
       const localDate = new Date(year, month - 1, day, 12, 0, 0, 0);
-      const exactDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+      const task = tasks.find(t => t.id.toString() === taskId);
       
-      await updateTask({ 
-        id: taskId, 
-        data: {
-          deadline: exactDate,
-        }
-      });
-      // Force refresh calendar data to show updated task
-      revalidate();
+      if (task) {
+        await actions.onTaskDrop(task, localDate);
+      }
     } catch (error) {
       console.error('❌ Calendar Page: FullCalendar drop update failed:', error);
       alert('Failed to update task. Please try again.');
-      revalidate();
     }
   };
 
   const handleEventResize = async (taskId: string, newStartDate: string, newEndDate: string) => {
     try {
-      await updateTask({ 
-        id: taskId, 
-        data: {
-          startDate: newStartDate, // Start date for multi-day tasks
-          deadline: newEndDate,    // End date for multi-day tasks
-        }
-      });
-      
-      // Force refresh calendar data with delay to ensure backend has processed
-      setTimeout(() => revalidate(), 100);
+      const parseDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day, 12, 0, 0, 0);
+      };
+
+      const task = tasks.find(t => t.id.toString() === taskId);
+      if (task) {
+        await actions.onTaskResize(task, parseDate(newStartDate), parseDate(newEndDate));
+      }
     } catch (error) {
       console.error('❌ Calendar Page: FullCalendar resize update failed:', error);
       revalidate();
     }
   };
 
-  // Task detail panel handlers - Only for editing existing tasks
+  // Task detail panel handlers using shared actions
   const handleTaskSave = async (taskId: string, updates: Partial<TaskListItem>) => {
-    // Only handle existing task updates (no more new task creation via panel)
-    const backendUpdates: Partial<any> = {};
-    
-    if (updates.name !== undefined) backendUpdates.title = updates.name;
-    if (updates.description !== undefined) backendUpdates.description = updates.description;
-    if (updates.dueDate !== undefined) backendUpdates.deadline = updates.dueDate;
-    if (updates.startDate !== undefined) backendUpdates.deadline = updates.startDate; // Backend uses deadline field
-    if (updates.priority !== undefined) {
-      backendUpdates.priority = updates.priority.toUpperCase();
-    }
-    if (updates.status !== undefined) {
-      const statusMap = {
-        'todo': 'TODO',
-        'in_progress': 'IN_PROGRESS', 
-        'done': 'DONE',
-        'review': 'REVIEW',
-        'cancelled': 'BLOCKED'
-      };
-      backendUpdates.status = statusMap[updates.status] || 'TODO';
-    }
-
-    console.log('🔄 Calendar: Updating existing task:', {
-      taskId,
-      taskListItemUpdates: updates,
-      backendUpdates
-    });
-
     try {
-      await updateTask({
-        id: taskId,
-        data: backendUpdates
-      });
-      console.log('✅ Calendar: Task updated successfully');
+      const task = tasks.find(t => t.id.toString() === taskId);
+      if (task) {
+        const taskListItem = convertTaskToTaskListItem(task);
+        await actions.onTaskEdit({ ...taskListItem, ...updates });
+      }
+      setCalendarState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
     } catch (error) {
       console.error('❌ Calendar: Failed to update task:', error);
       alert('Failed to update task. Please try again.');
     }
-    
-    setCalendarState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
   };
 
-  const handleTaskDelete = (taskId: string) => {
-    deleteTask(taskId);
-    setCalendarState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
+  const handleTaskDelete = async (taskId: string) => {
+    try {
+      await actions.onTaskDelete(taskId);
+      setCalendarState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
+    } catch (error) {
+      console.error('❌ Calendar: Failed to delete task:', error);
+    }
   };
 
   const handleClosePanel = () => {

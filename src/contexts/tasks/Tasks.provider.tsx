@@ -24,7 +24,7 @@ interface TasksProviderProps {
   initialSort?: TaskSort;
 }
 
-export const TasksProvider: React.FC<TasksProviderProps> = ({
+export function TasksProvider({
   children,
   initialFilters = {},
   initialSort = { field: 'startDate', direction: 'desc' } // Sort by startDate instead of createdAt

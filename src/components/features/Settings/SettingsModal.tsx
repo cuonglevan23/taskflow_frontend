@@ -29,14 +29,14 @@ interface SettingsModalProps {
 }
 
 // SettingsModal Component
-const SettingsModal: React.FC<SettingsModalProps> = ({ 
+const SettingsModal = ({ 
   isOpen, 
   onClose, 
   user, 
   backdropColor = 'white',
   backdropOpacity = 0.8,
   customBackdrop
-}) => {
+}: SettingsModalProps) => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 

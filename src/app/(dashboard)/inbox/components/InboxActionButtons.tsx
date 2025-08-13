@@ -14,13 +14,13 @@ interface InboxActionButtonsProps {
   onHideMoreActions?: () => void;
 }
 
-const InboxActionButtons: React.FC<InboxActionButtonsProps> = ({
+const InboxActionButtons = ({
   notification,
   actions,
   isLoading = false,
   showMoreMenu = false,
   onHideMoreActions,
-}) => {
+}: InboxActionButtonsProps) => {
   const { theme } = useTheme();
 
   const handleMoreActions = (e?: React.MouseEvent<HTMLButtonElement>) => {

@@ -12,10 +12,10 @@ interface DashboardsPageProps {
 }
 
 // Clean & Optimized Dashboards Page - Using Modular Components
-const DashboardsPage: React.FC<DashboardsPageProps> = ({ 
+export default function DashboardsPage({ 
   dateRange,
   userId = 'current-user' 
-}) => {
+}: DashboardsPageProps) {
   const { theme } = useTheme();
   const [recentsExpanded, setRecentsExpanded] = useState(true);
   const [viewMode, setViewMode] = useState<'tiles' | 'list'>('tiles');
@@ -167,4 +167,3 @@ const DashboardsPage: React.FC<DashboardsPageProps> = ({
   );
 };
 
-export default DashboardsPage;

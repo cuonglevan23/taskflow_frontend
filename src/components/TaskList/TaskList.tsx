@@ -36,7 +36,7 @@ const DEFAULT_CONFIG: TaskListConfig = {
   showSelection: true,
 };
 
-const TaskList: React.FC<TaskListProps> = ({
+const TaskList = ({
   tasks,
   config = {},
   actions,

@@ -27,7 +27,7 @@ interface KanbanColumn {
   count: number;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({
+const KanbanBoard = ({
   tasks,
   tasksByAssignmentDate,
   actions,
