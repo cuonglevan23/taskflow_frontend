@@ -1,4 +1,3 @@
-// Shared MyTasks Hook - Centralized logic for List, Board, Calendar pages
 import { useMemo, useCallback } from 'react';
 import { useMyTasksSummary, useUpdateTask, useCreateTask, useDeleteTask } from './index';
 import { useTasksContext } from '@/contexts/TasksContext';

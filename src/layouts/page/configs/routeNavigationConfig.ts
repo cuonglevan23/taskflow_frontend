@@ -109,11 +109,6 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
         href: '/my-tasks/dashboard',
         icon: LAYOUT_ICONS.timeline,
       },
-      {
-        label: 'File',
-        href: '/my-tasks/file',
-        icon: FILE_ICONS.document,
-      },
     ],
     actions: [],
     showTabsPlus: false,
