@@ -1,7 +1,7 @@
 // Task Data Hooks - Pure data fetching with SWR
 import useSWR from 'swr';
-import { taskService } from '@/services/task';
-import type { TaskFilter, TaskSort } from '@/services/task';
+import { taskService } from '@/services/tasks';
+import type { TaskFilter, TaskSort } from '@/services/tasks';
 
 // SWR Key generators for consistent cache keys
 export const taskKeys = {

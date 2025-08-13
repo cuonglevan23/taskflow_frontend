@@ -1,7 +1,7 @@
 // Task Actions Hooks - CRUD operations with SWR mutations
 import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
-import { taskService } from '@/services/task';
+import { taskService } from '@/services/tasks';
 import { taskKeys } from './useTasksData';
 import type { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
 

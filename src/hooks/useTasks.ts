@@ -32,4 +32,4 @@ export {
 } from './tasks';
 
 // Re-export types for backward compatibility
-export type { TaskFilter, TaskSort } from '@/services/task';
+export type { TaskFilter, TaskSort } from '@/services/tasks';

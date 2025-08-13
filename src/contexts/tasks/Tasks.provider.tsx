@@ -7,7 +7,7 @@
 import React, { ReactNode, useState, useMemo, useCallback } from "react";
 import { TasksContext, TasksContextType } from '@/contexts/tasks/Tasks.context';
 import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
-import { TaskFilter, TaskSort } from '@/services/task';
+import { TaskFilter, TaskSort } from '@/services/tasks';
 import { 
   useTasks, 
   useCreateTask, 

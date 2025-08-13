@@ -19,3 +19,17 @@ export type {
   PaginatedResponse,
   MyTasksStats
 } from '@/types/task';
+
+// Task-specific filter and sort interfaces
+export interface TaskFilter {
+  status?: string[];
+  priority?: string[];
+  assignee?: string;
+  projectId?: number;
+  teamId?: number;
+}
+
+export interface TaskSort {
+  field: string;
+  direction: 'asc' | 'desc';
+}

@@ -1,6 +1,6 @@
 // Task Filter & Pagination Hooks - State management for filters
 import { useState, useCallback, useMemo } from 'react';
-import type { TaskFilter, TaskSort } from '@/services/task';
+import type { TaskFilter, TaskSort } from '@/services/tasks';
 
 // Hook: Manage task filters
 export const useTasksFilter = (initialFilter?: TaskFilter) => {

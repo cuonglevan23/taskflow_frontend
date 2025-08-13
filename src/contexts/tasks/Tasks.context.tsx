@@ -7,7 +7,7 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
-import { TaskFilter, TaskSort } from '@/services/task';
+import { TaskFilter, TaskSort } from '@/services/tasks';
 
 // Context Interface - Clean and focused
 interface TasksContextType {

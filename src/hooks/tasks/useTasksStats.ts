@@ -1,8 +1,8 @@
 // Task Statistics Hooks - Data analytics and metrics
 import useSWR from 'swr';
-import { taskService } from '@/services/task';
+import { taskService } from '@/services/tasks';
 import { taskKeys } from './useTasksData';
-import type { TaskFilter } from '@/services/task';
+import type { TaskFilter } from '@/services/tasks';
 
 // Hook: Get task statistics
 export const useTaskStats = (filter?: TaskFilter) => {
