@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { GroupedTaskList, TaskListItem, TaskStatus } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
-import { SimpleDateRangePicker } from "@/components/common";
+
 import { useTasksContext, type Task } from "@/contexts";
 import { useTasks, useUpdateTask, useDeleteTask, useCreateTask, useMyTasksSummary } from "@/hooks/useTasks";
 import { CookieAuth } from '@/utils/cookieAuth';
@@ -301,12 +301,7 @@ const MyTaskListPage: React.FC<MyTaskListPageProps> = ({ searchValue = "" }) => 
         onDelete={handleTaskDelete}
       />
 
-      <SimpleDateRangePicker
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onSave={handleDateRangePickerSave}
-        title="Select Task Date Range"
-      />
+
     </>
   );
 };
