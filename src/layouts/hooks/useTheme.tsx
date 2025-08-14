@@ -38,16 +38,12 @@ export function ThemeProvider({
   const [mode, setMode] = useState<ThemeMode>(defaultTheme);
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage or system preference
+  // Initialize theme – force to defaultTheme to avoid white/light mismatch from stale storage
   useEffect(() => {
-    const storedTheme = localStorage.getItem(storageKey) as ThemeMode;
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-      .matches
-      ? "dark"
-      : "light";
-
-    const initialTheme = storedTheme || systemTheme || defaultTheme;
-    setMode(initialTheme);
+    setMode(defaultTheme);
+    try {
+      localStorage.setItem(storageKey, defaultTheme);
+    } catch {}
     setMounted(true);
   }, [defaultTheme, storageKey]);
 

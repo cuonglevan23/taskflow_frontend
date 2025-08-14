@@ -59,21 +59,27 @@ export default function PrivateLayoutContent({
         />
 
         {/* Main Content */}
-        <div 
+        <div
           className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out"
           style={{
-            marginLeft: isSidebarOpen ? (isSidebarCollapsed ? '4rem' : '16rem') : '0'
+            marginLeft: isSidebarOpen
+              ? isSidebarCollapsed
+                ? "4rem"
+                : "16rem"
+              : "0",
           }}
         >
-          <main 
+          <main
             className="flex-1 overflow-auto relative"
             style={{
-              overscrollBehavior: 'none',
-              overscrollBehaviorX: 'none', 
-              overscrollBehaviorY: 'none',
-              WebkitOverflowScrolling: 'touch'
+              overscrollBehavior: "none",
+              overscrollBehaviorX: "none",
+              overscrollBehaviorY: "none",
+              WebkitOverflowScrolling: "touch",
             }}
-          >{children}</main>
+          >
+            {children}
+          </main>
         </div>
 
         {/* Detail Panel */}

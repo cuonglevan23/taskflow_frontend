@@ -1,12 +1,13 @@
 // Theme Provider - Global theme context
-'use client';
+"use client";
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useTheme } from '@/layouts/hooks/useTheme';
+import React, { createContext, useContext, ReactNode } from "react";
+
+import { useTheme } from "@/hooks/useTheme";
 
 interface ThemeContextValue {
-  theme: 'light' | 'dark';
-  setTheme: (theme: 'light' | 'dark') => void;
+  theme: "light" | "dark";
+  setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
 }
 
@@ -14,20 +15,20 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: 'light' | 'dark';
+  defaultTheme?: "light" | "dark";
   storageKey?: string;
 }
 
-export function ThemeProvider({ 
-  children, 
-  defaultTheme = 'dark',
-  storageKey = 'theme'
-}: ThemeProviderProps) {
-  const themeHook = useTheme();
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({
+  children,
+  defaultTheme = "dark",
+  storageKey = "theme",
+}) => {
+  const { theme, setTheme, toggleTheme } = useTheme(storageKey, defaultTheme);
 
   return (
-    <ThemeContext.Provider value={themeHook}>
-      {children}
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+      <div className={theme}>{children}</div>
     </ThemeContext.Provider>
   );
 };
@@ -35,7 +36,7 @@ export function ThemeProvider({
 export const useThemeContext = (): ThemeContextValue => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useThemeContext must be used within a ThemeProvider');
+    throw new Error("useThemeContext must be used within a ThemeProvider");
   }
   return context;
 };
