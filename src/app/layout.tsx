@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "TaskManager - Project Management Made Simple",
   description:
-    "Streamline your project management with our comprehensive task management solution. Built for teams of all sizes.",
+    "Streamline your projects management with our comprehensive task management solution. Built for teams of all sizes.",
 };
 
 export default function RootLayout({

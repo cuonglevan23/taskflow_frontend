@@ -31,7 +31,7 @@ export function useProjectOverviewData() {
       
       setLoading(true);
       try {
-        // Simulate API call to fetch project metrics
+        // Simulate API call to fetch projects metrics
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Calculate days remaining
@@ -39,7 +39,7 @@ export function useProjectOverviewData() {
           ? Math.max(0, Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
           : 0;
         
-        // Mock metrics based on project data
+        // Mock metrics based on projects data
         setMetrics({
           tasksCompleted: 12,
           totalTasks: 18,
@@ -49,7 +49,7 @@ export function useProjectOverviewData() {
           daysRemaining
         });
       } catch (error) {
-        console.error('Failed to fetch project metrics:', error);
+        console.error('Failed to fetch projects metrics:', error);
       } finally {
         setLoading(false);
       }

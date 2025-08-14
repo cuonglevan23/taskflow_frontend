@@ -21,8 +21,8 @@ export interface FileActions {
 }
 
 /**
- * Custom hook providing file management actions for project files
- * Integrates with ProjectFilesContext for project-specific operations
+ * Custom hook providing file management actions for projects files
+ * Integrates with ProjectFilesContext for projects-specific operations
  */
 export function useProjectFileActions(): FileActions {
   const {

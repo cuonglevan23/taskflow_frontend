@@ -367,7 +367,7 @@ const EnhancedTaskRow = ({
             onClick={(e) => startEditing('project', task.project || '', e)}
             title="Click to add to project"
           >
-            {task.project || 'Add to project'}
+            {task.project || 'Add to projects'}
           </div>
         )}
       </td>

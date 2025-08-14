@@ -60,7 +60,7 @@ export default function CreateProjectForm({ onNameChange }: Props) {
       }
     }
 
-    console.log("Creating project:", data);
+    console.log("Creating projects:", data);
     await new Promise((res) => setTimeout(res, 1000));
     alert(`Project "${data.name}" created`);
     router.push("/project/list"); // Updated path - removed /owner

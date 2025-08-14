@@ -76,7 +76,7 @@ const navigationSections = useMemo(() => {
   
   // Cập nhật với dynamic data
   return baseSections.map(section => {
-    // Update task count, project list, etc.
+    // Update task count, projects list, etc.
     return section;
   });
 }, [rbac.user, projects, taskStats]);

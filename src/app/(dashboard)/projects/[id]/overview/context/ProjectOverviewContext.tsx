@@ -70,7 +70,7 @@ interface ProjectOverviewProviderProps {
 
 // Mock data
 const mockData: ProjectOverviewData = {
-  description: "This is a sample project description",
+  description: "This is a sample projects description",
   projectStatus: 'on_track',
   members: [
     {
@@ -84,8 +84,8 @@ const mockData: ProjectOverviewData = {
   goals: [
     {
       id: '1',
-      title: 'Complete project setup',
-      description: 'Set up project infrastructure and team',
+      title: 'Complete projects setup',
+      description: 'Set up projects infrastructure and team',
       progress: 100,
       status: 'completed'
     }
@@ -108,8 +108,8 @@ const mockData: ProjectOverviewData = {
     {
       id: '1',
       type: 'status_update',
-      title: 'This project is kicked off!',
-      description: 'This is a sample project status update in Asana. Use status updates to communicate the progress of your project with your teammates.',
+      title: 'This projects is kicked off!',
+      description: 'This is a sample projects status update in Asana. Use status updates to communicate the progress of your projects with your teammates.',
       author: {
         id: '1',
         name: 'Vân Lê',
@@ -123,7 +123,7 @@ const mockData: ProjectOverviewData = {
       id: '2',
       type: 'activity',
       title: 'My workspace team joined',
-      description: 'Team members were added to the project',
+      description: 'Team members were added to the projects',
       author: {
         id: '1',
         name: 'Vân Lê',
@@ -141,7 +141,7 @@ export function ProjectOverviewProvider({ children }: ProjectOverviewProviderPro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Update description based on project data
+  // Update description based on projects data
   useEffect(() => {
     if (project) {
       setData(prev => ({
@@ -261,7 +261,7 @@ export function ProjectOverviewProvider({ children }: ProjectOverviewProviderPro
       await new Promise(resolve => setTimeout(resolve, 300));
       setData(prev => ({ ...prev, projectStatus: status }));
     } catch (err) {
-      setError('Failed to update project status');
+      setError('Failed to update projects status');
     } finally {
       setLoading(false);
     }

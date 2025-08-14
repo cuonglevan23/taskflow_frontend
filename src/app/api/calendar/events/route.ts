@@ -38,7 +38,7 @@ const MOCK_EVENTS: CalendarEvent[] = [
   {
     id: '2',
     title: 'Project Milestone Review',
-    description: 'Review project milestones and deliverables',
+    description: 'Review projects milestones and deliverables',
     start: new Date('2024-01-18T14:00:00'),
     end: new Date('2024-01-18T16:00:00'),
     allDay: false,
@@ -49,7 +49,7 @@ const MOCK_EVENTS: CalendarEvent[] = [
     ownerId: 'user-2',
     assigneeIds: ['user-2', 'user-4'],
     teamId: 'team-123',
-    projectId: 'project-456',
+    projectId: 'projects-456',
     color: '#8B5CF6',
     tags: ['milestone', 'review'],
     location: 'Main Conference Room',

@@ -1,1 +1,1 @@
-// Export all project list components for easy importing
+// Export all projects list components for easy importing

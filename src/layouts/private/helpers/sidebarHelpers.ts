@@ -26,7 +26,7 @@ interface RoleChecks {
 export function isItemActive(item: NavigationItem, pathname: string): boolean {
   if (item.href === pathname) return true;
   
-  // Check for dynamic project routes
+  // Check for dynamic projects routes
   if (item.href.includes('/projects/') && pathname.includes('/projects/')) {
     const projectId = item.href.split('/projects/')[1];
     return pathname.includes(`/projects/${projectId}`);
@@ -36,7 +36,7 @@ export function isItemActive(item: NavigationItem, pathname: string): boolean {
 }
 
 /**
- * Get project title based on user role
+ * Get projects title based on user role
  */
 export function getProjectTitleByRole(roleChecks: RoleChecks): string {
   if (roleChecks.isMember()) return PROJECT_TITLES.MEMBER;

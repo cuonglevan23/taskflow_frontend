@@ -357,7 +357,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span style={{ color: theme.text.primary }}>
-                {task?.project || 'No project assigned'}
+                {task?.project || 'No projects assigned'}
               </span>
             </div>
           </div>

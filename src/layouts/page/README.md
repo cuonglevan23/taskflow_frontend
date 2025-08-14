@@ -64,7 +64,7 @@ if (pathname.startsWith("/projects")) {
     ],
     headerSections: [
       {
-        id: "project-stats",
+        id: "projects-stats",
         position: "top",
         content: <ProjectStatsWidget />,
         className: "mb-4",

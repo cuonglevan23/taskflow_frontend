@@ -85,7 +85,7 @@ export function usePrivateLayout() {
             icon: "folder",
           },
           {
-            key: "project-list",
+            key: "projects-list",
             title: "All Projects",
             href: "/projects/list",
             icon: "list",
@@ -136,7 +136,7 @@ export function usePrivateLayout() {
           {
             id: "1",
             title: `Project containing "${query}"`,
-            description: "A project that matches your search",
+            description: "A projects that matches your search",
             type: "project",
             url: "/projects/1",
             icon: "folder",

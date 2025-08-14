@@ -11,7 +11,7 @@ const CuratedWork = () => {
       id: 1,
       icon: "📊",
       title: "Sample Project",
-      description: "A sample project to get started",
+      description: "A sample projects to get started",
       color: "#10B981",
     },
     {

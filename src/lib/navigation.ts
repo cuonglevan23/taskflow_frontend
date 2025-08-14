@@ -152,7 +152,7 @@ export function getQuickActions(
   // Common actions based on permissions
   if (userPermissions.includes(Permission.CREATE_PROJECT)) {
     actions.push({
-      key: 'create-project',
+      key: 'create-projects',
       title: 'New Project',
       href: '/projects/new',
       icon: 'plus-circle',
@@ -234,15 +234,15 @@ export function getContextualNavigation(
   // Project context navigation
   if (currentPath.startsWith('/projects') || currentPath.startsWith('/project')) {
     const projectNavigation = [
-      { key: 'project-list', title: 'All Projects', href: '/project/list', icon: 'list' },
-      { key: 'project-board', title: 'Board View', href: '/project/board', icon: 'trello' },
+      { key: 'projects-list', title: 'All Projects', href: '/projects/list', icon: 'list' },
+      { key: 'projects-board', title: 'Board View', href: '/projects/board', icon: 'trello' },
     ];
 
     if (userPermissions.includes(Permission.VIEW_REPORTS)) {
       projectNavigation.push({
-        key: 'project-timeline',
+        key: 'projects-timeline',
         title: 'Timeline',
-        href: '/project/timeline',
+        href: '/projects/timeline',
         icon: 'gantt-chart'
       });
     }

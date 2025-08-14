@@ -10,11 +10,11 @@ const MOCK_TEAMS: Team[] = [
   {
     id: 'team-123',
     name: 'Development Team',
-    description: 'Main development team for the project',
+    description: 'Main development team for the projects',
     color: '#3B82F6',
     memberIds: ['user-1', 'user-2', 'user-3', 'user-4'],
     managerId: 'user-1',
-    projectIds: ['project-456', 'project-789'],
+    projectIds: ['projects-456', 'projects-789'],
   },
 ];
 

@@ -140,7 +140,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
     title: 'Managements',
     items: [
       {
-        id: 'project-management',
+        id: 'projects-management',
         label: 'Project Management',
         href: '/managements/projects',
         icon: React.createElement(Folder, { size: 20, className: "text-gray-300" }),
@@ -175,7 +175,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
  */
 export const RBAC_QUICK_ACTIONS = [
   {
-    id: 'create-project',
+    id: 'create-projects',
     label: 'Create Project',
     href: '/projects/create',
     icon: React.createElement(Plus, { size: 16, className: "text-gray-300" }),

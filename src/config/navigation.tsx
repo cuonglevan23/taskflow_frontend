@@ -151,12 +151,12 @@ export const navigationConfig: NavigationConfig = {
       defaultExpanded: true,
       items: [
         {
-          id: "project-management",
+          id: "projects-management",
           label: "Project Management",
-          href: "/project-management",
+          href: "/projects-management",
           icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/project-management",
-          permission: "project_management", // Custom permission for project management (Owner only)
+          activePattern: "/projects-management",
+          permission: "project_management", // Custom permission for projects management (Owner only)
         },
         {
           id: "team-management",

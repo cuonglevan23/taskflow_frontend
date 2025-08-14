@@ -144,7 +144,7 @@ const generateMockTasks = (projectId: string, projectName: string): TaskListItem
   {
     id: `${projectId}-task-4`,
     name: `Documentation Sprint for ${projectName}`,
-    description: 'Write comprehensive documentation for the project',
+    description: 'Write comprehensive documentation for the projects',
     status: 'in_progress' as TaskStatus,
     priority: 'low' as TaskPriority,
     assignees: [{ id: 'emma.davis', name: 'Emma Davis', avatar: 'ED' }],
@@ -184,7 +184,7 @@ export function ProjectCalendarProvider({ children }: ProjectCalendarProviderPro
     return tasks.map(convertToCalendarTask);
   }, [tasks]);
 
-  // Load tasks when project changes
+  // Load tasks when projects changes
   useEffect(() => {
     const loadProjectTasks = async () => {
       if (!project) return;
@@ -194,7 +194,7 @@ export function ProjectCalendarProvider({ children }: ProjectCalendarProviderPro
       
       try {
         // In real app, this would be an API call
-        // const response = await fetch(`/api/projects/${project.id}/tasks`);
+        // const response = await fetch(`/api/projects/${projects.id}/tasks`);
         // const projectTasks = await response.json();
         
         // For now, use mock data
@@ -203,8 +203,8 @@ export function ProjectCalendarProvider({ children }: ProjectCalendarProviderPro
         setTasks(mockTasks);
         
       } catch (err) {
-        setError('Failed to load project tasks');
-        console.error('Error loading project tasks:', err);
+        setError('Failed to load projects tasks');
+        console.error('Error loading projects tasks:', err);
       } finally {
         setLoading(false);
       }

@@ -333,7 +333,7 @@ export default function InviteModal({
                         color: theme.text.primary,
                       }}
                     >
-                      <span>{selectedProject?.name || "Select project"}</span>
+                      <span>{selectedProject?.name || "Select projects"}</span>
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   }

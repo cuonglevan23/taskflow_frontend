@@ -65,7 +65,7 @@ export default function SidebarSection({
 
     const quickActions = [];
 
-    // Projects section - Create project button
+    // Projects section - Create projects button
     if (section.id === NAV_SECTIONS.PROJECTS) {
       quickActions.push(
         <li key="create-project">

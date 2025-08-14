@@ -214,7 +214,7 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
       
       setProjects(prev => [newProject, ...prev]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add project');
+      setError(err instanceof Error ? err.message : 'Failed to add projects');
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +234,7 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
           : project
       ));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update project');
+      setError(err instanceof Error ? err.message : 'Failed to update projects');
     } finally {
       setIsLoading(false);
     }
@@ -250,7 +250,7 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
       
       setProjects(prev => prev.filter(project => project.id !== id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete project');
+      setError(err instanceof Error ? err.message : 'Failed to delete projects');
     } finally {
       setIsLoading(false);
     }
@@ -270,7 +270,7 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
         updatedAt: project.id === id ? new Date() : project.updatedAt
       })));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set featured project');
+      setError(err instanceof Error ? err.message : 'Failed to set featured projects');
     } finally {
       setIsLoading(false);
     }

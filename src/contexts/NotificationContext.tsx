@@ -136,7 +136,7 @@ const INITIAL_NOTIFICATIONS: BaseNotification[] = [
     id: "1",
     type: "task",
     title: "Task assigned to you",
-    content: "Complete project proposal by end of week",
+    content: "Complete projects proposal by end of week",
     priority: "high",
     status: "unread",
     timestamp: new Date(),
@@ -150,7 +150,7 @@ const INITIAL_NOTIFICATIONS: BaseNotification[] = [
   {
     id: "2", 
     type: "project",
-    title: "New project created",
+    title: "New projects created",
     content: "Project Alpha has been created and you're assigned as PM",
     priority: "medium",
     status: "unread", 

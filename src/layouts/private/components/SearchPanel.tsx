@@ -45,30 +45,30 @@ export default function SearchPanel({
       tasks: [
         {
           id: "1",
-          title: "Draft project brief",
+          title: "Draft projects brief",
           type: "task",
-          description: "Cross-functional project plan",
+          description: "Cross-functional projects plan",
           avatar: "LC",
         },
         {
           id: "2",
           title: "Schedule kickoff meeting",
           type: "task",
-          description: "Cross-functional project plan",
+          description: "Cross-functional projects plan",
           avatar: "JD",
         },
       ],
       projects: [
         {
           id: "3",
-          title: "Cross-functional project plan",
+          title: "Cross-functional projects plan",
           type: "project",
           description: "K",
           avatar: "K",
         },
         {
           id: "4",
-          title: "K 1 project",
+          title: "K 1 projects",
           type: "project",
           description: "Marketing initiative",
         },
@@ -90,7 +90,7 @@ export default function SearchPanel({
     () => [
       {
         id: "r1",
-        title: "Cross-functional project plan",
+        title: "Cross-functional projects plan",
         type: "project",
         description: "K",
         avatar: "K",
@@ -99,14 +99,14 @@ export default function SearchPanel({
         id: "r2",
         title: "Schedule kickoff meeting",
         type: "task",
-        description: "Cross-functional project plan",
+        description: "Cross-functional projects plan",
         avatar: "LC",
       },
       {
         id: "r3",
-        title: "Draft project brief",
+        title: "Draft projects brief",
         type: "task",
-        description: "Cross-functional project plan",
+        description: "Cross-functional projects plan",
         avatar: "LC",
       },
     ],

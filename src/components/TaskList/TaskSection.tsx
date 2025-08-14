@@ -6,7 +6,7 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskSection as TaskSectionType, TaskListItem, TaskListActions, TaskStatus } from './types';
 import TaskRow from './TaskRow';
 import TaskCard from './TaskCard';
-import DueDatePicker from '@/app/project/list/components/DueDatePicker';
+import DueDatePicker from '@/app/projects/list/components/DueDatePicker';
 import { EnhancedCalendar } from '@/components/features/EnhancedCalendar';
 
 interface TaskSectionProps {

@@ -1,6 +1,6 @@
 /**
  * Centralized image assets management
- * Provides type-safe access to all project images
+ * Provides type-safe access to all projects images
  */
 
 // Base paths for different image categories

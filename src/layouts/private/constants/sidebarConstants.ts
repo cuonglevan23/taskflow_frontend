@@ -50,7 +50,7 @@ export const NAV_SECTIONS = {
 // Default expanded sections
 export const DEFAULT_EXPANDED_SECTIONS = [NAV_SECTIONS.MAIN];
 
-// Role-based project titles
+// Role-based projects titles
 export const PROJECT_TITLES = {
   MEMBER: 'Projects ',
   LEADER: 'Projects ',

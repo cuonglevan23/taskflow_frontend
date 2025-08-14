@@ -73,7 +73,7 @@ export const useTaskData = (id: string | null) => {
   };
 };
 
-// Hook: Get tasks by project
+// Hook: Get tasks by projects
 export const useTasksByProjectData = (
   projectId: string | null,
   params?: {

@@ -151,7 +151,7 @@ const ProjectsCard = () => {
 
   // Business Logic using Hook
   const handleCreateProject = () => {
-    // Example: Add a new project
+    // Example: Add a new projects
     addProject({
       name: "New Project",
       color: "#8b5cf6",
@@ -167,7 +167,7 @@ const ProjectsCard = () => {
   // BaseCard Configuration
   const createAction: ActionButtonConfig = {
     icon: FaPlus,
-    label: "Create project",
+    label: "Create projects",
     onClick: handleCreateProject
   };
 

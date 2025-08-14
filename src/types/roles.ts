@@ -241,12 +241,12 @@ export interface UserWithRole {
   email: string;
   role: UserRole;
   permissions?: Permission[];
-  projectRoles?: Record<string, UserRole>; // Different roles per project
+  projectRoles?: Record<string, UserRole>; // Different roles per projects
   avatar?: string; // Avatar URL from OAuth or backend
   isFirstLogin?: boolean; // OAuth first login flag
 }
 
-// Context-specific permissions (e.g., project-level roles)
+// Context-specific permissions (e.g., projects-level roles)
 export interface ContextPermission {
   userId: string;
   contextType: 'project' | 'team' | 'portfolio';

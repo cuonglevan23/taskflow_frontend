@@ -95,9 +95,9 @@ export function ProjectStatus() {
       }`}>
         <div className={styles.statusTitle}>{currentStatus.label}</div>
         <div className={styles.statusDescription}>
-          {data.projectStatus === 'on_track' && 'This project is progressing well and meeting all milestones.'}
-          {data.projectStatus === 'at_risk' && 'This project has some challenges that need attention.'}
-          {data.projectStatus === 'off_track' && 'This project needs immediate attention to get back on track.'}
+          {data.projectStatus === 'on_track' && 'This projects is progressing well and meeting all milestones.'}
+          {data.projectStatus === 'at_risk' && 'This projects has some challenges that need attention.'}
+          {data.projectStatus === 'off_track' && 'This projects needs immediate attention to get back on track.'}
         </div>
         <div className={styles.statusSummary}>
           Summary: This is a sample project status update in Asana. 

@@ -5,8 +5,8 @@ import { TaskListActions, TaskListItem, TaskStatus, TaskPriority } from '@/compo
 import { useProjectTasks } from '../context/ProjectTasksContext';
 
 /**
- * Custom hook providing task actions for project task list
- * Integrates with ProjectTasksContext for project-specific operations
+ * Custom hook providing task actions for projects task list
+ * Integrates with ProjectTasksContext for projects-specific operations
  */
 export function useProjectTaskActions(): TaskListActions {
   const {

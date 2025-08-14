@@ -10,7 +10,7 @@ interface ProjectLayoutProps {
   }>
 }
 
-// Generate metadata for dynamic project pages
+// Generate metadata for dynamic projects pages
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   try {
     // Await params before accessing properties (Next.js 15 requirement)

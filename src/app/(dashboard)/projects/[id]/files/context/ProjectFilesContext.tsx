@@ -92,7 +92,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     },
     url: '/demo.png',
     tags: ['screenshot', 'demo', 'ui'],
-    description: 'Demo screenshot showing project interface',
+    description: 'Demo screenshot showing projects interface',
     version: 1,
     isShared: true,
     sharedWith: ['sarah.wilson', 'john.doe'],
@@ -113,7 +113,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     },
     url: `/files/${projectId}/design_specs.pdf`,
     tags: ['design', 'specification', 'ui'],
-    description: 'Design specifications and wireframes for the project',
+    description: 'Design specifications and wireframes for the projects',
     version: 1,
     isShared: true,
     sharedWith: ['john.doe', 'mike.chen'],
@@ -275,7 +275,7 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
 
-  // Load files when project changes
+  // Load files when projects changes
   useEffect(() => {
     const loadProjectFiles = async () => {
       if (!project) return;
@@ -295,8 +295,8 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
         setCurrentFolder(mockFolders.find(f => f.id === 'root') || null);
         
       } catch (err) {
-        setError('Failed to load project files');
-        console.error('Error loading project files:', err);
+        setError('Failed to load projects files');
+        console.error('Error loading projects files:', err);
       } finally {
         setLoading(false);
       }

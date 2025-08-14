@@ -61,7 +61,7 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
   useEffect(() => {
     const fetchProject = async () => {
       if (!projectId) {
-        setError('No project ID provided');
+        setError('No projects ID provided');
         updatePageTitle('Invalid Project');
         setLoading(false);
         return;
@@ -89,9 +89,9 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
           setTimeout(() => updatePageTitle('Project Not Found'), 50);
         }
       } catch (err) {
-        console.error('Error fetching project:', err);
+        console.error('Error fetching projects:', err);
         setProject(null);
-        setError('Failed to load project');
+        setError('Failed to load projects');
         setTimeout(() => updatePageTitle('Project Error'), 50);
       } finally {
         setLoading(false);

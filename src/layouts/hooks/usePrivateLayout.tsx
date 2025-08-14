@@ -132,9 +132,9 @@ export function usePrivateLayout(
 
     if (user.permissions.includes(Permission.CREATE_PROJECT)) {
       actions.push({
-        id: "create-project",
+        id: "create-projects",
         title: "New Project",
-        description: "Create a new project",
+        description: "Create a new projects",
         icon: "plus",
         href: "/projects/create",
         color: "blue",
@@ -170,7 +170,7 @@ export function usePrivateLayout(
       actions.push({
         id: "view-reports",
         title: "Reports",
-        description: "View project reports",
+        description: "View projects reports",
         icon: "chart-line",
         href: "/reports",
         color: "orange",
@@ -275,7 +275,7 @@ export function usePrivateLayout(
           {
             id: "1",
             title: `Project containing "${query}"`,
-            description: "A project that matches your search",
+            description: "A projects that matches your search",
             type: "project",
             url: "/projects/1",
             icon: "folder",

@@ -198,7 +198,7 @@ export interface UserInfo {
   role?: string;
 }
 
-// Generic project info
+// Generic projects info
 export interface ProjectInfo {
   id: string;
   name: string;

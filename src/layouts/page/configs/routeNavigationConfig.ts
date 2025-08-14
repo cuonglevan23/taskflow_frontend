@@ -173,27 +173,27 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
       },
       {
         label: 'List',
-        href: '/project/list',
+        href: '/projects/list',
         icon: LAYOUT_ICONS.list,
       },
       {
         label: 'Board',
-        href: '/project/board',
+        href: '/projects/board',
         icon: LAYOUT_ICONS.board,
       },
       {
         label: 'Calendar',
-        href: '/project/calendar',
+        href: '/projects/calendar',
         icon: LAYOUT_ICONS.calendar,
       },
       {
         label: 'Dashboard',
-        href: '/project/dashboard',
+        href: '/projects/dashboard',
         icon: LAYOUT_ICONS.timeline,
       },
       {
         label: 'File',
-        href: '/project/file',
+        href: '/projects/file',
         icon: FILE_ICONS.document,
       },
     ],
@@ -211,7 +211,7 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
     navItems: [
       {
         label: 'Overview',
-        href: '/owner/project',
+        href: '/owner/projects',
         icon: LAYOUT_ICONS.grid,
       },
       {

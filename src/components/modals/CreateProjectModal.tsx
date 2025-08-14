@@ -250,7 +250,7 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
     }
 
     try {
-      // Create project using global project system
+      // Create projects using global projects system
       const randomColor =
         PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)];
       const newProject = {
@@ -274,17 +274,17 @@ export default function CreateProjectModal({ isOpen, onClose }: Props) {
         tasksDue: 0,
       };
 
-      // Add to global project system
+      // Add to global projects system
       addProject(newProject);
 
-      console.log("Creating project:", newProject);
+      console.log("Creating projects:", newProject);
       await new Promise((res) => setTimeout(res, 300));
 
       reset();
       onClose();
       router.refresh();
     } catch (error) {
-      console.error("Failed to create project:", error);
+      console.error("Failed to create projects:", error);
     }
   };
 

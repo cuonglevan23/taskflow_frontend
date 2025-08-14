@@ -102,7 +102,7 @@ const generateMockTasks = (projectId: string, projectName: string): TaskListItem
   {
     id: `${projectId}-task-1`,
     name: `Schedule kickoff`,
-    description: 'Initial project kickoff meeting with stakeholders',
+    description: 'Initial projects kickoff meeting with stakeholders',
     status: 'in_progress' as TaskStatus,
     priority: 'high' as TaskPriority,
     assignees: [{ id: 'vl', name: 'VL', avatar: 'VL' }],
@@ -117,7 +117,7 @@ const generateMockTasks = (projectId: string, projectName: string): TaskListItem
   {
     id: `${projectId}-task-2`,
     name: `Share timeline with`,
-    description: 'Share project timeline with team members',
+    description: 'Share projects timeline with team members',
     status: 'todo' as TaskStatus,
     priority: 'medium' as TaskPriority,
     assignees: [{ id: 'team', name: 'Team', avatar: 'T' }],
@@ -191,7 +191,7 @@ export function ProjectTimelineProvider({ children }: ProjectTimelineProviderPro
     return groupTasksBySection(ganttTasks);
   }, [ganttTasks]);
 
-  // Load tasks when project changes
+  // Load tasks when projects changes
   useEffect(() => {
     const loadProjectTasks = async () => {
       if (!project) return;
@@ -201,7 +201,7 @@ export function ProjectTimelineProvider({ children }: ProjectTimelineProviderPro
       
       try {
         // In real app, this would be an API call
-        // const response = await fetch(`/api/projects/${project.id}/tasks`);
+        // const response = await fetch(`/api/projects/${projects.id}/tasks`);
         // const projectTasks = await response.json();
         
         // For now, use mock data
@@ -210,8 +210,8 @@ export function ProjectTimelineProvider({ children }: ProjectTimelineProviderPro
         setTasks(mockTasks);
         
       } catch (err) {
-        setError('Failed to load project tasks');
-        console.error('Error loading project tasks:', err);
+        setError('Failed to load projects tasks');
+        console.error('Error loading projects tasks:', err);
       } finally {
         setLoading(false);
       }
