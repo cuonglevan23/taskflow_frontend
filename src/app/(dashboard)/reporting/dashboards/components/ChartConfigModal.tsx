@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { BaseModal } from "@/components/ui/Modal";
+import { BaseModal } from "@/components/ui";
 import { 
   BarChart, 
   LineChart, 

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { ChevronDown, ArrowLeft, X, Sparkles } from "lucide-react";
-import { BaseModal } from "@/components/ui/Modal";
+import { BaseModal } from "@/components/ui";
 import Image from "next/image";
 
 /* ===================== Types ===================== */
