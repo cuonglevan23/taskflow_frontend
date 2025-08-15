@@ -64,19 +64,50 @@ export function useChartModal(): UseChartModalReturn {
   };
 
   // Chart actions
-  const addChart = (config: ChartConfig & { type: ChartType }) => {
-    const newChart: Chart = {
-      ...config,
-      id: `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    setCharts(prev => [...prev, newChart]);
-    setIsConfigModalOpen(false);
-    setSelectedChartType(null);
-    
-    console.log('Chart added:', newChart);
+  const addChart = async (config: ChartConfig & { type: ChartType }) => {
+    try {
+      // Create new dashboard with the chart
+      const newDashboard = {
+        name: config.title || "New Dashboard",
+        color: "#8b5cf6",
+        owner: { id: "user-1", name: "Văn Lê", initials: "VL" },
+        isRecent: true,
+      };
+
+      // Generate dashboard ID
+      const dashboardId = Date.now().toString();
+      
+      // Create chart
+      const newChart: Chart = {
+        ...config,
+        id: `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Store in localStorage to persist across navigation
+      const dashboardData = {
+        ...newDashboard,
+        id: dashboardId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Store dashboard and chart in localStorage
+      localStorage.setItem(`dashboard_${dashboardId}`, JSON.stringify(dashboardData));
+      localStorage.setItem(`dashboard_charts_${dashboardId}`, JSON.stringify([newChart]));
+
+      setIsConfigModalOpen(false);
+      setSelectedChartType(null);
+      
+      console.log('✅ Dashboard created with chart:', { dashboardId, chart: newChart });
+      
+      // Navigate to new dashboard
+      window.location.href = `/reporting/dashboards/${dashboardId}`;
+      
+    } catch (error) {
+      console.error('❌ Failed to create dashboard with chart:', error);
+    }
   };
 
   const removeChart = (id: string) => {

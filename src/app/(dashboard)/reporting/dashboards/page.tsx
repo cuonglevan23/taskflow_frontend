@@ -69,7 +69,7 @@ export default function DashboardsPage({
   };
 
   const handleCreateDashboard = async () => {
-    // Open chart selection modal instead of creating empty dashboard
+    // Open chart selection modal first
     openSelectModal();
   };
 

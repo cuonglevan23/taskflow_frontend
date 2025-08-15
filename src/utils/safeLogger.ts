@@ -25,6 +25,22 @@ export class SafeLogger {
     }
   }
   
+  static debug(message: string, ...args: any[]) {
+    try {
+      const safeArgs = args.map(arg => {
+        try {
+          return JSON.stringify(arg);
+        } catch {
+          return '[Object]';
+        }
+      });
+      
+      console.debug(message, ...safeArgs);
+    } catch (error) {
+      console.debug('🔍 Debug message (details unavailable)');
+    }
+  }
+  
   static warn(message: string, ...args: any[]) {
     try {
       const safeArgs = args.map(arg => {

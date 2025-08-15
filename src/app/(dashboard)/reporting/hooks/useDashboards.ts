@@ -89,7 +89,7 @@ export const useDashboards = (config: UseDashboardsConfig = {}) => {
       // In real app, this would call API
       const newDashboard: Dashboard = {
         ...dashboardData,
-        id: `dashboard-${Date.now()}`,
+        id: `${Date.now()}`, // Simple numeric ID
         createdAt: new Date(),
         updatedAt: new Date(),
       };

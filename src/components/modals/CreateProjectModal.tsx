@@ -1,288 +1,393 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import "@/app/globals.css";
-import {
-  Calendar,
-  FileText,
-  Mail,
-  User,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import Input from "@/components/ui/Input/Input";
-import { Button } from "@/components/ui/Button";
-import Dropdown, { DropdownItem } from "@/components/ui/Dropdown/Dropdown";
+import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { useProjects } from "@/hooks";
-import { GrProjects } from "react-icons/gr";
+import { ChevronDown, ArrowLeft, X, Sparkles } from "lucide-react";
+import { BaseModal } from "@/components/ui/Modal";
+import Image from "next/image";
 
 /* ===================== Types ===================== */
-export type FormData = {
-  name: string;
-  description: string;
-  startDate: string; // YYYY-MM-DD (native date input)
-  endDate?: string;
-  pmEmail: string;
-  status: string;
-};
-
-interface Props {
+interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreateProject?: (projectData: ProjectFormData) => void;
 }
 
-const STATUS_OPTIONS = [
-  { label: "Planned", color: "bg-blue-500" },
-  { label: "In Progress", color: "bg-yellow-500" },
-  { label: "Blocked", color: "bg-red-500" },
-  { label: "At Risk", color: "bg-orange-500" },
-  { label: "Completed", color: "bg-green-500" },
-  { label: "Cancelled", color: "bg-gray-500" },
-];
+interface ProjectFormData {
+  name: string;
+  privacy: string;
+}
 
-const PROJECT_COLORS = [
-  "#8b5cf6", // Purple
-  "#3b82f6", // Blue
-  "#10b981", // Green
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#ec4899", // Pink
-  "#06b6d4", // Cyan
-  "#84cc16", // Lime
-  "#f97316", // Orange
-  "#6366f1", // Indigo
-];
+interface PrivacyOption {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+}
 
-/* ===================== Helpers ===================== */
-const formatYMD = (date: Date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
-
-const getCalendarGrid = (monthDate: Date) => {
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const start = new Date(firstDay);
-  const startDay = firstDay.getDay(); // 0 = Sun
-  start.setDate(firstDay.getDate() - startDay);
-
-  const days: Date[] = [];
-  const current = new Date(start);
-  for (let i = 0; i < 42; i++) {
-    days.push(new Date(current));
-    current.setDate(current.getDate() + 1);
+/* ===================== Privacy Options ===================== */
+const PRIVACY_OPTIONS: PrivacyOption[] = [
+  {
+    id: "workspace",
+    label: "My workspace",
+    description: "Visible to workspace members",
+    icon: "🏢"
+  },
+  {
+    id: "private",
+    label: "Private to me",
+    description: "Only visible to you",
+    icon: "🔒"
+  },
+  {
+    id: "team",
+    label: "Team project", 
+    description: "Visible to team members",
+    icon: "👥"
   }
-  return days;
-};
-
-/* ===================== Stateless Subcomponents ===================== */
-const MonthLabel: React.FC<{ date: Date }> = ({ date }) => {
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  return (
-    <span className="font-semibold">
-      {months[date.getMonth()]} {date.getFullYear()}
-    </span>
-  );
-};
-
-const CalendarPopover: React.FC<{
-  month: Date;
-  setMonth: (d: Date) => void;
-  onSelect: (d: Date) => void;
-  minDate?: string; // YYYY-MM-DD
-  theme: ReturnType<typeof useTheme>["theme"];
-  todayYMD: string;
-}> = ({ month, setMonth, onSelect, minDate, theme, todayYMD }) => {
-  const days = getCalendarGrid(month);
-  const min = minDate ? new Date(minDate) : undefined;
-
-  const isDisabled = (d: Date) =>
-    min
-      ? d < new Date(min.getFullYear(), min.getMonth(), min.getDate())
-      : false;
-
-  return (
-    <div
-      className="rounded-lg shadow-lg border p-3 w-72"
-      style={{
-        backgroundColor: theme.background.primary,
-        borderColor: theme.border.default,
-        color: theme.text.primary,
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <button
-          type="button"
-          className="p-1 rounded hover:bg-gray-600/20"
-          onClick={() =>
-            setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
-          }
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <MonthLabel date={month} />
-        <button
-          type="button"
-          className="p-1 rounded hover:bg-gray-600/20"
-          onClick={() =>
-            setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
-          }
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 text-xs mb-1 opacity-70">
-        {"SUN MON TUE WED THU FRI SAT".split(" ").map((d) => (
-          <div key={d} className="text-center">
-            {d}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((d, idx) => {
-          const inMonth = d.getMonth() === month.getMonth();
-          const isToday = formatYMD(d) === todayYMD;
-          const disabled = isDisabled(d) || !inMonth;
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelect(d)}
-              className={`h-8 rounded text-sm ${
-                disabled
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-gray-600/20"
-              } ${isToday ? "ring-1" : ""}`}
-            >
-              {d.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+];
 
 /* ===================== Main Component ===================== */
-export default function CreateProjectModal({ isOpen, onClose }: Props) {
-  const router = useRouter();
+export default function CreateProjectModal({
+  isOpen,
+  onClose,
+  onCreateProject
+}: CreateProjectModalProps) {
   const { theme } = useTheme();
-  const { addProject } = useProjects();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setError,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    defaultValues: {
-      name: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      pmEmail: "",
-      status: "Planned",
-    },
-  });
-
-  const today = useMemo(() => formatYMD(new Date()), []);
-  const startDateValue = watch("startDate");
-  const statusValue = watch("status");
-
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [isStartCalOpen, setIsStartCalOpen] = useState(false);
-  const [isEndCalOpen, setIsEndCalOpen] = useState(false);
-  const [startMonth, setStartMonth] = useState<Date>(new Date());
-  const [endMonth, setEndMonth] = useState<Date>(new Date());
-  // Colors are assigned randomly on submit; no UI selection needed
-
-  const handleStatusChange = (status: string) => {
-    setValue("status", status, { shouldDirty: true });
-    setIsStatusOpen(false);
+  
+  // Form state
+  const [projectName, setProjectName] = useState("");
+  const [selectedPrivacy, setSelectedPrivacy] = useState<PrivacyOption>(PRIVACY_OPTIONS[0]);
+  const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = useState(false);
+  const [nameError, setNameError] = useState("");
+  
+  // Validation
+  const validateForm = () => {
+    if (!projectName.trim()) {
+      setNameError("Project name is required.");
+      return false;
+    }
+    setNameError("");
+    return true;
   };
-
-  const onSubmit = async (data: FormData) => {
-    if (data.endDate) {
-      if (data.endDate < today) {
-        setError("endDate", { message: "End date cannot be in the past" });
-        return;
-      }
-      if (data.endDate < data.startDate) {
-        setError("endDate", {
-          message: "End date must be after or equal to start date",
-        });
-        return;
-      }
+  
+  // Handlers
+  const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProjectName(e.target.value);
+    if (nameError) {
+      setNameError("");
     }
-
-    try {
-      // Create projects using global projects system
-      const randomColor =
-        PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)];
-      const newProject = {
-        name: data.name,
-        description: data.description,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        pmEmail: data.pmEmail,
-        status: (() => {
-          switch (data.status) {
-            case "Completed":
-              return "completed" as const;
-            case "Cancelled":
-              return "archived" as const;
-            default:
-              return "active" as const;
-          }
-        })(),
-        color: randomColor,
-        icon: GrProjects,
-        tasksDue: 0,
+  };
+  
+  const handlePrivacySelect = (privacy: PrivacyOption) => {
+    setSelectedPrivacy(privacy);
+    setIsPrivacyDropdownOpen(false);
+  };
+  
+  const handleSetupWithAI = () => {
+    if (validateForm()) {
+      console.log("Setting up with Asana AI:", { projectName, privacy: selectedPrivacy });
+      // Handle AI setup logic
+    }
+  };
+  
+  const handleContinue = () => {
+    if (validateForm()) {
+      const projectData: ProjectFormData = {
+        name: projectName,
+        privacy: selectedPrivacy.id
       };
-
-      // Add to global projects system
-      addProject(newProject);
-
-      console.log("Creating projects:", newProject);
-      await new Promise((res) => setTimeout(res, 300));
-
-      reset();
+      
+      if (onCreateProject) {
+        onCreateProject(projectData);
+      }
+      
+      // Reset form
+      setProjectName("");
+      setSelectedPrivacy(PRIVACY_OPTIONS[0]);
+      setNameError("");
       onClose();
-      router.refresh();
-    } catch (error) {
-      console.error("Failed to create projects:", error);
     }
+  };
+  
+  const handleClose = () => {
+    // Reset form on close
+    setProjectName("");
+    setSelectedPrivacy(PRIVACY_OPTIONS[0]);
+    setNameError("");
+    onClose();
   };
 
   return (
-   <></>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      maxWidth="7xl"
+      height="screen"
+      showHeader={false}
+      className="m-0 max-w-none w-screen h-screen rounded-none overflow-hidden"
+    >
+      <div 
+        className="flex h-screen"
+        style={{ backgroundColor: theme.background.primary }}
+      >
+        {/* Left Panel - Form */}
+        <div 
+          className="w-1/2 flex flex-col px-16 py-12 relative"
+          style={{ backgroundColor: theme.background.primary }}
+        >
+          {/* Header - Within left panel only */}
+          <div className="flex items-center justify-between mb-16">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleClose}
+                className="p-2 rounded-lg transition-colors"
+                style={{ 
+                  color: theme.text.secondary,
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+              <h1 
+                className="text-3xl font-semibold"
+                style={{ color: theme.text.primary }}
+              >
+                New project
+              </h1>
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="max-w-md mx-auto flex-1 flex flex-col justify-center">
+
+            {/* Project Name */}
+            <div className="mb-8">
+              <label 
+                className="block text-base font-medium mb-3"
+                style={{ color: theme.text.primary }}
+              >
+                Project name
+              </label>
+              <input
+                type="text"
+                value={projectName}
+                onChange={handleProjectNameChange}
+                className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-base ${
+                  nameError ? 'border-red-500 bg-red-50' : ''
+                }`}
+                style={{
+                  backgroundColor: nameError ? 'rgba(239, 68, 68, 0.1)' : theme.background.secondary,
+                  color: theme.text.primary,
+                  borderColor: nameError ? '#ef4444' : 'transparent',
+                  outline: 'none'
+                }}
+                placeholder=""
+                onFocus={(e) => {
+                  if (!nameError) {
+                    e.target.style.borderColor = '#3b82f6';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!nameError) {
+                    e.target.style.borderColor = 'transparent';
+                  }
+                }}
+              />
+              {nameError && (
+                <p className="text-red-500 text-sm mt-2 font-medium">{nameError}</p>
+              )}
+            </div>
+
+            {/* Privacy */}
+            <div className="mb-12">
+              <label 
+                className="block text-base font-medium mb-3"
+                style={{ color: theme.text.primary }}
+              >
+                Privacy
+              </label>
+              <div className="relative">
+                <button
+                  onClick={() => setIsPrivacyDropdownOpen(!isPrivacyDropdownOpen)}
+                  className="w-full p-4 rounded-lg border flex items-center justify-between transition-all duration-200 text-base"
+                  style={{
+                    backgroundColor: theme.background.secondary,
+                    borderColor: 'transparent',
+                    color: theme.text.primary,
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'transparent';
+                  }}
+                >
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">{selectedPrivacy.icon}</span>
+                  <span>{selectedPrivacy.label}</span>
+                </div>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {isPrivacyDropdownOpen && (
+                <div 
+                  className="absolute top-full left-0 right-0 mt-1 border rounded-lg shadow-lg z-50"
+                  style={{
+                    backgroundColor: theme.background.primary,
+                    borderColor: theme.border.default,
+                  }}
+                >
+                  {PRIVACY_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => handlePrivacySelect(option)}
+                      className="w-full p-3 text-left hover:bg-opacity-80 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                      style={{
+                        backgroundColor: selectedPrivacy.id === option.id 
+                          ? theme.background.secondary 
+                          : 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedPrivacy.id !== option.id) {
+                          e.currentTarget.style.backgroundColor = theme.background.secondary;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedPrivacy.id !== option.id) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-lg">{option.icon}</span>
+                        <div>
+                          <div 
+                            className="font-medium"
+                            style={{ color: theme.text.primary }}
+                          >
+                            {option.label}
+                          </div>
+                          <div 
+                            className="text-xs"
+                            style={{ color: theme.text.secondary }}
+                          >
+                            {option.description}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          </div>
+
+          {/* Action Buttons - Fixed at bottom */}
+          <div className="max-w-md mx-auto w-full space-y-4 mt-8">
+            <button
+              onClick={handleSetupWithAI}
+              className="w-full p-4 rounded-lg border-2 border-dashed transition-all duration-200 flex items-center justify-center space-x-3 text-base font-medium"
+              style={{
+                borderColor: theme.text.secondary,
+                backgroundColor: 'transparent',
+                color: theme.text.primary,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.secondary;
+                e.currentTarget.style.borderColor = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = theme.text.secondary;
+              }}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>Set up with Asana AI</span>
+            </button>
+            
+            <button
+              onClick={handleContinue}
+              className="w-full p-4 rounded-lg transition-all duration-200 text-base font-medium"
+              style={{
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#3b82f6';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+
+        {/* Right Panel - Preview */}
+        <div 
+          className="w-1/2 flex flex-col px-16 py-12 border-l relative"
+          style={{ 
+            backgroundColor: theme.background.secondary,
+            borderLeftColor: theme.border.default
+          }}
+        >
+          {/* Close button in top right */}
+          <div className="absolute top-6 right-6">
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-lg transition-colors"
+              style={{ 
+                color: theme.text.secondary,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Preview Content - Centered */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="max-w-md mx-auto">
+              <div 
+                className="w-full h-[480px] rounded-xl overflow-hidden shadow-2xl border"
+                style={{ borderColor: theme.border.default }}
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src="/images/backgrounds/Updated_Dark_List.png"
+                    alt="Project template preview"
+                    fill
+                    className="object-cover object-center"
+                    priority
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </BaseModal>
   );
 }
+
+/* ===================== Export Types ===================== */
+export type { CreateProjectModalProps, ProjectFormData };

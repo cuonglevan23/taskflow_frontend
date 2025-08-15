@@ -62,7 +62,7 @@ const MOCK_DASHBOARDS: Record<string, Dashboard> = {
   }
 };
 
-const MOCK_DASHBOARD_CHARTS: Record<string, Chart[]> = {
+export const MOCK_DASHBOARD_CHARTS: Record<string, Chart[]> = {
   '1': [
     {
       id: 'chart-1',
@@ -134,12 +134,36 @@ export function useDashboard(dashboardId: string): UseDashboardReturn {
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        const dashboardData = MOCK_DASHBOARDS[dashboardId];
+        // Try to get from localStorage first (for newly created dashboards)
+        let dashboardData = MOCK_DASHBOARDS[dashboardId];
+        let chartsData = MOCK_DASHBOARD_CHARTS[dashboardId] || [];
+
+        if (!dashboardData) {
+          // Check localStorage for newly created dashboard
+          const storedDashboard = localStorage.getItem(`dashboard_${dashboardId}`);
+          const storedCharts = localStorage.getItem(`dashboard_charts_${dashboardId}`);
+          
+          if (storedDashboard) {
+            dashboardData = JSON.parse(storedDashboard);
+            // Convert date strings back to Date objects
+            dashboardData.createdAt = new Date(dashboardData.createdAt);
+            dashboardData.updatedAt = new Date(dashboardData.updatedAt);
+          }
+          
+          if (storedCharts) {
+            chartsData = JSON.parse(storedCharts);
+            // Convert date strings back to Date objects
+            chartsData = chartsData.map(chart => ({
+              ...chart,
+              createdAt: new Date(chart.createdAt),
+              updatedAt: new Date(chart.updatedAt)
+            }));
+          }
+        }
+
         if (!dashboardData) {
           throw new Error(`Dashboard with ID "${dashboardId}" not found`);
         }
-
-        const chartsData = MOCK_DASHBOARD_CHARTS[dashboardId] || [];
 
         setDashboard(dashboardData);
         setCharts(chartsData);
@@ -174,6 +198,8 @@ export function useDashboard(dashboardId: string): UseDashboardReturn {
       // Update mock data
       MOCK_DASHBOARDS[dashboardId] = updatedDashboard;
       
+      console.log('✅ Dashboard updated successfully:', updatedDashboard);
+      
       console.log('Dashboard updated:', updatedDashboard);
     } catch (err) {
       console.error('Failed to update dashboard:', err);
@@ -198,7 +224,8 @@ export function useDashboard(dashboardId: string): UseDashboardReturn {
       // Update mock data
       MOCK_DASHBOARD_CHARTS[dashboardId] = [...(MOCK_DASHBOARD_CHARTS[dashboardId] || []), newChart];
       
-      console.log('Chart added to dashboard:', newChart);
+      console.log('✅ Chart added to dashboard:', newChart);
+      console.log('📊 Dashboard now has', MOCK_DASHBOARD_CHARTS[dashboardId].length, 'charts');
     } catch (err) {
       console.error('Failed to add chart:', err);
     }

@@ -51,6 +51,7 @@ class ApiClient {
     // Request Interceptor - Authentication & Logging
     this.instance.interceptors.request.use(
       (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+        // Get token only from cookies
         const token = CookieAuth.getAccessToken();
         
         if (token && config.headers) {
