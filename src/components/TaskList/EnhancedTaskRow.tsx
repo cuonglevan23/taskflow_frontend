@@ -61,7 +61,7 @@ const EnhancedTaskRow = ({
 
   const handleStatusChange = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const nextStatus = task.status === 'done' ? 'todo' : 'done';
+    const nextStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
     actions?.onTaskStatusChange?.(task.id, nextStatus);
   };
 
@@ -169,7 +169,7 @@ const EnhancedTaskRow = ({
             >
               <CheckCircle
                 className={`w-5 h-5 ${
-                  task.status === 'done' 
+                  task.status === 'DONE' 
                     ? 'text-green-500 fill-current' 
                     : 'text-gray-400 hover:text-gray-600'
                 }`}
@@ -191,10 +191,10 @@ const EnhancedTaskRow = ({
             ) : (
               <div 
                 className={`font-medium truncate cursor-text transition-all duration-150 px-2 py-1 rounded min-h-[28px] flex items-center ${
-                  task.status === 'done' ? 'line-through text-gray-500' : ''
+                  task.status === 'DONE' ? 'line-through text-gray-500' : ''
                 } hover:bg-gray-100 hover:shadow-sm`}
                 style={{ 
-                  color: task.status === 'done' ? theme.text.secondary : theme.text.primary,
+                  color: task.status === 'DONE' ? theme.text.secondary : theme.text.primary,
                   backgroundColor: editingField === 'name' ? 'rgba(59, 130, 246, 0.05)' : 'transparent'
                 }}
                 onClick={(e) => startEditing('name', task.name, e)}
@@ -383,11 +383,11 @@ const EnhancedTaskRow = ({
             onKeyDown={handleKeyPress}
             className="w-full text-xs bg-white border border-blue-500 rounded px-2 py-1 focus:outline-none shadow-sm"
           >
-            <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="done">Done</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="TODO">To Do</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="REVIEW">Review</option>
+            <option value="DONE">Done</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
         ) : (
           <div

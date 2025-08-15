@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { SimpleCalendar } from '@/components/Calendar';
+// import { SimpleCalendar } from '@/components/Calendar';
 import { TaskListHeader } from '@/components/TaskList';
 import { ProjectCalendarProvider, useProjectCalendar } from './context/ProjectCalendarContext';
 import { useProjectCalendarActions } from './hooks/useProjectCalendarActions';

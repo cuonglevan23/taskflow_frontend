@@ -3,13 +3,10 @@
 
 // Import everything from the new modular structure
 export { 
-  taskService,
-  taskApi,
   transformBackendTask,
   transformMyTasksSummary,
   transformMyTasksFull,
-  debugAuth
-} from './task';
+} from './tasks/tasksService';
 
 // Re-export types for backward compatibility
 export type { 
@@ -27,5 +24,5 @@ export type {
   MyTasksStats
 } from '@/types/task';
 
-export type { TaskFilter, TaskSort } from './task';
+// export type { TaskFilter, TaskSort } from './tasks/tasksService';
 

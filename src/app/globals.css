@@ -6,6 +6,10 @@
   --color-background-primary: #0f172a;
   --color-text-primary: #e2e8f0;
   --color-text-secondary: #94a3b8;
+
+  /* shadcn/ui compatibility variables (used by bg-background, text-foreground, etc.) */
+  --background: 222.2 47.4% 11.2%; /* hsl for #0f172a */
+  --foreground: 210 40% 98%;
 }
 
 /* Light theme override */
@@ -13,6 +17,10 @@
   --color-background-primary: #ffffff;
   --color-text-primary: #213547;
   --color-text-secondary: #64748b;
+
+  /* shadcn/ui compatibility */
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
 }
 
 .custom-date::-webkit-calendar-picker-indicator {
@@ -42,6 +50,11 @@ body {
   height: 100% !important;
 }
 
+/* Ensure main content inherits dark background */
+main {
+  background-color: var(--color-background-primary) !important;
+}
+
 @layer utilities {
   /* Hỗ trợ Chrome, Safari, Edge */
   .scrollbar-hide::-webkit-scrollbar {
@@ -55,14 +68,32 @@ body {
   }
 
   /* Dark mode overrides for common light utility classes */
-  .dark .bg-white { background-color: #111827 !important; }
-  .dark .bg-gray-50 { background-color: #1f2937 !important; }
-  .dark .text-gray-900 { color: #f8fafc !important; }
-  .dark .text-gray-600 { color: #d1d5db !important; }
-  .dark .border-gray-200 { border-color: #374151 !important; }
+  .dark .bg-white {
+    background-color: #111827 !important;
+  }
+  .dark .bg-gray-50 {
+    background-color: #1f2937 !important;
+  }
+  .dark .text-gray-900 {
+    color: #f8fafc !important;
+  }
+  .dark .text-gray-600 {
+    color: #d1d5db !important;
+  }
+  .dark .border-gray-200 {
+    border-color: #374151 !important;
+  }
 }
 
 @layer components {
+  /* Map shadcn tokens to our theme variables to ensure components follow theme */
+  .bg-background {
+    background-color: hsl(var(--background)) !important;
+  }
+  .text-foreground {
+    color: hsl(var(--foreground)) !important;
+  }
+
   /* Force dark theme cho search components - Đảm bảo đồng bộ 100% */
   input[type="text"] {
     background-color: #1f2937 !important; /* gray-800 */
