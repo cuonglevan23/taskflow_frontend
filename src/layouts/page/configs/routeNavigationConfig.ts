@@ -4,11 +4,11 @@ import {
   LAYOUT_ICONS,
   USER_ICONS,
   FILE_ICONS,
-  PROJECT_ICONS,
   COMMUNICATION_ICONS,
   DATA_ICONS,
   NAVIGATION_ICONS,
 } from "@/constants/icons";
+import { Star } from "lucide-react";
 
 export interface RouteConfig {
   title: string;
@@ -248,7 +248,7 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
     title: 'Portfolios',
     avatarConfig: {
       type: 'icon',
-      icon: PROJECT_ICONS.star,
+      icon: Star,
       bgColor: 'purple-500',
     },
     navItems: [
@@ -259,6 +259,34 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
       {
         label: 'Browse all',
         href: '/portfolios/browse-all',
+      },
+    ],
+    actions: [],
+    showTabsPlus: false,
+  },
+
+  '/manager': {
+    title: 'Manager',
+    avatarConfig: {
+      type: 'icon',
+      icon: USER_ICONS.users,
+      bgColor: 'orange-500',
+    },
+    navItems: [
+      {
+        label: 'Projects',
+        href: '/manager/projects',
+        icon: NAVIGATION_ICONS.projects,
+      },
+      {
+        label: 'Teams',
+        href: '/manager/teams',
+        icon: USER_ICONS.users,
+      },
+      {
+        label: 'Users',
+        href: '/manager/users',
+        icon: USER_ICONS.user,
       },
     ],
     actions: [],

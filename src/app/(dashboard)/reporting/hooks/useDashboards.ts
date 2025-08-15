@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { type Dashboard } from "../components/DashboardCard";
+import { MOCK_DASHBOARDS } from "../dashboards/hooks/useDashboard";
 
 // Hook Configuration Interface
 interface UseDashboardsConfig {
@@ -11,39 +12,9 @@ interface UseDashboardsConfig {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Mock data generator - In real app, this would come from API
+// Mock data generator - Use shared mock dashboards
 const generateMockDashboards = (userId?: string): Dashboard[] => {
-  return [
-    {
-      id: "1",
-      name: "New dashboard",
-      color: "#8b5cf6", // Purple
-      owner: { id: "user-1", name: "Văn Lê", initials: "VL" },
-      createdAt: new Date('2024-01-20'),
-      updatedAt: new Date('2024-01-20'),
-      isRecent: true,
-    },
-    {
-      id: "2", 
-      name: "My first dashboard",
-      color: "#ec4899", // Pink
-      owner: { id: "user-1", name: "Văn Lê", initials: "VL" },
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-19'),
-      isRecent: true,
-    },
-    {
-      id: "3",
-      name: "Văn Lê's dashboard", 
-      description: "Team health and risks over time",
-      color: "#3b82f6", // Blue
-      owner: { id: "user-1", name: "Văn Lê", initials: "VL" },
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-18'),
-      isRecent: true,
-      tags: ['analytics', 'team'],
-    },
-  ];
+  return Object.values(MOCK_DASHBOARDS);
 };
 
 // Professional Dashboards Hook - Reusable across app

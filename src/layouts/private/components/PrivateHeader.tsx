@@ -1,29 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { User } from "@/types/auth";
-import Avatar from "@/components/ui/Avatar/Avatar";
 import Dropdown, {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/Dropdown/Dropdown";
 import SearchPanel from "./SearchPanel";
 import UserMenu from "./UserMenu";
-import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
+import { CreateButton } from "@/components/features/create";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { HiChevronDoubleLeft, HiChevronDoubleRight } from "react-icons/hi";
-import {
-  CheckSquare,
-  Folder,
-  MessageSquare,
-  Briefcase,
-  Target,
-  Users,
-} from "lucide-react";
-import CreateProjectModal from "@/components/modals/CreateProjectModal";
-import { InviteModal } from "@/components/modals";
+
+
 
 interface PrivateHeaderProps {
   user: User;
@@ -40,32 +27,14 @@ export default function PrivateHeader({
   isSidebarCollapsed,
   onLogout,
 }: PrivateHeaderProps) {
-  // Use useDisclosure for dropdowns and modals
-  const notificationDropdown = useDisclosure(false);
-  const userDropdown = useDisclosure(false);
-  const createProjectModal = useDisclosure(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const inviteModal = useDisclosure(false);
   const handleSearch = (query: string) => {
     // Handle search logic here
     console.log("Searching for:", query);
   };
 
-  const PlusIcon = () => (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
-  );
+  const handleCreateAction = (actionId: string) => {
+    console.log(`Create action triggered: ${actionId}`);
+  };
 
   const BellIcon = () => (
     <svg
@@ -121,71 +90,7 @@ export default function PrivateHeader({
         </button>
 
         {/* Create Button */}
-        <Dropdown
-          trigger={
-            <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full transition-colors text-sm font-medium">
-              <PlusIcon />
-              <span>Create</span>
-            </button>
-          }
-          placement="right"
-          usePortal={false}
-          contentClassName="w-48"
-          isOpen={isCreateOpen}
-          onOpenChange={setIsCreateOpen}
-        >
-          <div className="py-2">
-            <DropdownItem
-              icon={<CheckSquare className="w-4 h-4" />}
-              onClick={() => setIsCreateOpen(false)}
-            >
-              Task
-            </DropdownItem>
-
-            <DropdownItem
-              icon={<Folder className="w-4 h-4" />}
-              onClick={() => {
-                setIsCreateOpen(false);
-                createProjectModal.onOpen();
-              }}
-            >
-              Project
-            </DropdownItem>
-
-            <DropdownItem
-              icon={<MessageSquare className="w-4 h-4" />}
-              onClick={() => setIsCreateOpen(false)}
-            >
-              Message
-            </DropdownItem>
-
-            <DropdownItem
-              icon={<Briefcase className="w-4 h-4" />}
-              onClick={() => setIsCreateOpen(false)}
-            >
-              Portfolio
-            </DropdownItem>
-
-            <DropdownItem
-              icon={<Target className="w-4 h-4" />}
-              onClick={() => setIsCreateOpen(false)}
-            >
-              Goal
-            </DropdownItem>
-
-            <DropdownSeparator />
-
-            <DropdownItem
-              icon={<Users className="w-4 h-4" />}
-              onClick={() => {
-                setIsCreateOpen(false);
-                inviteModal.onOpen();
-              }}
-            >
-              Invite
-            </DropdownItem>
-          </div>
-        </Dropdown>
+        <CreateButton onActionClick={handleCreateAction} />
       </div>
 
       {/* Center Section - Search Panel */}
@@ -292,15 +197,7 @@ export default function PrivateHeader({
         />
       </div>
 
-      {/* Modals */}
-      <CreateProjectModal
-        isOpen={createProjectModal.isOpen}
-        onClose={createProjectModal.onClose}
-      />
-      <InviteModal
-        isOpen={inviteModal.isOpen}
-        onClose={inviteModal.onClose}
-      />
+
       </header>
   );
 }

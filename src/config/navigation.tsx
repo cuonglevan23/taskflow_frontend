@@ -143,36 +143,20 @@ export const navigationConfig: NavigationConfig = {
       ],
     },
 
-    // Managements section (contains Project, Team and User Management)
+    // Management Center section (unified management interface)
     {
-      id: "managements",
-      title: "Managements",
+      id: "management",
+      title: "Management",
       collapsible: true,
       defaultExpanded: true,
       items: [
         {
-          id: "projects-management",
-          label: "Project Management",
-          href: "/projects-management",
-          icon: <Folder size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/projects-management",
-          permission: "project_management", // Custom permission for projects management (Owner only)
-        },
-        {
-          id: "team-management",
-          label: "Team Management",
-          href: "/team-management",
-          icon: <Users size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/team-management",
-          permission: "team_management", // Custom permission for team management
-        },
-        {
-          id: "user-management",
-          label: "User Management",
-          href: "/user-management",
-          icon: <User size={ICON_SIZE} className={ICON_CLASS} />,
-          activePattern: "/user-management",
-          permission: "user_management", // Custom permission for user management
+          id: "management-center",
+          label: "Management Center",
+          href: "/manager",
+          icon: <Settings size={ICON_SIZE} className={ICON_CLASS} />,
+          activePattern: "/manager",
+          permission: "management_center", // Custom permission for management center access
         },
       ],
     },

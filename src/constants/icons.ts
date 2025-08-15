@@ -205,15 +205,7 @@ export const THEME_ICONS = {
   palette: Palette,
 } as const;
 
-// Project Management Icons
-export const PROJECT_ICONS = {
-  branch: GitBranch,
-  layers: Layers,
-  flag: Flag,
-  star: Star,
-  heart: Heart,
-  bookmark: Bookmark,
-} as const;
+
 
 // Data & Analytics Icons
 export const DATA_ICONS = {
@@ -285,7 +277,6 @@ export const ALL_ICONS = {
   ...STATUS_ICONS,
   ...LAYOUT_ICONS,
   ...THEME_ICONS,
-  ...PROJECT_ICONS,
   ...DATA_ICONS,
   ...FILE_ICONS,
   ...MISC_ICONS,

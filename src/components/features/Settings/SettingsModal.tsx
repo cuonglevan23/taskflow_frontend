@@ -103,10 +103,11 @@ const SettingsModal = ({
         {/* Header */}
         <div 
           className="absolute top-0 left-0 right-0 flex items-center justify-between p-6 border-b"
-          style={{ zIndex: 10 }}
+
           style={{ 
             backgroundColor: theme.background.primary,
-            borderBottomColor: theme.border.default 
+            borderBottomColor: theme.border.default,
+            zIndex: 10
           }}
         >
           <h1 

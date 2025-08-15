@@ -23,7 +23,7 @@ export default function ToggleBackgroundButton({
           <div className="w-2 h-2 bg-blue-400 rounded-sm" />
         </div>
         Customize
-      </button>
+      </button>f
 
       {open && (
         <ToggleBackgroundPanel

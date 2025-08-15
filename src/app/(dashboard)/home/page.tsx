@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { PrivateLayout } from "@/layouts";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import { useUser } from "@/contexts/UserContext";
 import { 
   FaPlus, 
   FaCheckCircle, 
@@ -269,6 +270,7 @@ const HomeHeader = () => {
 // Greeting Section
 const GreetingSection = () => {
   const { theme } = useTheme();
+  const { user } = useUser();
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -287,7 +289,7 @@ const GreetingSection = () => {
         className="text-2xl font-semibold"
         style={{ color: theme.text.primary }}
       >
-        {getGreeting()}, levancuong
+        {getGreeting()}, {user?.name || 'User'}
       </h2>
     </div>
   );

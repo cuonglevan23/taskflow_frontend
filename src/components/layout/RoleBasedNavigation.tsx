@@ -70,11 +70,10 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
     roles: ['admin'],
   },
   {
-    label: 'User Management',
-    href: '/admin/users',
-    icon: '👤',
-    resource: 'users',
-    action: 'manage',
+    label: 'Management Center',
+    href: '/manager',
+    icon: '⚙️',
+    minimumRole: 'leader',
   },
 ];
 

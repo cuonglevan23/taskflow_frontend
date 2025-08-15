@@ -5,7 +5,7 @@ import type { AuthUser } from "@/lib/auth/types"
 /**
  * Check if user has specific permission
  */
-export function hasPermission(user: AuthUser | null, permission: Permission): boolean {
+export function hasPermission(user: AuthUser | UserProfile | null, permission: Permission): boolean {
   if (!user?.permissions) return false
   return user.permissions.includes(permission)
 }
@@ -13,7 +13,7 @@ export function hasPermission(user: AuthUser | null, permission: Permission): bo
 /**
  * Check if user has specific role
  */
-export function hasRole(user: AuthUser | null, role: UserRole): boolean {
+export function hasRole(user: AuthUser | UserProfile | null, role: UserRole): boolean {
   if (!user?.role) return false
   return user.role === role
 }
@@ -21,7 +21,7 @@ export function hasRole(user: AuthUser | null, role: UserRole): boolean {
 /**
  * Check if user has any of the specified roles
  */
-export function hasAnyRole(user: AuthUser | null, roles: UserRole[]): boolean {
+export function hasAnyRole(user: AuthUser | UserProfile | null, roles: UserRole[]): boolean {
   if (!user?.role) return false
   return roles.includes(user.role)
 }

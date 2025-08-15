@@ -13,6 +13,9 @@ export * from './UserAvatarGroup';
 // Button Components - All button related functionality
 export * from './Button';
 
+// Modal Components
+export * from './Modal';
+
 // Card Components
 export { default as BaseCard } from './BaseCard/BaseCard';
 export * from './BaseCard';

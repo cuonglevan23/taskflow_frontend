@@ -13,6 +13,7 @@ const protectedRoutes = [
   '/goals',
   '/reporting',
   '/admin',
+  '/manager',
   '/role-demo'
 ];
 
@@ -24,6 +25,9 @@ const adminRoutes = ['/admin'];
 
 // Owner-only routes
 const ownerRoutes = ['/admin/system'];
+
+// Manager-level routes (PM and above)
+const managerRoutes = ['/manager'];
 
 export default auth((req) => {
   const { nextUrl } = req
@@ -50,6 +54,11 @@ export default auth((req) => {
     nextUrl.pathname.startsWith(route)
   );
 
+  // Check if route requires manager access (PM and above)
+  const isManagerRoute = managerRoutes.some(route => 
+    nextUrl.pathname.startsWith(route)
+  );
+
   // Redirect unauthenticated users from protected routes
   if (isProtectedRoute && !isLoggedIn) {
     const loginUrl = new URL('/login', nextUrl)
@@ -72,6 +81,16 @@ export default auth((req) => {
   // Check owner access
   if (isOwnerRoute && isLoggedIn) {
     if (userRole !== UserRole.OWNER && userRole !== UserRole.SUPER_ADMIN) {
+      return NextResponse.redirect(new URL('/home', nextUrl))
+    }
+  }
+
+  // Check manager access (PM and above only)
+  if (isManagerRoute && isLoggedIn) {
+    if (userRole !== UserRole.PM && 
+        userRole !== UserRole.OWNER && 
+        userRole !== UserRole.ADMIN && 
+        userRole !== UserRole.SUPER_ADMIN) {
       return NextResponse.redirect(new URL('/home', nextUrl))
     }
   }

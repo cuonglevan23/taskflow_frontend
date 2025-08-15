@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
+import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/hooks/use-auth";
-import { useUserData } from "@/hooks/useUserData";
 import {
   LayoutContextValue,
   LayoutActions,
@@ -16,8 +16,8 @@ import {
 export function usePrivateLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user: authUser, logout } = useAuth();
-  const { user: backendUser, isLoading: userDataLoading } = useUserData();
+  const { user, isLoading: userDataLoading } = useUser();
+  const { logout: authLogout } = useAuth(); // Keep for logout functionality
 
   // Layout state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -29,31 +29,7 @@ export function usePrivateLayout() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use user data with priority: backend -> auth context -> null
-  const user = useMemo(() => {
-    // Prioritize backend user data if available
-    if (backendUser) {
-      return backendUser;
-    }
-    
-    // Use auth user (includes OAuth data)
-    if (!authUser) return null;
-    
-    // Convert authUser to User format for compatibility
-    const userData = {
-      id: authUser.id,
-      name: authUser.name,
-      email: authUser.email,
-      role: authUser.role as UserRole,
-      permissions: [],
-      avatar: authUser.avatar || "",
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    return userData;
-  }, [backendUser, authUser]);
+  // User data is already combined in UserContext - no need to merge here
 
   // Mock navigation
   const navigation = useMemo(
@@ -71,7 +47,7 @@ export function usePrivateLayout() {
           },
         ],
         order: 1,
-        requiredRoles: [UserRole.OWNER],
+        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
       },
       {
         id: "projects",
@@ -92,7 +68,7 @@ export function usePrivateLayout() {
           },
         ],
         order: 2,
-        requiredRoles: [UserRole.OWNER],
+        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
       },
       {
         id: "tasks",
@@ -102,18 +78,39 @@ export function usePrivateLayout() {
           {
             key: "tasks",
             title: "My Tasks",
-            href: "/tasks",
+            href: "/my-tasks",
             icon: "check-square",
           },
           {
             key: "task-board",
             title: "Task Board",
-            href: "/tasks/board",
+            href: "/my-tasks/board",
             icon: "trello",
           },
         ],
         order: 3,
-        requiredRoles: [UserRole.OWNER],
+        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+      },
+      {
+        id: "management",
+        title: "Management",
+        icon: "briefcase",
+        items: [
+          {
+            key: "management-center",
+            title: "Management Center",
+            href: "/manager",
+            icon: "settings",
+          },
+          {
+            key: "reports",
+            title: "Reports",
+            href: "/reports",
+            icon: "chart-line",
+          },
+        ],
+        order: 4,
+        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
       },
     ],
     []
@@ -205,13 +202,13 @@ export function usePrivateLayout() {
 
   const signOut = useCallback(async () => {
     try {
-      await logout();
+      await authLogout();
       // Redirect to login page after successful logout
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
-  }, [logout, router]);
+  }, [authLogout, router]);
 
   // Auto-generate breadcrumbs
   useEffect(() => {

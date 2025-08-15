@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { ACTION_ICONS, PROJECT_ICONS } from "@/constants/icons";
+import { ACTION_ICONS } from "@/constants/icons";
+import { Bookmark } from "lucide-react";
 import { InboxNotification, InboxActions } from "../hooks/useInboxActions";
 import { Button } from "@/components/ui";
 
@@ -118,7 +119,7 @@ const InboxActionButtons = ({
           disabled={isLoading}
           className="!p-2"
           icon={
-            <PROJECT_ICONS.bookmark
+            <Bookmark
               className="w-4 h-4"
               style={{
                 color: notification.isBookmarked

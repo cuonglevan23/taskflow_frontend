@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { useTheme } from '@/layouts/hooks/useTheme';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/contexts/UserContext';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import type { RouteConfig } from '../configs/routeNavigationConfig';
 
@@ -13,7 +13,7 @@ interface NavigationAvatarProps {
 
 const NavigationAvatar = memo(({ config, size = 'md' }: NavigationAvatarProps) => {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   
   const sizeClasses = {
     sm: 'w-8 h-8',

@@ -44,7 +44,7 @@ export const NAV_SECTIONS = {
   INSIGHTS: 'insights', 
   PROJECTS: 'projects',
   TEAMS: 'teams',
-  MANAGEMENTS: 'managements',
+  MANAGEMENT: 'management',
 } as const;
 
 // Default expanded sections

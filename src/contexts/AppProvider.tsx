@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
+import { UserProvider } from "./UserContext";
 import { ProjectsProvider } from "./ProjectsContext";
 import { TasksProvider } from "./TasksContext";
 import { NotificationProvider } from "./NotificationContext";
@@ -17,13 +18,15 @@ interface AppProviderProps {
  */
 export const AppProvider = ({ children }: AppProviderProps) => {
   return (
-    <NotificationProvider>
-      <ProjectsProvider>
-        <TasksProvider>
-          {children}
-        </TasksProvider>
-      </ProjectsProvider>
-    </NotificationProvider>
+    <UserProvider>
+      <NotificationProvider>
+        <ProjectsProvider>
+          <TasksProvider>
+            {children}
+          </TasksProvider>
+        </ProjectsProvider>
+      </NotificationProvider>
+    </UserProvider>
   );
 };
 

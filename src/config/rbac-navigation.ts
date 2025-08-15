@@ -134,34 +134,18 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
     allowedRoles: [UserRole.LEADER, UserRole.MEMBER],
   },
 
-  // Management Section - Role-based access
+  // Management Center Section - Role-based access
   {
-    id: 'managements',
-    title: 'Managements',
+    id: 'management',
+    title: 'Management',
     items: [
       {
-        id: 'projects-management',
-        label: 'Project Management',
-        href: '/managements/projects',
-        icon: React.createElement(Folder, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.PM,
-        requiredPermissions: [Permission.CREATE_PROJECT, Permission.UPDATE_PROJECT],
-      },
-      {
-        id: 'team-management',
-        label: 'Team Management',
-        href: '/managements/teams',
-        icon: React.createElement(Users, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.LEADER,
-        requiredPermissions: [Permission.MANAGE_TEAM],
-      },
-      {
-        id: 'user-management',
-        label: 'User Management',
-        href: '/managements/users',
+        id: 'management-center',
+        label: 'Management Center',
+        href: '/manager',
         icon: React.createElement(Settings, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.PM,
-        requiredPermissions: [Permission.MANAGE_USERS],
+        minimumRole: UserRole.LEADER,
+        requiredPermissions: [Permission.VIEW_REPORTS], // Basic management permission
       },
     ],
     collapsible: true,

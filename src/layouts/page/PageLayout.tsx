@@ -113,8 +113,11 @@ const PageLayout = ({ children }: PageLayoutProps) => {
 
   // Determine navigation style based on page type - only after mount to prevent hydration mismatch
   const isInboxStyle = mounted && pathname.startsWith("/inbox");
-  const isMyTaskStyle = mounted && (pathname.startsWith("/my-tasks") || pathname.startsWith("/project") || pathname.startsWith("/owner") || pathname.startsWith("/portfolios") || pathname.startsWith("/reporting") || pathname.startsWith("/goals"));
+  const isMyTaskStyle = mounted && (pathname.startsWith("/my-tasks") || pathname.startsWith("/project") || pathname.startsWith("/owner") || pathname.startsWith("/portfolios") || pathname.startsWith("/reporting") || pathname.startsWith("/goals") || pathname.startsWith("/manager"));
   const isTeamsStyle = mounted && pathname.startsWith("/teams");
+  
+  // Check if we're on a dashboard detail page
+  const isDashboardDetailPage = mounted && pathname?.match(/\/reporting\/dashboards\/[^/]+$/);
 
   // Prevent hydration mismatch by not rendering sticky styles until mounted
   if (!mounted) {
@@ -148,6 +151,17 @@ const PageLayout = ({ children }: PageLayoutProps) => {
     );
   }
 
+  // Skip header on dashboard detail pages
+  if (isDashboardDetailPage) {
+    return (
+      <PrivateLayout>
+        <div style={{ backgroundColor: theme.background.primary }}>
+          {children}
+        </div>
+      </PrivateLayout>
+    );
+  }
+
   return (
     <PrivateLayout>
       <div
@@ -159,8 +173,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
         <div 
           className="sticky top-0 z-50"
           style={{ 
-            backgroundColor: isMyTaskStyle || isTeamsStyle ? theme.header.background : theme.background.primary,
-            borderBottom: `1px solid ${theme.border.default}`
+            backgroundColor: isMyTaskStyle || isTeamsStyle ? theme.header.background : theme.background.primary
           }}
         >
           {/* Top Header Sections */}
@@ -173,10 +186,9 @@ const PageLayout = ({ children }: PageLayoutProps) => {
           {/* Header */}
           <div
             className={clsx(
-              "flex flex-col border-b",
+              "flex flex-col",
               isInboxStyle ? "gap-4 pb-4 px-6" : "gap-2 px-6"
             )}
-            style={{ borderColor: theme.border.default }}
           >
             {/* Breadcrumbs */}
             {headerInfo?.breadcrumbs && (
@@ -224,110 +236,112 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                 </div>
               )}
             </div>
-
-            {/* Custom Header Content */}
-            {headerInfo?.customContent && (
-              <div className="py-2">{headerInfo.customContent}</div>
-            )}
-
-            {/* Middle Header Sections */}
-            <HeaderSectionRenderer sections={headerSections} position="middle" />
-
-            {/* Navigation Tabs */}
-            <div>
-              <ul
-                className={clsx(
-                  "flex items-center",
-                  isInboxStyle ? "gap-6 border-b -mb-4" : isMyTaskStyle ? "gap-1 -mb-px" : "gap-5"
-                )}
-                style={isInboxStyle ? { borderColor: theme.border.default } : {}}
-              >
-                {navItems.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={clsx(
-                        "flex items-center gap-2 transition-all duration-200 group",
-                        // Inbox style
-                        isInboxStyle &&
-                          "inline-block pb-4 border-b-2 font-medium text-sm",
-                        // MyTask style - modern tabs
-                        isMyTaskStyle && 
-                          "px-4 py-3 rounded-t-lg border-b-2 font-medium text-sm relative",
-                        // Inbox active state
-                        isInboxStyle &&
-                          pathname === item.href &&
-                          "border-orange-500 text-orange-600",
-                        isInboxStyle &&
-                          pathname !== item.href &&
-                          "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                        // MyTask active state - consistent with teams theme
-                        isMyTaskStyle &&
-                          pathname === item.href &&
-                          "border-orange-500 text-white font-semibold",
-                        isMyTaskStyle &&
-                          pathname !== item.href &&
-                          "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-500",
-                        // Teams active state
-                        isTeamsStyle &&
-                          pathname === item.href &&
-                          "border-orange-500 text-white font-semibold border-b-2",
-                        isTeamsStyle &&
-                          pathname !== item.href &&
-                          "border-transparent text-gray-300 hover:text-white hover:border-gray-300"
-                      )}
-                      style={
-                        isMyTaskStyle && pathname === item.href
-                          ? {
-                              marginBottom: '-1px',
-                            }
-                          : {}
-                      }
-                    >
-                      {item.icon && (
-                        <span 
-                          className={clsx(
-                            "flex-shrink-0 transition-colors duration-200",
-                            isMyTaskStyle && pathname === item.href && "text-orange-500",
-                            isMyTaskStyle && pathname !== item.href && "text-gray-400 group-hover:text-orange-400"
-                          )}
-                        >
-                          {item.icon}
-                        </span>
-                      )}
-                      <span className="font-medium whitespace-nowrap">{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
-
-                {/* Plus button for inbox style */}
-                {isInboxStyle && showTabsPlus && (
-                  <li className="ml-auto">
-                    <button
-                      className="p-1.5 rounded-md transition-colors"
-                      style={{
-                        color: theme.text.secondary,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = theme.text.primary;
-                        e.currentTarget.style.backgroundColor =
-                          theme.background.secondary;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = theme.text.secondary;
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                    >
-                      <ACTION_ICONS.create className="w-4 h-4" />
-                    </button>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Bottom Header Sections */}
-            <HeaderSectionRenderer sections={headerSections} position="bottom" />
           </div>
+
+          {/* Custom Header Content */}
+          {headerInfo?.customContent && (
+            <div className="py-2">{headerInfo.customContent}</div>
+          )}
+
+          {/* Middle Header Sections */}
+          <HeaderSectionRenderer sections={headerSections} position="middle" />
+
+          {/* Navigation Tabs */}
+          <div 
+            className="border-b"
+            style={{ borderColor: theme.border.default }}
+          >
+            <ul
+              className={clsx(
+                "flex items-center",
+                isInboxStyle ? "gap-1 -mb-px" : isMyTaskStyle ? "gap-1 -mb-px" : "gap-5"
+              )}
+            >
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={clsx(
+                      "flex items-center gap-2 transition-all duration-200 group",
+                      // Inbox style - align with other styles
+                      isInboxStyle &&
+                        "px-4 py-3 border-b-2 font-medium text-sm",
+                      // MyTask style - modern tabs
+                      isMyTaskStyle && 
+                        "px-4 py-3 rounded-t-lg border-b-2 font-medium text-sm relative",
+                      // Inbox active state
+                      isInboxStyle &&
+                        pathname === item.href &&
+                        "border-orange-500 text-orange-600",
+                      isInboxStyle &&
+                        pathname !== item.href &&
+                        "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+                      // MyTask active state - consistent with teams theme
+                      isMyTaskStyle &&
+                        pathname === item.href &&
+                        "border-orange-500 text-white font-semibold",
+                      isMyTaskStyle &&
+                        pathname !== item.href &&
+                        "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-500",
+                      // Teams active state
+                      isTeamsStyle &&
+                        pathname === item.href &&
+                        "border-orange-500 text-white font-semibold border-b-2",
+                      isTeamsStyle &&
+                        pathname !== item.href &&
+                        "border-transparent text-gray-300 hover:text-white hover:border-gray-300"
+                    )}
+                    style={
+                      isMyTaskStyle && pathname === item.href
+                        ? {
+                            marginBottom: '-1px',
+                          }
+                        : {}
+                    }
+                  >
+                    {item.icon && (
+                      <span 
+                        className={clsx(
+                          "flex-shrink-0 transition-colors duration-200",
+                          isMyTaskStyle && pathname === item.href && "text-orange-500",
+                          isMyTaskStyle && pathname !== item.href && "text-gray-400 group-hover:text-orange-400"
+                        )}
+                      >
+                        {item.icon}
+                      </span>
+                    )}
+                    <span className="font-medium whitespace-nowrap">{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+
+              {/* Plus button for inbox style */}
+              {isInboxStyle && showTabsPlus && (
+                <li className="ml-auto">
+                  <button
+                    className="p-1.5 rounded-md transition-colors"
+                    style={{
+                      color: theme.text.secondary,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = theme.text.primary;
+                      e.currentTarget.style.backgroundColor =
+                        theme.background.secondary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = theme.text.secondary;
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <ACTION_ICONS.create className="w-4 h-4" />
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+
+          {/* Bottom Header Sections */}
+          <HeaderSectionRenderer sections={headerSections} position="bottom" />
         </div>
 
         {/* Content */}

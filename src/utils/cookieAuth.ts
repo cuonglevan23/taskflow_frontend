@@ -60,7 +60,7 @@ export class CookieAuth {
   
   // Access Token Management
   static setAccessToken(token: string): void {
-    this.setCookie(this.ACCESS_TOKEN_KEY, token, 7); // 7 days
+    this.setCookie(this.ACCESS_TOKEN_KEY, token, 30); // 30 days
   }
   
   static getAccessToken(): string | null {
@@ -73,7 +73,7 @@ export class CookieAuth {
   
   // Refresh Token Management  
   static setRefreshToken(token: string): void {
-    this.setCookie(this.REFRESH_TOKEN_KEY, token, 30); // 30 days
+    this.setCookie(this.REFRESH_TOKEN_KEY, token, 90); // 90 days
   }
   
   static getRefreshToken(): string | null {

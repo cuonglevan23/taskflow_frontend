@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@/contexts/UserContext";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
@@ -13,7 +13,7 @@ import { useTasks, useTaskStats, useUpdateTask, useCreateTask, useMyTasksSummary
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   // Get UI state from context
   const { globalFilters, globalSort } = useTasksContext();

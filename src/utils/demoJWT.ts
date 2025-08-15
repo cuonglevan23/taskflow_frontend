@@ -202,9 +202,9 @@ export class DemoTokenStorage {
     localStorage.setItem(this.TOKEN_EXPIRES_KEY, (Date.now() + expiresIn * 1000).toString());
     
     // Also store in cookies for middleware access
-    const expirationDate = new Date(Date.now() + expiresIn * 1000);
+    const expirationDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     document.cookie = `access_token=${accessToken}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`;
-    document.cookie = `refresh_token=${refreshToken}; expires=${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString()}; path=/; SameSite=Lax`;
+    document.cookie = `refresh_token=${refreshToken}; expires=${new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString()}; path=/; SameSite=Lax`; // 90 days
   }
 
   static getAccessToken(): string | null {

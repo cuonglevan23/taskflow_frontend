@@ -281,6 +281,49 @@ export const ROUTES: Record<string, RouteConfig> = {
     order: 2,
   },
 
+  // Management Center Routes
+  MANAGEMENT_CENTER: {
+    path: '/manager',
+    title: 'Management Center',
+    layout: 'private',
+    accessRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
+    requiresAuth: true,
+    isNavItem: true,
+    icon: 'settings',
+    navGroup: 'management',
+    order: 3,
+  },
+
+  MANAGEMENT_PROJECTS: {
+    path: '/manager/projects',
+    title: 'Manage Projects',
+    layout: 'private',
+    accessRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
+    requiresAuth: true,
+    parent: 'MANAGEMENT_CENTER',
+    icon: 'folder-open',
+  },
+
+  MANAGEMENT_TEAMS: {
+    path: '/manager/teams',
+    title: 'Manage Teams',
+    layout: 'private',
+    accessRoles: [UserRole.OWNER, UserRole.PM],
+    requiresAuth: true,
+    parent: 'MANAGEMENT_CENTER',
+    icon: 'users',
+  },
+
+  MANAGEMENT_USERS: {
+    path: '/manager/users',
+    title: 'Manage Users',
+    layout: 'private',
+    accessRoles: [UserRole.OWNER],
+    requiresAuth: true,
+    parent: 'MANAGEMENT_CENTER',
+    icon: 'user',
+  },
+
   // Personal Settings (All authenticated users)
   PROFILE: {
     path: '/profile',
@@ -350,7 +393,7 @@ export const SIDEBAR_GROUPS: Record<string, RouteGroup> = {
     order: 4,
     icon: 'briefcase',
     roles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
-    routes: [ROUTES.TEAM_MANAGEMENT, ROUTES.REPORTS],
+    routes: [ROUTES.TEAM_MANAGEMENT, ROUTES.REPORTS, ROUTES.MANAGEMENT_CENTER],
   },
 
   owner: {

@@ -27,8 +27,8 @@ export default function PrivateLayoutContent({
   // Don't render if user is null (during logout process)
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white">Loading...</div>
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: "transparent" }}>
+        <div className="text-gray-600">Loading...</div>
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function PrivateLayoutContent({
   return (
     <div
       className="h-screen flex flex-col"
-      style={{ backgroundColor: "#0f172a" }}
+      style={{ backgroundColor: "transparent" }}
     >
       {/* Header - Fixed at top */}
       <PrivateHeader
