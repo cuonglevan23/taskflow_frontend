@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Calendar, User, Building, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Calendar, User, Building } from 'lucide-react';
 import { useTheme } from '@/layouts/hooks/useTheme';
-import { TaskSection as TaskSectionType, TaskListItem, TaskListActions, TaskStatus } from './types';
+import { TaskSection as TaskSectionType, TaskListActions, TaskStatus } from './types';
 import EnhancedTaskRow from './EnhancedTaskRow';
+import { taskService } from '@/services/tasks';
+import { CreateTaskDTO } from '@/types/task';
+import { CookieAuth } from '@/utils/cookieAuth';
+import { TaskListItem } from './types';
+import { useRouter } from 'next/navigation';
 
 interface EnhancedTaskSectionProps {
   section: TaskSectionType;
@@ -12,6 +17,7 @@ interface EnhancedTaskSectionProps {
   selectedTasks?: string[];
   onSelectTask?: (taskId: string) => void;
   onSelectAll?: (taskIds: string[]) => void;
+  onTaskAdded?: (newTask: any, sectionId: string) => void; // callback để báo cho cha
   className?: string;
 }
 
@@ -21,15 +27,18 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
   selectedTasks = [],
   onSelectTask,
   onSelectAll,
+  onTaskAdded,
   className = '',
 }) => {
   const { theme } = useTheme();
+  const router = useRouter();
+
   const [isCollapsed, setIsCollapsed] = useState(section.collapsed || false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskProject, setNewTaskProject] = useState('');
-  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('TODO');
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
   const [enhancedDateData, setEnhancedDateData] = useState<{
     startDate?: string;
@@ -37,6 +46,12 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     startTime?: string;
     endTime?: string;
   }>({});
+  const [tasks, setTasks] = useState(section.tasks); // Thêm state cục bộ cho tasks
+
+  // Khi nhận prop section thay đổi, cập nhật lại tasks
+  React.useEffect(() => {
+    setTasks(section.tasks);
+  }, [section.tasks]);
 
   const handleToggleCollapse = () => {
     if (section.collapsible) {
@@ -48,13 +63,11 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     if (onSelectAll) {
       const allSelected = section.tasks.every(task => selectedTasks.includes(task.id));
       if (allSelected) {
-        // Deselect all tasks in this section
         const remainingSelected = selectedTasks.filter(id =>
           !section.tasks.some(task => task.id === id)
         );
         onSelectAll(remainingSelected);
       } else {
-        // Select all tasks in this section
         const newSelected = [...selectedTasks];
         section.tasks.forEach(task => {
           if (!newSelected.includes(task.id)) {
@@ -74,7 +87,6 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     repeatType: string;
     repeatDays: string[];
   }) => {
-    // Convert dd/mm/yy format to readable format
     const parseDate = (dateStr: string) => {
       if (!dateStr) return '';
       const [day, month, year] = dateStr.split('/');
@@ -88,7 +100,6 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     const startDateFormatted = parseDate(data.startDate);
     const endDateFormatted = parseDate(data.endDate);
 
-    // Create date range display
     let dateDisplay = '';
     if (startDateFormatted && endDateFormatted) {
       if (startDateFormatted === endDateFormatted) {
@@ -96,8 +107,6 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
       } else {
         dateDisplay = `${startDateFormatted} - ${endDateFormatted}`;
       }
-
-      // Add time if available
       if (data.startTime || data.endTime) {
         const timeStr = [];
         if (data.startTime) timeStr.push(data.startTime);
@@ -118,14 +127,11 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     setIsEnhancedCalendarOpen(false);
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (newTaskName.trim()) {
-      // Determine appropriate due date based on section
       let defaultDueDate = newTaskDueDate;
       if (!defaultDueDate && !enhancedDateData.startDate) {
         const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
 
@@ -138,35 +144,62 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
             break;
           case 'do-later':
             const laterDate = new Date(today);
-            laterDate.setDate(today.getDate() + 14); // 2 weeks later
+            laterDate.setDate(today.getDate() + 14);
             defaultDueDate = laterDate.toISOString().split('T')[0];
             break;
-          // 'recently-assigned' gets no default due date
         }
       }
 
-      // Create task with enhanced calendar data
-      const taskData = {
-        name: newTaskName.trim(),
-        dueDate: defaultDueDate || undefined,
-        startDate: enhancedDateData.startDate,
-        endDate: enhancedDateData.endDate,
-        startTime: enhancedDateData.startTime,
-        endTime: enhancedDateData.endTime,
-        hasStartTime: !!enhancedDateData.startTime,
-        hasEndTime: !!enhancedDateData.endTime,
-        project: newTaskProject.trim() || undefined,
-        status: newTaskStatus
+      const tokenPayload = CookieAuth.getTokenPayload();
+      const taskData: CreateTaskDTO = {
+        title: newTaskName.trim(),
+        description: '',
+        status: newTaskStatus,
+        priority: 'normal',
+        startDate: enhancedDateData.startDate || defaultDueDate || new Date().toISOString().split('T')[0],
+        deadline: enhancedDateData.endDate || defaultDueDate,
+        creatorId: tokenPayload?.userId,
+        assignedToIds: [],
+        tags: [],
       };
-      actions?.onCreateTask?.(taskData);
+
+      try {
+        const created = await taskService.createTask(taskData);
+
+        // Map the returned object to the UI's TaskListItem shape to satisfy TS types.
+        // Adjust fields mapping as needed if your API uses different property names.
+        const mapped: TaskListItem = {
+          id: (created as any).id ?? String(Date.now()),
+          // UI expects `name` while API may return `title`
+          name: (created as any).name ?? (created as any).title ?? newTaskName.trim(),
+          // include common fields used by the row component
+          assignees: (created as any).assignedToIds
+            ? (created as any).assignedToIds.map((aid: string) => ({ id: aid }))
+            : [],
+            status: (created as any).status ?? newTaskStatus,
+          createdAt: (created as any).createdAt ?? (created as any).created_at ?? new Date().toISOString(),
+          updatedAt: (created as any).updatedAt ?? (created as any).updated_at ?? new Date().toISOString(),
+          // preserve other properties so the component can access them if needed
+          ...(created as any),
+        } as TaskListItem;
+
+        setTasks(prev => [mapped, ...prev]);
+        router.refresh();
+
+        // optional: also notify calendar clients
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('task:created', { detail: mapped }));
+        }
+      } catch (error) {
+        console.error('Error creating task:', error);
+      }
     }
-    
-    // Reset form
+
     setIsAddingTask(false);
     setNewTaskName('');
     setNewTaskDueDate('');
     setNewTaskProject('');
-    setNewTaskStatus('todo');
+    setNewTaskStatus('TODO');
     setEnhancedDateData({});
   };
 
@@ -175,12 +208,11 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
     setNewTaskName('');
     setNewTaskDueDate('');
     setNewTaskProject('');
-    setNewTaskStatus('todo');
+    setNewTaskStatus('TODO');
     setEnhancedDateData({});
   };
 
   const isAllSelected = section.tasks.length > 0 && section.tasks.every(task => selectedTasks.includes(task.id));
-  const isIndeterminate = section.tasks.some(task => selectedTasks.includes(task.id)) && !isAllSelected;
 
   return (
     <div className={`mb-6 ${className}`}>
@@ -218,22 +250,16 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
             {section.tasks.length}
           </span>
         </button>
-
-        {/* Section actions - minimized */}
-        <div className="flex items-center gap-2">
-          {/* Removed Select all and Add task buttons from header - they're available in the row below */}
-        </div>
+        <div className="flex items-center gap-2"></div>
       </div>
 
-      {/* Section Content */}
       {!isCollapsed && (
         <div className="space-y-0">
-          {/* Tasks */}
-          {section.tasks.length > 0 && (
+          {tasks.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <tbody>
-                  {section.tasks.map((task) => (
+                  {tasks.map((task) => (
                     <EnhancedTaskRow
                       key={task.id}
                       task={task}
@@ -340,7 +366,7 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
                     )}
                   </td>
 
-                  {/* Task Visibility (Status) */}
+                  {/* Status */}
                   <td className="w-[140px] py-3 px-2">
                     {isAddingTask && (
                       <select
@@ -348,25 +374,19 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
                         onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
                         className="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:outline-none"
                       >
-                        <option value="todo">To Do</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="review">Review</option>
-                        <option value="done">Done</option>
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="REVIEW">Review</option>
+                        <option value="DONE">Done</option>
                       </select>
                     )}
                   </td>
-
-
                 </tr>
               </tbody>
             </table>
           </div>
-
-          {/* Empty state removed - sections always show "Add task..." row */}
         </div>
       )}
-
-
     </div>
   );
 };

@@ -46,7 +46,6 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     status: normalizeStatus(backendTask.status),
     hasTag: false,
     projectId: backendTask.projectId,
-    assigneeId: backendTask.assignedToIds?.[0] || null,
     tags: [],
     createdAt: safeParseDate(backendTask.createdAt),
     updatedAt: safeParseDate(backendTask.updatedAt),
@@ -75,7 +74,6 @@ export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
     hasTag: !!item.projectName || !!item.teamName,
     tagText: item.projectName || item.teamName || 'Default Project',
     projectId: undefined,
-    assigneeId: null,
     tags: [],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -107,7 +105,6 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
     status: normalizeStatus(item.status),
     hasTag: false,
     projectId: item.projectId,
-    assigneeId: null,
     tags: [],
     createdAt: safeParseDate(item.createdAt),
     updatedAt: safeParseDate(item.updatedAt),
@@ -153,11 +150,12 @@ export const tasksService = {
       } else {
         startDate = new Date().toISOString().split('T')[0];
       }
+      console.log('Task status:', data.status);
 
       const backendData = {
         title: data.title,
         description: data.description || '',
-        status: toBackendStatus(data.status || 'TODO'),
+        status: data.status || 'TODO',
         priority: toBackendPriority(data.priority || 'MEDIUM'),
         deadline: deadline,
         startDate: startDate,

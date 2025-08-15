@@ -16,7 +16,7 @@ export interface BackendTask {
   projectId?: number;
   creatorId: number;
   assignedToIds?: number[];
-  checklists?: ChecklistItem[];
+  // checklists?: ChecklistItem[];
 }
 
 // New My Tasks Response interfaces

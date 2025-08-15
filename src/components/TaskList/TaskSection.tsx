@@ -34,7 +34,7 @@ const TaskSection = ({
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskProject, setNewTaskProject] = useState('');
-  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('TODO');
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
   const [enhancedDateData, setEnhancedDateData] = useState<{
     startDate?: string;

@@ -45,8 +45,8 @@ export interface TaskAssignee {
   email?: string;
 }
 
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'cancelled';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate';
 
 export interface TaskSection {
@@ -81,16 +81,15 @@ export interface TaskListActions {
   onTaskStatusChange?: (taskId: string, status: TaskStatus) => void;
   onTaskAssign?: (taskId: string, assigneeId: string) => void;
   onCreateTask?: (taskData?: string | { 
-    name: string; 
-    dueDate?: string; 
-    startDate?: string;
-    endDate?: string;
-    startTime?: string;
-    endTime?: string;
-    hasStartTime?: boolean;
-    hasEndTime?: boolean;
-    project?: string; 
-    status?: TaskStatus;
+    title: string,
+    description: string,
+    status: string,
+    priority: 'NORMAL',
+    startDate: string,
+    deadline: string,
+    creatorId: string,
+    assignedToIds: string[],
+    tags: string[],
   }) => void;
   onBulkAction?: (taskIds: string[], action: string) => void;
 }
@@ -100,6 +99,6 @@ export interface NewTaskDataType {
   name: string;
   assignee: string[];
   dueDate: string;
-  priority: 'Low' | 'Medium' | 'High';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
   status: string;
 }
