@@ -18,6 +18,7 @@ interface EnhancedTaskSectionProps {
   onSelectTask?: (taskId: string) => void;
   onSelectAll?: (taskIds: string[]) => void;
   onTaskAdded?: (newTask: any, sectionId: string) => void; // callback để báo cho cha
+  revalidate?: () => void; // Thêm prop revalidate
   className?: string;
 }
 
@@ -28,6 +29,7 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
   onSelectTask,
   onSelectAll,
   onTaskAdded,
+  revalidate, // Thêm prop revalidate
   className = '',
 }) => {
   const { theme } = useTheme();
@@ -185,6 +187,11 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
 
         setTasks(prev => [mapped, ...prev]);
         router.refresh();
+
+        // Gọi revalidate để cập nhật lại dữ liệu từ server
+        if (revalidate) {
+          revalidate();
+        }
 
         // optional: also notify calendar clients
         if (typeof window !== 'undefined') {

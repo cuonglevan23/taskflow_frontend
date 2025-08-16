@@ -26,6 +26,7 @@ interface GroupedTaskListProps {
   className?: string;
   hideHeader?: boolean;
   groupBy?: TaskGroupBy;
+  revalidate?: () => void; // Thêm prop revalidate
 }
 
 const DEFAULT_CONFIG: TaskListConfig = {
@@ -117,7 +118,8 @@ const GroupedTaskList = ({
   className = '',
   hideHeader = false,
   groupBy: propGroupBy,
-}) => {
+  revalidate, // Thêm prop revalidate
+}: GroupedTaskListProps) => {
   const { theme } = useTheme();
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
@@ -225,16 +227,16 @@ const GroupedTaskList = ({
 
     // Create enhanced task data
     const enhancedTaskData = {
-      name: 'New Task',
-      dueDate: startDateFormatted,
-      startDate: startDateFormatted,
-      endDate: endDateFormatted,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      hasStartTime: !!data.startTime,
-      hasEndTime: !!data.endTime,
-      project: '',
-      status: 'todo' as const
+      title: 'New Task',
+      description: '',
+      status: 'TODO',
+      priority: 'NORMAL',
+      startDate: startDateFormatted || new Date().toISOString().split('T')[0],
+      deadline: endDateFormatted || startDateFormatted || new Date().toISOString().split('T')[0],
+      dueDate: startDateFormatted || new Date().toISOString().split('T')[0],
+      creatorId: '',
+      assignedToIds: [],
+      tags: [],
     };
 
     actions?.onCreateTask?.(enhancedTaskData);
@@ -390,6 +392,7 @@ const GroupedTaskList = ({
                     selectedTasks={selectedTasks}
                     onSelectTask={handleSelectTask}
                     onSelectAll={handleSelectAll}
+                    revalidate={revalidate} // Truyền prop revalidate xuống EnhancedTaskSection
                   />
                 ))
             ) : (

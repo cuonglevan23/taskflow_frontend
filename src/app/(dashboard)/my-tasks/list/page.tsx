@@ -22,7 +22,8 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     taskListItems,
     isLoading,
     error,
-    actions
+    actions,
+    revalidate // Thêm revalidate từ hook
   } = useMyTasksShared({
     page: 0,
     size: 1000,
@@ -115,6 +116,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
           loading={taskManagement.isLoading}
           error={taskManagement.error ?? undefined}
           hideHeader={true} // Use header from layout.tsx to avoid duplication
+          revalidate={revalidate} // Truyền prop revalidate
         />
       </div>
 
