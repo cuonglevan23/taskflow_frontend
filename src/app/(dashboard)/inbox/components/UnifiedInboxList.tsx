@@ -235,7 +235,7 @@ const UnifiedInboxList = ({ className = "" }: UnifiedInboxListProps) => {
                   Priority
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {(['urgent', 'high', 'medium', 'low'] as NotificationPriority[]).map(priority => (
+                  {(['urgent', 'HIGH', 'MEDIUM', 'LOW'] as NotificationPriority[]).map(priority => (
                     <button
                       key={priority}
                       onClick={() => handlePriorityFilter(priority)}

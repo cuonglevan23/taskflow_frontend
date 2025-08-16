@@ -97,14 +97,15 @@ const SortableTaskCard = ({
           </button>
         </div>
         
-        {task.description && (
+        {/* Description */}
+        <div className="mb-2">
           <p 
-            className="text-xs mb-2 line-clamp-2"
+            className="text-xs line-clamp-2"
             style={{ color: theme.text.secondary }}
           >
-            {task.description}
+            {task.description || "No description"}
           </p>
-        )}
+        </div>
 
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 flex-wrap">
@@ -123,10 +124,10 @@ const SortableTaskCard = ({
             {task.priority && (
               <span 
                 className={`px-2 py-1 rounded text-white text-xs whitespace-nowrap ${
-                  task.priority === 'urgent' ? 'bg-red-500' :
-                  task.priority === 'high' ? 'bg-orange-500' :
-                  task.priority === 'medium' ? 'bg-yellow-500' :
-                  'bg-gray-500'
+                  task.priority.toLocaleLowerCase() === 'high' ? 'bg-red-500' :
+                  task.priority.toLocaleLowerCase() === 'low' ? 'bg-green-500' :
+                  task.priority.toLocaleLowerCase() === 'medium' ? 'bg-yellow-500' :
+                  'bg-red-800'
                 }`}
               >
                 {task.priority}

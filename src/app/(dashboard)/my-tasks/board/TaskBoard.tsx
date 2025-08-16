@@ -11,15 +11,15 @@ type TaskSection = {
 };
 
 const statusColor = {
-  Low: "bg-teal-200 text-teal-800",
-  Medium: "bg-yellow-200 text-yellow-800",
-  High: "bg-red-200 text-red-800",
+  LOW: "bg-teal-200 text-teal-800",
+  MEDIUM: "bg-yellow-200 text-yellow-800",
+  HIGH: "bg-red-200 text-red-800",
 };
 
 const progressColor = {
-  "On track": "bg-cyan-200 text-cyan-800",
-  "Off track": "bg-red-100 text-red-700",
-  "In progress": "bg-purple-200 text-purple-800",
+  "ON_TRACK": "bg-cyan-200 text-cyan-800",
+  "OFF_TRACK": "bg-red-100 text-red-700",
+  "IN_PROGRESS": "bg-purple-200 text-purple-800",
 };
 const bgColors = [
   "bg-red-200 text-red-800",

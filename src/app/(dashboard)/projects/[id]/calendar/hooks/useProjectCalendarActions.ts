@@ -61,8 +61,8 @@ export function useProjectCalendarActions(): TaskListActions {
           name: taskData,
           description: '',
           assignees: [],
-          priority: 'medium',
-          status: 'todo',
+          priority: 'MEDIUM',
+          status: 'TODO',
           tags: [],
           startDate: new Date().toISOString().split('T')[0],
           endDate: new Date().toISOString().split('T')[0],
@@ -74,8 +74,8 @@ export function useProjectCalendarActions(): TaskListActions {
           name: taskData.name,
           description: '',
           assignees: [],
-          priority: 'medium',
-          status: taskData.status || 'todo',
+          priority: 'MEDIUM',
+          status: taskData.status || 'TODO',
           tags: [],
           dueDate: taskData.dueDate,
           startDate: taskData.startDate,
@@ -93,8 +93,8 @@ export function useProjectCalendarActions(): TaskListActions {
           name: 'New Task',
           description: '',
           assignees: [],
-          priority: 'medium',
-          status: 'todo',
+          priority: 'MEDIUM',
+          status: 'TODO',
           tags: [],
           startDate: today,
           endDate: today,
@@ -114,13 +114,13 @@ export function useProjectCalendarActions(): TaskListActions {
         case 'complete':
           // Mark multiple tasks as completed
           for (const taskId of taskIds) {
-            await updateTask(taskId, { status: 'done' });
+            await updateTask(taskId, { status: 'DONE' });
           }
           break;
         case 'archive':
           // Archive multiple tasks (could implement archive status)
           for (const taskId of taskIds) {
-            await updateTask(taskId, { status: 'cancelled' });
+            await updateTask(taskId, { status: 'CANCELLED' });
           }
           break;
         default:

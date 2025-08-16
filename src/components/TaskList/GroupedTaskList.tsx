@@ -239,7 +239,7 @@ const GroupedTaskList = ({
       tags: [],
     };
 
-    actions?.onCreateTask?.(enhancedTaskData);
+    // actions?.onCreateTask?.(enhancedTaskData);
     setIsCreatingTask(false);
   };
 

@@ -100,9 +100,9 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       endTime: '',
       hasStartTime: false,
       hasEndTime: false,
-      priority: (task.priority as any) || 'medium',
-      status: task.status === 'completed' ? 'done' : 
-              task.status === 'in-progress' ? 'in_progress' : 'todo',
+      priority: (task.priority as any) || 'MEDIUM',
+      status: task.status === 'DONE' ? 'DONE' : 
+              task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'TODO',
       tags: task.tags || [],
       project: task.tagText || 'Default Project',
       createdAt: task.createdAt.toISOString(),
@@ -138,12 +138,12 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         const backendData = {
           title: task.name,
           description: task.description || '',
-          status: task.status === 'done' ? 'COMPLETED' : 
-                 task.status === 'in_progress' ? 'IN_PROGRESS' : 
-                 task.status === 'review' ? 'REVIEW' : 'TODO',
-          priority: task.priority === 'low' ? 'LOW' :
-                   task.priority === 'medium' ? 'MEDIUM' :
-                   task.priority === 'high' ? 'HIGH' : 'URGENT',
+          status: task.status === 'DONE' ? 'DONE' : 
+                 task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
+                 task.status === 'REVIEW' ? 'REVIEW' : 'TODO',
+          priority: task.priority === 'LOW' ? 'LOW' :
+                   task.priority === 'MEDIUM' ? 'MEDIUM' :
+                   task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
           startDate: task.startDate || new Date().toISOString().split('T')[0],
           deadline: task.deadline || task.dueDate || null,
           groupId: null,
@@ -166,12 +166,12 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         const backendData = {
           title: taskData.name || 'New Task',
           description: taskData.description || '',
-          status: taskData.status === 'done' ? 'COMPLETED' : 
-                 taskData.status === 'in_progress' ? 'IN_PROGRESS' : 
-                 taskData.status === 'review' ? 'REVIEW' : 'TODO',
-          priority: taskData.priority === 'low' ? 'LOW' :
-                   taskData.priority === 'medium' ? 'MEDIUM' :
-                   taskData.priority === 'high' ? 'HIGH' : 'MEDIUM',
+          status: taskData.status === 'DONE' ? 'DONE' : 
+                 taskData.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
+                 taskData.status === 'REVIEW' ? 'REVIEW' : 'TODO',
+          priority: taskData.priority === 'LOW' ? 'LOW' :
+                   taskData.priority === 'MEDIUM' ? 'MEDIUM' :
+                   taskData.priority === 'HIGH' ? 'HIGH' : 'MEDIUM',
           startDate: taskData.startDate || new Date().toISOString().split('T')[0],
           deadline: taskData.dueDate || taskData.endDate || null,
           groupId: taskData.groupId || null,
@@ -198,9 +198,9 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     
     onTaskStatusChange: async (taskId: string, status: TaskStatus) => {
       try {
-        const backendStatus = status === 'done' ? 'COMPLETED' : 
-                            status === 'in_progress' ? 'IN_PROGRESS' : 
-                            status === 'review' ? 'REVIEW' : 'TODO';
+        const backendStatus = status === 'DONE' ? 'DONE' : 
+                            status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
+                            status === 'REVIEW' ? 'REVIEW' : 'TODO';
         
         await updateTask({ 
           id: taskId, 

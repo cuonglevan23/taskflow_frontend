@@ -56,15 +56,15 @@ const MyTasksCard = () => {
       return t.dueDateISO && t.dueDateISO < new Date() && !t.completed && t.status !== 'completed';
     }).length,
     byPriority: {
-      high: tasks.filter(t => t.priority === 'high').length,
-      medium: tasks.filter(t => t.priority === 'medium').length,
-      low: tasks.filter(t => t.priority === 'low').length
+      HIGH: tasks.filter(t => t.priority === 'HIGH').length,
+      MEDIUM: tasks.filter(t => t.priority === 'MEDIUM').length,
+      LOW: tasks.filter(t => t.priority === 'LOW').length
     }
   } : {
     total: 0,
-    byStatus: { todo: 0, in_progress: 0, completed: 0, other: 0 },
+    byStatus: { TODO: 0, IN_PROGRESS: 0, COMPLETED: 0, OTHER: 0 },
     overdue: 0,
-    byPriority: { high: 0, medium: 0, low: 0 }
+    byPriority: { HIGH: 0, MEDIUM: 0, LOW: 0 }
   };
   
   // SWR mutation hooks
@@ -322,8 +322,8 @@ const MyTasksCard = () => {
       title: "New task",
       dueDate: "Today",
       completed: false,
-      priority: 'medium',
-      status: 'pending',
+      priority: 'MEDIUM',
+      status: 'TODO',
       hasTag: false
     });
   };

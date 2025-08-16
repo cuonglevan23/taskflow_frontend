@@ -23,6 +23,7 @@ export interface BackendTask {
 export interface MyTasksSummaryItem {
   id: number;
   title: string;
+  description?: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   deadline?: string; // Optional
@@ -40,6 +41,7 @@ export interface MyTasksSummaryItem {
 export interface MyTasksFullItem {
   id: number;
   title: string;
+  description?: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   deadline?: string;

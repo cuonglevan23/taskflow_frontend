@@ -65,7 +65,7 @@ export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
   return {
     id: item.id,
     title: item.title,
-    description: '',
+    description: item.description || '',
     dueDate: displayDate,
     dueDateISO: taskDueDateISO,
     completed: item.status === 'DONE',
@@ -97,7 +97,7 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
   return {
     id: item.id,
     title: item.title,
-    description: '',
+    description: item.description || '',
     dueDate: item.deadline || 'No deadline',
     dueDateISO: taskDueDateISO,
     completed: item.status === 'DONE',
@@ -264,6 +264,7 @@ export const tasksService = {
       const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
+      console.log('✅ Successfully fetched my tasks (full data) with pagination:', response.data);
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
       const tasks = content.map(transformMyTasksFull);

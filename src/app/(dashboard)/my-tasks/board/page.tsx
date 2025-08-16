@@ -4,6 +4,7 @@ import React from "react";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { KanbanBoard } from "@/components/features/KanbanBoard";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
+import { TaskListItem } from "@/components/TaskList/types";
 
 interface MyTaskBoardPageProps {
   searchValue?: string;
@@ -24,6 +25,53 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
     searchValue
   });
 
+  // Calculate tasksByAssignmentDate from taskListItems
+  const tasksByAssignmentDate = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    // Filter tasks based on assignment date and due date
+    const recentlyAssigned = taskListItems.filter(task => {
+      const createdAt = new Date(task.createdAt);
+      const daysDiff = (today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+      return daysDiff <= 7; // Tasks created in last 7 days
+    });
+
+    const doToday = taskListItems.filter(task => {
+      if (!task.dueDate) return false;
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate.getTime() === today.getTime();
+    });
+
+    const doNextWeek = taskListItems.filter(task => {
+      if (!task.dueDate) return false;
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate > today && dueDate <= nextWeek;
+    });
+
+    const doLater = taskListItems.filter(task => {
+      if (!task.dueDate) return true; // Tasks without due date go to "Do later"
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate > nextWeek;
+    });
+
+    return {
+      "recently-assigned": recentlyAssigned,
+      "do-today": doToday,
+      "do-next-week": doNextWeek,
+      "do-later": doLater,
+    };
+  }, [taskListItems]);
+
   // Task management object for compatibility
   const taskManagement = {
     tasks: taskListItems,
@@ -31,7 +79,7 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
     error: error?.message || null,
     updateTask: actions.onTaskEdit,
     deleteTask: actions.onTaskDelete,
-    tasksByAssignmentDate: {},
+    tasksByAssignmentDate,
     selectedTask: null,
     isPanelOpen: false,
     closeTaskPanel: () => {},
@@ -57,7 +105,7 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
           tasks={taskManagement.tasks}
           tasksByAssignmentDate={taskManagement.tasksByAssignmentDate}
           actions={actions}
-          onTaskMove={(taskId, sectionId) => {
+          onTaskMove={(taskId: string, sectionId: string) => {
             // Move task based on section, update due date accordingly
             const today = new Date();
             const nextWeek = new Date(today);
