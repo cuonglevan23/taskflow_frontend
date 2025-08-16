@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Calendar, User, Building } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Calendar, User, Building, X, Check } from 'lucide-react';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskSection as TaskSectionType, TaskListActions, TaskStatus } from './types';
 import EnhancedTaskRow from './EnhancedTaskRow';
@@ -376,16 +376,34 @@ const EnhancedTaskSection: React.FC<EnhancedTaskSectionProps> = ({
                   {/* Status */}
                   <td className="w-[140px] py-3 px-2">
                     {isAddingTask && (
-                      <select
-                        value={newTaskStatus}
-                        onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
-                        className="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value="TODO">To Do</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="REVIEW">Review</option>
-                        <option value="DONE">Done</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={newTaskStatus}
+                          onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
+                          className="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:outline-none"
+                        >
+                          <option value="TODO">To Do</option>
+                          <option value="IN_PROGRESS">In Progress</option>
+                          <option value="REVIEW">Review</option>
+                          <option value="DONE">Done</option>
+                        </select>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={handleAddTask}
+                            className="p-1 rounded hover:bg-green-100 transition-colors"
+                            title="Save task"
+                          >
+                            <Check className="w-4 h-4 text-green-600" />
+                          </button>
+                          <button
+                            onClick={handleCancelAdd}
+                            className="p-1 rounded hover:bg-red-100 transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </td>
                 </tr>
