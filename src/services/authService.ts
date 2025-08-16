@@ -18,7 +18,7 @@ export const authService = {
   loginWithGoogle: async (authorizationCode: string): Promise<GoogleAuthResponse> => {
     const response = await api.post<GoogleAuthResponse>('/auth/google', {
       code: authorizationCode,
-      redirectUri: `${window.location.origin}/auth/callback`
+      redirectUri: `${window.location.origin}/callback`
     }, {
       // Ensure cookies are included in requests
       withCredentials: true

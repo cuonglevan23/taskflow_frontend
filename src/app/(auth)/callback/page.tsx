@@ -186,6 +186,7 @@ export default function AuthCallbackPage() {
             }
 
             console.log('NextAuth sign in successful');
+            
           } catch (loginError) {
             console.error('NextAuth sign in failed:', loginError);
             throw loginError;
@@ -197,7 +198,7 @@ export default function AuthCallbackPage() {
         // Redirect to home after successful login
         setTimeout(() => {
           router.push('/home');
-        }, 2000);
+        }, 1500);
 
       } catch (err) {
         console.error('=== OAuth Callback Error ===');

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { API_BASE_URL } from "@/lib/constants"
@@ -14,7 +15,7 @@ export function LoginForm() {
     try {
       setIsGoogleLoading(true)
       
-      // Use backend OAuth flow
+      // Use backend OAuth flow with NextAuth integration
       const apiUrl = API_BASE_URL
       console.log('Redirecting to backend OAuth:', `${apiUrl}/api/auth/google/url`)
       
