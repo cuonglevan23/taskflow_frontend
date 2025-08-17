@@ -79,7 +79,7 @@ export const authOptions: NextAuthConfig = {
   
   pages: {
     signIn: "/login",
-    error: "/auth/error",
+    error: "/error", // Updated to match route structure
   },
 
   callbacks: {
@@ -131,6 +131,7 @@ export const authOptions: NextAuthConfig = {
   session: {
     strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Update session every 24 hours instead of every request
   },
 
   jwt: {
@@ -145,7 +146,22 @@ export const authOptions: NextAuthConfig = {
     },
   },
 
-  debug: process.env.NODE_ENV === "development",
+  debug: false, // Disable debug to reduce console logs
+  
+  // Reduce unnecessary session updates
+  useSecureCookies: process.env.NODE_ENV === "production",
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      },
+    },
+  },
 }
 
 export const {

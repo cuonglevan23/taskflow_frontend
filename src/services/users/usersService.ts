@@ -96,17 +96,7 @@ export const usersService = {
     }
   },
 
-  // Get current user
-  getCurrentUser: async (): Promise<User> => {
-    try {
-      console.log('🔄 Fetching current user...');
-      const response = await api.get('/api/auth/me');
-      return transformUser(response.data);
-    } catch (error) {
-      console.error('❌ Failed to fetch current user:', error);
-      throw error;
-    }
-  },
+  // getCurrentUser method removed - Use UserContext.useUser() instead
 
   // Create user
   createUser: async (data: CreateUserDTO): Promise<User> => {

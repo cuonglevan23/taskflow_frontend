@@ -183,7 +183,7 @@ const normalizedRole = normalizeRole(backendRole); // UserRole.OWNER
 **Nguyên nhân:** Role mapping không đúng
 **Solution:**
 ```typescript
-// Update LEGACY_ROLE_MAPPING
+// Legacy role mapping for backward compatibility
 export const LEGACY_ROLE_MAPPING = {
   'OWNER': UserRole.OWNER,  // Backend trả về uppercase
   'owner': UserRole.OWNER,  // Support lowercase

@@ -1,4 +1,4 @@
-// import { RegisterForm } from '@/features/auth/components/RegisterForm'; // Legacy removed
+
 
 export default function RegisterPage() {
   return (

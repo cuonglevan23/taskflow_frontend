@@ -2,6 +2,30 @@
 
 ## File Cleanup Commands
 
+### Cleanup Deprecated Authentication Files
+When optimizing authentication system, these legacy files were removed:
+
+```bash
+# Removed deprecated OAuth routes
+rm -rf src/app/api/auth/oauth
+
+# Removed deprecated hooks and services
+rm src/hooks/useUserData.ts
+
+# Removed temporary documentation
+rm AUTHENTICATION_OPTIMIZATION.md
+
+# Removed legacy exports
+rm src/app/(dashboard)/home/components/Cards/index.ts
+```
+
+**Deprecated methods removed:**
+- `authService.getCurrentUser()` → Use `UserContext.useUser()`
+- `usersService.getCurrentUser()` → Use `UserContext.useUser()`
+- `useUserData` hook → Use `UserContext.useUser()`
+
+**Result:** Clean codebase with no deprecated authentication code.
+
 ### Remove Unnecessary Files
 When cleaning up complex component structures:
 
@@ -25,6 +49,43 @@ rm -rf src/components/Calendar/components
 ```
 
 **Result:** Clean, maintainable structure with minimal files.
+
+## Authentication OAuth Callback Fix
+
+### Problem: Duplicate Callback Routes
+Had both `/auth/callback` and `/callback` routes causing duplicate API calls.
+
+### Solution: NextAuth Standard Flow with useSession Hook
+```typescript
+// src/app/auth/callback/page.tsx - Optimized with useSession hook
+const { data: session, status: sessionStatus } = useSession();
+
+// Smart authentication flow
+if (sessionStatus === 'authenticated' && session) {
+  router.push('/home'); // Already logged in
+  return;
+}
+
+if (sessionStatus === 'loading') {
+  return; // Wait for session
+}
+
+// Only process OAuth if not authenticated
+const result = await signIn('backend-oauth', { ... });
+```
+
+### OAuth Flow:
+```
+Backend OAuth → /auth/callback → NextAuth signIn → /home
+                     ↓              ↓               ↓
+                 Parse params    Process auth    Redirect
+```
+
+### Result:
+- ✅ Single OAuth route only
+- ✅ Uses NextAuth standard hooks
+- ✅ No duplicate processing
+- ✅ Clean authentication flow
 
 ## Development Commands
 

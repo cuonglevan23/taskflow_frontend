@@ -32,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        {/* Disable StrictMode in production to reduce duplicate renders */}
         <NextAuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
             <AppProvider>

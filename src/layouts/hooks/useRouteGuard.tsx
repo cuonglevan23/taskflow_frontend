@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { UserRole, Permission } from "@/constants/auth";
 import { getRouteByPath, hasRouteAccess } from "@/config/routes";
-import { useAuth } from "@/layouts/hooks/useAuth";
+import { useUser } from "@/contexts/UserContext";
 
 export interface RouteGuardOptions {
   requiredRoles?: UserRole[];
@@ -18,7 +18,7 @@ export interface RouteGuardOptions {
  * Hook for protecting routes with role and permission checks
  */
 export function useRouteGuard(options: RouteGuardOptions = {}) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
@@ -103,7 +103,7 @@ export function useRouteGuard(options: RouteGuardOptions = {}) {
  * Hook for automatically protecting routes based on route configuration
  */
 export function useAutoRouteGuard() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
@@ -157,7 +157,7 @@ export function useAutoRouteGuard() {
  * Hook for checking permissions
  */
 export function usePermissions() {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const hasPermission = (permission: Permission): boolean => {
     return user?.permissions.includes(permission) || false;
@@ -194,7 +194,7 @@ export function usePermissions() {
  * Hook for checking if user can access a specific route
  */
 export function useCanAccessRoute() {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const canAccessRoute = (routePath: string): boolean => {
     if (!user) return false;

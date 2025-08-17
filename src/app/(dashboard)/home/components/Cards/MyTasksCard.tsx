@@ -143,6 +143,8 @@ const MyTasksCard = () => {
   const toggleTaskComplete = async (taskId: string | number) => {
     const numericId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
 
+
+
     // Optimistic update
     setTaskStates(prev => ({ ...prev, [numericId]: !prev[numericId] }));
 
@@ -151,18 +153,32 @@ const MyTasksCard = () => {
       if (task) {
         const newCompleted = !task.completed;
         // Map to correct backend status format using dynamic configuration
-        const backendStatus = newCompleted ? 'DONE' : 'TODO';
+        const backendStatus = newCompleted ? 'completed' : 'todo';
+        
+
+        
         await updateTask({
           id: task.id.toString(),
           data: {
             status: backendStatus  // Only send status, backend doesn't expect 'completed' field
           }
         });
+        
+
+        
+        // ✅ FIX: Clear local optimistic state after successful API update
+        // Let SWR cache take over with real backend data
+        setTaskStates(prev => {
+          const newState = { ...prev };
+          delete newState[numericId];
+
+          return newState;
+        });
       }
     } catch (error) {
       // Revert optimistic update on error
       setTaskStates(prev => ({ ...prev, [numericId]: !prev[numericId] }));
-      console.error('Failed to update task status:', error);
+      console.error('❌ Failed to update task status:', error);
     }
   };
 

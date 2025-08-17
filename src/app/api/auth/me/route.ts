@@ -1,16 +1,36 @@
-/**
- * Current User API - NextAuth.js integration
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/auth';
 
 // GET /api/auth/me
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    // Add more detailed error tracking
+    console.log('🔍 Fetching auth session...');
+    
+    let session;
+    try {
+      // Use getServerSession instead of auth() for API routes
+      session = await getServerSession(authOptions);
+      console.log('✅ Session retrieved:', session ? 'Found' : 'Not found');
+      
+      if (session) {
+        console.log('📋 Session details:', {
+          hasUser: !!session.user,
+          userEmail: session.user?.email,
+          userRole: session.user?.role,
+        });
+      }
+    } catch (authError) {
+      console.error('❌ Auth function error:', authError);
+      return NextResponse.json(
+        { error: 'Authentication system error', details: authError instanceof Error ? authError.message : 'Unknown auth error' },
+        { status: 500 }
+      );
+    }
     
     if (!session || !session.user) {
+      console.log('🔐 No session or user found');
       return NextResponse.json(
         { error: 'Not authenticated' },
         { 
@@ -22,26 +42,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform NextAuth user to our format
+    console.log('👤 Building user object from session...');
+
+    // Transform NextAuth user to our format with better error handling
     const user = {
-      id: session.user.id || session.user.email || 'unknown',
+      id: session.user.id || session.user.email || `user_${Date.now()}`,
       name: session.user.name || 'Unknown User',
       email: session.user.email || '',
       avatar: session.user.image || null,
-      role: session.user.role || 'member',
+      role: session.user.role || 'MEMBER',
+      permissions: session.user.permissions || [],
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      // Additional fields for compatibility
       teamIds: [],
-      permissions: session.user.permissions || [
-        { resource: 'event', action: 'create', scope: 'own' },
-        { resource: 'event', action: 'read', scope: 'own' },
-        { resource: 'event', action: 'update', scope: 'own' },
-        { resource: 'event', action: 'delete', scope: 'own' },
-        { resource: 'calendar', action: 'read', scope: 'own' },
-        { resource: 'task', action: 'create', scope: 'own' },
-        { resource: 'task', action: 'read', scope: 'own' },
-        { resource: 'task', action: 'update', scope: 'own' },
-        { resource: 'task', action: 'delete', scope: 'own' },
-      ],
+      preferences: {
+        theme: 'dark',
+        language: 'en',
+        timezone: 'UTC',
+        emailNotifications: true,
+        pushNotifications: true,
+        defaultView: 'list',
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '24h',
+      },
     };
+    
+    console.log('✅ User object built successfully for:', user.email);
     
     return NextResponse.json(user, {
       headers: {
@@ -50,9 +78,15 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Current user API error:', error);
+    console.error('❌ Unexpected error in /api/auth/me:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
+    
     return NextResponse.json(
-      { error: 'Failed to fetch current user' },
+      { 
+        error: 'Failed to fetch current user', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { 
         status: 500,
         headers: {

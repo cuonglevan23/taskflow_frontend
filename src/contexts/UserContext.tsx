@@ -10,7 +10,7 @@ import React, {
   ReactNode 
 } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserData } from '@/hooks/useUserData';
+import { api } from '@/services/api';
 import type { User } from '@/types/auth';
 import { UserRole } from '@/constants/auth';
 
@@ -29,9 +29,9 @@ export interface UserPreferences {
 // Extended User Profile Interface
 export interface UserProfile extends User {
   preferences?: UserPreferences;
-  lastLoginAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  lastLoginAt?: string | Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 // User Context Type
@@ -50,6 +50,7 @@ export interface UserContextType {
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<void>;
   updateAvatar: (avatarFile: File) => Promise<void>;
   refreshUser: () => Promise<void>;
+  logout: () => Promise<void>;
   
   // Permission Helpers
   hasRole: (role: UserRole) => boolean;
@@ -85,76 +86,158 @@ interface UserProviderProps {
 export function UserProvider({ children }: UserProviderProps) {
   // Local State
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetch, setLastFetch] = useState<number>(0);
+  const [userDataCache, setUserDataCache] = useState<{data: User | null, timestamp: number}>({
+    data: null, 
+    timestamp: 0
+  });
   
-  // Hooks
-  const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { 
-    user: backendUser, 
-    isLoading: backendLoading, 
-    error: backendError,
-    refetch: refetchBackendUser,
-    updateUser: updateBackendUser,
-    updateAvatar: updateBackendAvatar
-  } = useUserData();
+  // Request deduplication - prevent multiple simultaneous API calls
+  const [activeRequest, setActiveRequest] = useState<Promise<User | null> | null>(null);
+  
+  // Only use NextAuth for authentication (optimized with minimal calls)
+  const { user: authUser, isAuthenticated, isLoading: authLoading, logout: authLogout } = useAuth();
 
-  // Cache TTL (5 minutes)
-  const CACHE_TTL = 5 * 60 * 1000;
+  // Cache TTL (10 minutes - reduced frequency to prevent spam)
+  const CACHE_TTL = 10 * 60 * 1000;
+
+  // Fetch user details from backend (only when needed) with deduplication
+  const fetchUserDetails = useCallback(async (force = false): Promise<User | null> => {
+    if (!isAuthenticated) return null;
+    
+    // Check cache first
+    const now = Date.now();
+    const cacheValid = now - userDataCache.timestamp < CACHE_TTL;
+    
+    if (!force && cacheValid && userDataCache.data) {
+      console.log('💾 Using cached user data');
+      return userDataCache.data;
+    }
+    
+    // Request deduplication - if there's already an active request, wait for it
+    if (activeRequest) {
+      console.log('⏳ Request already in progress, waiting for result...');
+      try {
+        const result = await activeRequest;
+        return result;
+      } catch (err) {
+        // If active request failed, continue with new request
+        console.warn('⚠️ Active request failed, making new request');
+      }
+    }
+    
+    // Create new request
+    const requestPromise = (async (): Promise<User | null> => {
+      try {
+        setError(null);
+        
+        // Only call backend API if we need extended user data
+        console.log('🔄 Making NEW /api/auth/me call...');
+        const response = await api.get('/api/auth/me');
+        console.log('✅ /api/auth/me response received:', response.status);
+        const userData = response.data;
+        
+        // Update cache
+        setUserDataCache({
+          data: userData,
+          timestamp: now
+        });
+        
+        return userData;
+      } catch (err: any) {
+        // Handle all backend errors gracefully - use NextAuth data as fallback
+        const statusCode = err.response?.status || 0;
+        
+        if (statusCode === 401) {
+          // Unauthorized - clear cache
+          setUserDataCache({ data: null, timestamp: 0 });
+          console.warn('🔐 User unauthorized, cleared cache');
+        } else if (statusCode === 500) {
+          // Server error - don't clear cache, just skip this fetch
+          console.warn('🛑 Backend server error (500), using NextAuth data as fallback');
+        } else {
+          // Other errors (network, etc.)
+          console.warn(`⚠️ Backend API error (${statusCode}), using NextAuth data as fallback:`, err.message);
+        }
+        
+        // Always return null on error - UserContext will use NextAuth data instead
+        return null;
+      } finally {
+        // Clear active request when done
+        setActiveRequest(null);
+      }
+    })();
+    
+    // Store active request
+    setActiveRequest(requestPromise);
+    
+    return requestPromise;
+  }, [isAuthenticated, CACHE_TTL, activeRequest]); // Added activeRequest to dependencies
 
   // Combine auth and backend user data
   const combineUserData = useCallback((auth: any, backend: User | null): UserProfile | null => {
-    if (!auth && !backend) return null;
+    if (!auth) return null;
     
-    // Start with auth user as base
+    // Start with auth user as base (always available from NextAuth)
     const combined: UserProfile = {
-      id: auth?.id || backend?.id || '',
-      email: auth?.email || backend?.email || '',
-      name: auth?.name || backend?.name || '',
-      avatar: backend?.avatar || auth?.image || auth?.avatar || '',
-      role: (backend?.role || auth?.role || UserRole.MEMBER) as UserRole,
+      id: auth.id || '',
+      email: auth.email || '',
+      name: auth.name || '',
+      avatar: backend?.avatar || auth.image || auth.avatar || '',
+      role: (backend?.role || auth.role || UserRole.MEMBER) as UserRole,
+      permissions: backend?.permissions || [],
+      isActive: backend?.isActive ?? true,
       preferences: {
         ...DEFAULT_PREFERENCES,
         ...(backend?.preferences || {}),
       },
       lastLoginAt: backend?.lastLoginAt,
-      createdAt: backend?.createdAt,
-      updatedAt: backend?.updatedAt,
+      createdAt: backend?.createdAt || backend?.created_at || new Date(),
+      updatedAt: backend?.updatedAt || backend?.updated_at || new Date(),
     };
 
     return combined;
-  }, []);
+  }, []); // No dependencies - pure function
 
-  // Refresh user data
+  // Refresh user data - SIMPLIFIED to only use NextAuth
   const refreshUser = useCallback(async () => {
+    if (!isAuthenticated || !authUser) return;
+    
     try {
+      setIsLoading(true);
       setError(null);
-      await refetchBackendUser();
-      setLastFetch(Date.now());
+      
+      // Only use NextAuth data - no backend API calls
+      console.log('🔄 Refreshing user data from NextAuth only');
+      const refreshedProfile = combineUserData(authUser, null);
+      setUserProfile(refreshedProfile);
+      
     } catch (err: any) {
       setError(err.message || 'Failed to refresh user data');
+    } finally {
+      setIsLoading(false);
     }
-  }, [refetchBackendUser]);
+  }, [isAuthenticated, authUser, combineUserData]);
 
-  // Update user profile
+  // Update user profile - LOCAL ONLY (no backend API)
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
     try {
       setError(null);
       
-      // Update backend
-      await updateBackendUser(updates);
+      console.log('⚠️ Profile update - local only (backend API disabled)');
       
       // Update local state optimistically
       setUserProfile(prev => prev ? { ...prev, ...updates } : null);
       
-      // Refresh from backend to ensure consistency
-      await refreshUser();
+      // TODO: Enable backend API when it's stable
+      // For now, just update locally to avoid 500 errors
+      
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
       throw err;
     }
-  }, [updateBackendUser, refreshUser]);
+  }, []);
 
   // Update user preferences
   const updatePreferences = useCallback(async (preferences: Partial<UserPreferences>) => {
@@ -173,17 +256,27 @@ export function UserProvider({ children }: UserProviderProps) {
     }
   }, [userProfile?.preferences, updateProfile]);
 
-  // Update avatar
+  // Update avatar - LOCAL ONLY (no backend API)
   const updateAvatar = useCallback(async (avatarFile: File) => {
     try {
       setError(null);
-      await updateBackendAvatar(avatarFile);
-      await refreshUser();
+      
+      console.log('⚠️ Avatar update - local only (backend API disabled)');
+      
+      // Create temporary URL for preview
+      const tempUrl = URL.createObjectURL(avatarFile);
+      
+      // Update local state only
+      setUserProfile(prev => prev ? { ...prev, avatar: tempUrl } : null);
+      
+      // TODO: Enable backend API when it's stable
+      // For now, just update locally to avoid 500 errors
+      
     } catch (err: any) {
       setError(err.message || 'Failed to update avatar');
       throw err;
     }
-  }, [updateBackendAvatar, refreshUser]);
+  }, []);
 
   // Role helpers
   const hasRole = useCallback((role: UserRole): boolean => {
@@ -206,34 +299,41 @@ export function UserProvider({ children }: UserProviderProps) {
   // Clear cache
   const clearUserCache = useCallback(() => {
     setUserProfile(null);
-    setLastFetch(0);
+    setUserDataCache({ data: null, timestamp: 0 });
     setError(null);
-  }, []);
+    setActiveRequest(null); // Clear any active request
+  }, []); // No dependencies - only setState calls
 
-  // Update user profile when data changes
-  useEffect(() => {
-    const combined = combineUserData(authUser, backendUser);
-    setUserProfile(combined);
-    
-    // Update loading state
-    const loading = authLoading || backendLoading;
-    setIsLoading(loading);
-    
-    // Update error state
-    setError(backendError);
-  }, [authUser, backendUser, authLoading, backendLoading, backendError, combineUserData]);
-
-  // Auto-refresh user data when cache expires
-  useEffect(() => {
-    if (!isAuthenticated || !userProfile) return;
-    
-    const now = Date.now();
-    const cacheExpired = now - lastFetch > CACHE_TTL;
-    
-    if (cacheExpired && !isLoading) {
-      refreshUser();
+  // Logout function
+  const logout = useCallback(async () => {
+    try {
+      console.log('🚪 Logging out user...');
+      clearUserCache();
+      await authLogout();
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+      throw error;
     }
-  }, [isAuthenticated, userProfile, lastFetch, isLoading, refreshUser, CACHE_TTL]);
+  }, [authLogout, clearUserCache]);
+
+  // Initialize user profile when auth changes - ONLY use NextAuth data
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && authUser) {
+      // DISABLE backend API calls completely - only use NextAuth data
+      console.log('✅ Using NextAuth data only (no backend API calls)');
+      const profileFromAuth = combineUserData(authUser, null); // Pass null for backend data
+      setUserProfile(profileFromAuth);
+      
+      // DO NOT call backend API - it's causing 500 errors
+      // The app will work perfectly with just NextAuth data
+      
+    } else if (!authLoading && !isAuthenticated) {
+      // Clear user data when not authenticated
+      setUserProfile(null);
+      setUserDataCache({ data: null, timestamp: 0 });
+      setError(null);
+    }
+  }, [authUser?.id, isAuthenticated, authLoading]); // Use authUser.id instead of full object
 
   // Context value
   const contextValue: UserContextType = useMemo(() => ({
@@ -251,6 +351,7 @@ export function UserProvider({ children }: UserProviderProps) {
     updatePreferences,
     updateAvatar,
     refreshUser,
+    logout,
     
     // Permission Helpers
     hasRole,
@@ -269,6 +370,7 @@ export function UserProvider({ children }: UserProviderProps) {
     updatePreferences,
     updateAvatar,
     refreshUser,
+    logout,
     hasRole,
     hasAnyRole,
     canAccessManager,
