@@ -35,7 +35,7 @@ import RefactoredGoalsCard from "./components/Cards/GoalsCard";
 
 // Import Global Context
 import { useTasksContext } from "@/contexts";
-import { useTaskStats } from "@/hooks/useTasks";
+import { useMyTasksSummary } from "@/hooks/useTasks";
 
 // Base Card Types & Interfaces
 interface TabConfig {
@@ -268,9 +268,8 @@ const HomeHeader = () => {
 };
 
 // Greeting Section
-const GreetingSection = () => {
+const GreetingSection = ({ user }: { user: any }) => {
   const { theme } = useTheme();
-  const { user } = useUser();
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -299,8 +298,27 @@ const GreetingSection = () => {
 const AchievementsWidget = () => {
   const { theme } = useTheme();
   
-  // Use global context for real-time task statistics
-  const { stats: taskStats } = useTaskStats();
+  // Use same working logic as MyTasksCard
+  const { tasks, isLoading, error } = useMyTasksSummary({
+    page: 0,
+    size: 50,
+    sortBy: 'startDate',
+    sortDir: 'desc'
+  });
+  
+  const { optimisticTaskStates } = useTasksContext();
+  
+  // Calculate completed tasks same way as MyTasksCard
+  const completedTasksCount = React.useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return 0;
+
+    return tasks.filter(task => {
+      const optimisticState = optimisticTaskStates[task.id.toString()];
+      const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+      const finalCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
+      return finalCompleted;
+    }).length;
+  }, [tasks, optimisticTaskStates]);
   
   return (
     <div className="flex justify-center mb-8">
@@ -332,7 +350,7 @@ const AchievementsWidget = () => {
             className="text-sm"
             style={{ color: theme.text.primary }}
           >
-            {taskStats?.totalParticipatingTasks || 0} task{(taskStats?.totalParticipatingTasks || 0) !== 1 ? 's' : ''} completed
+            {completedTasksCount || 0} task{(completedTasksCount || 0) !== 1 ? 's' : ''} completed
           </span>
         </div>
 
@@ -364,6 +382,7 @@ const AchievementsWidget = () => {
 
 export default function HomeDashboard() {
   const { theme } = useTheme();
+  const { user } = useUser();
 
   return (
     <PrivateLayout>
@@ -376,8 +395,8 @@ export default function HomeDashboard() {
           {/* Header */}
           <HomeHeader />
 
-          {/* Greeting Section */}
-          <GreetingSection />
+          {/* Greeting Section - Get user from layout context */}
+          <GreetingSection user={user} />
 
           {/* Achievements Widget (Summary Bar) with Customize Button */}
           <div className="relative">

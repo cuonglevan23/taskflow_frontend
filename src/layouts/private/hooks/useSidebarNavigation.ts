@@ -1,12 +1,7 @@
-/**
- * Custom Hook for Sidebar Navigation Logic
- * Tách logic phức tạp ra khỏi component chính
- */
-
 import { useMemo, useCallback } from 'react';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useProjectsContext } from '@/contexts';
-import { useTaskStats } from '@/hooks/useTasks';
+import { useMyTasksSummary } from '@/hooks/useTasks';
 import { 
   getVisibleNavigationSections,
   type NavigationSection 
@@ -31,8 +26,23 @@ export function useSidebarNavigation() {
   const rbac = useRBAC();
   const { projects } = useProjectsContext();
   
-  // Use SWR hook for task stats instead of context
-  const { stats: taskStats } = useTaskStats();
+  // Use shared hook for consistency with UserSummaryBar and MyTasksCard
+  const { tasks } = useMyTasksSummary({
+    page: 0,
+    size: 50,
+    sortBy: 'startDate',
+    sortDir: 'desc'
+  });
+
+  // Calculate pending tasks count from shared data source
+  const pendingTasksCount = useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return 0;
+    return tasks.filter(task => 
+      !task.completed && 
+      task.status !== 'completed' && 
+      task.status !== 'DONE'
+    ).length;
+  }, [tasks]);
 
   // Create role checks object (memoized)
   const roleChecks = useMemo(() => createRoleChecks(rbac), [rbac]);
@@ -54,7 +64,7 @@ export function useSidebarNavigation() {
               return {
                 ...item,
                 badge: {
-                  count: taskStats?.byStatus?.pending || 0,
+                  count: pendingTasksCount,
                   color: "default" as const,
                 }
               };
@@ -97,7 +107,7 @@ export function useSidebarNavigation() {
       
       return section;
     });
-  }, [baseNavigationSections, roleChecks, taskStats?.byStatus?.pending, projects]);
+  }, [baseNavigationSections, roleChecks, pendingTasksCount, projects]);
 
   // Check if item is active (memoized with useCallback)
   const checkItemActive = useCallback((item: any, pathname: string) => {

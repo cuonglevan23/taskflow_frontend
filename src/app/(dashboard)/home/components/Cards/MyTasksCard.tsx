@@ -16,7 +16,7 @@ const MyTasksCard = () => {
   const { user } = useUser();
 
   // Get UI state from context
-  const { globalFilters, globalSort } = useTasksContext();
+  const { globalFilters, globalSort, optimisticTaskStates, setOptimisticTaskState, clearOptimisticTaskState } = useTasksContext();
   
   // Simple local task grouping function (without backend dependency)
   const getTaskCountsByGroup = (tasks: Task[]) => {
@@ -36,13 +36,18 @@ const MyTasksCard = () => {
     return groups;
   };
   
-  // Use correct API for user's personal tasks
+  // Use correct API for user's personal tasks - with error handling
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
     size: 50,
     sortBy: 'startDate',
     sortDir: 'desc'
   });
+  
+  // Don't render if there's a 401 error to prevent infinite loops
+  if (error && (error.status === 401 || error.message?.includes('401'))) {
+    return null;
+  }
   
   // Remove stats API call due to 403 error - calculate from tasks instead
   // const { stats: myTasksStats } = useMyTasksStats();
@@ -74,7 +79,7 @@ const MyTasksCard = () => {
   // Local state for UI management
   const [activeTab, setActiveTab] = React.useState<string>("upcoming");
   const [showAllTasks, setShowAllTasks] = React.useState(false);
-  const [taskStates, setTaskStates] = React.useState<Record<string, boolean>>({});
+  // taskStates replaced with shared optimistic state from context
 
   // Computed values
   const displayedTasks = React.useMemo(() => {
@@ -84,10 +89,9 @@ const MyTasksCard = () => {
 
     // Helper function to check if task is completed
     const isTaskCompleted = (task: Task) => {
-      return task.completed || 
-             task.status === 'completed' || 
-             task.status === 'DONE' ||     // Backend format
-             taskStates[task.id];
+      const optimisticState = optimisticTaskStates[task.id.toString()];
+      const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+      return optimisticState !== undefined ? optimisticState : actualCompleted;
     };
 
     // Filter by active tab
@@ -105,79 +109,108 @@ const MyTasksCard = () => {
 
     // Limit display if not showing all
     return showAllTasks ? filteredTasks : filteredTasks.slice(0, 4);
-  }, [tasks, activeTab, showAllTasks, taskStates]);
+  }, [tasks, activeTab, showAllTasks, optimisticTaskStates]);
 
   const taskStats = React.useMemo(() => {
+    console.log('🔍 MyTasksCard - Debug taskStats calculation:', {
+      tasks: tasks ? `Array(${tasks.length})` : 'null/undefined',
+      optimisticTaskStates,
+      sampleTask: tasks?.[0] ? {
+        id: tasks[0].id,
+        completed: tasks[0].completed, 
+        status: tasks[0].status,
+        title: tasks[0].title
+      } : 'No tasks'
+    });
+
     if (!tasks || !Array.isArray(tasks)) return { completed: 0, overdue: 0, total: 0 };
 
-    const completed = tasks.filter(task => task.completed || task.status === 'completed' || taskStates[task.id]).length;
+    const completed = tasks.filter(task => {
+      const optimisticState = optimisticTaskStates[task.id.toString()];
+      const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+      const finalCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
+      
+      console.log(`📋 MyTasksCard Task ${task.id}:`, {
+        optimistic: optimisticState,
+        actual: actualCompleted,
+        final: finalCompleted
+      });
+      
+      return finalCompleted;
+    }).length;
+    
     const overdue = tasks.filter(task => {
-      const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !task.completed && task.status !== 'completed' && !taskStates[task.id];
-      return isOverdue;
+      const optimisticState = optimisticTaskStates[task.id.toString()];
+      const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+      const isCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
+      return task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
     }).length;
 
     return { completed, overdue, total: tasks.length };
-  }, [tasks, taskStates]);
+  }, [tasks, optimisticTaskStates]);
 
   const hasMoreTasks = React.useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return false;
 
     let filteredCount = 0;
     if (activeTab === "completed") {
-      filteredCount = tasks.filter(task => task.completed || task.status === 'completed' || taskStates[task.id]).length;
+      filteredCount = tasks.filter(task => {
+        const optimisticState = optimisticTaskStates[task.id.toString()];
+        const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+        return optimisticState !== undefined ? optimisticState : actualCompleted;
+      }).length;
     } else if (activeTab === "overdue") {
       filteredCount = tasks.filter(task => {
-        const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !task.completed && task.status !== 'completed' && !taskStates[task.id];
-        return isOverdue;
+        const optimisticState = optimisticTaskStates[task.id.toString()];
+        const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+        const isCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
+        return task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
       }).length;
     } else {
-      filteredCount = tasks.filter(task => !task.completed && task.status !== 'completed' && !taskStates[task.id]).length;
+      filteredCount = tasks.filter(task => {
+        const optimisticState = optimisticTaskStates[task.id.toString()];
+        const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+        const isCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
+        return !isCompleted;
+      }).length;
     }
 
     return filteredCount > 4;
-  }, [tasks, activeTab, taskStates]);
+  }, [tasks, activeTab, optimisticTaskStates]);
 
   // Helper functions
   const toggleShowAll = () => setShowAllTasks(!showAllTasks);
 
   const toggleTaskComplete = async (taskId: string | number) => {
     const numericId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
+    const stringId = numericId.toString();
 
+    // Get current state (optimistic or actual)
+    const currentOptimistic = optimisticTaskStates[stringId];
+    const task = tasks.find(t => t.id === numericId);
+    const currentCompleted = currentOptimistic !== undefined ? currentOptimistic : (task?.completed || task?.status === 'completed' || task?.status === 'DONE');
 
-
-    // Optimistic update
-    setTaskStates(prev => ({ ...prev, [numericId]: !prev[numericId] }));
+    // Optimistic update using shared state
+    setOptimisticTaskState(stringId, !currentCompleted);
 
     try {
-      const task = tasks.find(t => t.id === numericId);
       if (task) {
-        const newCompleted = !task.completed;
-        // Map to correct backend status format using dynamic configuration
+        const newCompleted = !currentCompleted;
         const backendStatus = newCompleted ? 'completed' : 'todo';
-        
-
         
         await updateTask({
           id: task.id.toString(),
           data: {
-            status: backendStatus  // Only send status, backend doesn't expect 'completed' field
+            status: backendStatus
           }
         });
         
-
-        
-        // ✅ FIX: Clear local optimistic state after successful API update
-        // Let SWR cache take over with real backend data
-        setTaskStates(prev => {
-          const newState = { ...prev };
-          delete newState[numericId];
-
-          return newState;
-        });
+        // Clear optimistic state after successful API update
+        clearOptimisticTaskState(stringId);
       }
     } catch (error) {
       // Revert optimistic update on error
-      setTaskStates(prev => ({ ...prev, [numericId]: !prev[numericId] }));
+      setOptimisticTaskState(stringId, currentCompleted);
       console.error('❌ Failed to update task status:', error);
     }
   };
@@ -223,7 +256,9 @@ const MyTasksCard = () => {
   // Task Item Component
   const TaskItem = ({ task }: { task: Task }) => {
     // Check both completion mechanisms for proper synchronization
-    const isCompleted = taskStates[task.id] || task.completed || task.status === 'completed';
+    const optimisticState = optimisticTaskStates[task.id.toString()];
+    const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
+    const isCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
 
     return (
       <div

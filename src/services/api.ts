@@ -26,15 +26,47 @@ const apiClient: AxiosInstance = axios.create(API_CONFIG);
 
 // Request Interceptor - Authentication & Logging
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = CookieAuth.getAccessToken();
+  async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
+    // Try to get token from NextAuth session first
+    let token = null;
+    
+    // Import auth dynamically to avoid SSR issues
+    if (typeof window !== 'undefined') {
+      try {
+        const { getSession } = await import('next-auth/react');
+        const session = await getSession();
+        token = session?.user?.accessToken;
+        
+        if (token) {
+          console.log('🔑 Using NextAuth session token for API request');
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to get NextAuth session:', error);
+      }
+    }
+    
+    // Fallback to cookies if NextAuth session not available
+    if (!token) {
+      token = CookieAuth.getAccessToken();
+      if (token) {
+        console.log('🍪 Using cookie token for API request');
+      }
+    }
     
     if (token && config.headers) {
       // Add Bearer token to Authorization header
       config.headers['Authorization'] = `Bearer ${token}`;
+      console.log('📤 Authorization header added:', `Bearer ${token.substring(0, 20)}...`);
       
       // Add user context headers for backend compatibility
-      const payload = CookieAuth.getTokenPayload();
+      const payload = CookieAuth.getTokenPayload() || (() => {
+        try {
+          return JSON.parse(atob(token.split('.')[1]));
+        } catch {
+          return null;
+        }
+      })();
+      
       if (payload) {
         config.headers['X-User-ID'] = payload.userId?.toString();
         config.headers['X-User-Email'] = payload.email;
@@ -47,6 +79,10 @@ apiClient.interceptors.request.use(
       }
     } else {
       console.warn('⚠️ No access token found for request:', config.url);
+      console.warn('📋 Available auth sources:', {
+        nextAuthSession: 'checked',
+        cookieToken: CookieAuth.getAccessToken() ? 'present' : 'missing'
+      });
     }
     
     return config;
@@ -78,17 +114,10 @@ apiClient.interceptors.response.use(
 
     // Handle specific error cases
     if (status === 401) {
-      console.error('🚨 401 Unauthorized - Clearing auth and redirecting...');
-      try {
-        CookieAuth.clearAuth();
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-      } catch (authError: unknown) {
-        // Silent fail - don't cause more errors
-        console.warn('Auth cleanup failed:', authError);
-      }
-    } if (status === 403) {
+      console.warn('🚨 401 Unauthorized - API call failed');
+      // Don't automatically redirect or clear auth - let NextAuth/UserContext handle it
+      // This prevents infinite redirect loops
+    } else if (status === 403) {
       console.error('🚨 403 Forbidden - Check user permissions');
     } else if (!status) {
       console.error('🚨 Network Error - Backend unreachable');

@@ -50,6 +50,20 @@ export default function AuthCallback() {
 
         const userRole = decodeJWT(accessToken);
 
+        // Store token in cookies for API interceptor compatibility
+        const { CookieAuth } = await import('@/utils/cookieAuth');
+        CookieAuth.setAccessToken(accessToken);
+        CookieAuth.setUserInfo({
+          id: userEmail,
+          email: decodeURIComponent(userEmail),
+          role: userRole,
+          name: userName || decodeURIComponent(userEmail),
+          avatar: userAvatar ? decodeURIComponent(userAvatar) : undefined,
+        });
+        
+        console.log('🍪 Stored authentication in cookies');
+        console.log('🔑 Token stored for API requests');
+
         // Sign in with NextAuth using backend OAuth data (only once)
         const result = await signIn('backend-oauth', {
           token: accessToken,

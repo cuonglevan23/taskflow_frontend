@@ -33,6 +33,11 @@ interface TasksContextType {
     direction: 'asc' | 'desc';
   };
   setGlobalSort: (sort: TasksContextType['globalSort']) => void;
+  
+  // Optimistic updates for task completion (shared across components)
+  optimisticTaskStates: Record<string, boolean>;
+  setOptimisticTaskState: (taskId: string, completed: boolean) => void;
+  clearOptimisticTaskState: (taskId: string) => void;
 }
 
 const TasksContext = createContext<TasksContextType | undefined>(undefined);
@@ -46,6 +51,21 @@ export const TasksProvider = ({ children }: TasksProviderProps) => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<'dayGridMonth' | 'dayGridWeek'>('dayGridMonth');
   const [activeFilters, setActiveFilters] = useState<TasksContextType['activeFilters']>({});
+  
+  // Shared optimistic state for task completion
+  const [optimisticTaskStates, setOptimisticTaskStates] = useState<Record<string, boolean>>({});
+  
+  const setOptimisticTaskState = (taskId: string, completed: boolean) => {
+    setOptimisticTaskStates(prev => ({ ...prev, [taskId]: completed }));
+  };
+  
+  const clearOptimisticTaskState = (taskId: string) => {
+    setOptimisticTaskStates(prev => {
+      const newState = { ...prev };
+      delete newState[taskId];
+      return newState;
+    });
+  };
   
   // Global filters and sort state for component compatibility
   const [globalFilters, setGlobalFilters] = useState<TasksContextType['globalFilters']>({});
@@ -65,6 +85,9 @@ export const TasksProvider = ({ children }: TasksProviderProps) => {
     setGlobalFilters,
     globalSort,
     setGlobalSort,
+    optimisticTaskStates,
+    setOptimisticTaskState,
+    clearOptimisticTaskState,
   };
 
   return (

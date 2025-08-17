@@ -16,8 +16,7 @@ import {
 export function usePrivateLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading: userDataLoading } = useUser();
-  const { logout: authLogout } = useUser(); // Use logout from UserContext
+  const { user, isLoading: userDataLoading, logout: authLogout } = useUser(); // Single useUser call
 
   // Layout state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

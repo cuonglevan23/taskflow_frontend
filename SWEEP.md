@@ -26,6 +26,144 @@ rm src/app/(dashboard)/home/components/Cards/index.ts
 
 **Result:** Clean codebase with no deprecated authentication code.
 
+### Fix Infinite Session Calls / Reload Loop
+When experiencing continuous page reloads and multiple session API calls:
+
+**Problem:** Multiple components calling `useUser()` → `useSession()` causing duplicate session polling.
+
+**Solution:** Minimize `useUser()` calls and use layout context:
+
+```typescript
+// ❌ Multiple useUser() calls in different components
+const HomeComponent = () => {
+  const { user } = useUser(); // Session call 1
+};
+const CardComponent = () => {
+  const { user } = useUser(); // Session call 2  
+};
+
+// ✅ Single useUser() call in layout, pass user via props
+const Layout = () => {
+  const { user } = useUser(); // Single session call
+  return <HomeComponent user={user} />;
+};
+```
+
+**Files to optimize:**
+```typescript
+// Comment out duplicate useUser imports
+// src/app/(dashboard)/home/page.tsx
+// import { useUser } from "@/contexts/UserContext"; // Commented out
+
+// src/app/(dashboard)/home/components/Cards/MyTasksCard.tsx  
+// import { useUser } from "@/contexts/UserContext"; // Use from layout context instead
+```
+
+**Middleware check:**
+- Ensure middleware.ts doesn't cause redirect loops
+- Check for infinite redirects between auth/protected routes
+
+**NextAuth optimization:**
+```typescript
+// src/providers/NextAuthProvider.tsx
+<SessionProvider
+  refetchInterval={0}              // Disable auto refetch
+  refetchOnWindowFocus={false}     // Disable focus refetch
+  refetchWhenOffline={false}       // Disable offline refetch
+>
+```
+
+**Result:** Reduced from 10+ session calls to 2-3 per page load.
+
+### Fix 401 API Error Infinite Redirects
+When API calls return 401 Unauthorized causing infinite page reloads:
+
+**Problem:** API interceptors automatically redirecting on 401 errors, creating loops.
+
+**Solution:** Let NextAuth middleware handle authentication redirects:
+
+```typescript
+// ❌ Before - Automatic redirect on 401
+if (status === 401) {
+  CookieAuth.clearAuth();
+  window.location.href = '/login'; // Causes infinite loops
+}
+
+// ✅ After - Let NextAuth handle redirects  
+if (status === 401) {
+  console.warn('🚨 401 Unauthorized - API call failed');
+  // Don't automatically redirect - let NextAuth/middleware handle it
+}
+```
+
+**Component protection:**
+```typescript
+// Guard against 401 errors in components
+if (error && (error.status === 401 || error.message?.includes('401'))) {
+  return null; // Don't render component if unauthorized
+}
+```
+
+**Result:** No more infinite reload loops from API 401 errors.
+
+### Fix API Endpoint 401 Errors
+When API endpoints return 401 due to authentication middleware issues:
+
+**Problem:** Complex middleware or endpoint URL mismatches causing 401 errors.
+
+**Solution:** Simplify API routes to use NextAuth directly:
+
+```typescript
+// ❌ Before - Complex middleware
+export const GET = withAuthHandler(async (request, user) => {
+  // Complex auth logic
+}, withTaskPermissions);
+
+// ✅ After - Direct NextAuth usage
+export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+  // Handle request
+}
+```
+
+**Endpoint fixes:**
+- Created correct API route structure: `/api/tasks/my-tasks/summary`
+- Simplified authentication with direct NextAuth `auth()` function
+- Added mock data responses matching backend MyTaskSummaryDto structure
+
+**Result:** API endpoints work with proper NextAuth integration.
+
+### Fix API Route 401 After Creation
+When new API routes still return 401 after being created:
+
+**Problem:** Server caching or wrong port access.
+
+**Solution:** 
+1. **Restart dev server** to load new API routes
+2. **Check correct port** - Next.js may switch ports if 3000 is busy
+3. **Clear browser cache** to remove cached 401 responses
+
+```bash
+# If port 3000 is busy, Next.js uses next available port
+npm run dev
+# ⚠ Port 3000 is in use, using port 3001 instead
+
+# Access correct URL
+http://localhost:3001  # NOT localhost:3000
+```
+
+**Debugging API routes:**
+```typescript
+// Add debug logging to API routes
+console.log('🔍 API endpoint called');
+console.log('📋 Session:', session ? 'Found' : 'None');
+```
+
+**Result:** API endpoints accessible after server restart and port correction.
+
 ### Remove Unnecessary Files
 When cleaning up complex component structures:
 

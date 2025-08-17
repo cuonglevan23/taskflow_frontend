@@ -24,13 +24,9 @@ export default function PrivateLayoutContent({
     setSidebarOpen(false);
   };
 
-  // Don't render if user is null (during logout process)
+  // Don't render if user is null (during logout process) - but avoid flicker
   if (!user) {
-    return (
-      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: "transparent" }}>
-        <div className="text-gray-600">Loading...</div>
-      </div>
-    );
+    return null; // Return null instead of loading to prevent layout shift
   }
 
   return (

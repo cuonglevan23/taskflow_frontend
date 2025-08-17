@@ -133,21 +133,17 @@ class ApiClient {
   }
 
   private async handleUnauthorized(): Promise<void> {
-    SafeLogger.error('🚨 401 Unauthorized - Clearing auth and redirecting...');
+    SafeLogger.warn('🚨 401 Unauthorized - API call failed, letting NextAuth handle session');
+    
+    // Don't automatically clear auth or redirect - let NextAuth/UserContext handle it
+    // This prevents infinite redirect loops from API calls that fail due to auth issues
     
     try {
-      // Try to refresh token first
-      const refreshToken = CookieAuth.getRefreshToken();
-      if (refreshToken) {
-        // Implement token refresh logic here if needed
-        // For now, just clear auth
-      }
+      // Only log the issue, don't take any action that could cause loops
+      SafeLogger.warn('Auth token may be expired or invalid');
       
-      CookieAuth.clearAuth();
-      
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
+      // Let the middleware and NextAuth handle the redirect properly
+      // Don't force immediate redirects here
     } catch (authError) {
       // Silent fail - don't cause more errors
       SafeLogger.error('Failed to handle unauthorized error:', authError);

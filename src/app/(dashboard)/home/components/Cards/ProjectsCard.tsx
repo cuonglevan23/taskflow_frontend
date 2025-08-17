@@ -179,7 +179,6 @@ const ProjectsCard = () => {
   return (
     <BaseCard
       title="Projects"
-      createAction={createAction}
       showMoreButton={showMoreButton}
       onMenuClick={handleMenuClick}
     >
