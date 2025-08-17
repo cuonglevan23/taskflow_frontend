@@ -12,7 +12,7 @@ interface BaseModalProps {
   title?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'fullscreen';
   height?: 'auto' | 'screen' | 'fit' | string;
   showCloseButton?: boolean;
   showHeader?: boolean;
@@ -37,6 +37,7 @@ const MAX_WIDTH_CLASSES = {
   '5xl': 'max-w-5xl',
   '6xl': 'max-w-6xl',
   '7xl': 'max-w-7xl',
+  fullscreen: 'max-w-none w-screen h-screen',
 };
 
 const HEIGHT_CLASSES = {
@@ -74,6 +75,7 @@ export default function BaseModal({
     }
   };
 
+  const isFullscreen = maxWidth === 'fullscreen';
   const maxWidthClass = MAX_WIDTH_CLASSES[maxWidth];
   const heightClass = typeof height === 'string' && HEIGHT_CLASSES[height as keyof typeof HEIGHT_CLASSES] 
     ? HEIGHT_CLASSES[height as keyof typeof HEIGHT_CLASSES]
@@ -85,19 +87,21 @@ export default function BaseModal({
 
   return (
     <div 
-      className={`fixed inset-0 flex items-center justify-center ${backdropClassName}`}
+      className={`fixed inset-0 ${isFullscreen ? '' : 'flex items-center justify-center'} ${backdropClassName}`}
       style={{ zIndex }}
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 cursor-pointer"
-        style={{ backgroundColor: 'rgba(66, 66, 68, 0.4)' }}
-        onClick={handleBackdropClick}
-      />
+      {/* Backdrop - Hidden for fullscreen */}
+      {!isFullscreen && (
+        <div
+          className="absolute inset-0 cursor-pointer"
+          style={{ backgroundColor: 'rgba(66, 66, 68, 0.4)' }}
+          onClick={handleBackdropClick}
+        />
+      )}
 
       {/* Modal */}
       <div
-        className={`relative w-full mx-4 rounded-xl shadow-2xl overflow-hidden ${maxWidthClass} ${heightClass} ${className}`}
+        className={`relative ${isFullscreen ? 'w-screen h-screen' : `w-full mx-4 rounded-xl shadow-2xl`} overflow-hidden ${isFullscreen ? '' : maxWidthClass} ${heightClass} ${className}`}
         style={{
           backgroundColor: theme.background.primary,
           zIndex: Z_INDEX.popover,
@@ -183,6 +187,21 @@ export function LargeModal(props: BaseModalProps) {
       {...props}
       maxWidth="6xl"
       height="screen"
+      contentClassName={`flex-1 overflow-auto ${props.contentClassName || ''}`}
+    />
+  );
+}
+
+// Fullscreen modal that covers entire viewport
+export function FullscreenModal(props: BaseModalProps) {
+  return (
+    <BaseModal
+      {...props}
+      maxWidth="fullscreen"
+      height="screen"
+      showHeader={false}
+      backdropClickToClose={false}
+      className={`m-0 rounded-none ${props.className || ''}`}
       contentClassName={`flex-1 overflow-auto ${props.contentClassName || ''}`}
     />
   );
