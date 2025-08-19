@@ -203,27 +203,48 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   // Convert tasks to TaskListItem format - Clean and simple
   const taskListItems = useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return [];
-    return tasks.map(task => ({
-      id: task.id.toString(),
-      name: task.title,
-      description: task.description,
-      assignees: task.creatorName ? [{
-        id: 'creator',
-        name: task.creatorName,
-        avatar: task.creatorName.split(' ').map(n => n[0]).join('').toUpperCase()
-      }] : [],
-      dueDate: task.dueDate !== 'No due date' ? task.dueDate : undefined,
-      startDate: task.startDate ? task.startDate.toISOString().split('T')[0] : undefined,
-      endDate: task.endDate ? task.endDate.toISOString().split('T')[0] : undefined,
-      deadline: task.dueDateISO ? task.dueDateISO.toISOString().split('T')[0] : undefined,
-      priority: task.priority,
-      status: task.status,
-      completed: task.completed || task.status === 'completed' || task.status === 'DONE',
-      tags: task.tags || [],
-      project: task.tagText || undefined,
-      createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
-    }));
+    const mappedTasks = tasks.map(task => {
+      const mappedTask = {
+        id: task.id.toString(),
+        name: task.title,
+        description: task.description,
+        assignees: task.creatorName ? [{
+          id: 'creator',
+          name: task.creatorName,
+          avatar: task.creatorName.split(' ').map(n => n[0]).join('').toUpperCase()
+        }] : [],
+        dueDate: task.dueDate !== 'No due date' ? task.dueDate : undefined,
+        startDate: task.startDate ? task.startDate.toISOString().split('T')[0] : undefined,
+        endDate: task.endDate ? task.endDate.toISOString().split('T')[0] : undefined,
+        deadline: task.dueDateISO ? task.dueDateISO.toISOString().split('T')[0] : (task.dueDate !== 'No due date' ? task.dueDate : undefined),
+        priority: task.priority,
+        status: task.status,
+        completed: task.completed || task.status === 'completed' || task.status === 'DONE',
+        tags: task.tags || [],
+        project: task.tagText || undefined,
+        createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
+        updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
+      };
+      
+      // Debug logging for date fields
+      console.log('🔍 Task date mapping:', {
+        taskId: task.id,
+        taskTitle: task.title,
+        originalDueDate: task.dueDate,
+        originalDueDateISO: task.dueDateISO,
+        originalStartDate: task.startDate,
+        originalEndDate: task.endDate,
+        mappedDueDate: mappedTask.dueDate,
+        mappedDeadline: mappedTask.deadline,
+        mappedStartDate: mappedTask.startDate,
+        mappedEndDate: mappedTask.endDate
+      });
+      
+      return mappedTask;
+    });
+    
+    console.log('📋 Total mapped tasks:', mappedTasks.length);
+    return mappedTasks;
   }, [tasks]);
 
   // Business Logic: Bucket configuration for My Tasks page

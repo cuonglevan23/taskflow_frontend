@@ -140,12 +140,29 @@ export const TaskRow = ({
 
   // Format date for display
   const getFormattedDateDisplay = () => {
-    return formatTaskDate({
+    // Use endDate as the actual deadline for range display
+    const dateData = {
       startDate: task.startDate,
-      deadline: task.deadline,
+      deadline: task.endDate || task.deadline || task.dueDate, // Use endDate first for ranges
       dueDate: task.dueDate,
-      endDate: task.deadline || task.dueDate
+      endDate: task.endDate || task.deadline || task.dueDate
+    };
+    
+    // Debug logging for TaskRow
+    console.log('🎯 TaskRow date data:', {
+      taskId: task.id,
+      taskName: task.name,
+      taskStartDate: task.startDate,
+      taskDeadline: task.deadline,
+      taskDueDate: task.dueDate,
+      taskEndDate: task.endDate,
+      dateDataForFormat: dateData
     });
+    
+    const formattedDate = formatTaskDate(dateData);
+    console.log('📅 Formatted date result:', formattedDate);
+    
+    return formattedDate;
   };
 
   // Check if task is overdue

@@ -24,6 +24,7 @@ export interface TaskListItem {
   description?: string;
   assignees: TaskAssignee[];
   dueDate?: string;
+  deadline?: string; // Deadline date for task completion
   startDate?: string; // ISO date string for enhanced calendar
   endDate?: string; // ISO date string for enhanced calendar
   startTime?: string; // Time string like "10:00"
@@ -37,6 +38,7 @@ export interface TaskListItem {
   actionTime?: TaskActionTime; // Personal action time bucket (không ảnh hưởng deadline)
   createdAt: string;
   updatedAt: string;
+  completed?: boolean; // Whether task is completed
 }
 
 export interface TaskAssignee {
