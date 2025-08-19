@@ -228,12 +228,77 @@ export const tasksService = {
   updateTaskStatus: async (id: string, status: string): Promise<Task> => {
     try {
       console.log('🔄 Updating task status:', id, 'to', status);
-      const response = await api.patch<BackendTask>(`/api/tasks/${id}/status`, {
+      const response = await api.put<BackendTask>(`/api/tasks/${id}`, {
         status: toBackendStatus(status)
       });
       return transformBackendTask(response.data);
     } catch (error) {
       console.error('❌ Failed to update task status:', error);
+      throw error;
+    }
+  },
+
+  // Get Tasks (General) with filters and pagination
+  getTasks: async (params?: {
+    filter?: any;
+    sort?: any;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Task[];
+    total: number;
+    page: number;
+    limit: number;
+  }> => {
+    try {
+      const {
+        filter,
+        sort,
+        page = 0,
+        limit = 20
+      } = params || {};
+
+      console.log('🔄 Fetching tasks with params:', params);
+      
+      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
+        params: { 
+          page, 
+          size: limit, 
+          sortBy: sort?.field || 'updatedAt', 
+          sortDir: sort?.direction || 'desc',
+          ...filter 
+        }
+      });
+
+      const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+      const tasks = content.map(transformBackendTask);
+
+      console.log(`✅ Successfully fetched ${tasks.length} tasks (page ${number + 1}/${totalPages})`);
+
+      return {
+        data: tasks,
+        total: totalElements,
+        page: number + 1,
+        limit: pageSize,
+      };
+    } catch (error) {
+      console.error('❌ Failed to fetch tasks:', error);
+      throw error;
+    }
+  },
+
+  // Get Tasks by Project
+  getTasksByProject: async (projectId: string, params?: any): Promise<Task[]> => {
+    try {
+      console.log('🔄 Fetching tasks for project:', projectId);
+      const response = await api.get<BackendTask[]>(`/api/projects/${projectId}/tasks`, {
+        params
+      });
+      const tasks = response.data.map(transformBackendTask);
+      console.log(`✅ Successfully fetched ${tasks.length} tasks for project ${projectId}`);
+      return tasks;
+    } catch (error) {
+      console.error('❌ Failed to fetch project tasks:', error);
       throw error;
     }
   },
@@ -364,6 +429,70 @@ export const tasksService = {
         userEmail: userInfo.email || 'unknown@example.com',
         userId: parseInt(userInfo.id || '1')
       };
+    }
+  },
+
+  // Get Task Statistics (general)
+  getTaskStats: async (filter?: any): Promise<any> => {
+    try {
+      console.log('🔄 Fetching task statistics with filter:', filter);
+      const response = await api.get('/api/tasks/my-tasks/stats', {
+        params: filter
+      });
+      console.log('✅ Successfully fetched task stats:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to fetch task stats:', error);
+      // Return default stats on error
+      return {
+        total: 0,
+        completed: 0,
+        inProgress: 0,
+        todo: 0,
+        overdue: 0
+      };
+    }
+  },
+
+  // Assign task to user
+  assignTask: async (id: string, userId: string): Promise<Task> => {
+    try {
+      console.log('🔄 Assigning task:', id, 'to user:', userId);
+      const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
+        assignedToIds: [userId]
+      });
+      return transformBackendTask(response.data);
+    } catch (error) {
+      console.error('❌ Failed to assign task:', error);
+      throw error;
+    }
+  },
+
+  // Unassign task from user
+  unassignTask: async (id: string): Promise<Task> => {
+    try {
+      console.log('🔄 Unassigning task:', id);
+      const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
+        assignedToIds: []
+      });
+      return transformBackendTask(response.data);
+    } catch (error) {
+      console.error('❌ Failed to unassign task:', error);
+      throw error;
+    }
+  },
+
+  // Bulk update tasks
+  bulkUpdateTasks: async (updates: Array<{ id: string; data: Partial<UpdateTaskDTO> }>): Promise<Task[]> => {
+    try {
+      console.log('🔄 Bulk updating tasks:', updates.length, 'tasks');
+      const promises = updates.map(({ id, data }) => tasksService.updateTask(id, data));
+      const results = await Promise.all(promises);
+      console.log('✅ Successfully bulk updated tasks');
+      return results;
+    } catch (error) {
+      console.error('❌ Failed to bulk update tasks:', error);
+      throw error;
     }
   },
 

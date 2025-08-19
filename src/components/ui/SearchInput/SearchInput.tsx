@@ -2,6 +2,7 @@
 
 import React, { useCallback } from "react";
 import { Search, X } from "lucide-react";
+import { DARK_THEME } from "@/constants/theme";
 
 export interface SearchInputProps {
   value: string;
@@ -49,18 +50,15 @@ const SearchInput = ({
     lg: "left-3.5",
   };
 
-  // Variant styles
-  const variantClasses = {
-    default: "bg-gray-50 border border-gray-300 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-    minimal: "bg-transparent border-0 focus:bg-gray-50 focus:ring-2 focus:ring-blue-500/20",
-    bordered: "bg-white border-2 border-gray-200 focus:border-blue-500 focus:ring-0",
-  };
-
-  // Dark theme variants
-  const darkVariantClasses = {
-    default: "dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 dark:focus:bg-gray-700 dark:focus:border-blue-400",
-    minimal: "dark:bg-transparent dark:text-white dark:placeholder-gray-400 dark:focus:bg-gray-800",
-    bordered: "dark:bg-gray-900 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-400",
+  // Get search styles from theme
+  const searchStyles = {
+    background: DARK_THEME.search.background,
+    backgroundStrong: DARK_THEME.search.backgroundStrong,
+    backgroundActive: DARK_THEME.search.backgroundActive,
+    text: DARK_THEME.search.text,
+    placeholder: DARK_THEME.search.placeholder,
+    border: DARK_THEME.search.border,
+    focus: DARK_THEME.search.focus,
   };
 
   return (
@@ -69,7 +67,7 @@ const SearchInput = ({
       <div className={`absolute inset-y-0 ${iconPositions[size]} flex items-center pointer-events-none`}>
         <Search 
           size={iconSizes[size]} 
-          className="text-gray-400 dark:text-gray-500" 
+          style={{ color: searchStyles.placeholder }}
         />
       </div>
 
@@ -81,14 +79,29 @@ const SearchInput = ({
         onChange={(e) => onChange(e.target.value)}
         onFocus={onFocus}
         onBlur={onBlur}
-        className={`
-          w-full rounded-full transition-all duration-200 outline-none
-          ${sizeClasses[size]}
-          ${variantClasses[variant]}
-          ${darkVariantClasses[variant]}
-          placeholder:text-gray-500 dark:placeholder:text-gray-400
-        `}
+        className={`w-full rounded-full transition-all duration-200 outline-none ${sizeClasses[size]}`}
+        style={{
+          backgroundColor: searchStyles.background,
+          borderColor: searchStyles.border,
+          borderWidth: '1px',
+          color: searchStyles.text,
+        }}
+        onFocusCapture={(e) => {
+          e.target.style.backgroundColor = searchStyles.backgroundActive;
+          e.target.style.borderColor = searchStyles.focus;
+        }}
+        onBlurCapture={(e) => {
+          e.target.style.backgroundColor = searchStyles.background;
+          e.target.style.borderColor = searchStyles.border;
+        }}
       />
+      
+      {/* Custom CSS for placeholder */}
+      <style jsx>{`
+        input::placeholder {
+          color: ${searchStyles.placeholder} !important;
+        }
+      `}</style>
 
       {/* Right Side Actions */}
       <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-3">
@@ -96,7 +109,16 @@ const SearchInput = ({
         {value && (
           <button
             onClick={handleClear}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-0.5 rounded"
+            className="transition-colors p-0.5 rounded"
+            style={{ 
+              color: searchStyles.placeholder,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = searchStyles.text;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = searchStyles.placeholder;
+            }}
             aria-label="Clear search"
           >
             <X size={iconSizes[size] - 2} />
@@ -105,7 +127,15 @@ const SearchInput = ({
 
         {/* Keyboard Shortcut */}
         {showShortcut && !value && (
-          <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-semibold text-gray-400 bg-gray-100 dark:bg-gray-800 dark:text-gray-500 border border-gray-200 dark:border-gray-600 rounded">
+          <kbd 
+            className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded"
+            style={{
+              color: searchStyles.placeholder,
+              backgroundColor: searchStyles.backgroundStrong,
+              borderColor: searchStyles.border,
+              borderWidth: '1px',
+            }}
+          >
             ⌘K
           </kbd>
         )}

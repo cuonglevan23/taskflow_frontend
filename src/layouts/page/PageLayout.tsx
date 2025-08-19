@@ -5,8 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ACTION_ICONS } from "@/constants/icons";
-import { THEME_COLORS } from "@/constants/theme";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { DARK_THEME } from "@/constants/theme";
 import PrivateLayout from "@/layouts/private/PrivateLayout";
 import {
   usePageNavigation,
@@ -90,7 +89,6 @@ const HeaderSectionRenderer = ({
 const PageLayout = ({ children }: PageLayoutProps) => {
   const pathname = usePathname();
   const config = usePageNavigation();
-  const { theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -123,11 +121,11 @@ const PageLayout = ({ children }: PageLayoutProps) => {
   if (!mounted) {
     return (
       <PrivateLayout>
-        <div style={{ backgroundColor: theme.background.primary }}>
+        <div style={{ backgroundColor: DARK_THEME.background.primary }}>
           <div className="flex-shrink-0">
-            <div className="flex flex-col border-b gap-2 px-6" style={{ borderColor: theme.border.default }}>
+            <div className="flex flex-col border-b gap-2 px-6" style={{ borderColor: DARK_THEME.border.default }}>
               <div className="flex items-center justify-between">
-                <h1 className="text-lg font-bold" style={{ color: theme.text.primary }}>
+                <h1 className="text-lg font-bold" style={{ color: DARK_THEME.text.primary }}>
                   {title}
                 </h1>
               </div>
@@ -155,7 +153,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
   if (isDashboardDetailPage) {
     return (
       <PrivateLayout>
-        <div style={{ backgroundColor: theme.background.primary }}>
+        <div style={{ backgroundColor: DARK_THEME.background.primary }}>
           {children}
         </div>
       </PrivateLayout>
@@ -166,14 +164,14 @@ const PageLayout = ({ children }: PageLayoutProps) => {
     <PrivateLayout>
       <div
         style={{
-          backgroundColor: theme.background.primary,
+          backgroundColor: DARK_THEME.background.primary,
         }}
       >
         {/* Sticky Header */}
         <div 
           className="sticky top-0 z-50"
           style={{ 
-            backgroundColor: isMyTaskStyle || isTeamsStyle ? theme.header.background : theme.background.primary
+            backgroundColor: isMyTaskStyle ? DARK_THEME.background.primary : isTeamsStyle ? DARK_THEME.header.background : DARK_THEME.background.primary
           }}
         >
           {/* Top Header Sections */}
@@ -210,7 +208,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                     isInboxStyle ? "text-2xl" : isMyTaskStyle || isTeamsStyle ? "text-2xl" : "text-lg font-bold"
                   )}
                   style={{ 
-                    color: isMyTaskStyle || isTeamsStyle ? theme.header.text : theme.text.primary 
+                    color: isMyTaskStyle || isTeamsStyle ? DARK_THEME.header.text : DARK_THEME.text.primary 
                   }}
                 >
                   {title}
@@ -219,7 +217,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                   <span 
                     className="text-sm"
                     style={{ 
-                      color: isMyTaskStyle || isTeamsStyle ? theme.sidebar.textMuted : theme.text.secondary 
+                      color: isMyTaskStyle || isTeamsStyle ? DARK_THEME.sidebar.textMuted : DARK_THEME.text.secondary 
                     }}
                   >
                     {headerInfo.subtitle}
@@ -249,7 +247,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
           {/* Navigation Tabs */}
           <div 
             className="border-b"
-            style={{ borderColor: theme.border.default }}
+            style={{ borderColor: DARK_THEME.border.default }}
           >
             <ul
               className={clsx(
@@ -321,15 +319,15 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                   <button
                     className="p-1.5 rounded-md transition-colors"
                     style={{
-                      color: theme.text.secondary,
+                      color: DARK_THEME.text.secondary,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = theme.text.primary;
+                      e.currentTarget.style.color = DARK_THEME.text.primary;
                       e.currentTarget.style.backgroundColor =
-                        theme.background.secondary;
+                        DARK_THEME.background.secondary;
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = theme.text.secondary;
+                      e.currentTarget.style.color = DARK_THEME.text.secondary;
                       e.currentTarget.style.backgroundColor = "transparent";
                     }}
                   >

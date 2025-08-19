@@ -8,10 +8,8 @@ export { default as TaskListHeader } from './TaskListHeader';
 export { default as TaskRow } from './TaskRow';
 export { default as TaskCard } from './TaskCard';
 
-// Enhanced components for Asana/ClickUp style grouped task lists
-export { default as GroupedTaskList } from './GroupedTaskList';
-export { default as EnhancedTaskSection } from './EnhancedTaskSection';
-export { default as EnhancedTaskRow } from './EnhancedTaskRow';
+export { default as BucketTaskList } from './BucketTaskList';
+
 
 
 
@@ -24,6 +22,7 @@ export type {
   TaskAssignee,
   TaskPriority,
   TaskStatus,
+  TaskActionTime,
   TaskGroupBy,
   TaskSection as TaskSectionType,
   TaskListConfig,

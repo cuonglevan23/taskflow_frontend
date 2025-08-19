@@ -105,6 +105,7 @@ export const LIGHT_THEME = {
     secondary: '#f8fafc',
     tertiary: '#f1f5f9',
     muted: '#e2e8f0',
+    weakHover: '#f1f5f9',
   },
   
   // Text Colors
@@ -137,6 +138,16 @@ export const LIGHT_THEME = {
     text: '#e2e8f0',
     border: '#334155',
   },
+
+  search: {
+    background: '#ffffff',
+    backgroundStrong: '#f8fafc',
+    backgroundActive: '#f1f5f9',
+    text: '#0f172a',
+    placeholder: '#64748b',
+    border: '#e2e8f0',
+    focus: '#0066cc',
+  },
   
   dropdown: {
     background: '#ffffff',
@@ -164,10 +175,11 @@ export const LIGHT_THEME = {
 export const DARK_THEME = {
   // Background Colors
   background: {
-    primary: '#0f172a',
-    secondary: '#1e293b',
+    primary: '#1e1f21', // Updated background-page
+    secondary: '#2e2e30', // Updated for sidebar/header
     tertiary: '#334155',
     muted: '#475569',
+    weakHover: '#2a2b2d', // Hover effect for task rows
   },
   
   // Text Colors
@@ -175,30 +187,40 @@ export const DARK_THEME = {
     primary: '#f8fafc',
     secondary: '#e2e8f0',
     muted: '#94a3b8',
-    inverse: '#0f172a',
+    inverse: '#1e1f21', // Updated to match new background
   },
   
   // Border Colors
   border: {
-    default: '#334155',
+    default: '#424244', // Updated color-border
     muted: '#475569',
     focus: THEME_COLORS.primary[400],
   },
   
   // Component Colors
   sidebar: {
-    background: '#0f172a',
+    background: '#2e2e30', // Updated sidebar background
     text: '#e2e8f0',
     textMuted: '#94a3b8',
-    border: '#1e293b',
-    hover: '#1e293b',
+    border: '#424244', // Updated border color
+    hover: '#424244', // Updated hover color
     active: THEME_COLORS.primary[500],
   },
   
   header: {
-    background: '#0f172a',
+    background: '#2e2e30', // Updated header background
     text: '#e2e8f0',
-    border: '#1e293b',
+    border: '#424244', // Updated border color
+  },
+
+  search: {
+    background: '#3d3e40', // Navigation search background
+    backgroundStrong: '#565557', // Navigation search background strong
+    backgroundActive: '#1e1f21', // Navigation search background when clicked/active
+    text: '#e2e8f0',
+    placeholder: '#94a3b8',
+    border: '#424244',
+    focus: '#0066cc',
   },
   
   dropdown: {
@@ -230,6 +252,7 @@ export type ThemeConfig = {
     secondary: string;
     tertiary: string;
     muted: string;
+    weakHover: string;
   };
   text: {
     primary: string;
@@ -254,6 +277,15 @@ export type ThemeConfig = {
     background: string;
     text: string;
     border: string;
+  };
+  search: {
+    background: string;
+    backgroundStrong: string;
+    backgroundActive: string;
+    text: string;
+    placeholder: string;
+    border: string;
+    focus: string;
   };
   dropdown: {
     background: string;
@@ -305,19 +337,25 @@ export const CSS_VARIABLES = {
     '--color-sidebar-text': LIGHT_THEME.sidebar.text,
     '--color-header-bg': LIGHT_THEME.header.background,
     '--color-dropdown-bg': LIGHT_THEME.dropdown.background,
+    '--color-success-text': '#66a88b',
+    '--color-button-success-border-pressed': '#32695d',
   },
   dark: {
     '--color-primary': THEME_COLORS.primary[500],
     '--color-primary-hover': THEME_COLORS.primary[600],
-    '--color-background-primary': DARK_THEME.background.primary,
-    '--color-background-secondary': DARK_THEME.background.secondary,
+    '--color-background-primary': '#1e1f21', // Updated background-page
+    '--color-background-secondary': '#2e2e30', // Updated for sidebar/header
     '--color-text-primary': DARK_THEME.text.primary,
     '--color-text-secondary': DARK_THEME.text.secondary,
-    '--color-border-default': DARK_THEME.border.default,
-    '--color-sidebar-bg': DARK_THEME.sidebar.background,
+    '--color-border-default': '#424244', // Updated color-border
+    '--color-sidebar-bg': '#2e2e30', // Updated sidebar background
     '--color-sidebar-text': DARK_THEME.sidebar.text,
-    '--color-header-bg': DARK_THEME.header.background,
+    '--color-header-bg': '#2e2e30', // Updated header background
     '--color-dropdown-bg': DARK_THEME.dropdown.background,
+    '--color-navigation-search-background': '#3d3e40', // Navigation search background
+    '--color-navigation-search-background-strong': '#565557', // Navigation search background strong
+    '--color-success-text': '#66a88b',
+    '--color-button-success-border-pressed': '#32695d',
   },
 } as const;
 

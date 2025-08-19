@@ -34,6 +34,7 @@ export interface TaskListItem {
   status: TaskStatus;
   tags?: string[];
   project?: string;
+  actionTime?: TaskActionTime; // Personal action time bucket (không ảnh hưởng deadline)
   createdAt: string;
   updatedAt: string;
 }
@@ -47,7 +48,8 @@ export interface TaskAssignee {
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'CANCELLED';
-export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate';
+export type TaskActionTime = 'recently-assigned' | 'do-today' | 'do-next-week' | 'do-later';
+export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate' | 'actionTime';
 
 export interface TaskSection {
   id: string;
@@ -80,6 +82,7 @@ export interface TaskListActions {
   onTaskDelete?: (taskId: string) => void;
   onTaskStatusChange?: (taskId: string, status: TaskStatus) => void;
   onTaskAssign?: (taskId: string, assigneeId: string) => void;
+  onTaskActionTimeChange?: (taskId: string, actionTime: TaskActionTime) => void;
   onCreateTask?: (taskData?: string | { 
     title: string,
     description: string,
@@ -90,6 +93,7 @@ export interface TaskListActions {
     creatorId: string,
     assignedToIds: string[],
     tags: string[],
+    actionTime?: TaskActionTime,
   }) => void;
   onBulkAction?: (taskIds: string[], action: string) => void;
 }

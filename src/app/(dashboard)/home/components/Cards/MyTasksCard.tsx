@@ -8,7 +8,7 @@ import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import { useTasks, useTaskStats, useUpdateTask, useCreateTask, useMyTasksSummary } from "@/hooks/useTasks";
+import {  useUpdateTask, useCreateTask, useMyTasksSummary } from "@/hooks/tasks";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {

@@ -88,7 +88,8 @@ export const normalizePriority = (backendPriority: string): 'low' | 'medium' | '
 
 // Convert frontend status to backend format
 export const toBackendStatus = (frontendStatus: string): string => {
-  switch (frontendStatus) {
+  const status = frontendStatus.toLowerCase(); // Handle both uppercase and lowercase
+  switch (status) {
     case 'completed':
     case 'done':
       return 'COMPLETED';
@@ -196,4 +197,18 @@ export const transformProject = (backendProject: Record<string, unknown>) => {
     createdAt: safeParseDate(backendProject.createdAt),
     updatedAt: safeParseDate(backendProject.updatedAt),
   };
+};
+
+// Calculate days between two dates
+export const calculateDaysBetween = (startDate: Date, endDate: Date): number => {
+  const timeDifference = endDate.getTime() - startDate.getTime();
+  const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+  return Math.max(0, daysDifference);
+};
+
+// Check if a date is overdue (past current date)
+export const isDateOverdue = (date: Date): boolean => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // End of today
+  return date.getTime() < today.getTime();
 };

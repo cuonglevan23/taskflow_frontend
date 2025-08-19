@@ -3,6 +3,8 @@
  * Centralize magic strings and configuration
  */
 
+import { DARK_THEME } from "@/constants/theme";
+
 // Badge color mapping
 export const BADGE_COLORS = {
   default: "bg-gray-500 text-white",
@@ -20,16 +22,40 @@ export const SIDEBAR_DIMENSIONS = {
   EXPANDED_WIDTH: "w-64",
 } as const;
 
-// Common CSS classes
+// Common CSS classes with theme-based hover styles
 export const SIDEBAR_CLASSES = {
-  CONTAINER: "fixed top-12 left-0 h-[calc(100vh-3rem)] bg-gray-800 border-r border-gray-700 z-50 transform transition-all duration-300 ease-in-out flex flex-col",
+  CONTAINER: "fixed top-12 left-0 h-[calc(100vh-3rem)] z-50 transform transition-all duration-300 ease-in-out flex flex-col",
   BACKDROP: "fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden",
-  SECTION_HEADER: "flex items-center justify-between w-full text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2 py-1 hover:text-gray-300 transition-colors",
+  SECTION_HEADER: `flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider mb-2 px-2 py-1 transition-colors`,
   NAV_ITEM_BASE: "flex items-center rounded text-sm font-medium transition-colors group",
   NAV_ITEM_ACTIVE: "bg-orange-600 text-white",
-  NAV_ITEM_INACTIVE: "text-gray-300 hover:bg-gray-700 hover:text-white",
-  CREATE_BUTTON: "flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium text-gray-400 hover:text-gray-300 hover:bg-gray-700 transition-colors w-full",
+  NAV_ITEM_INACTIVE: `transition-colors`,
+  CREATE_BUTTON: `flex items-center space-x-3 px-2 py-1.5 rounded text-sm font-medium transition-colors w-full`,
 } as const;
+
+// Dynamic styles using theme variables
+export const getSidebarStyles = () => ({
+  sectionHeader: {
+    color: DARK_THEME.sidebar.textMuted,
+  },
+  sectionHeaderHover: {
+    color: DARK_THEME.sidebar.text,
+  },
+  navItemInactive: {
+    color: DARK_THEME.sidebar.text,
+  },
+  navItemInactiveHover: {
+    backgroundColor: DARK_THEME.sidebar.hover,
+    color: DARK_THEME.sidebar.text,
+  },
+  createButton: {
+    color: DARK_THEME.sidebar.textMuted,
+  },
+  createButtonHover: {
+    color: DARK_THEME.sidebar.text,
+    backgroundColor: DARK_THEME.sidebar.hover,
+  },
+});
 
 // Mock data for development
 export const MOCK_TEAMS = [

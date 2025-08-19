@@ -9,6 +9,7 @@ import SearchPanel from "./SearchPanel";
 import UserMenu from "./UserMenu";
 import { CreateButton } from "@/components/features/create";
 import { GiHamburgerMenu } from "react-icons/gi";
+import { DARK_THEME } from "@/constants/theme";
 
 
 
@@ -69,7 +70,7 @@ export default function PrivateHeader({
   );
 
   return (
-    <header className="h-12 bg-gray-800 flex items-center justify-between px-4 border-b border-gray-700">
+    <header className="h-12 flex items-center justify-between px-4 border-b" style={{ backgroundColor: DARK_THEME.header.background, borderColor: DARK_THEME.header.border }}>
       {/* Left Section - Menu and Create */}
       <div className="flex items-center space-x-2">
         {/* Sidebar Toggle */}

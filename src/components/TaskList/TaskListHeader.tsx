@@ -4,7 +4,7 @@ import React from 'react';
 import { Plus, Search, Filter, ArrowUpDown, Grid3X3, Settings, Check } from 'lucide-react';
 import { Button } from '@/components/ui';
 import Dropdown, { DropdownItem, DropdownSeparator } from '@/components/ui/Dropdown/Dropdown';
-import { useTheme } from '@/layouts/hooks/useTheme';
+import { DARK_THEME } from '@/constants/theme';
 
 interface TaskListHeaderProps {
   searchValue?: string;
@@ -23,7 +23,7 @@ interface TaskListHeaderProps {
   hideLeftSide?: boolean;
 }
 
-const TaskListHeader: React.FC<TaskListHeaderProps> = ({
+const TaskListHeader = ({
   searchValue = '',
   onSearchChange,
   onCreateTask,
@@ -38,16 +38,15 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
   showOptions = true,
   className = '',
   hideLeftSide = false,
-}) => {
-  const { theme } = useTheme();
+}: TaskListHeaderProps) => {
   const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
 
   return (
     <div 
       className={`flex items-center ${hideLeftSide ? '' : 'justify-between py-4 px-6'} w-full ${className}`}
       style={{ 
-        backgroundColor: theme.background.primary,
-        borderBottom: hideLeftSide ? 'none' : `1px solid ${theme.border.default}`,
+        backgroundColor: DARK_THEME.background.primary,
+        borderBottom: hideLeftSide ? 'none' : `1px solid ${DARK_THEME.border.default}`,
         width: '100%',
         minWidth: '100%',
         position: 'relative',
@@ -71,16 +70,16 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
                 style={{
-                  color: theme.text.secondary,
+                  color: DARK_THEME.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.secondary;
                 }}
               >
                 <Filter className="w-4 h-4" />
@@ -89,8 +88,8 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
             }
             placement="bottom-right"
           >
-            <div className="p-2" style={{ backgroundColor: theme.background.primary }}>
-              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: theme.text.secondary }}>Status</div>
+            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
+              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Status</div>
               <DropdownItem onClick={() => console.log('Filter by To Do')}>
                 <Check className="w-4 h-4 text-transparent" />
                 To Do
@@ -108,7 +107,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
                 Done
               </DropdownItem>
               <DropdownSeparator />
-              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: theme.text.secondary }}>Priority</div>
+              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Priority</div>
               <DropdownItem onClick={() => console.log('Filter by Low')}>
                 <Check className="w-4 h-4 text-transparent" />
                 Low
@@ -136,16 +135,16 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
                 style={{
-                  color: theme.text.secondary,
+                  color: DARK_THEME.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.secondary;
                 }}
               >
                 <ArrowUpDown className="w-4 h-4" />
@@ -154,7 +153,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
             }
             placement="bottom-right"
           >
-            <div className="p-2" style={{ backgroundColor: theme.background.primary }}>
+            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
               <DropdownItem onClick={() => console.log('Sort by Name')}>
                 Name
               </DropdownItem>
@@ -188,16 +187,16 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
                 style={{
-                  color: theme.text.secondary,
+                  color: DARK_THEME.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.secondary;
                 }}
               >
                 <Grid3X3 className="w-4 h-4" />
@@ -206,7 +205,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
             }
             placement="bottom-right"
           >
-            <div className="p-2" style={{ backgroundColor: theme.background.primary }}>
+            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
               <DropdownItem onClick={() => console.log('Group by Status')}>
                 <Check className="w-4 h-4 text-blue-600" />
                 Status
@@ -242,16 +241,16 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
               <button 
                 className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
                 style={{
-                  color: theme.text.secondary,
+                  color: DARK_THEME.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.secondary;
                 }}
               >
                 <Settings className="w-4 h-4" />
@@ -260,7 +259,7 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
             }
             placement="bottom-right"
           >
-            <div className="p-2" style={{ backgroundColor: theme.background.primary }}>
+            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
               <DropdownItem onClick={() => console.log('View Settings')}>
                 View Settings
               </DropdownItem>
@@ -303,9 +302,9 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
                     placeholder="Search task names"
                     className="pl-10 pr-12 py-2 w-80 rounded-full border transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
-                      backgroundColor: theme.background.primary,
-                      borderColor: theme.border.default,
-                      color: theme.text.primary,
+                      backgroundColor: DARK_THEME.background.primary,
+                      borderColor: DARK_THEME.border.default,
+                      color: DARK_THEME.text.primary,
                     }}
                     autoFocus
                   />
@@ -322,16 +321,16 @@ const TaskListHeader: React.FC<TaskListHeaderProps> = ({
                 onClick={() => setIsSearchExpanded(true)}
                 className="p-2 rounded-lg transition-colors"
                 style={{
-                  color: theme.text.secondary,
+                  color: DARK_THEME.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = theme.background.secondary;
-                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.color = DARK_THEME.text.secondary;
                 }}
               >
                 <Search className="w-4 h-4" />

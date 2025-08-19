@@ -9,6 +9,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { User } from "@/types/auth";
 import { cn } from "@/lib/utils";
+import { DARK_THEME } from "@/constants/theme";
 
 // Custom hooks and utilities
 import { 
@@ -64,9 +65,10 @@ export default function PrivateSidebar({
           sidebarWidth,
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ backgroundColor: DARK_THEME.sidebar.background, borderRightColor: DARK_THEME.sidebar.border, borderRightWidth: '1px' }}
       >
         {/* Fixed Main Navigation Section */}
-        <div className="p-3 border-b border-gray-700">
+        <div className="p-3 border-b" style={{ borderColor: DARK_THEME.border.default }}>
           {navigationSections
             .filter(section => section.id === NAV_SECTIONS.MAIN)
             .map((section) => (

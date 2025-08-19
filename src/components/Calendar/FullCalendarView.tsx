@@ -163,7 +163,7 @@ export const FullCalendarView = ({
     
     // Priority: completed > overdue > status > priority > default
     if (isCompleted) {
-      return { backgroundColor: '#10b981', borderColor: '#059669' }; // Green
+      return { backgroundColor: '#b8acff', borderColor: '#b8acff' }; // Purple for completed
     }
     
     if (isOverdue) {
@@ -196,8 +196,8 @@ export const FullCalendarView = ({
       return { backgroundColor: '#f59e0b', borderColor: '#d97706' }; // Orange
     }
     
-    // Default
-    return { backgroundColor: '#6b7280', borderColor: '#4b5563' }; // Gray
+    // Default theme color
+    return { backgroundColor: '#5da283', borderColor: '#5da283' }; // Green theme
   };
 
   // Convert tasks to calendar events
@@ -353,15 +353,29 @@ export const FullCalendarView = ({
         eventOverlap={true}
         eventConstraint={undefined}
         selectOverlap={true}
+        buttonText={{
+          today: 'Today',       // đổi từ "today" → "Today"
+          month: 'Month',
+          week: 'Week',
+          day: 'Day'
+        }}
+
         
         // Custom styling
         eventDidMount={(info) => {
           const el = info.el;
           const priority = info.event.extendedProps?.priority || 'low';
+          const status = info.event.extendedProps?.status || '';
+          const originalTask = info.event.extendedProps?.originalTask;
+          const isCompleted = originalTask?.completed || status === 'completed' || status === 'DONE';
           
           if (el && el.classList) {
             el.classList.add('fc-event-custom');
             el.classList.add(`fc-event-priority-${priority}`);
+            
+            if (isCompleted) {
+              el.classList.add('fc-event-completed');
+            }
           }
         }}
       />
@@ -393,7 +407,7 @@ export const FullCalendarView = ({
           color: ${theme?.text?.primary || '#ffffff'};
           font-weight: 600;
           font-size: 0.875rem;
-          padding: 0.75rem 0.5rem;
+          padding: 0 0;
         }
         
         .fc-daygrid-day {
@@ -403,7 +417,7 @@ export const FullCalendarView = ({
         }
         
         .fc-day-today {
-          background-color: ${theme?.background?.secondary || '#374151'} !important;
+          background-color: ${theme?.background?.secondary || '#1e1f21'} !important;
         }
         
         .fc-daygrid-day-number {
@@ -431,12 +445,32 @@ export const FullCalendarView = ({
           font-weight: 500;
           margin: 1px;
           cursor: pointer;
+          min-height: 36px;
+          height: auto;
+          margin-bottom: 4px;
+          display: flex;
+          align-items: center;
+          padding: 6px 8px;
+          line-height: 1.3;
+        }
+        
+        .fc-event-title {
+          word-wrap: break-word;
+          word-break: break-word;
+          white-space: normal;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
         
         .fc-event:hover {
           opacity: 0.9;
           transform: translateY(-1px);
           transition: all 0.2s ease;
+        }
+        
+        .fc-event.fc-event-completed {
+          opacity: 0.5;
+          box-shadow: none;
         }
         
         .fc-event-custom {
@@ -459,9 +493,9 @@ export const FullCalendarView = ({
         /* Clean Minimal Toolbar styling */
         .fc-toolbar {
           background-color: transparent;
-          padding: 1rem 0;
+          padding: 5px 5px;
           border: none;
-          margin-bottom: 0;
+          
           border-bottom: 1px solid ${theme?.border?.default || 'rgba(255, 255, 255, 0.1)'};
         }
         
@@ -476,74 +510,49 @@ export const FullCalendarView = ({
           font-size: 1.25rem;
           font-weight: 600;
           margin: 0;
+          
+        }
+        .fc .fc-toolbar.fc-header-toolbar {
+          margin: 0;
+        }
+        /* trạng thái bình thường: chỉ có text */
+        .fc .fc-button-primary {
+          background-color: transparent !important;
+          border: none !important;
+          color: #fff;
+          box-shadow: none !important;
+         
+        
+        }
+
+        /* hover: nền mờ */
+        .fc .fc-button-primary:hover {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+          border: none !important;
+         
+        }
+
+        /* active (đang chọn): nền xanh nổi bật */
+        .fc .fc-button-primary.fc-button-active {
+          background-color:rgba(255, 255, 255, .06)!important; /* xanh Tailwind emerald-500 */
+          color: white !important;
+          border: none !important;
+   
+        }
+
+        /* disabled: chỉ text xám */
+        .fc .fc-button-primary:disabled {
+          background-color: transparent !important;
+          border: none !important;
+          color: #6b7280 !important; /* text gray */
+       
         }
         
-        .fc-button-group {
-          border: 1px solid ${theme?.border?.default || 'rgba(255, 255, 255, 0.2)'};
-          border-radius: 6px;
-          overflow: hidden;
-          background-color: ${theme?.background?.primary || '#1f2937'};
-        }
-        
-        .fc-button {
-          background-color: transparent;
-          border: none;
-          color: ${theme?.text?.primary || '#ffffff'};
-          padding: 0.25rem 0.5rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-          transition: all 0.2s ease;
-          min-width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .fc-button:hover {
-          background-color: ${theme?.background?.secondary || 'rgba(255, 255, 255, 0.1)'};
-        }
-        
-        .fc-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        
-        .fc-button-active {
-          background-color: ${theme?.background?.secondary || 'rgba(255, 255, 255, 0.15)'} !important;
-          color: ${theme?.text?.primary || '#ffffff'} !important;
-        }
-        
-        /* Navigation buttons group */
-        .fc-toolbar-chunk:first-child .fc-button-group {
-          display: flex;
-          align-items: center;
-        }
-        
-        .fc-prev-button, .fc-next-button {
-          border-radius: 0 !important;
-          padding: 0.25rem 0.375rem !important;
-        }
-        
-        .fc-today-button {
-          border-radius: 0 !important;
-          padding: 0.25rem 0.5rem !important;
-          font-size: 0.75rem !important;
-          border-left: 1px solid ${theme?.border?.default || 'rgba(255, 255, 255, 0.1)'} !important;
-          border-right: 1px solid ${theme?.border?.default || 'rgba(255, 255, 255, 0.1)'} !important;
-        }
-        
-        /* View buttons (Month/Week) */
-        .fc-toolbar-chunk:last-child .fc-button-group {
-          display: flex;
-          align-items: center;
-        }
-        
-        .fc-dayGridMonth-button, .fc-dayGridWeek-button {
-          padding: 0.25rem 0.75rem !important;
-          font-size: 0.75rem !important;
-          border-radius: 0 !important;
-        }
+
+
+
+
+
       `}</style>
     </div>
   );

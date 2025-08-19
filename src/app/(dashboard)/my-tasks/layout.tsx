@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import PageLayout from '@/layouts/page/PageLayout';
 import TaskListHeader from '@/components/TaskList/TaskListHeader';
-import { useTheme } from '@/layouts/hooks/useTheme';
 import { usePathname } from 'next/navigation';
+import { DARK_THEME } from '@/constants/theme';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
 import { useTasks, useTaskStats } from '@/hooks/useTasks';
@@ -16,7 +16,6 @@ interface MyTaskLayoutProps {
 }
 
 function MyTaskContent({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme();
   const pathname = usePathname();
   const { tasks } = useTasks(); // Use SWR hook for actual data
   const { stats: taskStats } = useTaskStats();
@@ -60,8 +59,8 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
       <div 
         className="sticky top-0 z-30 shadow-sm border-b" 
         style={{ 
-          backgroundColor: theme.background.primary,
-          borderColor: theme.border.default,
+          backgroundColor: DARK_THEME.background.primary,
+          borderColor: DARK_THEME.border.default,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           width: '100%'
         }}
@@ -76,7 +75,7 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <span 
                 className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap" 
-                style={{ color: theme.text.secondary }}
+                style={{ color: DARK_THEME.text.secondary }}
               >
                 No date ({tasks?.filter(t => !t.dueDateISO).length || 0})
               </span>
@@ -121,7 +120,7 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Tab Content */}
-      <div className="h-[calc(100vh-228px)] overflow-hidden">
+      <div className="h-[calc(100vh-228px)] overflow-y-auto">
         {childrenWithProps}
       </div>
     </>

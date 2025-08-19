@@ -24,12 +24,19 @@ interface RoleChecks {
  * Check if navigation item is active
  */
 export function isItemActive(item: NavigationItem, pathname: string): boolean {
+  // Exact match
   if (item.href === pathname) return true;
   
   // Check for dynamic projects routes
   if (item.href.includes('/projects/') && pathname.includes('/projects/')) {
     const projectId = item.href.split('/projects/')[1];
     return pathname.includes(`/projects/${projectId}`);
+  }
+  
+  // Check for nested routes (e.g., /goals should be active when on /goals/strategy-map)
+  // But avoid false positives like /my-tasks being active when on /my-tasks-archive
+  if (pathname.startsWith(item.href + '/')) {
+    return true;
   }
   
   return false;

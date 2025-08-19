@@ -8,6 +8,7 @@ import {
   useLayoutActions,
 } from "../context/PrivateLayoutContext";
 import { DetailPanel } from "@/components/features/DetailPanel";
+import { DARK_THEME } from "@/constants/theme";
 
 interface PrivateLayoutContentProps {
   children: React.ReactNode;
@@ -32,7 +33,7 @@ export default function PrivateLayoutContent({
   return (
     <div
       className="h-screen flex flex-col"
-      style={{ backgroundColor: "transparent" }}
+      style={{ backgroundColor: DARK_THEME.background.primary }}
     >
       {/* Header - Fixed at top */}
       <PrivateHeader

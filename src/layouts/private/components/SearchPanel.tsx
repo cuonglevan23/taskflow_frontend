@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SearchDropdown, SearchResult, SavedSearch, SearchTab } from "@/components/ui/SearchDropdown";
+import { DARK_THEME } from "@/constants/theme";
 
 interface SearchPanelProps {
   onSearch: (query: string) => void;

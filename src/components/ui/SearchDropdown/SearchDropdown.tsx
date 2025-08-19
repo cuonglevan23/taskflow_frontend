@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Avatar from "@/components/ui/Avatar/Avatar";
 import Button from "@/components/ui/Button/Button";
+import { DARK_THEME } from "@/constants/theme";
 
 export interface SearchResult {
   id: string;
@@ -81,21 +82,30 @@ const SearchResultItem = ({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors group"
+      className="w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors group"
+      style={{
+        backgroundColor: 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
     >
       {item.avatar ? (
         <Avatar name={item.avatar} size="sm" className="w-6 h-6" />
       ) : (
-        <div className="w-6 h-6 flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+        <div className="w-6 h-6 flex items-center justify-center" style={{ color: DARK_THEME.search.placeholder }}>
           <IconComponent size={16} />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+        <p className="text-sm font-medium truncate" style={{ color: DARK_THEME.search.text }}>
           {item.title}
         </p>
         {item.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs truncate" style={{ color: DARK_THEME.search.placeholder }}>
             {item.description}
           </p>
         )}
@@ -117,11 +127,24 @@ const TabButton = ({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-        isActive
-          ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent"
-      }`}
+      className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border"
+      style={{
+        backgroundColor: isActive ? DARK_THEME.search.focus + '20' : 'transparent',
+        color: isActive ? DARK_THEME.search.focus : DARK_THEME.search.placeholder,
+        borderColor: isActive ? DARK_THEME.search.focus : 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+          e.currentTarget.style.color = DARK_THEME.search.text;
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.color = DARK_THEME.search.placeholder;
+        }
+      }}
     >
       <IconComponent size={14} />
       <span>{tab.label}</span>
@@ -155,15 +178,18 @@ const SearchDropdown = ({
 
   return (
     <div
-      className={`absolute top-full ${positionClasses[position]} mt-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[100] ${className}`}
+      className={`absolute top-full ${positionClasses[position]} mt-2 rounded-xl overflow-hidden z-[100] ${className}`}
       style={{
+        backgroundColor: DARK_THEME.search.backgroundActive,
+        borderColor: DARK_THEME.search.border,
+        borderWidth: '1px',
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
         minWidth: "600px",
         maxWidth: "90vw",
       }}
     >
       {/* Tabs */}
-      <div className="px-6 pt-6 border-b border-gray-100 dark:border-gray-800">
+      <div className="px-6 pt-6 border-b" style={{ borderColor: DARK_THEME.search.border }}>
         <div className="flex space-x-2 overflow-x-auto pb-4 scrollbar-hide">
           {tabs.map((tab) => (
             <TabButton
@@ -186,7 +212,7 @@ const SearchDropdown = ({
               </div>
             ) : searchResults.length > 0 ? (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 capitalize">
+                <h3 className="text-sm font-semibold mb-4 capitalize" style={{ color: DARK_THEME.search.text }}>
                   {activeTab} ({searchResults.length})
                 </h3>
                 <div className="space-y-1">
@@ -198,7 +224,7 @@ const SearchDropdown = ({
                     />
                   ))}
                 </div>
-                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="mt-6 pt-4 border-t" style={{ borderColor: DARK_THEME.search.border }}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -211,10 +237,10 @@ const SearchDropdown = ({
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="text-gray-400 dark:text-gray-500 mb-2">
+                <div className="mb-2" style={{ color: DARK_THEME.search.placeholder }}>
                   <Search size={24} className="mx-auto" />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm" style={{ color: DARK_THEME.search.placeholder }}>
                   No results found for &quot;{searchQuery}&quot;
                 </p>
               </div>
@@ -225,7 +251,7 @@ const SearchDropdown = ({
             {/* Recent Items */}
             {recentItems.length > 0 && (
               <div className="mb-8">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                <h3 className="text-sm font-semibold mb-4" style={{ color: DARK_THEME.search.text }}>
                   Recents
                 </h3>
                 <div className="space-y-1">
@@ -243,24 +269,33 @@ const SearchDropdown = ({
             {/* Saved Searches */}
             {savedSearches.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                <h3 className="text-sm font-semibold mb-4" style={{ color: DARK_THEME.search.text }}>
                   Saved searches
                 </h3>
                 <div className="space-y-1">
                   {savedSearches.map((search) => (
                     <button
                       key={search.id}
-                      className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors group"
+                      className="w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors group"
+                      style={{
+                        backgroundColor: 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                       onClick={() => onSavedSearchClick(search)}
                     >
-                      <div className="w-6 h-6 flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                      <div className="w-6 h-6 flex items-center justify-center" style={{ color: DARK_THEME.search.placeholder }}>
                         <search.icon size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <p className="text-sm font-medium truncate" style={{ color: DARK_THEME.search.text }}>
                           {search.title}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs truncate" style={{ color: DARK_THEME.search.placeholder }}>
                           {search.description}
                         </p>
                       </div>

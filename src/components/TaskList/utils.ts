@@ -146,7 +146,7 @@ export const formatTaskDate = (task: {
     
     // Check if same date
     if (startDate.toDateString() === endDate.toDateString()) {
-      let result = `${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
+      let result = `${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })}`;
       
       // Add time if available
       if (task.startTime || task.endTime) {
@@ -161,7 +161,7 @@ export const formatTaskDate = (task: {
     
     // Check if same month
     if (startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()) {
-      let result = `${startDate.getDate()}-${endDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
+      let result = `${startDate.getDate()} - ${endDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })}`;
       
       // Add time if available
       if (task.startTime || task.endTime) {
@@ -176,7 +176,7 @@ export const formatTaskDate = (task: {
     }
     
     // Different months
-    let result = `${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()} - ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
+    let result = `${startDate.getDate()} ${startDate.toLocaleDateString('en-US', { month: 'short' })} - ${endDate.getDate()} ${endDate.toLocaleDateString('en-US', { month: 'short' })}`;
     
     // Add time if available
     if (task.startTime || task.endTime) {
@@ -195,8 +195,8 @@ export const formatTaskDate = (task: {
   if (fallbackDate) {
     const date = new Date(fallbackDate);
     if (!isNaN(date.getTime())) {
-      // Use consistent format: "25 jan" instead of "Jan 25" 
-      return `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
+      // Use consistent format: "25 Aug" to match the image format
+      return `${date.getDate()} ${date.toLocaleDateString('en-US', { month: 'short' })}`;
     }
     // If date parsing fails, use original formatDate function
     return formatDate(fallbackDate as string | Date);
