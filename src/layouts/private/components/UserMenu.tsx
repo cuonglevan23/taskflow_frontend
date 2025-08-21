@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/ui";
 import Dropdown, { DropdownItem, DropdownSeparator } from "@/components/ui/Dropdown/Dropdown";
 import { 
@@ -68,6 +69,7 @@ const UserMenu = ({
   customMenuSections = [],
   showDefaultSections = true,
 }: UserMenuProps) => {
+  const router = useRouter();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Don't render if user is null
@@ -107,7 +109,7 @@ const UserMenu = ({
         {
           id: 'profile',
           label: 'Profile',
-          onClick: onProfileSettings,
+          onClick: () => router.push('/profile'),
         },
         {
           id: 'settings',

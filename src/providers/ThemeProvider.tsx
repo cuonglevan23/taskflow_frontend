@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/layouts/hooks/useTheme";
 
 interface ThemeContextValue {
   theme: "light" | "dark";

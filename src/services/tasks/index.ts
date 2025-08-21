@@ -1,35 +1,7 @@
-// Tasks Service - Barrel exports
-export * from './tasksService';
+/**
+ * Unified Task Services Export
+ */
 
-// Re-export for backward compatibility
-export { tasksService as taskService } from './tasksService';
+// Export existing task services for backward compatibility
+export {  tasksService } from './tasksService';
 
-// Re-export types
-export type { 
-  BackendTask, 
-  Task, 
-  CreateTaskDTO, 
-  UpdateTaskDTO, 
-  TasksResponse,
-  TaskStatsResponse,
-  TaskQueryParams,
-  BulkTaskUpdate,
-  MyTasksSummaryItem,
-  MyTasksFullItem,
-  PaginatedResponse,
-  MyTasksStats
-} from '@/types/task';
-
-// Task-specific filter and sort interfaces
-export interface TaskFilter {
-  status?: string[];
-  priority?: string[];
-  assignee?: string;
-  projectId?: number;
-  teamId?: number;
-}
-
-export interface TaskSort {
-  field: string;
-  direction: 'asc' | 'desc';
-}

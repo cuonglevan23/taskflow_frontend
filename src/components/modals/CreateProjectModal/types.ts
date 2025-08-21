@@ -7,16 +7,20 @@ export interface CreateProjectModalProps {
 
 export interface ProjectFormData {
     name: string;
-    privacy: string;
+    description?: string;
     startDate: string;
     endDate: string;
+    isPersonal: boolean;
+    teamId?: number | null;
 }
 
 export interface PrivacyOption {
-    id: string;
+    id: 'personal' | 'team';
     label: string;
     description: string;
     icon: string;
+    isPersonal: boolean;
+    teamId?: number | null;
 }
 
 export interface FormErrors {

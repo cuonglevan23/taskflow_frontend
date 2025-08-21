@@ -3,6 +3,7 @@
 import React from "react";
 import { ArrowLeft, X } from "lucide-react";
 import { BaseModal } from "@/components/ui";
+import { DARK_THEME } from "@/constants/theme";
 
 // Internal imports
 import { useCreateProjectModal } from "./CreateProjectModal/hooks/useCreateProjectModal";
@@ -62,28 +63,52 @@ export default function CreateProjectModal({
             <div className="absolute top-1 right-1 z-50">
                 <button
                     onClick={handleClose}
-                    className="p-3 rounded-xl transition-all duration-300 text-gray-400 hover:text-white bg-gray-800/60 hover:bg-gray-800/80 backdrop-blur-sm shadow-xl"
+                    className="p-3 rounded-xl transition-all duration-300 backdrop-blur-sm shadow-xl"
+                    style={{
+                        color: DARK_THEME.text.muted,
+                        backgroundColor: `${DARK_THEME.background.secondary}99`,
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = DARK_THEME.text.primary;
+                        e.currentTarget.style.backgroundColor = `${DARK_THEME.background.secondary}CC`;
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = DARK_THEME.text.muted;
+                        e.currentTarget.style.backgroundColor = `${DARK_THEME.background.secondary}99`;
+                    }}
                     title="Close"
                 >
                     <X className="w-7 h-7" />
                 </button>
             </div>
 
-            <div className="flex h-screen bg-gray-900">
+            <div className="flex h-screen" style={{ backgroundColor: DARK_THEME.background.primary }}>
                 {/* Left Panel */}
-                <div className="w-1/2 flex flex-col px-16 py-12 relative bg-gray-900">
+                <div className="w-1/2 flex flex-col px-16 py-12 relative" style={{ backgroundColor: DARK_THEME.background.primary }}>
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center space-x-4">
                             {currentStep > 1 && (
                                 <button
                                     onClick={handlePrevStep}
-                                    className="absolute top-1 left-1 z-50 p-3 rounded-xl transition-all duration-300 text-gray-400 hover:text-white hover:bg-gray-800/80 backdrop-blur-sm shadow-lg"
+                                    className="absolute top-1 left-1 z-50 p-3 rounded-xl transition-all duration-300 backdrop-blur-sm shadow-lg"
+                                    style={{
+                                        color: DARK_THEME.text.muted,
+                                        backgroundColor: `${DARK_THEME.background.secondary}CC`,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = DARK_THEME.text.primary;
+                                        e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = DARK_THEME.text.muted;
+                                        e.currentTarget.style.backgroundColor = `${DARK_THEME.background.secondary}CC`;
+                                    }}
                                     title="Go back"
                                 >
                                     <ArrowLeft className="w-6 h-6" />
                                 </button>
                             )}
-                            <h1 className="text-4xl font-bold text-white">
+                            <h1 className="text-4xl font-bold" style={{ color: DARK_THEME.text.primary }}>
                                 {STEP_TITLES[currentStep as keyof typeof STEP_TITLES]}
                             </h1>
                         </div>
@@ -120,7 +145,11 @@ export default function CreateProjectModal({
                 </div>
 
                 {/* Right Panel - Preview */}
-                <div className="w-1/2 flex flex-col px-12 py-12 border-l bg-gray-800 border-gray-700 relative">
+                <div className="w-1/2 flex flex-col px-12 py-12 border-l relative" 
+                     style={{ 
+                         backgroundColor: DARK_THEME.background.secondary,
+                         borderLeftColor: DARK_THEME.border.default
+                     }}>
                     <div className="flex-1 flex items-center justify-center">
                         <ProjectPreview currentStep={currentStep} formState={formState} />
                     </div>

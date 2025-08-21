@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckSquare,
   Folder,
@@ -9,12 +10,13 @@ import {
   Target,
   Users,
   Plus,
+  UserPlus,
 } from "lucide-react";
 import Dropdown, {
   DropdownItem,
   DropdownSeparator,
 } from "@/components/ui/Dropdown/Dropdown";
-import { CreateProjectModal, InviteModal } from "@/components/modals";
+import { CreateProjectModal, CreateTeamModal, InviteModal } from "@/components/modals";
 import { useDisclosure } from "@/layouts/hooks/ui/useDisclosure";
 
 /* ===================== Types ===================== */
@@ -42,6 +44,7 @@ interface CreateButtonProps {
 /* ===================== Default Actions ===================== */
 const getDefaultActions = (
   createProjectModal: any,
+  createTeamModal: any,
   inviteModal: any,
   onActionClick?: (actionId: string) => void
 ): CreateAction[] => [
@@ -61,6 +64,15 @@ const getDefaultActions = (
     onClick: () => {
       onActionClick?.("project");
       createProjectModal.onOpen();
+    },
+  },
+  {
+    id: "Teams",
+    label: "Teams",
+    icon: <UserPlus className="w-4 h-4" />,
+    onClick: () => {
+      onActionClick?.("Teams");
+      createTeamModal.onOpen();
     },
   },
   {
@@ -116,15 +128,17 @@ export default function CreateButton({
   style,
   onActionClick,
 }: CreateButtonProps) {
+  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   // Modal states
   const createProjectModal = useDisclosure(false);
+  const createTeamModal = useDisclosure(false);
   const inviteModal = useDisclosure(false);
 
   // Determine which actions to show
   const displayActions = actions || (showDefaultActions 
-    ? getDefaultActions(createProjectModal, inviteModal, onActionClick)
+    ? getDefaultActions(createProjectModal, createTeamModal, inviteModal, onActionClick)
     : []
   );
 
@@ -175,6 +189,24 @@ export default function CreateButton({
       <CreateProjectModal
         isOpen={createProjectModal.isOpen}
         onClose={createProjectModal.onClose}
+        onCreateProject={(projectData) => {
+          console.log('Creating project:', projectData);
+          // Handle project creation logic here
+        }}
+      />
+      
+      <CreateTeamModal
+        isOpen={createTeamModal.isOpen}
+        onClose={createTeamModal.onClose}
+        onSuccess={(team) => {
+          console.log('✅ Team created successfully:', team);
+          
+          // Show success feedback
+          alert(`🎉 Team "${team.name}" created successfully!`);
+          
+          // Navigate to teams page to see the new team
+          router.push('/manager/teams');
+        }}
       />
       
       <InviteModal

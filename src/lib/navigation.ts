@@ -290,7 +290,7 @@ export function getContextualNavigation(
  */
 export function getUserMenuItems(userRole: UserRole): NavigationItem[] {
   const baseItems: NavigationItem[] = [
-    { key: 'profile', title: 'Profile', href: '/settings/profile', icon: 'user' },
+    { key: 'profile', title: 'Profile', href: '/profile', icon: 'user' },
     { key: 'settings', title: 'Settings', href: '/settings', icon: 'settings' },
   ];
 

@@ -8,11 +8,11 @@ import {
 } from '@/lib/transforms';
 import { CookieAuth } from '@/utils/cookieAuth';
 import type { 
-  BackendProject,
+  ProjectResponseDto as BackendProject,
   Project,
-  CreateProjectDTO,
-  UpdateProjectDTO,
-  ProjectFormData,
+  CreateProjectRequestDto as CreateProjectDTO,
+  UpdateProjectRequestDto as UpdateProjectDTO,
+  CreateProjectFormData as ProjectFormData,
   ProjectSummary,
   ProjectStats,
   ProjectProgress,
@@ -21,8 +21,9 @@ import type {
   PaginatedProjectsResponse,
   ProjectQueryParams,
   ProjectStatus,
-  ProjectPriority
-} from '@/types/project';
+  ProjectPriority,
+  ProjectsApiResponse
+} from '@/types/projects';
 import { 
   PROJECT_STATUS_COLORS,
   PROJECT_PRIORITY_COLORS
@@ -111,16 +112,17 @@ export const transformFormToCreateDTO = (formData: ProjectFormData): CreateProje
   
   return {
     name: formData.name.trim(),
-    description: formData.description?.trim(),
+    description: formData.description?.trim() || '',
     startDate: formData.startDate,
     endDate: formData.endDate,
-    status: formData.status,
-    priority: formData.priority,
-    emailPm: formData.emailPm.trim(),
+    status: 'PLANNED', // Default status
+    priority: 'MEDIUM', // Default priority
+    emailPm: userInfo.email || tokenPayload?.email || '',
     ownerId: tokenPayload?.userId || parseInt(userInfo.id || '1'),
-    organizationId: tokenPayload?.organizationId || 1,
-    budget: formData.budget,
-    teamIds: formData.teamIds,
+    organizationId: formData.isPersonal ? null : (tokenPayload?.organizationId || 1),
+    budget: undefined,
+    teamIds: formData.isPersonal ? [] : (formData.teamId ? [formData.teamId] : []),
+    isPersonal: formData.isPersonal,
   };
 };
 
@@ -159,10 +161,10 @@ const projectsService = {
   // Get project by ID
   getProject: async (id: number): Promise<Project> => {
     try {
-      console.log('🔄 Fetching project by ID:', id);
+  
       const response = await api.get<BackendProject>(`/api/projects/${id}`);
       const backendProject = response.data;
-      console.log('✅ Successfully fetched project:', backendProject.name);
+
       return transformBackendProject(backendProject);
     } catch (error) {
       console.error('❌ Failed to fetch project:', error);
@@ -170,7 +172,7 @@ const projectsService = {
     }
   },
 
-  // Get all projects with pagination and filters
+  // Get current user's projects (using correct endpoint from API integration guide)
   getProjects: async (params?: ProjectQueryParams): Promise<{
     projects: Project[];
     totalElements: number;
@@ -181,38 +183,55 @@ const projectsService = {
     try {
       const {
         page = 0,
-        size = 10,
-        sortBy = 'updatedAt',
-        sortDir = 'desc',
-        ...filters
+        size = 20,
+        search
       } = params || {};
 
-      console.log('🔄 Fetching projects with filters:', filters);
+
       
-      const response = await api.get<PaginatedProjectsResponse>('/api/projects', {
-        params: { 
-          page, 
-          size, 
-          sortBy, 
-          sortDir,
-          ...filters 
-        }
+      // Use the correct endpoint from API integration guide: /api/users/me/projects
+      const response = await api.get('/api/users/me/projects', {
+        params: { page, size, q: search }
       });
 
-      const { content, totalElements, totalPages, number, size: pageSize } = response.data;
-      const projects = content.map(transformBackendProject);
+      // Handle response data - could be paginated or simple array
+      const responseData = response.data;
+      
+      if (responseData.content && Array.isArray(responseData.content)) {
+        // Paginated response
+        const projects = responseData.content.map(transformBackendProject);
 
-      console.log(`✅ Successfully fetched ${projects.length} projects (page ${number + 1}/${totalPages})`);
+        return {
+          projects,
+          totalElements: responseData.totalElements,
+          totalPages: responseData.totalPages,
+          currentPage: responseData.number,
+          pageSize: responseData.size,
+        };
+      } else if (Array.isArray(responseData)) {
+        // Simple array response
+        const projects = responseData.map(transformBackendProject);
 
-      return {
-        projects,
-        totalElements,
-        totalPages,
-        currentPage: number,
-        pageSize,
-      };
+        return {
+          projects,
+          totalElements: projects.length,
+          totalPages: 1,
+          currentPage: 0,
+          pageSize: projects.length,
+        };
+      } else {
+        // Empty or invalid response
+
+        return {
+          projects: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: 0,
+        };
+      }
     } catch (error) {
-      console.error('❌ Failed to fetch projects:', error);
+      console.error('❌ Failed to fetch user projects:', error);
       throw error;
     }
   },
@@ -220,7 +239,7 @@ const projectsService = {
   // Create new project
   createProject: async (data: CreateProjectDTO): Promise<Project> => {
     try {
-      console.log('🔄 ProjectService: Creating new project:', data.name);
+
       
       // Validate data
       const validationErrors = validateProjectData(data);
@@ -231,10 +250,10 @@ const projectsService = {
       console.log('📤 ProjectService: Sending to backend:', JSON.stringify(data, null, 2));
       
       const response = await api.post<BackendProject>('/api/projects', data);
-      console.log('✅ ProjectService: Backend response:', response.data);
+
       
       const transformedProject = transformBackendProject(response.data);
-      console.log('🔄 ProjectService: Transformed project for frontend:', transformedProject);
+
       
       return transformedProject;
     } catch (error: unknown) {
@@ -246,7 +265,7 @@ const projectsService = {
   // Update existing project
   updateProject: async (id: number, data: UpdateProjectDTO): Promise<Project> => {
     try {
-      console.log('🔄 ProjectService: Updating project:', id, data);
+
       
       // Validate data
       const validationErrors = validateProjectData(data);
@@ -262,7 +281,7 @@ const projectsService = {
       console.log('📤 ProjectService: Sending update to backend:', cleanData);
       
       const response = await api.put<BackendProject>(`/api/projects/${id}`, cleanData);
-      console.log('✅ ProjectService: Update response:', response.data);
+
       
       return transformBackendProject(response.data);
     } catch (error) {
@@ -274,11 +293,61 @@ const projectsService = {
   // Delete project
   deleteProject: async (id: number): Promise<void> => {
     try {
-      console.log('🔄 Deleting project:', id);
+
       await api.delete(`/api/projects/${id}`);
-      console.log('✅ Successfully deleted project:', id);
+
     } catch (error) {
       console.error('❌ Failed to delete project:', error);
+      throw error;
+    }
+  },
+
+  // ===== API INTEGRATION GUIDE METHODS =====
+
+  // Get other user's projects (Admin/Owner only)
+  getUserProjects: async (userId: number): Promise<BackendProject[]> => {
+    try {
+
+      const response = await api.get(`/api/users/${userId}/projects`);
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error('Access denied: You can only view your own projects or need OWNER/ADMIN role');
+      }
+      console.error('❌ Failed to fetch user projects:', error);
+      throw error;
+    }
+  },
+
+  // Get projects created by specific user (Admin/Owner only)
+  getUserCreatedProjects: async (userId: number): Promise<BackendProject[]> => {
+    try {
+
+      const response = await api.get(`/api/users/${userId}/projects/created`);
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
+      }
+      console.error('❌ Failed to fetch user created projects:', error);
+      throw error;
+    }
+  },
+
+  // Get projects owned by specific user (Admin/Owner only)
+  getUserOwnedProjects: async (userId: number): Promise<BackendProject[]> => {
+    try {
+
+      const response = await api.get(`/api/users/${userId}/projects/owned`);
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
+      }
+      console.error('❌ Failed to fetch user owned projects:', error);
       throw error;
     }
   },
@@ -286,7 +355,7 @@ const projectsService = {
   // Update project status
   updateProjectStatus: async (id: number, status: ProjectStatus): Promise<Project> => {
     try {
-      console.log('🔄 Updating project status:', id, 'to', status);
+
       return await projectsService.updateProject(id, { status });
     } catch (error) {
       console.error('❌ Failed to update project status:', error);
@@ -297,9 +366,9 @@ const projectsService = {
   // Get project tasks
   getProjectTasks: async (id: number): Promise<ProjectTasksResponse> => {
     try {
-      console.log('🔄 Fetching tasks for project:', id);
+
       const response = await api.get<ProjectTasksResponse>(`/api/projects/${id}/tasks`);
-      console.log('✅ Successfully fetched project tasks:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch project tasks:', error);
@@ -310,9 +379,9 @@ const projectsService = {
   // Get project progress details
   getProjectProgress: async (id: number): Promise<ProjectProgress> => {
     try {
-      console.log('🔄 Fetching project progress for ID:', id);
+
       const response = await api.get<ProjectProgress>(`/api/projects/${id}/progress`);
-      console.log('✅ Successfully fetched project progress:', response.data);
+
       return response.data;
     } catch (error: unknown) {
       const status = (error as { status?: number })?.status;
@@ -375,13 +444,67 @@ const projectsService = {
     pageSize: number;
   }> => {
     try {
-      const userInfo = CookieAuth.getUserInfo();
-      const userId = parseInt(userInfo.id || '1');
+      const {
+        page = 0,
+        size = 20,
+        status,
+        priority,
+      } = params || {};
+
+
       
-      return await projectsService.getProjects({
-        ...params,
-        ownerId: userId, // Filter by current user
+      // Call user-specific projects endpoint
+      const response = await api.get('/api/users/me/projects', {
+        params: { 
+          page, 
+          size,
+          status: status?.join(','),
+          priority: priority?.join(','),
+        }
       });
+
+
+
+      // Handle both paginated and simple array responses
+      if (response.data?.content && Array.isArray(response.data.content)) {
+        // Paginated response
+        const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+        const projects = content.map(transformBackendProject);
+        
+
+        
+        return {
+          projects,
+          totalElements,
+          totalPages,
+          currentPage: number,
+          pageSize,
+        };
+      } else if (Array.isArray(response.data)) {
+        // Simple array response
+        const projects = response.data.map(transformBackendProject);
+        
+
+        
+        return {
+          projects,
+          totalElements: projects.length,
+          totalPages: 1,
+          currentPage: 0,
+          pageSize: projects.length,
+        };
+      } else {
+        // Empty or unexpected response
+        console.warn('⚠️ Unexpected response format:', response.data);
+        
+        return {
+          projects: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: 0,
+        };
+      }
     } catch (error) {
       console.error('❌ Failed to fetch my projects:', error);
       throw error;
@@ -391,12 +514,12 @@ const projectsService = {
   // Get project statistics
   getProjectStats: async (organizationId?: number): Promise<ProjectStats> => {
     try {
-      console.log('🔄 Fetching project statistics...');
+
       
       const params = organizationId ? { organizationId } : {};
       const response = await api.get<ProjectStats>('/api/projects/stats', { params });
       
-      console.log('✅ Successfully fetched project stats:', response.data);
+
       return response.data;
     } catch (error: unknown) {
       const status = (error as { status?: number })?.status;
@@ -443,7 +566,7 @@ const projectsService = {
         size: 50, // Larger size for search results
       });
       
-      console.log(`✅ Found ${projects.length} projects matching: "${query}"`);
+
       return projects;
     } catch (error) {
       console.error('❌ Failed to search projects:', error);
@@ -451,18 +574,8 @@ const projectsService = {
     }
   },
 
-  // Test authentication
-  testAuth: async (): Promise<boolean> => {
-    try {
-      console.log('🧪 Testing authentication...');
-      const response = await api.get('/api/projects');
-      console.log('✅ Authentication test successful');
-      return true;
-    } catch (error) {
-      console.error('❌ Authentication test failed');
-      return false;
-    }
-  }
+
+
 };
 
 // Export service and utilities

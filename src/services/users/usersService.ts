@@ -51,7 +51,7 @@ export const usersService = {
         role
       } = params || {};
 
-      console.log('🔄 Fetching users...');
+
       
       const response = await api.get('/api/users', {
         params: { page, size, q: search, role }
@@ -87,7 +87,7 @@ export const usersService = {
   // Get user by ID
   getUser: async (id: string): Promise<User> => {
     try {
-      console.log('🔄 Fetching user by ID:', id);
+
       const response = await api.get(`/api/users/${id}`);
       return transformUser(response.data);
     } catch (error) {
@@ -101,7 +101,7 @@ export const usersService = {
   // Create user
   createUser: async (data: CreateUserDTO): Promise<User> => {
     try {
-      console.log('🔄 Creating user:', data.email);
+
       const response = await api.post('/api/users', data);
       return transformUser(response.data);
     } catch (error) {
@@ -113,7 +113,7 @@ export const usersService = {
   // Update user
   updateUser: async (id: string, data: UpdateUserDTO): Promise<User> => {
     try {
-      console.log('🔄 Updating user:', id);
+
       const response = await api.put(`/api/users/${id}`, data);
       return transformUser(response.data);
     } catch (error) {
@@ -125,9 +125,9 @@ export const usersService = {
   // Delete user
   deleteUser: async (id: string): Promise<void> => {
     try {
-      console.log('🔄 Deleting user:', id);
+
       await api.delete(`/api/users/${id}`);
-      console.log('✅ Successfully deleted user:', id);
+
     } catch (error) {
       console.error('❌ Failed to delete user:', error);
       throw error;
@@ -137,7 +137,7 @@ export const usersService = {
   // Search users
   searchUsers: async (query: string): Promise<User[]> => {
     try {
-      console.log('🔄 Searching users:', query);
+
       const response = await api.get('/api/users/search', {
         params: { q: query }
       });

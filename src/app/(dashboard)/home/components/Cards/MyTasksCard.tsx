@@ -8,7 +8,8 @@ import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import {  useUpdateTask, useCreateTask, useMyTasksSummary } from "@/hooks/tasks";
+import { useMyTasksSummary } from "@/hooks/tasks";
+import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/tasks/useTasksActions";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
@@ -37,9 +38,11 @@ const MyTasksCard = () => {
   };
   
   // Use correct API for user's personal tasks - with error handling
+  // Use cached global data - no API calls
+  // ✅ FIX: Use same SWR data source as sidebar for consistency
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
-    size: 50,
+    size: 1000,
     sortBy: 'startDate',
     sortDir: 'desc'
   });
@@ -72,9 +75,11 @@ const MyTasksCard = () => {
     byPriority: { HIGH: 0, MEDIUM: 0, LOW: 0 }
   };
   
-  // SWR mutation hooks
-  const { updateTask } = useUpdateTask();
-  const { createTask } = useCreateTask();
+  // SWR mutation hooks - consistent with my-tasks/list
+  const { createTask, isCreating } = useCreateTask();
+  const { updateTask, isUpdating } = useUpdateTask();
+  const { deleteTask, isDeleting } = useDeleteTask();
+  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
 
   // Local state for UI management
   const [activeTab, setActiveTab] = React.useState<string>("upcoming");
@@ -112,29 +117,12 @@ const MyTasksCard = () => {
   }, [tasks, activeTab, showAllTasks, optimisticTaskStates]);
 
   const taskStats = React.useMemo(() => {
-    console.log('🔍 MyTasksCard - Debug taskStats calculation:', {
-      tasks: tasks ? `Array(${tasks.length})` : 'null/undefined',
-      optimisticTaskStates,
-      sampleTask: tasks?.[0] ? {
-        id: tasks[0].id,
-        completed: tasks[0].completed, 
-        status: tasks[0].status,
-        title: tasks[0].title
-      } : 'No tasks'
-    });
-
     if (!tasks || !Array.isArray(tasks)) return { completed: 0, overdue: 0, total: 0 };
 
     const completed = tasks.filter(task => {
       const optimisticState = optimisticTaskStates[task.id.toString()];
       const actualCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
       const finalCompleted = optimisticState !== undefined ? optimisticState : actualCompleted;
-      
-      console.log(`📋 MyTasksCard Task ${task.id}:`, {
-        optimistic: optimisticState,
-        actual: actualCompleted,
-        final: finalCompleted
-      });
       
       return finalCompleted;
     }).length;
@@ -199,7 +187,7 @@ const MyTasksCard = () => {
         const backendStatus = newCompleted ? 'completed' : 'todo';
         
         await updateTask({
-          id: task.id.toString(),
+          id: typeof task.id === 'string' ? parseInt(task.id) : task.id,
           data: {
             status: backendStatus
           }

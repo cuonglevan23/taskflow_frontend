@@ -61,15 +61,29 @@ export function filterProjectsByRole(
   projects: any[], 
   roleChecks: RoleChecks
 ): any[] {
+  // Safety check: Ensure projects is an array
+  if (!Array.isArray(projects)) {
+    return [];
+  }
+
   if (roleChecks.isMember() || roleChecks.isLeader()) {
     // Member & Leader: Show active projects they participate in
-    return projects.filter(project => project.status === 'active');
+    // Note: Backend might use different status values, let's be more flexible
+    return projects.filter(project => 
+      project?.status === 'active' || 
+      project?.status === 'IN_PROGRESS' || 
+      project?.status === 'PLANNED'
+    );
   } 
   
   if (roleChecks.isProjectManager()) {
     // PM: Show active and completed projects they can manage
     return projects.filter(project => 
-      project.status === 'active' || project.status === 'completed'
+      project?.status === 'active' || 
+      project?.status === 'completed' ||
+      project?.status === 'IN_PROGRESS' || 
+      project?.status === 'COMPLETED' ||
+      project?.status === 'PLANNED'
     );
   }
   
@@ -81,22 +95,14 @@ export function filterProjectsByRole(
  * Check if user should see projects section
  */
 export function shouldShowProjectsSection(roleChecks: RoleChecks): boolean {
-  return roleChecks.isMember() || roleChecks.isLeader();
+  return roleChecks.isMember() || roleChecks.isLeader() || roleChecks.isProjectManager() || roleChecks.isOwner() || roleChecks.isAdmin();
 }
 
 /**
  * Check if user should see teams section
  */
 export function shouldShowTeamsSection(roleChecks: RoleChecks): boolean {
-  return roleChecks.isMember() || roleChecks.isLeader();
-}
-
-/**
- * Get user's teams (mock data for now)
- */
-export function getUserTeams(): typeof MOCK_TEAMS {
-  // In real app, this would fetch from API based on user ID
-  return MOCK_TEAMS;
+  return roleChecks.isMember() || roleChecks.isLeader() || roleChecks.isProjectManager() || roleChecks.isOwner() || roleChecks.isAdmin();
 }
 
 /**
@@ -107,19 +113,6 @@ export function createProjectNavItems(projects: any[]): NavigationItem[] {
     id: `project-${project.id}`,
     label: project.name,
     href: `/projects/${project.id}`,
-    // Note: icon will be handled in component due to React element
-    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-  }));
-}
-
-/**
- * Create navigation items from teams
- */
-export function createTeamNavItems(): NavigationItem[] {
-  return getUserTeams().map(team => ({
-    id: `team-${team.id}`,
-    label: team.name,
-    href: `/teams/${team.id}`,
     // Note: icon will be handled in component due to React element
     allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
   }));

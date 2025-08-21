@@ -1,46 +1,101 @@
-import React from 'react'
-import { PageLayout } from '@/layouts/page'
-import { Metadata } from 'next'
-import { DynamicProjectProvider } from './components/DynamicProjectProvider'
+"use client";
+
+import React, { useState } from 'react';
+import PageLayout from '@/layouts/page/PageLayout';
+import { TaskListHeader } from '@/components/TaskList';
+import { usePathname } from 'next/navigation';
+import { useTheme } from '@/layouts/hooks/useTheme';
+import { DynamicProjectProvider } from './components/DynamicProjectProvider';
 
 interface ProjectLayoutProps {
-  children: React.ReactNode
-  params: Promise<{
-    id: string
-  }>
+  children: React.ReactNode;
 }
 
-// Generate metadata for dynamic projects pages
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  try {
-    // Await params before accessing properties (Next.js 15 requirement)
-    const { id } = await params;
-    
-    // In a real app, you'd fetch from your API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/projects`, {
-      cache: 'no-store'
-    });
-    const projects = await response.json();
-    const project = projects.find((p: any) => p.id === id);
-    
-    return {
-      title: project ? `${project.name} - TaskManager` : 'Project - TaskManager',
-      description: project ? project.description : 'Project management dashboard',
-    };
-  } catch (error) {
-    return {
-      title: 'Project - TaskManager',
-      description: 'Project management dashboard',
-    };
-  }
-}
+function ProjectContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { theme } = useTheme();
+  const [searchValue, setSearchValue] = useState("");
 
-const ProjectLayout = ({ children, params }: ProjectLayoutProps) => {
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+  };
+
+  const handleCreateTask = () => {
+    // This will be handled by individual tab components
+    console.log('Create task from project header');
+  };
+
+  // Safe props passing - avoid unsafe cloning
+  const childrenWithProps = React.Children.map(children, (child) => {
+    if (React.isValidElement(child)) {
+      // Check if component accepts searchValue prop
+      const childType = child.type as any;
+      const hasSearchValueProp = childType?.propTypes?.searchValue || 
+                                childType?.defaultProps?.hasOwnProperty?.('searchValue');
+      
+      if (hasSearchValueProp) {
+        try {
+          return React.cloneElement(child, { searchValue });
+        } catch (error) {
+          console.warn('Failed to clone element with searchValue:', error);
+          return child;
+        }
+      }
+    }
+    return child;
+  });
+
+  // Only show TaskListHeader for task-related pages (board, list, timeline)
+  const showTaskHeader = pathname?.includes('/board') || 
+                         pathname?.includes('/list') || 
+                         pathname?.includes('/timeline');
+
   return (
-    <DynamicProjectProvider>
-      <PageLayout>{children}</PageLayout>
-    </DynamicProjectProvider>
-  )
+    <>
+      {showTaskHeader && (
+        <div 
+          className="sticky top-0 z-30 shadow-sm border-b" 
+          style={{ 
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            width: '100%'
+          }}
+        >
+          <TaskListHeader
+            searchValue={searchValue}
+            onSearchChange={handleSearchChange}
+            onCreateTask={handleCreateTask}
+            onFilterClick={() => {/* Handle filter modal */}}
+            onSortClick={() => {/* Handle sort modal */}}
+            onGroupClick={() => {/* Handle group modal */}}
+            onOptionsClick={() => {/* Handle options modal */}}
+            showSearch={true}
+            showFilters={true}
+            showSort={pathname?.includes('/list') || pathname?.includes('/board')}
+            showGroup={pathname?.includes('/list')}
+            showOptions={true}
+            className="mb-0"
+          />
+        </div>
+      )}
+
+      {/* Tab Content */}
+      <div className={showTaskHeader ? "h-[calc(100vh-228px)] overflow-y-auto" : "h-full"}>
+        {childrenWithProps}
+      </div>
+    </>
+  );
 }
 
-export default ProjectLayout
+export default function ProjectLayout({ children }: ProjectLayoutProps) {
+  return (
+    <PageLayout>
+      <DynamicProjectProvider>
+        <ProjectContent>
+          {children}
+        </ProjectContent>
+      </DynamicProjectProvider>
+    </PageLayout>
+  );
+}

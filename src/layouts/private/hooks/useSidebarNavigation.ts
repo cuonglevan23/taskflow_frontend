@@ -1,7 +1,8 @@
 import { useMemo, useCallback } from 'react';
 import { useRBAC } from '@/hooks/useRBAC';
-import { useProjectsContext } from '@/contexts';
-import { useMyTasksSummary } from '@/hooks/useTasks';
+import { useMyProjects } from '@/hooks/projects/useProjects';
+import { useMyTeams } from '@/hooks/teams/useTeams';
+import { useMyTasksSummary } from '@/hooks/tasks';
 import { 
   getVisibleNavigationSections,
   type NavigationSection 
@@ -12,8 +13,6 @@ import {
   filterProjectsByRole,
   shouldShowProjectsSection,
   shouldShowTeamsSection,
-  createProjectNavItems,
-  createTeamNavItems,
   isItemActive,
 } from '../helpers/sidebarHelpers';
 import { NAV_SECTIONS } from '../constants/sidebarConstants';
@@ -22,26 +21,39 @@ import { GrProjects } from "react-icons/gr";
 import { Users } from 'lucide-react';
 
 export function useSidebarNavigation() {
-  // Get RBAC data and contexts
+  // Get RBAC data and cached global data (no API calls)
   const rbac = useRBAC();
-  const { projects } = useProjectsContext();
+  const { data: projectsData } = useMyProjects();
+  const { teams } = useMyTeams();
   
-  // Use shared hook for consistency with UserSummaryBar and MyTasksCard
+  // Extract arrays with null safety - handle SWR response structure
+  const projects = useMemo(() => {
+    if (!projectsData) return [];
+    // Handle both array response and paginated response
+    return Array.isArray(projectsData) ? projectsData : (projectsData.projects || []);
+  }, [projectsData]);
+  // ✅ FIX: Use same SWR data source as task mutations
   const { tasks } = useMyTasksSummary({
     page: 0,
-    size: 50,
+    size: 1000,
     sortBy: 'startDate',
     sortDir: 'desc'
   });
 
   // Calculate pending tasks count from shared data source
   const pendingTasksCount = useMemo(() => {
-    if (!tasks || !Array.isArray(tasks)) return 0;
-    return tasks.filter(task => 
-      !task.completed && 
-      task.status !== 'completed' && 
-      task.status !== 'DONE'
-    ).length;
+    if (!tasks || !Array.isArray(tasks)) {
+      return 0;
+    }
+
+    const pendingTasks = tasks.filter(task => {
+      const isPending = !task.completed &&
+        task.status !== 'completed' &&
+        task.status !== 'DONE';
+      return isPending;
+    });
+    
+    return pendingTasks.length;
   }, [tasks]);
 
   // Create role checks object (memoized)
@@ -92,15 +104,16 @@ export function useSidebarNavigation() {
         };
       }
 
-      // Process Teams section (only for MEMBER and LEADER)  
+      // Process Teams section (only for MEMBER and LEADER) with real SWR data
       if (section.id === NAV_SECTIONS.TEAMS && shouldShowTeamsSection(roleChecks)) {
-        const teamNavItems = createTeamNavItems();
-        
         return {
           ...section,
-          items: teamNavItems.map(team => ({
-            ...team,
+          items: teams.slice(0, 5).map(team => ({
+            id: `team-${team.id}`,
+            label: team.name,
+            href: `/teams/${team.id}`,
             icon: React.createElement(Users, { size: 20, className: "text-gray-300" }),
+            allowedRoles: section.allowedRoles,
           }))
         };
       }

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     try {
       // Use getServerSession instead of auth() for API routes
       session = await getServerSession(authOptions);
-      console.log('✅ Session retrieved:', session ? 'Found' : 'Not found');
+
       
       if (session) {
         console.log('📋 Session details:', {
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       },
     };
     
-    console.log('✅ User object built successfully for:', user.email);
+
     
     return NextResponse.json(user, {
       headers: {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { StepProps } from '../types';
+import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
 
 interface ProjectTimelineStepProps extends Pick<
     StepProps, 
@@ -17,15 +18,15 @@ export const ProjectTimelineStep: React.FC<ProjectTimelineStepProps> = ({
     return (
         <>
             <div className="mb-8">
-                <h2 className="text-xl font-medium text-white mb-4">Set project timeline</h2>
-                <p className="text-gray-400 text-sm mb-6">
+                <h2 className="text-xl font-medium mb-4" style={{ color: DARK_THEME.text.primary }}>Set project timeline</h2>
+                <p className="text-sm mb-6" style={{ color: DARK_THEME.text.muted }}>
                     Choose start and end dates for your project to help track progress and deadlines.
                 </p>
             </div>
 
             {/* Start Date */}
             <div className="mb-8">
-                <label className="block text-lg font-semibold mb-4 text-white">
+                <label className="block text-lg font-semibold mb-4" style={{ color: DARK_THEME.text.primary }}>
                     Start date
                 </label>
                 <div className="relative">
@@ -33,15 +34,39 @@ export const ProjectTimelineStep: React.FC<ProjectTimelineStepProps> = ({
                         type="date"
                         value={formState.startDate}
                         onChange={onStartDateChange}
-                        className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-lg bg-gray-800/60 backdrop-blur-sm text-white shadow-lg ${
-                            errors.dateError 
-                                ? 'border-red-500 focus:border-red-400 shadow-red-500/20' 
-                                : 'border-gray-600/50 focus:border-blue-500 focus:shadow-blue-500/20 hover:border-gray-500/70'
-                        } focus:outline-none focus:ring-2 focus:ring-blue-500/30`}
+                        className="w-full p-5 rounded-xl border-2 transition-all duration-300 text-lg backdrop-blur-sm shadow-lg focus:outline-none focus:ring-2"
+                        style={{
+                            backgroundColor: `${DARK_THEME.background.secondary}99`,
+                            color: DARK_THEME.text.primary,
+                            borderColor: errors.dateError ? THEME_COLORS.error[500] : DARK_THEME.border.default,
+                            boxShadow: errors.dateError 
+                                ? `0 0 0 4px ${THEME_COLORS.error[500]}33` 
+                                : `0 0 0 4px ${THEME_COLORS.info[500]}33`,
+                        }}
+                        onFocus={(e) => {
+                            e.target.style.borderColor = errors.dateError ? THEME_COLORS.error[400] : THEME_COLORS.info[500];
+                        }}
+                        onBlur={(e) => {
+                            e.target.style.borderColor = errors.dateError ? THEME_COLORS.error[500] : DARK_THEME.border.default;
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!errors.dateError) {
+                                e.target.style.borderColor = DARK_THEME.border.muted;
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!errors.dateError) {
+                                e.target.style.borderColor = DARK_THEME.border.default;
+                            }
+                        }}
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-lg flex items-center justify-center border border-green-500/30">
-                            <Calendar className="w-5 h-5 text-green-400" />
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center border" 
+                             style={{ 
+                                 background: `linear-gradient(to bottom right, ${THEME_COLORS.success[500]}33, ${THEME_COLORS.success[600]}33)`,
+                                 borderColor: `${THEME_COLORS.success[500]}4D`
+                             }}>
+                            <Calendar className="w-5 h-5" style={{ color: THEME_COLORS.success[400] }} />
                         </div>
                     </div>
                 </div>
@@ -49,7 +74,7 @@ export const ProjectTimelineStep: React.FC<ProjectTimelineStepProps> = ({
 
             {/* End Date */}
             <div className="mb-8">
-                <label className="block text-lg font-semibold mb-4 text-white">
+                <label className="block text-lg font-semibold mb-4" style={{ color: DARK_THEME.text.primary }}>
                     End date
                 </label>
                 <div className="relative">
@@ -57,23 +82,49 @@ export const ProjectTimelineStep: React.FC<ProjectTimelineStepProps> = ({
                         type="date"
                         value={formState.endDate}
                         onChange={onEndDateChange}
-                        className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-lg bg-gray-800/60 backdrop-blur-sm text-white shadow-lg ${
-                            errors.dateError 
-                                ? 'border-red-500 focus:border-red-400 shadow-red-500/20' 
-                                : 'border-gray-600/50 focus:border-blue-500 focus:shadow-blue-500/20 hover:border-gray-500/70'
-                        } focus:outline-none focus:ring-2 focus:ring-blue-500/30`}
+                        className="w-full p-5 rounded-xl border-2 transition-all duration-300 text-lg backdrop-blur-sm shadow-lg focus:outline-none focus:ring-2"
+                        style={{
+                            backgroundColor: `${DARK_THEME.background.secondary}99`,
+                            color: DARK_THEME.text.primary,
+                            borderColor: errors.dateError ? THEME_COLORS.error[500] : DARK_THEME.border.default,
+                            boxShadow: errors.dateError 
+                                ? `0 0 0 4px ${THEME_COLORS.error[500]}33` 
+                                : `0 0 0 4px ${THEME_COLORS.info[500]}33`,
+                        }}
+                        onFocus={(e) => {
+                            e.target.style.borderColor = errors.dateError ? THEME_COLORS.error[400] : THEME_COLORS.info[500];
+                        }}
+                        onBlur={(e) => {
+                            e.target.style.borderColor = errors.dateError ? THEME_COLORS.error[500] : DARK_THEME.border.default;
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!errors.dateError) {
+                                e.target.style.borderColor = DARK_THEME.border.muted;
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!errors.dateError) {
+                                e.target.style.borderColor = DARK_THEME.border.default;
+                            }
+                        }}
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <div className="w-10 h-10 bg-gradient-to-br from-red-500/20 to-rose-600/20 rounded-lg flex items-center justify-center border border-red-500/30">
-                            <Calendar className="w-5 h-5 text-red-400" />
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center border" 
+                             style={{ 
+                                 background: `linear-gradient(to bottom right, ${THEME_COLORS.error[500]}33, ${THEME_COLORS.error[600]}33)`,
+                                 borderColor: `${THEME_COLORS.error[500]}4D`
+                             }}>
+                            <Calendar className="w-5 h-5" style={{ color: THEME_COLORS.error[400] }} />
                         </div>
                     </div>
                 </div>
                 {errors.dateError && (
-                    <p className="text-red-400 text-sm mt-3 font-medium flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></div>
+                    <div className="text-sm mt-3 font-medium flex items-center space-x-2" 
+                         style={{ color: THEME_COLORS.error[400] }}>
+                        <div className="w-4 h-4 rounded-full flex-shrink-0" 
+                             style={{ backgroundColor: THEME_COLORS.error[500] }}></div>
                         <span>{errors.dateError}</span>
-                    </p>
+                    </div>
                 )}
             </div>
 
@@ -81,7 +132,17 @@ export const ProjectTimelineStep: React.FC<ProjectTimelineStepProps> = ({
             <div className="max-w-md w-full space-y-4 mt-8">
                 <button
                     onClick={onCreateProject}
-                    className="w-full p-4 rounded-lg transition-all duration-200 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 hover:transform hover:-translate-y-0.5"
+                    className="w-full p-4 rounded-lg transition-all duration-200 text-base font-medium hover:transform hover:-translate-y-0.5"
+                    style={{
+                        backgroundColor: THEME_COLORS.info[600],
+                        color: DARK_THEME.text.primary,
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = THEME_COLORS.info[700];
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = THEME_COLORS.info[600];
+                    }}
                     type="button"
                 >
                     Create Project

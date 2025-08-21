@@ -119,10 +119,10 @@ export const tasksService = {
   // Get task by ID
   getTask: async (id: string): Promise<Task> => {
     try {
-      console.log('🔄 Fetching task by ID:', id);
+
       const response = await api.get<BackendTask>(`/api/tasks/${id}`);
       const backendTask = response.data;
-      console.log('✅ Successfully fetched task:', backendTask.title);
+
       return transformBackendTask(backendTask);
     } catch (error) {
       console.error('❌ Failed to fetch task:', error);
@@ -133,7 +133,7 @@ export const tasksService = {
   // Create task
   createTask: async (data: CreateTaskDTO): Promise<Task> => {
     try {
-      console.log('🔄 TaskService: Creating new task:', data.title);
+
       
       // Get current user ID from cookies for creatorId
       const userInfo = CookieAuth.getUserInfo();
@@ -168,10 +168,10 @@ export const tasksService = {
       console.log('📤 TaskService: Sending to backend:', JSON.stringify(backendData, null, 2));
       
       const response = await api.post<BackendTask>('/api/tasks', backendData);
-      console.log('✅ TaskService: Backend response:', response.data);
+
       
       const transformedTask = transformBackendTask(response.data);
-      console.log('🔄 TaskService: Transformed task for frontend:', transformedTask);
+
       
       return transformedTask;
     } catch (error: unknown) {
@@ -215,9 +215,9 @@ export const tasksService = {
   // Delete task
   deleteTask: async (id: string): Promise<void> => {
     try {
-      console.log('🔄 Deleting task:', id);
+
       await api.delete(`/api/tasks/${id}`);
-      console.log('✅ Successfully deleted task:', id);
+
     } catch (error) {
       console.error('❌ Failed to delete task:', error);
       throw error;
@@ -227,7 +227,7 @@ export const tasksService = {
   // Update task status
   updateTaskStatus: async (id: string, status: string): Promise<Task> => {
     try {
-      console.log('🔄 Updating task status:', id, 'to', status);
+
       const response = await api.put<BackendTask>(`/api/tasks/${id}`, {
         status: toBackendStatus(status)
       });
@@ -258,7 +258,7 @@ export const tasksService = {
         limit = 20
       } = params || {};
 
-      console.log('🔄 Fetching tasks with params:', params);
+
       
       const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
         params: { 
@@ -273,7 +273,7 @@ export const tasksService = {
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
       const tasks = content.map(transformBackendTask);
 
-      console.log(`✅ Successfully fetched ${tasks.length} tasks (page ${number + 1}/${totalPages})`);
+
 
       return {
         data: tasks,
@@ -290,12 +290,12 @@ export const tasksService = {
   // Get Tasks by Project
   getTasksByProject: async (projectId: string, params?: any): Promise<Task[]> => {
     try {
-      console.log('🔄 Fetching tasks for project:', projectId);
+
       const response = await api.get<BackendTask[]>(`/api/projects/${projectId}/tasks`, {
         params
       });
       const tasks = response.data.map(transformBackendTask);
-      console.log(`✅ Successfully fetched ${tasks.length} tasks for project ${projectId}`);
+
       return tasks;
     } catch (error) {
       console.error('❌ Failed to fetch project tasks:', error);
@@ -324,17 +324,17 @@ export const tasksService = {
         sortDir = 'desc'
       } = params || {};
 
-      console.log('🔄 Fetching my tasks (full data) with pagination...');
+
       
       const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
-      console.log('✅ Successfully fetched my tasks (full data) with pagination:', response.data);
+
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
       const tasks = content.map(transformMyTasksFull);
 
-      console.log(`✅ Successfully fetched ${tasks.length} my tasks (page ${number + 1}/${totalPages})`);
+
 
       return {
         tasks,
@@ -375,6 +375,19 @@ export const tasksService = {
       });
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+      
+      // Safety check for content field
+      if (!Array.isArray(content)) {
+        console.warn('⚠️ API response missing or invalid content field, using empty array');
+        return {
+          tasks: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: 20,
+        };
+      }
+      
       const tasks = content.map(transformMyTasksSummary);
 
       return {
@@ -406,12 +419,12 @@ export const tasksService = {
 
   // Get My Tasks Statistics
   getMyTasksStats: async (): Promise<MyTasksStats> => {
-    console.log('🔄 Fetching my tasks statistics...');
+
     
     try {
       const response = await api.get<MyTasksStats>('/api/tasks/my-tasks/stats');
       
-      console.log('✅ Successfully fetched my tasks stats:', response.data);
+  
       return response.data;
     } catch (error: unknown) {
       const status = (error as { status?: number })?.status;
@@ -435,11 +448,11 @@ export const tasksService = {
   // Get Task Statistics (general)
   getTaskStats: async (filter?: any): Promise<any> => {
     try {
-      console.log('🔄 Fetching task statistics with filter:', filter);
+
       const response = await api.get('/api/tasks/my-tasks/stats', {
         params: filter
       });
-      console.log('✅ Successfully fetched task stats:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch task stats:', error);
@@ -457,7 +470,7 @@ export const tasksService = {
   // Assign task to user
   assignTask: async (id: string, userId: string): Promise<Task> => {
     try {
-      console.log('🔄 Assigning task:', id, 'to user:', userId);
+
       const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
         assignedToIds: [userId]
       });
@@ -471,7 +484,7 @@ export const tasksService = {
   // Unassign task from user
   unassignTask: async (id: string): Promise<Task> => {
     try {
-      console.log('🔄 Unassigning task:', id);
+
       const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
         assignedToIds: []
       });
@@ -485,10 +498,10 @@ export const tasksService = {
   // Bulk update tasks
   bulkUpdateTasks: async (updates: Array<{ id: string; data: Partial<UpdateTaskDTO> }>): Promise<Task[]> => {
     try {
-      console.log('🔄 Bulk updating tasks:', updates.length, 'tasks');
+
       const promises = updates.map(({ id, data }) => tasksService.updateTask(id, data));
       const results = await Promise.all(promises);
-      console.log('✅ Successfully bulk updated tasks');
+
       return results;
     } catch (error) {
       console.error('❌ Failed to bulk update tasks:', error);
@@ -501,7 +514,7 @@ export const tasksService = {
     try {
       console.log('🧪 Testing authentication...');
       const response = await api.get('/api/tasks');
-      console.log('✅ Authentication test successful');
+
       return true;
     } catch (error) {
       console.error('❌ Authentication test failed');

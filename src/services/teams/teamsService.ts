@@ -1,49 +1,41 @@
-// Teams Service - Centralized team operations using lib/api.ts
+// Teams Service - Centralized team operations
+// Uses fetch for Next.js API routes instead of external backend
 import { api } from '@/lib/api';
-import { transformTeam, transformPaginatedResponse } from '@/lib/transforms';
+import type {
+  Team,
+  TeamResponseDto,
+  CreateTeamRequestDto,
+  UpdateTeamRequestDto,
+  TeamInvitationRequestDto,
+  AddMemberRequestDto,
+  CreateTeamFormData,
+  UpdateTeamFormData,
+  TeamsApiResponse,
+  TeamMember,
+  TeamQueryParams
+} from '@/types/teams';
 
-export interface Team {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  memberIds: string[];
-  managerId: string | null;
-  projectIds: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Transform backend response to frontend type
+const transformTeamResponse = (backendTeam: TeamResponseDto): Team => {
+  return {
+    id: backendTeam.id,
+    name: backendTeam.name,
+    description: backendTeam.description,
+    leaderId: backendTeam.leaderId,
+    createdById: backendTeam.createdById,
+    isDefaultWorkspace: backendTeam.isDefaultWorkspace,
+    organizationId: backendTeam.organizationId,
+    createdAt: new Date(backendTeam.createdAt),
+    updatedAt: new Date(backendTeam.updatedAt),
+  };
+};
 
-export interface CreateTeamDTO {
-  name: string;
-  description?: string;
-  color?: string;
-  memberIds?: string[];
-  managerId?: string;
-}
-
-export interface UpdateTeamDTO {
-  name?: string;
-  description?: string;
-  color?: string;
-  memberIds?: string[];
-  managerId?: string;
-}
-
-// Teams Service
+// Teams Service with CRUD operations
 export const teamsService = {
-  // Get all teams
-  getTeams: async (params?: {
-    page?: number;
-    size?: number;
-    search?: string;
-  }): Promise<{
-    teams: Team[];
-    totalElements: number;
-    totalPages: number;
-    currentPage: number;
-    pageSize: number;
-  }> => {
+  // ===== BASIC CRUD OPERATIONS =====
+
+  // Get all teams with pagination
+  getTeams: async (params?: TeamQueryParams): Promise<TeamsApiResponse> => {
     try {
       const {
         page = 0,
@@ -51,24 +43,45 @@ export const teamsService = {
         search
       } = params || {};
 
-      console.log('🔄 Fetching teams...');
+
       
-      const response = await api.get('/api/teams', {
+      // Use api client to hit real backend with proper authentication
+      const response = await api.get('/api/users/me/teams', {
         params: { page, size, q: search }
       });
 
+      // Handle response data
+      const responseData = response.data;
+      
       // Handle both paginated and simple array responses
-      if (response.data.content) {
-        return transformPaginatedResponse(response.data, transformTeam);
-      } else {
+      if (responseData?.content && Array.isArray(responseData.content)) {
+        // Paginated response
+        const teams = responseData.content.map(transformTeamResponse);
+        return {
+          teams,
+          totalElements: responseData.totalElements,
+          totalPages: responseData.totalPages,
+          currentPage: responseData.number,
+          pageSize: responseData.size,
+        };
+      } else if (Array.isArray(responseData)) {
         // Simple array response
-        const teams = response.data.map(transformTeam);
+        const teams = responseData.map(transformTeamResponse);
         return {
           teams,
           totalElements: teams.length,
           totalPages: 1,
           currentPage: 0,
           pageSize: teams.length,
+        };
+      } else {
+        // Empty or invalid response
+        return {
+          teams: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: 0,
         };
       }
     } catch (error) {
@@ -78,23 +91,59 @@ export const teamsService = {
   },
 
   // Get team by ID
-  getTeam: async (id: string): Promise<Team> => {
+  getTeam: async (id: number): Promise<Team> => {
     try {
-      console.log('🔄 Fetching team by ID:', id);
+
       const response = await api.get(`/api/teams/${id}`);
-      return transformTeam(response.data);
+      return transformTeamResponse(response.data);
     } catch (error) {
       console.error('❌ Failed to fetch team:', error);
       throw error;
     }
   },
 
-  // Create team
-  createTeam: async (data: CreateTeamDTO): Promise<Team> => {
+  // Create team (simple - just name and description)
+  createTeam: async (formData: CreateTeamFormData, userSession?: any): Promise<Team> => {
     try {
-      console.log('🔄 Creating team:', data.name);
-      const response = await api.post('/api/teams', data);
-      return transformTeam(response.data);
+      // Prepare request data according to TEAM_CREATION_UPDATE.md
+      // Don't send leader_id - let backend use current user from JWT automatically
+      const requestData: CreateTeamRequestDto = {
+        name: formData.name.trim(),
+        description: formData.description?.trim(),
+        // leader_id omitted - backend will use current user from JWT as leader
+        // project_id omitted - not needed for basic team creation
+      };
+
+      // Use api client to hit real backend with proper authentication
+      const response = await api.post('/api/teams', requestData);
+      
+      // Transform response - backend handles user IDs automatically
+      const teamData = response.data;
+      const newTeam: Team = {
+        id: teamData.id,
+        name: teamData.name,
+        description: teamData.description || '',
+        leaderId: teamData.leaderId,
+        createdById: teamData.createdById,
+        isDefaultWorkspace: teamData.isDefaultWorkspace || false,
+        organizationId: teamData.organizationId || null,
+        createdAt: new Date(teamData.createdAt || new Date()),
+        updatedAt: new Date(teamData.updatedAt || new Date()),
+      };
+      
+      // If member emails provided, invite them after team creation
+      if (formData.memberEmails && formData.memberEmails.length > 0) {
+        // Invite each member (fire and forget - don't block team creation)
+        formData.memberEmails.forEach(async (email) => {
+          try {
+            await teamsService.inviteMemberByEmail(newTeam.id, { email });
+          } catch (error) {
+            console.warn('⚠️ Failed to invite member:', email, error);
+          }
+        });
+      }
+      
+      return newTeam;
     } catch (error) {
       console.error('❌ Failed to create team:', error);
       throw error;
@@ -102,11 +151,17 @@ export const teamsService = {
   },
 
   // Update team
-  updateTeam: async (id: string, data: UpdateTeamDTO): Promise<Team> => {
+  updateTeam: async (id: number, formData: UpdateTeamFormData): Promise<Team> => {
     try {
-      console.log('🔄 Updating team:', id);
-      const response = await api.put(`/api/teams/${id}`, data);
-      return transformTeam(response.data);
+
+      
+      const requestData: UpdateTeamRequestDto = {
+        name: formData.name?.trim(),
+        description: formData.description?.trim(),
+      };
+
+      const response = await api.put(`/api/teams/${id}`, requestData);
+      return transformTeamResponse(response.data);
     } catch (error) {
       console.error('❌ Failed to update team:', error);
       throw error;
@@ -114,37 +169,122 @@ export const teamsService = {
   },
 
   // Delete team
-  deleteTeam: async (id: string): Promise<void> => {
+  deleteTeam: async (id: number): Promise<void> => {
     try {
-      console.log('🔄 Deleting team:', id);
+
       await api.delete(`/api/teams/${id}`);
-      console.log('✅ Successfully deleted team:', id);
+
     } catch (error) {
       console.error('❌ Failed to delete team:', error);
       throw error;
     }
   },
 
-  // Add member to team
-  addMember: async (teamId: string, userId: string): Promise<Team> => {
+  // ===== MEMBER MANAGEMENT =====
+
+  // Invite member by email
+  inviteMemberByEmail: async (teamId: number, invitation: TeamInvitationRequestDto): Promise<void> => {
     try {
-      console.log('🔄 Adding member to team:', teamId, userId);
-      const response = await api.post(`/api/teams/${teamId}/members`, { userId });
-      return transformTeam(response.data);
+
+      await api.post(`/api/teams/${teamId}/invitations`, invitation);
+
     } catch (error) {
-      console.error('❌ Failed to add member to team:', error);
+      console.error('❌ Failed to invite member:', error);
+      throw error;
+    }
+  },
+
+  // Add existing user to team by ID
+  addMemberById: async (teamId: number, memberData: AddMemberRequestDto): Promise<void> => {
+    try {
+
+      await api.post(`/api/teams/${teamId}/members`, memberData);
+
+    } catch (error) {
+      console.error('❌ Failed to add member:', error);
       throw error;
     }
   },
 
   // Remove member from team
-  removeMember: async (teamId: string, userId: string): Promise<Team> => {
+  removeMember: async (teamId: number, memberId: number): Promise<void> => {
     try {
-      console.log('🔄 Removing member from team:', teamId, userId);
-      const response = await api.delete(`/api/teams/${teamId}/members/${userId}`);
-      return transformTeam(response.data);
+
+      await api.delete(`/api/teams/${teamId}/members/${memberId}`);
+
     } catch (error) {
-      console.error('❌ Failed to remove member from team:', error);
+      console.error('❌ Failed to remove member:', error);
+      throw error;
+    }
+  },
+
+  // Get team members
+  getTeamMembers: async (teamId: number): Promise<TeamMember[]> => {
+    try {
+
+      const response = await api.get(`/api/teams/${teamId}/members`);
+
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to fetch team members:', error);
+      throw error;
+    }
+  },
+
+  // ===== API INTEGRATION GUIDE METHODS =====
+
+  // Get current user's teams (main method from API guide)
+  getMyTeams: async (): Promise<TeamResponseDto[]> => {
+    try {
+      const response = await api.get('/api/users/me/teams');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to fetch my teams:', error);
+      throw error;
+    }
+  },
+
+  // Get other user's teams (Admin/Owner only)
+  getUserTeams: async (userId: number): Promise<TeamResponseDto[]> => {
+    try {
+
+      const response = await api.get(`/api/users/${userId}/teams`);
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error('Access denied: You can only view your own teams or need OWNER/ADMIN role');
+      }
+      console.error('❌ Failed to fetch user teams:', error);
+      throw error;
+    }
+  },
+
+  // Get teams created by specific user (Admin/Owner only)
+  getUserCreatedTeams: async (userId: number): Promise<TeamResponseDto[]> => {
+    try {
+
+      const response = await api.get(`/api/users/${userId}/teams/created`);
+
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 403) {
+        throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
+      }
+      console.error('❌ Failed to fetch user created teams:', error);
+      throw error;
+    }
+  },
+
+  // ===== HELPER METHODS =====
+
+  // Search teams by name
+  searchTeams: async (query: string): Promise<Team[]> => {
+    try {
+      const { teams } = await teamsService.getTeams({ search: query, size: 50 });
+      return teams;
+    } catch (error) {
+      console.error('❌ Failed to search teams:', error);
       throw error;
     }
   },

@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { DARK_THEME } from '@/constants/theme';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
-import { useTasks, useTaskStats } from '@/hooks/useTasks';
+import { useMyTasksSummary, useMyTasksStats } from '@/hooks/tasks';
 
 import { Button } from '@/components/ui';
 
@@ -17,8 +17,8 @@ interface MyTaskLayoutProps {
 
 function MyTaskContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { tasks } = useTasks(); // Use SWR hook for actual data
-  const { stats: taskStats } = useTaskStats();
+  const { tasks } = useMyTasksSummary({ page: 0, size: 1000 }); // Use SWR hook for actual data
+  const { stats: taskStats } = useMyTasksStats();
   const [searchValue, setSearchValue] = useState("");
   // Removed calendarView state since Week button is removed - always use Month view
 

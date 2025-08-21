@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { TimelineGantt } from '@/components/TimelineGantt';
-import { TaskListHeader } from '@/components/TaskList';
+
 import { TaskConnection } from '@/components/TimelineGantt/hooks/useWorkflowConnection'; // ✅ Add import
 import { ProjectTimelineProvider, useProjectTimeline } from './context/ProjectTimelineContext';
 import { useProjectTimelineActions } from './hooks/useProjectTimelineActions';
@@ -89,19 +89,7 @@ function ProjectTimelineContent({ searchValue = "" }: ProjectTimelinePageProps) 
 
   return (
     <div className="h-screen flex flex-col" style={{ backgroundColor: theme.background.secondary }}>
-      {/* Task List Header */}
-      <div className="flex-shrink-0">
-        <TaskListHeader
-          searchValue={searchValue}
-          onSearchChange={() => {}}
-          onCreateTask={() => {}}
-          showSearch={true}
-          showFilters={true}
-          showSort={true}
-          showGroup={true}
-          showOptions={true}
-        />
-      </div>
+
       
       {/* Timeline Gantt - Full remaining height */}
       <div className="flex-1 min-h-0">

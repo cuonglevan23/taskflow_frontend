@@ -19,7 +19,7 @@ interface ApiConfig {
 }
 
 const DEFAULT_CONFIG: ApiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '', // Empty string means same origin (Next.js app)
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -95,8 +95,8 @@ class ApiClient {
           await this.handleUnauthorized();
         } else if (normalizedError.status === 403) {
           SafeLogger.error('🚨 403 Forbidden - Check user permissions');
-          // Try to refresh token if 403 might be due to expired token
-          await this.handleForbidden();
+          // Don't try to handle 403 automatically - let component handle it
+          // await this.handleForbidden();
         } else if (normalizedError.status && normalizedError.status >= 500) {
           SafeLogger.error('🚨 Server Error - Backend issue');
         } else if (!normalizedError.status) {
