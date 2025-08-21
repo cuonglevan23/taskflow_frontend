@@ -44,13 +44,7 @@ export const TaskRow = ({
     // Use consistent lowercase status values that match toBackendStatus mapping
     const isCurrentlyCompleted = task.status === 'DONE' || task.status === 'completed' || task.status === 'done' || task.completed;
     const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
-    console.log('🔄 TaskRow handleCompleteTask:', {
-      taskId: task.id,
-      currentStatus: task.status,
-      isCurrentlyCompleted,
-      newStatus,
-      onTaskStatusChange: !!onTaskStatusChange
-    });
+
     onTaskStatusChange?.(task.id, newStatus);
   };
 
@@ -148,19 +142,10 @@ export const TaskRow = ({
       endDate: task.endDate || task.deadline || task.dueDate
     };
     
-    // Debug logging for TaskRow
-    console.log('🎯 TaskRow date data:', {
-      taskId: task.id,
-      taskName: task.name,
-      taskStartDate: task.startDate,
-      taskDeadline: task.deadline,
-      taskDueDate: task.dueDate,
-      taskEndDate: task.endDate,
-      dateDataForFormat: dateData
-    });
+
     
     const formattedDate = formatTaskDate(dateData);
-    console.log('📅 Formatted date result:', formattedDate);
+
     
     return formattedDate;
   };

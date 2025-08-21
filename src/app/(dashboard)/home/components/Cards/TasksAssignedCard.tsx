@@ -6,7 +6,7 @@ import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
-import { useTasks, useTaskStats, useMyTasksSummary, useMyTasksStats } from "@/hooks/useTasks";
+import { useMyTasksSummary, useTaskStats, useMyTasksStats } from "@/hooks/tasks";
 
 // Professional TasksAssignedCard using BaseCard & Direct Context - Senior Product Code
 const TasksAssignedCard = () => {
@@ -16,11 +16,11 @@ const TasksAssignedCard = () => {
   // Get UI state from context
   const { globalFilters, globalSort } = useTasksContext();
   
-  // Use new My Tasks Summary API - it already filters for participating tasks
+  // ✅ FIX: Use same SWR data source as sidebar for consistency
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
-    size: 20,
-    sortBy: 'updatedAt',
+    size: 1000,
+    sortBy: 'startDate',
     sortDir: 'desc'
   });
   

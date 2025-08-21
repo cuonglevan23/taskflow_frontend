@@ -1,19 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useParams } from 'next/navigation';
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  teamId: string;
-  managerId: string;
-  status: string;
-  startDate: Date | string;
-  endDate: Date | string;
-}
+import { useProject as useSWRProject } from '@/hooks/projects/useProjects';
+import type { Project } from '@/types/project';
 
 interface ProjectContextValue {
   project: Project | null;
@@ -32,9 +22,11 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
   const params = useParams();
   const projectId = params?.id as string;
   
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Convert string ID to number for SWR hook
+  const numericProjectId = projectId ? parseInt(projectId, 10) : null;
+  
+  // Use SWR hook for project data with caching and auto-sync
+  const { data: project, error: swrError, isLoading } = useSWRProject(numericProjectId);
 
   // Function to update page title with retry mechanism
   const updatePageTitle = (title: string) => {
@@ -58,53 +50,30 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
     }
   };
 
+  // Update page title when project data changes
   useEffect(() => {
-    const fetchProject = async () => {
-      if (!projectId) {
-        setError('No projects ID provided');
-        updatePageTitle('Invalid Project');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        setError(null);
-        setProject(null);
-        
-        // Set initial loading title
-        updatePageTitle('Loading Project...');
-        
-        const response = await fetch('/api/projects');
-        const projects = await response.json();
-        const currentProject = projects.find((p: Project) => p.id === projectId);
-        
-        if (currentProject) {
-          setProject(currentProject);
-          // Delay title update to ensure component is ready
-          setTimeout(() => updatePageTitle(currentProject.name), 50);
-        } else {
-          setProject(null);
-          setError('Project not found');
-          setTimeout(() => updatePageTitle('Project Not Found'), 50);
-        }
-      } catch (err) {
-        console.error('Error fetching projects:', err);
-        setProject(null);
-        setError('Failed to load projects');
-        setTimeout(() => updatePageTitle('Project Error'), 50);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (isLoading) {
+      updatePageTitle('Loading Project...');
+    } else if (swrError) {
+      updatePageTitle('Project Error');
+    } else if (!project) {
+      updatePageTitle('Project Not Found');
+    } else {
+      updatePageTitle(project.name);
+    }
+  }, [project, isLoading, swrError]);
 
-    fetchProject();
+  // Handle ID validation
+  useEffect(() => {
+    if (!projectId) {
+      updatePageTitle('Invalid Project');
+    }
   }, [projectId]);
 
   const value: ProjectContextValue = {
-    project,
-    loading,
-    error,
+    project: project || null,
+    loading: isLoading,
+    error: swrError?.message || (swrError ? 'Failed to load project' : (!projectId ? 'No project ID provided' : null)),
     updatePageTitle,
   };
 

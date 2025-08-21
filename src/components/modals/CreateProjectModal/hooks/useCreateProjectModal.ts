@@ -1,4 +1,7 @@
 import React from 'react';
+import { useSession } from 'next-auth/react';
+import { transformFormToCreateDTO } from '@/services/projects';
+import { useCreateProject } from '@/hooks/projects/useProjects';
 import { ProjectFormData, PrivacyOption, FormState, FormErrors } from '../types';
 import { PRIVACY_OPTIONS, TOTAL_STEPS } from '../constants';
 
@@ -8,6 +11,10 @@ interface UseCreateProjectModalProps {
 }
 
 export function useCreateProjectModal({ onClose, onCreateProject }: UseCreateProjectModalProps) {
+    // Optimistic mutation for creating project with instant UI updates
+    const { trigger: createProject, isMutating: isCreating } = useCreateProject();
+    const { data: session } = useSession();
+    
     // Step management
     const [currentStep, setCurrentStep] = React.useState(1);
 
@@ -19,6 +26,7 @@ export function useCreateProjectModal({ onClose, onCreateProject }: UseCreatePro
     
     // UI state
     const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
     
     // Errors
     const [nameError, setNameError] = React.useState("");
@@ -103,17 +111,53 @@ export function useCreateProjectModal({ onClose, onCreateProject }: UseCreatePro
         }
     }, [currentStep, validateStep1, projectName, selectedPrivacy]);
 
-    const handleCreateProject = React.useCallback(() => {
-        if (validateStep2()) {
+    const handleCreateProject = React.useCallback(async () => {
+        if (!validateStep2()) {
+            return;
+        }
+
+        if (!session?.user) {
+            setDateError('Please log in to create a project');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Prepare project data based on privacy selection
             const projectData: ProjectFormData = {
                 name: projectName,
-                privacy: selectedPrivacy.id,
+                description: '',
                 startDate,
-                endDate
+                endDate,
+                isPersonal: selectedPrivacy.isPersonal,
+                teamId: selectedPrivacy.teamId || null
             };
-            onCreateProject?.(projectData);
+
+            // Create project using SWR mutation (auto-updates cache)
+            const newProject = await createProject(projectData);
+            
+            console.log('✅ Project created successfully:', newProject);
+
+            // Call optional callback if provided
+            if (onCreateProject) {
+                onCreateProject(projectData);
+            }
+            
             resetForm();
             onClose();
+        } catch (error: any) {
+            console.error('❌ Error creating project:', error);
+            
+            // Handle specific error types
+            if (error.message?.includes('duplicate') || error.message?.includes('already exists')) {
+                setNameError('A project with this name already exists');
+            } else if (error.message?.includes('permission')) {
+                setDateError('You do not have permission to create projects');
+            } else {
+                setDateError('Failed to create project. Please try again.');
+            }
+        } finally {
+            setIsSubmitting(false);
         }
     }, [validateStep2, projectName, selectedPrivacy, startDate, endDate, onCreateProject, resetForm, onClose]);
 

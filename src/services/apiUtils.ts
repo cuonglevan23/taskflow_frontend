@@ -34,7 +34,7 @@ export async function withRetry<T>(
 
   for (let attempt = 1; attempt <= retryConfig.maxAttempts; attempt++) {
     try {
-      console.log(`🔄 API call attempt ${attempt}/${retryConfig.maxAttempts}`);
+
       const result = await apiCall();
       
       if (attempt > 1) {

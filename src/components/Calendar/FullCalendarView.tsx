@@ -203,7 +203,7 @@ export const FullCalendarView = ({
   // Convert tasks to calendar events
   const calendarEvents = useMemo(() => {
     const events = convertTasksToEvents(tasks, getTaskColors);
-    console.log('📅 FullCalendar events:', events.length, events.slice(0, 3));
+
     return events;
   }, [tasks]);
 
@@ -239,6 +239,13 @@ export const FullCalendarView = ({
   }, [onEventClick]);
 
   const handleDateClick = useCallback((info: any) => {
+    // ✅ FIX: Prevent duplicate clicks with debouncing
+    const now = Date.now();
+    if (handleDateClick.lastClickTime && now - handleDateClick.lastClickTime < 1000) {
+      return;
+    }
+    handleDateClick.lastClickTime = now;
+    
     const clickedDate = info.date || new Date(info.dateStr);
     const year = clickedDate.getFullYear();
     const month = String(clickedDate.getMonth() + 1).padStart(2, '0');
@@ -269,18 +276,13 @@ export const FullCalendarView = ({
       actualEndDate.setDate(actualEndDate.getDate() - 1);
       const endDateStr = formatDate(actualEndDate);
 
-      console.log('🔄 Multi-day event dropped:', { 
-        taskId, 
-        newStart: startDateStr, 
-        newEnd: endDateStr,
-        duration: `${Math.ceil((newEnd.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24))} days`
-      });
+
 
       // Use resize handler for multi-day tasks to preserve both start and end
       onEventResize?.(taskId, startDateStr, endDateStr);
     } else {
       // Single day task - use original drop handler
-      console.log('🔄 Single-day event dropped:', { taskId, newDate: startDateStr });
+
       onEventDrop?.(taskId, startDateStr);
     }
   }, [onEventDrop, onEventResize]);

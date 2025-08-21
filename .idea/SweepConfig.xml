@@ -10,6 +10,8 @@
         <option value="get_errors" />
         <option value="bash" />
         <option value="powershell" />
+        <option value="str_replace" />
+        <option value="create_file" />
       </set>
     </option>
     <option name="debounceThresholdMs" value="300" />

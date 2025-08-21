@@ -1,81 +1,163 @@
-/**
- * Projects API - Mock implementation for development
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { Project } from '@/lib/calendar/types';
+import { auth } from '@/auth';
 
-// Mock projects data - sync with ProjectsContext
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: '1',
-    name: 'Website Redesign',
-    description: 'Complete redesign of company website',
-    color: '#e91e63',
-    teamId: 'team-123',
-    managerId: 'user-1',
-    status: 'active',
-    startDate: new Date('2024-01-15'),
-    endDate: new Date('2024-06-30'),
-  },
-  {
-    id: '2',
-    name: 'Mobile App Development',
-    description: 'Native iOS and Android app',
-    color: '#3f51b5',
-    teamId: 'team-123',
-    managerId: 'user-2',
-    status: 'active',
-    startDate: new Date('2024-01-10'),
-    endDate: new Date('2024-08-31'),
-  },
-  {
-    id: '3',
-    name: 'Marketing Campaign Q1',
-    description: 'Digital marketing campaign for Q1',
-    color: '#10b981',
-    teamId: 'team-123',
-    managerId: 'user-3',
-    status: 'active',
-    startDate: new Date('2024-01-12'),
-    endDate: new Date('2024-05-31'),
-  },
-  {
-    id: '4',
-    name: 'User Research Study',
-    description: 'Comprehensive user experience research',
-    color: '#8b5cf6',
-    teamId: 'team-123',
-    managerId: 'user-4',
-    status: 'active',
-    startDate: new Date('2024-01-08'),
-    endDate: new Date('2024-04-30'),
-  },
-  {
-    id: '5',
-    name: 'Request Tracking System',
-    description: 'Internal request management system',
-    color: '#2196f3',
-    teamId: 'team-123',
-    managerId: 'user-5',
-    status: 'active',
-    startDate: new Date('2024-01-05'),
-    endDate: new Date('2024-07-31'),
-  },
-];
-
-// GET /api/projects
 export async function GET(request: NextRequest) {
   try {
-    // In real app, filter based on user permissions
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Get session from NextAuth
+    const session = await auth();
     
-    return NextResponse.json(MOCK_PROJECTS);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' }, 
+        { status: 401 }
+      );
+    }
+
+    // Check if accessToken exists
+    if (!session.user.accessToken) {
+      return NextResponse.json(
+        { error: 'No access token available' }, 
+        { status: 401 }
+      );
+    }
+
+
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const params = new URLSearchParams();
     
-  } catch (error) {
-    console.error('Projects API error:', error);
+    // Forward all query parameters
+    searchParams.forEach((value, key) => {
+      params.append(key, value);
+    });
+
+    // Get backend base URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/projects?${params.toString()}`;
+
+    console.log('📤 Proxying to backend:', url);
+
+    // Forward request to backend with user's JWT token
+    const backendResponse = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.user.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch projects from backend',
+          details: errorText,
+          status: backendResponse.status 
+        }, 
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+
+
+    return NextResponse.json(data);
+    
+  } catch (error: unknown) {
+    console.error('❌ API Error in GET /api/projects:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
     return NextResponse.json(
-      { error: 'Failed to fetch projects' },
+      { 
+        error: 'Internal server error',
+        details: errorMessage 
+      }, 
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get session from NextAuth
+    const session = await auth();
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' }, 
+        { status: 401 }
+      );
+    }
+
+    // Check if accessToken exists
+    if (!session.user.accessToken) {
+      console.error('❌ No access token found in session');
+      return NextResponse.json(
+        { error: 'No access token available' }, 
+        { status: 401 }
+      );
+    }
+
+
+
+    // Get request body
+    const body = await request.json();
+
+
+    // Get backend base URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/projects`;
+
+    console.log('📤 Proxying to backend:', url);
+
+    // Forward request to backend with user's JWT token
+    const backendResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.user.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', {
+        status: backendResponse.status,
+        statusText: backendResponse.statusText,
+        url: url,
+        errorText: errorText,
+      });
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to create project in backend',
+          details: errorText,
+          status: backendResponse.status 
+        }, 
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+
+
+    return NextResponse.json(data);
+    
+  } catch (error: unknown) {
+    console.error('❌ API Error in POST /api/projects:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        details: errorMessage 
+      }, 
       { status: 500 }
     );
   }

@@ -1,15 +1,44 @@
-// Services - Main barrel exports for clean imports
-// Usage: import { tasksService, usersService, teamsService } from '@/services';
+/**
+ * Main Services Export
+ * Central export file for all task-related services
+ */
 
-// Export all services
-export * from './tasks';
-export * from './users';
-export * from './teams';
+// Project Task Services
+export { projectTaskService } from './projects';
+export type {
+  CreateProjectTaskRequest,
+  UpdateProjectTaskRequest,
+  ProjectTaskFilters,
+  ProjectTaskResponseDto,
+  ProjectTaskPage,
+  ProjectTaskStats,
+  ProjectTaskAssignee,
+} from './projects';
 
-// Export common utilities
-export { api, ApiClient } from '@/lib/api';
-export * from '@/lib/transforms';
+// Team Task Services
+export { teamTaskService } from './teams';
+export type {
+  CreateTeamTaskRequest,
+  UpdateTeamTaskRequest,
+  TeamTaskFilters,
+  TeamTaskResponseDto,
+  TeamTaskPage,
+  TeamTaskStats,
+  TeamTaskAssignedMember,
+  TeamTaskCategory,
+  RecurrencePattern,
+} from './teams';
 
-// Backward compatibility exports
-export { tasksService as taskService } from './tasks';
-export { api as apiClient } from '@/lib/api';
+// Unified Task Services
+export { unifiedTaskService } from './tasks';
+export type {
+  UnifiedTaskDto,
+  UnifiedTaskStats,
+  UnifiedTaskPage,
+  UnifiedTaskFilters,
+} from './tasks';
+
+// Re-export existing services for backward compatibility
+export { default as tasksService } from './tasks/tasksService';
+export { default as projectsService } from './projects/projectsService';
+export { default as teamsService } from './teams/teamsService';

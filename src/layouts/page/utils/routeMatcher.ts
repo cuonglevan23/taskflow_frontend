@@ -31,14 +31,15 @@ const matchSingleRoute = (pathname: string, routePattern: string): Omit<RouteMat
     const routeParts = routePattern.split('/');
     const pathParts = pathname.split('/');
     
-    // Must have same number of parts for dynamic routes
-    if (routeParts.length !== pathParts.length) {
+    // For dynamic routes, path must have at least as many parts as route pattern
+    if (pathParts.length < routeParts.length) {
       return { params: {}, isMatch: false };
     }
     
     const params: Record<string, string> = {};
     let matches = true;
     
+    // Only match the parts defined in the route pattern
     for (let i = 0; i < routeParts.length; i++) {
       const routePart = routeParts[i];
       const pathPart = pathParts[i];

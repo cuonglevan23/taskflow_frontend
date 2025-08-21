@@ -1,6 +1,6 @@
 // Task Statistics Hooks - Data analytics and metrics
 import useSWR from 'swr';
-import { taskService } from '@/services/tasks';
+import { tasksService } from '@/services/tasks';
 import { taskKeys } from './useTasksData';
 import type { TaskFilter } from '@/services/tasks';
 
@@ -8,7 +8,7 @@ import type { TaskFilter } from '@/services/tasks';
 export const useTaskStats = (filter?: TaskFilter) => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     [...taskKeys.all, 'stats', filter],
-    () => taskService.getTaskStats(filter),
+    () => tasksService.getTaskStats(filter),
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 1 minute
@@ -27,7 +27,7 @@ export const useTaskStats = (filter?: TaskFilter) => {
 export const useMyTasksStats = () => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     [...taskKeys.myTasks(), 'stats'],
-    () => taskService.getMyTasksStats(),
+    () => tasksService.getMyTasksStats(),
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 1 minute
@@ -49,7 +49,7 @@ export const useTaskAnalytics = (timeRange?: 'week' | 'month' | 'quarter' | 'yea
     () => {
       // This could be a future endpoint for detailed analytics
       // For now, return basic stats
-      return taskService.getMyTasksStats();
+      return tasksService.getMyTasksStats();
     },
     {
       revalidateOnFocus: false,

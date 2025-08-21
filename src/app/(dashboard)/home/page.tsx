@@ -35,7 +35,7 @@ import RefactoredGoalsCard from "./components/Cards/GoalsCard";
 
 // Import Global Context
 import { useTasksContext } from "@/contexts";
-import { useMyTasksSummary } from "@/hooks/useTasks";
+import { useMyTasksSummary } from "@/hooks/tasks";
 
 // Base Card Types & Interfaces
 interface TabConfig {
@@ -298,10 +298,11 @@ const GreetingSection = ({ user }: { user: any }) => {
 const AchievementsWidget = () => {
   const { theme } = useTheme();
   
-  // Use same working logic as MyTasksCard
+  // Use cached global data - no API calls
+  // ✅ FIX: Use same SWR data source as sidebar for consistency
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
-    size: 50,
+    size: 1000,
     sortBy: 'startDate',
     sortDir: 'desc'
   });

@@ -1,79 +1,138 @@
-// Task by ID API Route - Refactored with reusable middleware
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthHandler, withTaskPermissions } from '@/lib/middleware';
-import { tasksService } from '@/services';
-import type { AuthenticatedUser } from '@/lib/middleware/auth';
+import { auth } from '@/auth';
 
-interface RouteParams {
-  params: { id: string };
+type RouteParams = {
+  params: Promise<{ id: string }>
 }
 
-// GET /api/tasks/[id] - Get task by ID
-export const GET = withAuthHandler(
-  async (request: NextRequest, user: AuthenticatedUser, { params }: RouteParams): Promise<NextResponse> => {
-    try {
-      const task = await tasksService.getTask(params.id);
-      return NextResponse.json(task);
-    } catch (error) {
-      console.error(`GET /api/tasks/${params.id} error:`, error);
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.accessToken) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
-  },
-  withTaskPermissions
-);
 
-// PUT /api/tasks/[id] - Update task
-export const PUT = withAuthHandler(
-  async (request: NextRequest, user: AuthenticatedUser, { params }: RouteParams): Promise<NextResponse> => {
-    try {
-      const body = await request.json();
-      const task = await tasksService.updateTask(params.id, body);
-      return NextResponse.json(task);
-    } catch (error) {
-      console.error(`PUT /api/tasks/${params.id} error:`, error);
-      return NextResponse.json(
-        { error: 'Failed to update task' },
-        { status: 500 }
-      );
-    }
-  },
-  withTaskPermissions
-);
+    const resolvedParams = await params;
+    const taskId = resolvedParams.id;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/tasks/${taskId}`;
 
-// PATCH /api/tasks/[id] - Update task status
-export const PATCH = withAuthHandler(
-  async (request: NextRequest, user: AuthenticatedUser, { params }: RouteParams): Promise<NextResponse> => {
-    try {
-      const body = await request.json();
-      const task = await tasksService.updateTask(params.id, { status: body.status });
-      return NextResponse.json(task);
-    } catch (error) {
-      console.error(`PATCH /api/tasks/${params.id} error:`, error);
-      return NextResponse.json(
-        { error: 'Failed to update task status' },
-        { status: 500 }
-      );
-    }
-  },
-  withTaskPermissions
-);
 
-// DELETE /api/tasks/[id] - Delete task
-export const DELETE = withAuthHandler(
-  async (request: NextRequest, user: AuthenticatedUser, { params }: RouteParams): Promise<NextResponse> => {
-    try {
-      await tasksService.deleteTask(params.id);
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      console.error(`DELETE /api/tasks/${params.id} error:`, error);
+
+    const backendResponse = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.user.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
       return NextResponse.json(
-        { error: 'Failed to delete task' },
-        { status: 500 }
+        { error: 'Failed to fetch task', details: errorText }, 
+        { status: backendResponse.status }
       );
     }
-  },
-  withTaskPermissions
-);
+
+    const data = await backendResponse.json();
+
+    return NextResponse.json(data);
+    
+  } catch (error: unknown) {
+    console.error('❌ API Error in GET /api/tasks/[id]:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.accessToken) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const resolvedParams = await params;
+    const taskId = resolvedParams.id;
+    const body = await request.json();
+    
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/tasks/${taskId}`;
+
+
+
+    const backendResponse = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${session.user.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
+      return NextResponse.json(
+        { error: 'Failed to update task', details: errorText }, 
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+
+    return NextResponse.json(data);
+    
+  } catch (error: unknown) {
+    console.error('❌ API Error in PUT /api/tasks/[id]:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.accessToken) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const resolvedParams = await params;
+    const taskId = resolvedParams.id;
+    
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/tasks/${taskId}`;
+
+
+
+    const backendResponse = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.user.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
+      return NextResponse.json(
+        { error: 'Failed to delete task', details: errorText }, 
+        { status: backendResponse.status }
+      );
+    }
+
+
+    return NextResponse.json({ message: 'Task deleted successfully' });
+    
+  } catch (error: unknown) {
+    console.error('❌ API Error in DELETE /api/tasks/[id]:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
+  }
+}

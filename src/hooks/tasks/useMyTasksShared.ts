@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useMyTasksSummary, useUpdateTask, useCreateTask, useDeleteTask } from './index';
+import { useMyTasksSummary, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
 import { useTasksContext } from '@/contexts/TasksContext';
 import { CookieAuth } from '@/utils/cookieAuth';
 import type { Task, CreateTaskDTO } from '@/types';
@@ -69,6 +69,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   
   // SWR mutation hooks
   const { updateTask, isUpdating } = useUpdateTask();
+  const { updateTaskStatus, isUpdating: isUpdatingStatus } = useUpdateTaskStatus();
   const { deleteTask, isDeleting } = useDeleteTask();
   const { createTask, isCreating } = useCreateTask();
 
@@ -202,13 +203,10 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
                             status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
                             status === 'REVIEW' ? 'REVIEW' : 'TODO';
         
-        await updateTask({ 
+        // ✅ FIX: Use updateTaskStatus instead of updateTask for status changes
+        await updateTaskStatus({ 
           id: taskId, 
-          data: { 
-            status: backendStatus,
-            startDate: new Date().toISOString().split('T')[0],
-            deadline: null
-          }
+          status: backendStatus
         });
       } catch (error) {
         console.error('Failed to update task status:', error);
@@ -250,8 +248,16 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
 
     // Calendar-specific actions
     onDateClick: async (dateStr: string) => {
-      const tokenPayload = CookieAuth.getTokenPayload();
-      const userInfo = CookieAuth.getUserInfo();
+      // ✅ FIX: Prevent duplicate execution
+      if (actions.onDateClick.isCreating) {
+
+        return;
+      }
+      actions.onDateClick.isCreating = true;
+      
+      try {
+        const tokenPayload = CookieAuth.getTokenPayload();
+        const userInfo = CookieAuth.getUserInfo();
       
       const dateParts = dateStr.split('-');
       const selectedDate = new Date(
@@ -276,13 +282,16 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         groupId: null,
       };
       
-      try {
-        await createTask(taskData);
-      } catch (error) {
-        console.error('Failed to create task on date click:', error);
-        throw error;
-      }
-    },
+          const newTask = await createTask(taskData);
+          return newTask;
+        } catch (error) {
+          console.error('Failed to create task on date click:', error);
+          throw error;
+        } finally {
+          // Reset flag after completion
+          actions.onDateClick.isCreating = false;
+        }
+      },
 
     onTaskDrop: async (task: Task, newDate: Date) => {
       const localDate = new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(), 12, 0, 0, 0);

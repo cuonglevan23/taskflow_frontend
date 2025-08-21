@@ -1,11 +1,13 @@
 import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
-import { taskService } from '@/services/tasks';
+import { tasksService } from '@/services/tasks';
 import { taskKeys } from './useTasksData';
 import type { Task, CreateTaskDTO, UpdateTaskDTO } from '@/types/task';
 
+
 // Mutation Hook: Create task with optimistic updates
 export const useCreateTask = () => {
+
   const { trigger, isMutating, error } = useSWRMutation(
     taskKeys.all,
     async (key, { arg }: { arg: CreateTaskDTO }) => {
@@ -42,9 +44,14 @@ export const useCreateTask = () => {
         endDate: taskDate,
       };
 
-      // Add optimistic task to cache
+      // Add optimistic task to cache - use specific cache key with params
       mutate(
-        (key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'summary',
+        ['tasks', 'my-tasks', 'summary', {
+          page: 0,
+          size: 1000,
+          sortBy: 'startDate',
+          sortDir: 'desc'
+        }],
         (currentData: any) => {
           if (currentData?.tasks) {
             const updatedTasks = [optimisticTask, ...currentData.tasks];
@@ -54,33 +61,43 @@ export const useCreateTask = () => {
               totalElements: currentData.totalElements + 1
             };
           }
-          return currentData;
+          return { tasks: [optimisticTask] };
         },
         false
       );
 
       try {
         // Make actual API call
-        const newTask = await taskService.createTask(arg);
+        const newTask = await tasksService.createTask(arg);
         
-        // Replace optimistic task with real task - Fix ID matching
+        // ✅ FIX: No need for GlobalDataContext update since we're using SWR everywhere now
+        // addTask(newTask); // Removed - causes duplicate tasks
+        
+        // ✅ FIX: Properly replace optimistic task with real task
         mutate(
-          (key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'summary',
+          ['tasks', 'my-tasks', 'summary', {
+            page: 0,
+            size: 1000,
+            sortBy: 'startDate',
+            sortDir: 'desc'
+          }],
           (currentData: any) => {
             if (currentData?.tasks) {
               // Remove optimistic task and add real task
-              const updatedTasks = currentData.tasks
-                .filter((task: Task) => task.id !== optimisticTask.id) // Remove optimistic
-                .concat([newTask]); // Add real task
+              const filteredTasks = currentData.tasks.filter((task: Task) => {
+                const isOptimistic = String(task.id) === String(optimisticTask.id);
+                return !isOptimistic;
+              });
               
-
+              const updatedTasks = [newTask, ...filteredTasks]; // Add real task first
               
               return {
                 ...currentData,
-                tasks: updatedTasks
+                tasks: updatedTasks,
+                totalElements: currentData.totalElements // Keep same count
               };
             }
-            return currentData;
+            return { tasks: [newTask] };
           },
           false
         );
@@ -89,9 +106,14 @@ export const useCreateTask = () => {
 
         return newTask;
       } catch (error) {
-        // Rollback optimistic update
+        // Rollback optimistic update - use specific cache key with params
         mutate(
-          (key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'summary',
+          ['tasks', 'my-tasks', 'summary', {
+            page: 0,
+            size: 1000,
+            sortBy: 'startDate',
+            sortDir: 'desc'
+          }],
           (currentData: any) => {
             if (currentData?.tasks) {
               return {
@@ -144,7 +166,10 @@ export const useUpdateTask = () => {
       );
 
       try {
-        const updatedTask = await taskService.updateTask(id, data);
+        const updatedTask = await tasksService.updateTask(id, data);
+        
+        // ✅ FIX: No longer needed - SWR handles all updates
+        // updateGlobalTask(taskId, updatedTask); // Removed - using SWR only
         
         // Update cache with real data
         mutate(taskKeys.detail(id), updatedTask, true);
@@ -257,7 +282,11 @@ export const useDeleteTask = () => {
       mutate(taskKeys.detail(taskId), undefined, false);
 
       try {
-        await taskService.deleteTask(taskId);
+        await tasksService.deleteTask(taskId);
+        
+        // ✅ FIX: No longer needed - SWR handles all updates
+        // updateGlobalTask(taskIdNum, { deleted: true }); // Removed - using SWR only
+        
         return taskId;
       } catch (error) {
         // Rollback optimistic update
@@ -294,15 +323,51 @@ export const useUpdateTaskStatus = () => {
     taskKeys.all,
     async (key, { arg }: { arg: { id: string; status: string } }) => {
       const { id, status } = arg;
-      const updatedTask = await taskService.updateTaskStatus(id, status);
+      let previousData: any = null;
       
-      // Update specific task in cache
-      mutate(taskKeys.detail(id), updatedTask, false);
+      // Optimistic update - instant UI response
+      mutate(
+        (cacheKey) => {
+          if (!Array.isArray(cacheKey)) return false;
+          return cacheKey[0] === 'tasks' && cacheKey[1] === 'my-tasks' && cacheKey[2] === 'summary';
+        },
+        (currentData: any) => {
+          if (!currentData?.tasks) return currentData;
+          
+          // Store original for potential rollback
+          previousData = currentData;
+          
+          return {
+            ...currentData,
+            tasks: currentData.tasks.map((task: Task) => 
+              task.id.toString() === id 
+                ? { ...task, status, updatedAt: new Date() }
+                : task
+            )
+          };
+        },
+        false // No revalidation during optimistic update
+      );
       
-      // Revalidate task lists and stats
-      mutate((key) => Array.isArray(key) && key[0] === 'tasks');
-      
-      return updatedTask;
+      try {
+        // API call
+        const updatedTask = await tasksService.updateTaskStatus(id, status);
+        
+        // Update specific task cache
+        mutate(taskKeys.detail(id), updatedTask, false);
+        
+        return updatedTask;
+      } catch (error) {
+        // Rollback optimistic update on error
+        if (previousData) {
+          mutate(
+            (cacheKey) => Array.isArray(cacheKey) && cacheKey[0] === 'tasks' && cacheKey[1] === 'my-tasks' && cacheKey[2] === 'summary',
+            previousData,
+            false
+          );
+        }
+        throw error;
+      }
     }
   );
 
@@ -319,7 +384,7 @@ export const useAssignTask = () => {
     taskKeys.all,
     async (key, { arg }: { arg: { id: string; userId: string } }) => {
       const { id, userId } = arg;
-      const updatedTask = await taskService.assignTask(id, userId);
+      const updatedTask = await tasksService.assignTask(id, userId);
       
       // Update cache
       mutate(taskKeys.detail(id), updatedTask, false);
@@ -341,7 +406,7 @@ export const useUnassignTask = () => {
   const { trigger, isMutating, error } = useSWRMutation(
     taskKeys.all,
     async (key, { arg }: { arg: string }) => {
-      const updatedTask = await taskService.unassignTask(arg);
+      const updatedTask = await tasksService.unassignTask(arg);
       
       // Update cache
       mutate(taskKeys.detail(arg), updatedTask, false);
@@ -363,7 +428,7 @@ export const useBulkUpdateTasks = () => {
   const { trigger, isMutating, error } = useSWRMutation(
     taskKeys.all,
     async (key, { arg }: { arg: Array<{ id: string; data: Partial<UpdateTaskDTO> }> }) => {
-      const updatedTasks = await taskService.bulkUpdateTasks(arg);
+      const updatedTasks = await tasksService.bulkUpdateTasks(arg);
       
       // Update individual tasks in cache
       updatedTasks.forEach(task => {

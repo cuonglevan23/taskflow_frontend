@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useMyTasksSummary } from '@/hooks/tasks/useTasksData';
+import { useMyTasksSummary } from '@/hooks/tasks';
 import { useTaskActionTime } from '@/hooks/tasks/useTaskActionTime';
 import { useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/tasks/useTasksActions';
 import BucketTaskList from '@/components/TaskList/BucketTaskList';
@@ -15,7 +15,12 @@ export default function TaskBucketViewPage() {
   const [searchValue, setSearchValue] = useState('');
 
   // Data hooks
-  const { data: tasksData, isLoading, error } = useMyTasksSummary();
+  const { tasks: tasksData, isLoading, error } = useMyTasksSummary({
+    page: 0,
+    size: 1000,
+    sortBy: 'startDate',
+    sortDir: 'desc'
+  });
   const { moveTaskToActionTime } = useTaskActionTime();
   const { createTask } = useCreateTask();
   const { updateTask } = useUpdateTask();

@@ -1,6 +1,6 @@
 // Task Data Hooks - Pure data fetching with SWR
 import useSWR from 'swr';
-import { taskService } from '@/services/tasks';
+import { tasksService } from '@/services/tasks';
 import type { TaskFilter, TaskSort } from '@/services/tasks';
 
 // SWR Key generators for consistent cache keys
@@ -30,7 +30,7 @@ export const useTasksData = (params?: {
 }) => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     taskKeys.list(params),
-    () => taskService.getTasks(params),
+    () => tasksService.getTasks(params),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -58,7 +58,7 @@ export const useTasksData = (params?: {
 export const useTaskData = (id: string | null) => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     id ? taskKeys.detail(id) : null,
-    () => id ? taskService.getTask(id) : null,
+    () => id ? tasksService.getTask(id) : null,
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 1 minute
@@ -83,7 +83,7 @@ export const useTasksByProjectData = (
 ) => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     projectId ? taskKeys.byProject(projectId, params) : null,
-    () => projectId ? taskService.getTasksByProject(projectId, params) : null,
+    () => projectId ? tasksService.getTasksByProject(projectId, params) : null,
     {
       revalidateOnFocus: false,
       dedupingInterval: 30000,
@@ -107,7 +107,7 @@ export const useMyTasksData = (params?: {
 }) => {
   const { data, error, isLoading, mutate: revalidate } = useSWR(
     taskKeys.myTasksList(params),
-    () => taskService.getMyTasks(params),
+    () => tasksService.getMyTasks(params),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -139,16 +139,24 @@ export const useMyTasksSummaryData = (params?: {
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
 }) => {
+  // Standardize parameters to reduce duplicate cache keys
+  const standardizedParams = {
+    page: params?.page ?? 0,
+    size: params?.size ?? 1000,        // Large size to cover all needs
+    sortBy: params?.sortBy ?? 'startDate',  // Standard sort field
+    sortDir: params?.sortDir ?? 'desc'      // Standard direction
+  };
+  
   const { data, error, isLoading, mutate: revalidate } = useSWR(
-    taskKeys.myTasksSummary(params),
-    () => taskService.getMyTasksSummary(params),
+    taskKeys.myTasksSummary(standardizedParams),
+    () => tasksService.getMyTasksSummary(standardizedParams),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
       dedupingInterval: 300000, // 5 minutes
-      errorRetryCount: 2,
-      errorRetryInterval: 2000,
+      errorRetryCount: 1,        // Reduce retries to avoid spam
+      errorRetryInterval: 5000,  // Longer interval between retries
       keepPreviousData: true,
       refreshInterval: 0,
     }

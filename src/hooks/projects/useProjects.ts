@@ -1,6 +1,7 @@
 // SWR Hooks for Projects - Data fetching with caching and revalidation
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
+import { mutate } from 'swr';
 import { projectsService } from '@/services/projects';
 import type {
   Project,
@@ -62,12 +63,8 @@ export const useMyProjects = (params?: {
 }) => {
   return useSWR(
     projectKeys.myProjects(),
-    () => projectsService.getMyProjects(params),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      errorRetryCount: 3,
-    }
+    () => projectsService.getMyProjects(params)
+    // Use global SWR config from SWRProvider
   );
 };
 
@@ -114,19 +111,21 @@ export const useProjectProgress = (projectId: number | null) => {
   );
 };
 
-// Create project mutation
+// Create project mutation with optimistic updates
 export const useCreateProject = () => {
   return useSWRMutation(
-    projectKeys.lists(),
+    projectKeys.myProjects(),
     async (key, { arg }: { arg: CreateProjectDTO }) => {
       const newProject = await projectsService.createProject(arg);
       
-      // Mutate related caches
+      // Update global cache optimistically 
+      // No global mutations needed - SWR handles cache updates automatically
+      // addProject will be called from component level
+      
       return newProject;
     },
     {
       populateCache: (newProject: Project, currentData) => {
-        // Add new project to existing list if available
         if (currentData && 'projects' in currentData) {
           return {
             ...currentData,
@@ -136,7 +135,7 @@ export const useCreateProject = () => {
         }
         return newProject;
       },
-      revalidate: true,
+      revalidate: false, // No need to revalidate since we update optimistically
     }
   );
 };
@@ -148,6 +147,9 @@ export const useUpdateProject = () => {
     async (key, { arg }: { arg: { id: number; data: UpdateProjectDTO } }) => {
       const { id, data } = arg;
       const updatedProject = await projectsService.updateProject(id, data);
+      
+      // ✅ FIX: Update individual project cache immediately
+      mutate(projectKeys.detail(id), updatedProject, false);
       
       return { id, project: updatedProject };
     },

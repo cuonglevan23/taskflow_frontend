@@ -101,13 +101,13 @@ export default function PrivateHeader({
 
       {/* Right Section */}
       <div className="flex items-center space-x-3">
-        {/* Current Role Indicator */}
-        <div className="hidden md:flex items-center space-x-2">
-          <span className="text-xs text-gray-400">Role:</span>
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
-            {user.role?.toUpperCase() || "UNKNOWN"}
-          </span>
-        </div>
+        {/*/!* Current Role Indicator *!/*/}
+        {/*<div className="hidden md:flex items-center space-x-2">*/}
+        {/*  <span className="text-xs text-gray-400">Role:</span>*/}
+        {/*  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">*/}
+        {/*    {user.role?.toUpperCase() || "UNKNOWN"}*/}
+        {/*  </span>*/}
+        {/*</div>*/}
 
         {/* Help */}
         <button className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">

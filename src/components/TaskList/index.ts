@@ -1,14 +1,12 @@
 // TaskList Component - Clean exports for easy importing
 
-// Main components
-export { default as TaskList } from './TaskList';
-export { default as TaskTable } from './TaskTable';
-export { default as TaskSection } from './TaskSection';
+
+
 export { default as TaskListHeader } from './TaskListHeader';
-export { default as TaskRow } from './TaskRow';
-export { default as TaskCard } from './TaskCard';
+
 
 export { default as BucketTaskList } from './BucketTaskList';
+export { default as ProjectTaskList, ProjectTaskListLayout } from './ProjectTaskList';
 
 
 

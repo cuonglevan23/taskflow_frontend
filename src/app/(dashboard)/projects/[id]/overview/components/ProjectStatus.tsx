@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ACTION_ICONS } from '@/constants/icons';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { useProjectOverview } from '../context/ProjectOverviewContext';
-import styles from '../styles/OverviewLayout.module.css';
+
 
 export function ProjectStatus() {
   const { data, updateProjectStatus, loading } = useProjectOverview();
@@ -13,36 +13,64 @@ export function ProjectStatus() {
 
     const statusOptions = [
         {
-            value: 'on_track',
-            label: 'On track',
+            value: 'PLANNED',
+            label: 'Planned',
+            color: 'bg-blue-500 border-blue-600 text-white',
+            bgColor: 'bg-blue-500',
+            icon: '📋'
+        },
+        {
+            value: 'IN_PROGRESS',
+            label: 'In Progress',
+            color: 'bg-orange-500 border-orange-600 text-white',
+            bgColor: 'bg-orange-500',
+            icon: '🚀'
+        },
+        {
+            value: 'COMPLETED',
+            label: 'Completed',
             color: 'bg-green-500 border-green-600 text-white',
-            bgColor: 'bg-green-500'
+            bgColor: 'bg-green-500',
+            icon: '✅'
         },
         {
-            value: 'at_risk',
-            label: 'At risk',
+            value: 'AT_RISK',
+            label: 'At Risk',
             color: 'bg-yellow-500 border-yellow-600 text-white',
-            bgColor: 'bg-yellow-500'
+            bgColor: 'bg-yellow-500',
+            icon: '⚠️'
         },
         {
-            value: 'off_track',
-            label: 'Off track',
+            value: 'BLOCKED',
+            label: 'Blocked',
             color: 'bg-red-500 border-red-600 text-white',
-            bgColor: 'bg-red-500'
+            bgColor: 'bg-red-500',
+            icon: '🚫'
+        },
+        {
+            value: 'CANCELLED',
+            label: 'Cancelled',
+            color: 'bg-gray-500 border-gray-600 text-white',
+            bgColor: 'bg-gray-500',
+            icon: '❌'
         }
     ];
 
   const currentStatus = statusOptions.find(s => s.value === data.projectStatus) || statusOptions[0];
 
-  const handleStatusChange = async (newStatus: 'on_track' | 'at_risk' | 'off_track') => {
+  const handleStatusChange = async (newStatus: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED') => {
     await updateProjectStatus(newStatus);
     setIsDropdownOpen(false);
   };
 
   return (
     <>
-        <div className={styles.statusHeader}>
-     <span className={`${currentStatus.bgColor} text-white px-2 py-1 rounded text-xs font-medium`}>
+        <div className="flex items-center justify-between mb-4 p-4 border rounded-lg" style={{ 
+          borderColor: theme.border.default, 
+          backgroundColor: theme.background.primary 
+        }}>
+     <span className={`${currentStatus.bgColor} text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1`}>
+  <span>{currentStatus.icon}</span>
   {currentStatus.label}
 </span>
 
@@ -76,6 +104,7 @@ export function ProjectStatus() {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2">
+                                        <span className="text-sm">{option.icon}</span>
                                         <div
                                             className={`w-3 h-3 rounded-full ${option.bgColor.replace('bg-', 'bg-').replace('-100', '-500')}`}/>
                                         {option.label}
@@ -88,20 +117,23 @@ export function ProjectStatus() {
             </div>
         </div>
 
-        <div className={`${styles.statusContent} ${
-            data.projectStatus === 'on_track' ? styles.statusOnTrack :
-                data.projectStatus === 'at_risk' ? styles.statusAtRisk :
-        styles.statusOffTrack
-      }`}>
-        <div className={styles.statusTitle}>{currentStatus.label}</div>
-        <div className={styles.statusDescription}>
-          {data.projectStatus === 'on_track' && 'This projects is progressing well and meeting all milestones.'}
-          {data.projectStatus === 'at_risk' && 'This projects has some challenges that need attention.'}
-          {data.projectStatus === 'off_track' && 'This projects needs immediate attention to get back on track.'}
+        <div className="p-4 border rounded-lg space-y-3" style={{ 
+          borderColor: theme.border.default, 
+          backgroundColor: theme.background.secondary 
+        }}>
+        <div className="text-lg font-semibold flex items-center gap-2" style={{ color: theme.text.primary }}>
+          {currentStatus.icon} {currentStatus.label}
         </div>
-        <div className={styles.statusSummary}>
-          Summary: This is a sample project status update in Asana. 
-          Use status updates to communicate the progress of your project with your teammates.
+        <div className="text-sm leading-relaxed" style={{ color: theme.text.secondary }}>
+          {data.projectStatus === 'PLANNED' && 'This project is in the planning phase. Tasks and timelines are being defined.'}
+          {data.projectStatus === 'IN_PROGRESS' && 'This project is actively being worked on and making progress.'}
+          {data.projectStatus === 'COMPLETED' && 'This project has been successfully completed and all deliverables are finished.'}
+          {data.projectStatus === 'AT_RISK' && 'This project has some challenges that need attention to stay on track.'}
+          {data.projectStatus === 'BLOCKED' && 'This project is currently blocked and cannot proceed without resolving issues.'}
+          {data.projectStatus === 'CANCELLED' && 'This project has been cancelled and will not be completed.'}
+        </div>
+        <div className="text-sm" style={{ color: theme.text.muted }}>
+          Summary: This is a sample project status update in Asana.
         </div>
       </div>
     </>

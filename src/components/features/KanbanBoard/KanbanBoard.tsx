@@ -206,7 +206,7 @@ const KanbanBoard = ({
       name: newTaskName.trim(),
       dueDate,
       project: '',
-      status: 'todo' as const
+      status: 'TODO' as const
     };
     
     actions?.onCreateTask?.(taskData);
@@ -239,7 +239,7 @@ const KanbanBoard = ({
     
     // Determine appropriate due date and status based on section
     let defaultDueDate = startDateFormatted;
-    let taskStatus: TaskStatus = 'todo';
+    let taskStatus: TaskStatus = 'TODO';
     
     if (!defaultDueDate) {
       const today = new Date();

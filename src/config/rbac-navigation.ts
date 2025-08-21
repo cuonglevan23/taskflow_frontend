@@ -114,24 +114,24 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
     minimumRole: UserRole.MEMBER,
   },
 
-  // Projects Section - Only for MEMBER và LEADER (tham gia/team projects)
+  // Projects Section - All roles can see projects (with role-based filtering)
   {
     id: 'projects',
     title: 'Projects',
     items: [], // Will be populated dynamically with user's projects
     collapsible: true,
     defaultExpanded: true,
-    allowedRoles: [UserRole.LEADER, UserRole.MEMBER],
+    minimumRole: UserRole.MEMBER, // All roles from MEMBER and above
   },
 
-  // Teams Section - Only for Member và Leader (tham gia)
+  // Teams Section - All roles can see teams (with role-based filtering)
   {
     id: 'teams',
     title: 'Teams ',
     items: [], // Will be populated dynamically with user's teams
     collapsible: true,
     defaultExpanded: true,
-    allowedRoles: [UserRole.LEADER, UserRole.MEMBER],
+    minimumRole: UserRole.MEMBER, // All roles from MEMBER and above
   },
 
   // Management Center Section - Role-based access

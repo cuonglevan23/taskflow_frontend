@@ -3,8 +3,9 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { BucketTaskList, TaskListItem, TaskActionTime, type TaskBucket } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
-import { useMyTasksSummaryData } from "@/hooks/tasks/useTasksData";
-import { useUpdateTask, useCreateTask, useDeleteTask, useTaskStatusUpdate } from "@/hooks/tasks/useTaskMutations";
+import { useMyTasksSummary } from "@/hooks/tasks";
+import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/tasks/useTasksActions";
+
 import { useTasksContext, type Task } from "@/contexts";
 import { useTaskActionTime } from "@/hooks/tasks/useTaskActionTime";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -31,7 +32,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     isLoading,
     error,
     revalidate
-  } = useMyTasksSummaryData({
+  } = useMyTasksSummary({
     page: 0,
     size: 1000,
     sortBy: 'startDate',
@@ -43,11 +44,11 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     return null;
   }
 
-  // Clean SWR action hooks
-  const { updateTask, isUpdating } = useUpdateTask();
+  // Clean SWR action hooks - Next.js 15 compliant
   const { createTask, isCreating } = useCreateTask();
+  const { updateTask, isUpdating } = useUpdateTask();
   const { deleteTask, isDeleting } = useDeleteTask();
-  const { updateStatus, isUpdating: isStatusUpdating } = useTaskStatusUpdate();
+  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
 
   // Action time management hook
   const { moveTaskToActionTime } = useTaskActionTime();
@@ -134,17 +135,17 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
 
   // Clean task status change with optimistic updates
   const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
-    console.log('🎯 Clean handleTaskStatusChange called:', { taskId, status });
+
     
     try {
-      await updateStatus(taskId, status);
+      await updateTaskStatus({ id: taskId, status });
       showNotification(`Task status updated to ${status}`, 'success');
-      console.log('🎉 Task status update completed successfully');
+
     } catch (error) {
       showNotification('Failed to update task status', 'error');
       console.error('❌ Failed to update task status:', error);
     }
-  }, [updateStatus, showNotification]);
+  }, [updateTaskStatus, showNotification]);
 
   const handleTaskAssign = useCallback(async (taskId: string, assigneeData: {
     id: string;
@@ -174,7 +175,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
           break;
         case 'complete':
           // Use clean SWR pattern for bulk status updates
-          await Promise.all(taskIds.map(id => updateStatus(id, 'completed')));
+          await Promise.all(taskIds.map(id => updateTaskStatus({ id, status: 'completed' })));
           showNotification(`${taskIds.length} tasks completed`, 'success');
           break;
         case 'archive':
@@ -186,7 +187,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
       showNotification(`Failed to ${action} tasks`, 'error');
       console.error(`Failed to ${action} tasks:`, error);
     }
-  }, [deleteTask, updateStatus, showNotification]);
+  }, [deleteTask, updateTaskStatus, showNotification]);
 
   // Handle task move between buckets - No manual revalidation needed
   const handleTaskMove = useCallback(async (taskId: string, bucketId: string) => {
@@ -226,24 +227,12 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
         updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
       };
       
-      // Debug logging for date fields
-      console.log('🔍 Task date mapping:', {
-        taskId: task.id,
-        taskTitle: task.title,
-        originalDueDate: task.dueDate,
-        originalDueDateISO: task.dueDateISO,
-        originalStartDate: task.startDate,
-        originalEndDate: task.endDate,
-        mappedDueDate: mappedTask.dueDate,
-        mappedDeadline: mappedTask.deadline,
-        mappedStartDate: mappedTask.startDate,
-        mappedEndDate: mappedTask.endDate
-      });
+
       
       return mappedTask;
     });
     
-    console.log('📋 Total mapped tasks:', mappedTasks.length);
+
     return mappedTasks;
   }, [tasks]);
 

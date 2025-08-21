@@ -6,35 +6,46 @@ import BaseCard, { type ActionButtonConfig } from "@/components/ui/BaseCard";
 import { FaPlus } from "react-icons/fa";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { GrProjects } from "react-icons/gr";
-import { useProjects, type Project } from "@/hooks";
+import { useMyProjects } from "@/hooks/projects/useProjects";
+import type { ProjectResponseDto } from "@/types/projects";
 
-// Professional ProjectsCard using BaseCard & useProjects Hook - Senior Product Code
+// Professional ProjectsCard using BaseCard & Real SWR API Integration
 const ProjectsCard = () => {
   const { theme } = useTheme();
 
-  // Use the custom hook for data management
-  const {
-    featuredProject,
-    displayedProjects,
-    showAllProjects,
-    hasMoreProjects,
-    isLoading,
-    toggleShowAll,
-    addProject,
-    projectStats
-  } = useProjects({
-    initialLimit: 4,
-    sortBy: 'updatedAt',
-    sortOrder: 'desc'
-  });
+  // Use cached global data - no API calls
+  const { data: projectsData, isLoading: loading, error } = useMyProjects();
+  
+  // Local state for show more functionality
+  const [showAllProjects, setShowAllProjects] = React.useState(false);
+  const initialLimit = 4;
 
-  // Project Item Component - Professional Implementation
-  const ProjectItem = ({ project }: { project: Project }) => {
-    const IconComponent = project.icon || GrProjects;
+  // Extract projects array with null safety
+  const projects = React.useMemo(() => {
+    if (!projectsData) return [];
+    // Handle both array response and paginated response
+    return Array.isArray(projectsData) ? projectsData : (projectsData.projects || []);
+  }, [projectsData]);
+
+  // Process real API data
+  const sortedProjects = React.useMemo(() => {
+    return [...projects].sort((a, b) => 
+      new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+    );
+  }, [projects]);
+
+  const featuredProject = sortedProjects[0]; // Most recently updated as featured
+  const regularProjects = sortedProjects.slice(1);
+  const displayedProjects = showAllProjects ? regularProjects : regularProjects.slice(0, initialLimit);
+  const hasMoreProjects = regularProjects.length > initialLimit;
+
+  // Project Item Component - Same hover effects as Featured Project
+  const ProjectItem = ({ project }: { project: ProjectResponseDto }) => {
+    const IconComponent = GrProjects; // Use default icon for API projects
 
     return (
       <div
-        className="flex items-center gap-2 p-1.5 rounded-lg transition-colors cursor-pointer group"
+        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105"
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.background.secondary;
         }}
@@ -44,11 +55,11 @@ const ProjectsCard = () => {
       >
         {/* Project Icon with Professional Styling */}
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-105"
-          style={{ backgroundColor: project.color }}
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
+          style={{ backgroundColor: '#8b5cf6' }} // Default purple color
         >
           <IconComponent
-            className="w-4 h-4 text-white"
+            className="w-5 h-5 text-white"
           />
         </div>
 
@@ -63,22 +74,22 @@ const ProjectsCard = () => {
     );
   };
 
-  // Featured Project Component - Professional Implementation
-  const FeaturedProject = ({ project }: { project: Project }) => {
-    const IconComponent = project.icon || GrProjects;
+  // Featured Project Component - Large size w-10 h-10
+  const FeaturedProject = ({ project }: { project: ProjectResponseDto }) => {
+    const IconComponent = GrProjects; // Use default icon for API projects
 
     return (
       <div
         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105"
         style={{
-          backgroundColor: project.color + '20', // 20% opacity
-          border: `1px solid ${project.color}40` // 40% opacity border
+          backgroundColor: '#8b5cf620', // 20% opacity purple
+          border: '1px solid #8b5cf640' // 40% opacity purple border
         }}
       >
-        {/* Featured Project Icon */}
+        {/* Featured Project Icon - Large size */}
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
-          style={{ backgroundColor: project.color }}
+          style={{ backgroundColor: '#8b5cf6' }}
         >
           <IconComponent
             className="w-5 h-5 text-white"
@@ -93,24 +104,22 @@ const ProjectsCard = () => {
           >
             {project.name}
           </div>
-          {project.tasksDue && (
-            <div
-              className="text-xs flex items-center gap-1"
-              style={{ color: theme.text.secondary }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-              {project.tasksDue} tasks due soon
-            </div>
-          )}
+          <div
+            className="text-xs flex items-center gap-1"
+            style={{ color: theme.text.secondary }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            {project.status || 'Active'}
+          </div>
         </div>
       </div>
     );
   };
 
-  // Create Project Button Component
+  // Create Project Button Component - Same hover effects as Featured Project
   const CreateProjectButton = () => (
     <button
-      className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl h-12 transition-colors"
+      className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed transition-all duration-200 hover:scale-105"
       style={{
         borderColor: theme.border.default,
       }}
@@ -121,12 +130,23 @@ const ProjectsCard = () => {
         e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      <FaPlus
-        className="w-3 h-3 mb-1"
-        style={{ color: theme.text.secondary }}
-      />
+      {/* Plus Icon Container - Large size matching project icons */}
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
+        style={{ 
+          backgroundColor: theme.background.secondary,
+          border: `1px dashed ${theme.border.default}`
+        }}
+      >
+        <FaPlus
+          className="w-5 h-5"
+          style={{ color: theme.text.secondary }}
+        />
+      </div>
+
+      {/* Create Project Text - Same styling as project name */}
       <span
-        className="text-xs"
+        className="text-sm font-medium truncate"
         style={{ color: theme.text.secondary }}
       >
         Create project
@@ -149,19 +169,18 @@ const ProjectsCard = () => {
     </div>
   );
 
-  // Business Logic using Hook
+  // Business Logic with Real API
   const handleCreateProject = () => {
-    // Example: Add a new projects
-    addProject({
-      name: "New Project",
-      color: "#8b5cf6",
-      icon: GrProjects,
-      status: 'active'
-    });
+    // TODO: Implement project creation modal
+    console.log("Create project clicked");
   };
 
   const handleMenuClick = () => {
-    console.log("Projects menu clicked - Total projects:", projectStats.total);
+    console.log("Projects menu clicked - Total projects:", projects.length);
+  };
+
+  const toggleShowAll = () => {
+    setShowAllProjects(prev => !prev);
   };
 
   // BaseCard Configuration
@@ -175,6 +194,32 @@ const ProjectsCard = () => {
     show: hasMoreProjects && !showAllProjects,
     onClick: toggleShowAll
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <BaseCard title="Projects">
+        <div className="flex items-center justify-center h-32">
+          <div className="text-sm" style={{ color: theme.text.secondary }}>
+            Loading projects...
+          </div>
+        </div>
+      </BaseCard>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <BaseCard title="Projects">
+        <div className="flex items-center justify-center h-32">
+          <div className="text-sm text-red-500">
+            Failed to load projects
+          </div>
+        </div>
+      </BaseCard>
+    );
+  }
 
   return (
     <BaseCard
@@ -194,11 +239,20 @@ const ProjectsCard = () => {
           {/* Featured Project */}
           {featuredProject && <FeaturedProject project={featuredProject} />}
 
-          {/* Regular Projects - From Hook */}
+          {/* Regular Projects - From Real API */}
           {displayedProjects.map((project) => (
             <ProjectItem key={project.id} project={project} />
           ))}
         </div>
+
+        {/* No projects state */}
+        {projects.length === 0 && (
+          <div className="text-center py-8">
+            <div className="text-sm" style={{ color: theme.text.secondary }}>
+              No projects found
+            </div>
+          </div>
+        )}
       </div>
     </BaseCard>
   );

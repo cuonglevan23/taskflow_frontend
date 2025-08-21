@@ -56,7 +56,7 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       // Add Bearer token to Authorization header
       config.headers['Authorization'] = `Bearer ${token}`;
-      console.log('📤 Authorization header added:', `Bearer ${token.substring(0, 20)}...`);
+
       
       // Add user context headers for backend compatibility
       const payload = CookieAuth.getTokenPayload() || (() => {
@@ -194,7 +194,7 @@ export const healthCheck = async (): Promise<boolean> => {
   try {
     console.log('🏥 Performing health check...');
     const response = await api.get('/actuator/health');
-    console.log('✅ Backend is healthy:', response.status);
+
     return true;
   } catch (error) {
     console.error('❌ Backend health check failed:', error);
@@ -218,11 +218,11 @@ export const testAuthentication = async (): Promise<boolean> => {
     for (const endpoint of testEndpoints) {
       try {
         const response = await api.get(endpoint);
-        console.log(`✅ Authentication test successful on ${endpoint}:`, response.status);
+
         return true;
       } catch (error: unknown) {
         const axiosError = error as AxiosError;
-        console.log(`❌ Failed ${endpoint}:`, axiosError.response?.status);
+
       }
     }
     

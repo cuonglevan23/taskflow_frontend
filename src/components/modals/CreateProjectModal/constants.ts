@@ -3,22 +3,20 @@ import { PrivacyOption } from './types';
 /* ===================== Constants ===================== */
 export const PRIVACY_OPTIONS: PrivacyOption[] = [
     {
-        id: "workspace",
-        label: "My workspace", 
-        description: "Visible to workspace members",
-        icon: "🏢"
-    },
-    {
-        id: "private",
-        label: "Private to me",
+        id: "personal",
+        label: "Personal Project", 
         description: "Only visible to you",
-        icon: "🔒"
+        icon: "🔒",
+        isPersonal: true,
+        teamId: null
     },
     {
         id: "team",
-        label: "Team project",
+        label: "Team Project",
         description: "Visible to team members",
-        icon: "👥"
+        icon: "👥",
+        isPersonal: false,
+        teamId: 789 // Default team ID - could be made dynamic later
     }
 ];
 

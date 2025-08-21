@@ -2,6 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useProject } from '../../components/DynamicProjectProvider';
+import { useProject as useProjectData } from '@/hooks/projects/useProjects';
+import { teamsService } from '@/services/teams/teamsService';
+import { projectsService } from '@/services/projects';
+import useSWR, { mutate } from 'swr';
 
 interface TeamMember {
   id: string;
@@ -24,7 +28,7 @@ interface Portfolio {
   id: string;
   name: string;
   color: string;
-  status: 'on_track' | 'at_risk' | 'off_track';
+  status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED';
   owner: TeamMember;
 }
 
@@ -35,7 +39,7 @@ interface StatusUpdate {
   description: string;
   author: TeamMember;
   timestamp: Date;
-  status?: 'on_track' | 'at_risk' | 'off_track';
+  status?: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED';
 }
 
 interface ProjectOverviewData {
@@ -44,7 +48,7 @@ interface ProjectOverviewData {
   goals: Goal[];
   portfolios: Portfolio[];
   statusUpdates: StatusUpdate[];
-  projectStatus: 'on_track' | 'at_risk' | 'off_track';
+  projectStatus: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED';
 }
 
 interface ProjectOverviewContextValue {
@@ -59,7 +63,7 @@ interface ProjectOverviewContextValue {
   addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
   updateGoal: (goalId: string, updates: Partial<Goal>) => Promise<void>;
   addStatusUpdate: (update: Omit<StatusUpdate, 'id' | 'timestamp'>) => Promise<void>;
-  updateProjectStatus: (status: 'on_track' | 'at_risk' | 'off_track') => Promise<void>;
+  updateProjectStatus: (status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED') => Promise<void>;
 }
 
 const ProjectOverviewContext = createContext<ProjectOverviewContextValue | undefined>(undefined);
@@ -71,7 +75,7 @@ interface ProjectOverviewProviderProps {
 // Mock data
 const mockData: ProjectOverviewData = {
   description: "This is a sample projects description",
-  projectStatus: 'on_track',
+  projectStatus: 'IN_PROGRESS',
   members: [
     {
       id: '1',
@@ -95,7 +99,7 @@ const mockData: ProjectOverviewData = {
       id: '1',
       name: 'My first portfolio',
       color: '#8b5cf6',
-      status: 'on_track',
+      status: 'IN_PROGRESS',
       owner: {
         id: '1',
         name: 'Vân Lê',
@@ -117,7 +121,7 @@ const mockData: ProjectOverviewData = {
         avatar: 'VL'
       },
       timestamp: new Date(Date.now() - 60000), // 1 minute ago
-      status: 'on_track'
+      status: 'IN_PROGRESS'
     },
     {
       id: '2',
@@ -137,131 +141,188 @@ const mockData: ProjectOverviewData = {
 
 export function ProjectOverviewProvider({ children }: ProjectOverviewProviderProps) {
   const { project } = useProject();
-  const [data, setData] = useState<ProjectOverviewData>(mockData);
+  const projectId = project?.id;
+  
+  // SWR hooks for real data fetching - Next.js 15 compliant
+  const { data: projectData } = useProjectData(projectId ? Number(projectId) : null);
+  const { data: teamMembers, mutate: mutateMembers } = useSWR(
+    projectId ? `project-${projectId}-members` : null,
+    async () => {
+      if (!projectId) return [];
+      // For now, use mock data structure until backend API is ready
+      return mockData.members;
+    }
+  );
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Local state for optimistic updates
+  const [optimisticStatus, setOptimisticStatus] = useState<'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED' | null>(null);
+  
+  // Combine real and mock data - Next.js 15 pattern
+  const data: ProjectOverviewData = {
+    description: projectData?.description || project?.description || mockData.description,
+    members: teamMembers || mockData.members,
+    goals: mockData.goals, // Will be replaced with real API later
+    portfolios: mockData.portfolios, // Will be replaced with real API later
+    statusUpdates: mockData.statusUpdates, // Will be replaced with real API later
+    projectStatus: optimisticStatus || (projectData?.status as any) || mockData.projectStatus,
+  };
 
-  // Update description based on projects data
-  useEffect(() => {
-    if (project) {
-      setData(prev => ({
-        ...prev,
-        description: project.description || prev.description
-      }));
-    }
-  }, [project]);
-
-  // Actions
+  // Actions - Real API integration
   const updateDescription = async (description: string) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setData(prev => ({ ...prev, description }));
+      await projectsService.updateProject(Number(projectId), { description });
+      // Revalidate project data
+      await mutate(`project-${projectId}`);
     } catch (err) {
       setError('Failed to update description');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const addMember = async (member: Omit<TeamMember, 'id'>) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // For now, simulate API call - will be replaced with real project member API
       const newMember: TeamMember = {
         ...member,
         id: Date.now().toString()
       };
-      setData(prev => ({
-        ...prev,
-        members: [...prev.members, newMember]
-      }));
+      
+      // Optimistic update
+      await mutateMembers([...data.members, newMember], false);
+      
+      // Here you would call real API:
+      // await projectsService.addProjectMember(Number(projectId), member);
+      
+      // Revalidate members
+      await mutateMembers();
     } catch (err) {
       setError('Failed to add member');
+      // Rollback optimistic update
+      await mutateMembers();
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const removeMember = async (memberId: string) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setData(prev => ({
-        ...prev,
-        members: prev.members.filter(m => m.id !== memberId)
-      }));
+      // Optimistic update
+      const updatedMembers = data.members.filter(m => m.id !== memberId);
+      await mutateMembers(updatedMembers, false);
+      
+      // Here you would call real API:
+      // await projectsService.removeProjectMember(Number(projectId), memberId);
+      
+      // Revalidate members
+      await mutateMembers();
     } catch (err) {
       setError('Failed to remove member');
+      // Rollback optimistic update
+      await mutateMembers();
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const addGoal = async (goal: Omit<Goal, 'id'>) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
+      // TODO: Real API call when backend is ready
+      // await projectsService.addProjectGoal(Number(projectId), goal);
+      
+      // For now, simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-      const newGoal: Goal = {
-        ...goal,
-        id: Date.now().toString()
-      };
-      setData(prev => ({
-        ...prev,
-        goals: [...prev.goals, newGoal]
-      }));
+      
+      console.log('Added goal:', goal.title);
     } catch (err) {
       setError('Failed to add goal');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const updateGoal = async (goalId: string, updates: Partial<Goal>) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
+      // TODO: Real API call when backend is ready
+      // await projectsService.updateProjectGoal(Number(projectId), goalId, updates);
+      
+      // For now, simulate API call
       await new Promise(resolve => setTimeout(resolve, 300));
-      setData(prev => ({
-        ...prev,
-        goals: prev.goals.map(goal =>
-          goal.id === goalId ? { ...goal, ...updates } : goal
-        )
-      }));
+      
+      console.log('Updated goal:', goalId, updates);
     } catch (err) {
       setError('Failed to update goal');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const addStatusUpdate = async (update: Omit<StatusUpdate, 'id' | 'timestamp'>) => {
+    if (!projectId) return;
+    
     setLoading(true);
     try {
+      // TODO: Real API call when backend is ready
+      // await projectsService.addProjectStatusUpdate(Number(projectId), update);
+      
+      // For now, simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-      const newUpdate: StatusUpdate = {
-        ...update,
-        id: Date.now().toString(),
-        timestamp: new Date()
-      };
-      setData(prev => ({
-        ...prev,
-        statusUpdates: [newUpdate, ...prev.statusUpdates]
-      }));
+      
+      console.log('Added status update:', update.title);
     } catch (err) {
       setError('Failed to add status update');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateProjectStatus = async (status: 'on_track' | 'at_risk' | 'off_track') => {
+  const updateProjectStatus = async (status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'AT_RISK' | 'BLOCKED' | 'CANCELLED') => {
+    if (!projectId) return;
+    
+    // Optimistic update - immediate UI feedback
+    const previousStatus = optimisticStatus || data.projectStatus;
+    setOptimisticStatus(status);
+    
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setData(prev => ({ ...prev, projectStatus: status }));
+      // Real API call to backend
+      await projectsService.updateProjectStatus(Number(projectId), status);
+      
+      // Revalidate project data to get real status from backend
+      await mutate(`project-${projectId}`);
+      
+      console.log('✅ Successfully updated project status in backend:', status);
     } catch (err) {
-      setError('Failed to update projects status');
+      console.error('❌ Failed to update project status in backend:', err);
+      
+      // Rollback optimistic update on error
+      setOptimisticStatus(previousStatus);
+      setError('Failed to update project status');
+      throw err;
     } finally {
       setLoading(false);
     }

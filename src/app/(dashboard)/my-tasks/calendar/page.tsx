@@ -93,11 +93,13 @@ const MyTaskCalendarPage = ({
   };
 
   const handleDateClick = React.useCallback(async (dateStr: string) => {
-    if (isCreating) return; // Prevent multiple clicks
+    // ✅ FIX: Enhanced duplicate prevention
+    if (isCreating) {
+      return;
+    }
     
     try {
       await actions.onDateClick(dateStr);
-      console.log('✅ Calendar: Default task created successfully');
     } catch (error) {
       console.error('❌ Calendar: Failed to create task:', error);
       alert('Failed to create task. Please try again.');

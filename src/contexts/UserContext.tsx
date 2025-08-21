@@ -133,9 +133,9 @@ export function UserProvider({ children }: UserProviderProps) {
         setError(null);
         
         // Only call backend API if we need extended user data
-        console.log('🔄 Making NEW /api/auth/me call...');
+
         const response = await api.get('/api/auth/me');
-        console.log('✅ /api/auth/me response received:', response.status);
+
         const userData = response.data;
         
         // Update cache
@@ -209,7 +209,7 @@ export function UserProvider({ children }: UserProviderProps) {
       setError(null);
       
       // Only use NextAuth data - no backend API calls
-      console.log('🔄 Refreshing user data from NextAuth only');
+
       const refreshedProfile = combineUserData(authUser, null);
       setUserProfile(refreshedProfile);
       
@@ -320,7 +320,7 @@ export function UserProvider({ children }: UserProviderProps) {
   useEffect(() => {
     if (!authLoading && isAuthenticated && authUser) {
       // DISABLE backend API calls completely - only use NextAuth data
-      console.log('✅ Using NextAuth data only (no backend API calls)');
+
       const profileFromAuth = combineUserData(authUser, null); // Pass null for backend data
       setUserProfile(profileFromAuth);
       

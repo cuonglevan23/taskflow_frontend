@@ -1,6 +1,7 @@
 import React from 'react';
 import { Circle, MessageCircle, Calendar } from 'lucide-react';
 import { FormState } from '../types';
+import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
 
 interface ProjectPreviewProps {
     currentStep: number;
@@ -13,7 +14,11 @@ export const ProjectPreview: React.FC<ProjectPreviewProps> = ({
 }) => {
     return (
         <div className="w-full max-w-4xl">
-            <div className="bg-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-700 p-6">
+            <div className="rounded-xl overflow-hidden shadow-2xl border p-6" 
+                 style={{ 
+                     backgroundColor: DARK_THEME.background.primary,
+                     borderColor: DARK_THEME.border.default
+                 }}>
                 <div className="relative">
                     {/* Step 1 Preview */}
                     {currentStep === 1 && (
@@ -36,20 +41,24 @@ const Step1Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
         <div className="mb-6">
             <div className="flex items-center space-x-3 mb-2">
                 <span className="text-xl">{formState.selectedPrivacy.icon}</span>
-                <div className="h-5 bg-gray-700 rounded flex-1 flex items-center px-3">
+                <div className="h-5 rounded flex-1 flex items-center px-3" 
+                     style={{ backgroundColor: DARK_THEME.background.tertiary }}>
                     {formState.projectName ? (
-                        <span className="text-white font-medium text-sm truncate">
+                        <span className="font-medium text-sm truncate" 
+                              style={{ color: DARK_THEME.text.primary }}>
                             {formState.projectName}
                         </span>
                     ) : (
-                        <span className="text-gray-500 text-sm italic">
+                        <span className="text-sm italic" 
+                              style={{ color: DARK_THEME.text.muted }}>
                             Enter project name...
                         </span>
                     )}
                 </div>
             </div>
-            <div className="h-3 bg-gray-600 rounded w-1/3 flex items-center px-2">
-                <span className="text-gray-400 text-xs">
+            <div className="h-3 rounded w-1/3 flex items-center px-2" 
+                 style={{ backgroundColor: DARK_THEME.background.muted }}>
+                <span className="text-xs" style={{ color: DARK_THEME.text.muted }}>
                     {formState.selectedPrivacy.label}
                 </span>
             </div>
@@ -58,24 +67,27 @@ const Step1Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
         {/* Task List Rows */}
         <div className="space-y-2">
             {[...Array(8)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg" 
+                     style={{ backgroundColor: DARK_THEME.background.secondary }}>
                     <div className="flex items-center space-x-3 flex-1">
-                        <Circle className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                        <div className={`h-3 bg-gray-600 rounded ${
+                        <Circle className="w-4 h-4 flex-shrink-0" style={{ color: DARK_THEME.text.muted }} />
+                        <div className={`h-3 rounded ${
                             i === 0 ? 'w-32' : i === 1 ? 'w-24' : i === 2 ? 'w-28' : 
                             i === 3 ? 'w-20' : i === 4 ? 'w-36' : i === 5 ? 'w-24' : 
                             i === 6 ? 'w-30' : 'w-22'
-                        }`}></div>
+                        }`} style={{ backgroundColor: DARK_THEME.background.muted }}></div>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
-                        <div className="w-7 h-7 bg-gray-600 rounded-full"></div>
-                        <MessageCircle className="w-4 h-4 text-gray-500" />
-                        <div className={`w-12 h-4 rounded ${
-                            i === 0 ? 'bg-red-500' : i === 1 ? 'bg-purple-500' : 
-                            i === 2 ? 'bg-green-500' : i === 3 ? 'bg-blue-500' :
-                            i === 4 ? 'bg-green-500' : i === 5 ? 'bg-purple-500' :
-                            i === 6 ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}></div>
+                        <div className="w-7 h-7 rounded-full" 
+                             style={{ backgroundColor: DARK_THEME.background.muted }}></div>
+                        <MessageCircle className="w-4 h-4" style={{ color: DARK_THEME.text.muted }} />
+                        <div className={`w-12 h-4 rounded`}
+                             style={{
+                                 backgroundColor: i === 0 ? THEME_COLORS.error[500] : i === 1 ? THEME_COLORS.secondary[600] : 
+                                                  i === 2 ? THEME_COLORS.success[500] : i === 3 ? THEME_COLORS.info[500] :
+                                                  i === 4 ? THEME_COLORS.success[500] : i === 5 ? THEME_COLORS.secondary[600] :
+                                                  i === 6 ? THEME_COLORS.error[500] : THEME_COLORS.warning[500]
+                             }}></div>
                     </div>
                 </div>
             ))}
@@ -87,16 +99,23 @@ const Step2Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
     <>
         {/* Enhanced Timeline Header */}
         <div className="mb-8">
-            <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-xl p-6 border border-blue-500/30 backdrop-blur-sm">
+            <div className="rounded-xl p-6 border backdrop-blur-sm" 
+                 style={{ 
+                     background: `linear-gradient(to right, ${THEME_COLORS.info[900]}4D, ${THEME_COLORS.secondary[900]}4D)`,
+                     borderColor: `${THEME_COLORS.info[500]}4D`
+                 }}>
                 <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <Calendar className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" 
+                         style={{ 
+                             background: `linear-gradient(to bottom right, ${THEME_COLORS.info[500]}, ${THEME_COLORS.secondary[600]})`
+                         }}>
+                        <Calendar className="w-6 h-6" style={{ color: DARK_THEME.text.primary }} />
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-xl font-bold text-white mb-1">Project Timeline</h3>
+                        <h3 className="text-xl font-bold mb-1" style={{ color: DARK_THEME.text.primary }}>Project Timeline</h3>
                         <div className="flex items-center space-x-2">
                             <span className="text-lg">{formState.selectedPrivacy.icon}</span>
-                            <span className="text-blue-300 font-semibold">
+                            <span className="font-semibold" style={{ color: THEME_COLORS.info[300] }}>
                                 {formState.projectName || 'Project Name'}
                             </span>
                         </div>
@@ -107,14 +126,19 @@ const Step2Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
 
         {/* Enhanced Date Cards */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 rounded-xl p-4 border border-green-500/20 backdrop-blur-sm">
+            <div className="rounded-xl p-4 border backdrop-blur-sm" 
+                 style={{ 
+                     background: `linear-gradient(to bottom right, ${THEME_COLORS.success[900]}33, ${THEME_COLORS.success[800]}1A)`,
+                     borderColor: `${THEME_COLORS.success[500]}33`
+                 }}>
                 <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" 
+                         style={{ backgroundColor: THEME_COLORS.success[500] }}>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: DARK_THEME.text.primary }}></div>
                     </div>
-                    <span className="text-green-300 font-medium">Start Date</span>
+                    <span className="font-medium" style={{ color: THEME_COLORS.success[300] }}>Start Date</span>
                 </div>
-                <div className="text-white text-lg font-semibold">
+                <div className="text-lg font-semibold" style={{ color: DARK_THEME.text.primary }}>
                     {formState.startDate ? new Date(formState.startDate).toLocaleDateString('en-US', { 
                         month: 'short', 
                         day: 'numeric',
@@ -123,14 +147,19 @@ const Step2Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
                 </div>
             </div>
 
-            <div className="bg-gradient-to-br from-red-900/20 to-red-800/10 rounded-xl p-4 border border-red-500/20 backdrop-blur-sm">
+            <div className="rounded-xl p-4 border backdrop-blur-sm" 
+                 style={{ 
+                     background: `linear-gradient(to bottom right, ${THEME_COLORS.error[900]}33, ${THEME_COLORS.error[800]}1A)`,
+                     borderColor: `${THEME_COLORS.error[500]}33`
+                 }}>
                 <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" 
+                         style={{ backgroundColor: THEME_COLORS.error[500] }}>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: DARK_THEME.text.primary }}></div>
                     </div>
-                    <span className="text-red-300 font-medium">End Date</span>
+                    <span className="font-medium" style={{ color: THEME_COLORS.error[300] }}>End Date</span>
                 </div>
-                <div className="text-white text-lg font-semibold">
+                <div className="text-lg font-semibold" style={{ color: DARK_THEME.text.primary }}>
                     {formState.endDate ? new Date(formState.endDate).toLocaleDateString('en-US', { 
                         month: 'short', 
                         day: 'numeric',
@@ -142,55 +171,66 @@ const Step2Preview: React.FC<{ formState: FormState }> = ({ formState }) => (
 
         {/* Duration Card */}
         {formState.startDate && formState.endDate && (
-            <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-xl p-6 border border-blue-500/30 mb-8">
+            <div className="rounded-xl p-6 border mb-8" 
+                 style={{ 
+                     background: `linear-gradient(to right, ${THEME_COLORS.info[900]}4D, ${THEME_COLORS.secondary[900]}4D)`,
+                     borderColor: `${THEME_COLORS.info[500]}4D`
+                 }}>
                 <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-300 mb-2">
+                    <div className="text-3xl font-bold mb-2" style={{ color: THEME_COLORS.info[300] }}>
                         {Math.ceil((new Date(formState.endDate).getTime() - new Date(formState.startDate).getTime()) / (1000 * 60 * 60 * 24))}
                     </div>
-                    <div className="text-blue-200 font-medium">Days Duration</div>
+                    <div className="font-medium" style={{ color: THEME_COLORS.info[200] }}>Days Duration</div>
                 </div>
             </div>
         )}
 
         {/* Enhanced Timeline Visualization */}
         <div className="space-y-6">
-            <h4 className="text-lg font-semibold text-white flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <h4 className="text-lg font-semibold flex items-center space-x-2" style={{ color: DARK_THEME.text.primary }}>
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: THEME_COLORS.info[500] }}></div>
                 <span>Project Phases</span>
             </h4>
             
             <div className="space-y-4">
                 {[
-                    { name: 'Planning & Design', progress: 100, color: 'from-blue-500 to-blue-600', bgColor: 'from-blue-900/20 to-blue-800/10', borderColor: 'border-blue-500/20' },
-                    { name: 'Development', progress: 75, color: 'from-green-500 to-green-600', bgColor: 'from-green-900/20 to-green-800/10', borderColor: 'border-green-500/20' },
-                    { name: 'Testing & Launch', progress: 25, color: 'from-yellow-500 to-yellow-600', bgColor: 'from-yellow-900/20 to-yellow-800/10', borderColor: 'border-yellow-500/20' }
+                    { name: 'Planning & Design', progress: 100, colorFrom: THEME_COLORS.info[500], colorTo: THEME_COLORS.info[600], bgColor: `${THEME_COLORS.info[900]}33`, borderColor: `${THEME_COLORS.info[500]}33` },
+                    { name: 'Development', progress: 75, colorFrom: THEME_COLORS.success[500], colorTo: THEME_COLORS.success[600], bgColor: `${THEME_COLORS.success[900]}33`, borderColor: `${THEME_COLORS.success[500]}33` },
+                    { name: 'Testing & Launch', progress: 25, colorFrom: THEME_COLORS.warning[500], colorTo: THEME_COLORS.warning[600], bgColor: `${THEME_COLORS.warning[900]}33`, borderColor: `${THEME_COLORS.warning[500]}33` }
                 ].map((phase, i) => (
-                    <div key={i} className={`bg-gradient-to-r ${phase.bgColor} rounded-xl p-4 border ${phase.borderColor} backdrop-blur-sm`}>
+                    <div key={i} className="rounded-xl p-4 border backdrop-blur-sm" 
+                         style={{ 
+                             background: `linear-gradient(to right, ${phase.bgColor}, ${phase.bgColor})`,
+                             borderColor: phase.borderColor
+                         }}>
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-white font-medium">{phase.name}</span>
-                            <span className="text-gray-300 text-sm">{phase.progress}%</span>
+                            <span className="font-medium" style={{ color: DARK_THEME.text.primary }}>{phase.name}</span>
+                            <span className="text-sm" style={{ color: DARK_THEME.text.secondary }}>{phase.progress}%</span>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: DARK_THEME.background.tertiary }}>
                             <div 
-                                className={`h-full bg-gradient-to-r ${phase.color} transition-all duration-1000 ease-out shadow-lg`}
-                                style={{ width: `${phase.progress}%` }}
+                                className="h-full transition-all duration-1000 ease-out shadow-lg"
+                                style={{ 
+                                    width: `${phase.progress}%`,
+                                    background: `linear-gradient(to right, ${phase.colorFrom}, ${phase.colorTo})`
+                                }}
                             ></div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <div className="flex justify-between text-sm text-gray-400 mt-6 px-2">
+            <div className="flex justify-between text-sm mt-6 px-2" style={{ color: DARK_THEME.text.muted }}>
                 <span className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: THEME_COLORS.success[500] }}></div>
                     <span>Start</span>
                 </span>
                 <span className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: THEME_COLORS.info[500] }}></div>
                     <span>Current</span>
                 </span>
                 <span className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: THEME_COLORS.error[500] }}></div>
                     <span>Target</span>
                 </span>
             </div>
