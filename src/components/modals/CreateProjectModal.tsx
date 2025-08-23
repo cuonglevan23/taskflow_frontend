@@ -31,7 +31,8 @@ import type { CreateProjectModalProps } from "./CreateProjectModal/types";
 export default function CreateProjectModal({
     isOpen,
     onClose,
-    onCreateProject
+    onCreateProject,
+    teamId
 }: CreateProjectModalProps) {
     const {
         currentStep,
@@ -48,7 +49,7 @@ export default function CreateProjectModal({
         handleCreateProject,
         handleClose,
         setIsPrivacyDropdownOpen
-    } = useCreateProjectModal({ onClose, onCreateProject });
+    } = useCreateProjectModal({ onClose, onCreateProject, teamId });
 
     return (
         <BaseModal

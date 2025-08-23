@@ -171,7 +171,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
         <div 
           className="sticky top-0 z-50"
           style={{ 
-            backgroundColor: isMyTaskStyle ? DARK_THEME.background.primary : isTeamsStyle ? DARK_THEME.header.background : DARK_THEME.background.primary
+            backgroundColor: DARK_THEME.background.primary
           }}
         >
           {/* Top Header Sections */}
@@ -252,7 +252,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
             <ul
               className={clsx(
                 "flex items-center",
-                isInboxStyle ? "gap-1 -mb-px" : isMyTaskStyle ? "gap-1 -mb-px" : "gap-5"
+                isInboxStyle ? "gap-1 -mb-px" : isMyTaskStyle || isTeamsStyle ? "gap-1 -mb-px" : "gap-5"
               )}
             >
               {navItems.map((item) => (
@@ -266,6 +266,9 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                         "px-4 py-3 border-b-2 font-medium text-sm",
                       // MyTask style - modern tabs
                       isMyTaskStyle && 
+                        "px-4 py-3 rounded-t-lg border-b-2 font-medium text-sm relative",
+                      // Teams style - same as MyTask
+                      isTeamsStyle && 
                         "px-4 py-3 rounded-t-lg border-b-2 font-medium text-sm relative",
                       // Inbox active state
                       isInboxStyle &&
@@ -281,16 +284,16 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                       isMyTaskStyle &&
                         pathname !== item.href &&
                         "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-500",
-                      // Teams active state
+                      // Teams active state - same as MyTask
                       isTeamsStyle &&
                         pathname === item.href &&
-                        "border-orange-500 text-white font-semibold border-b-2",
+                        "border-orange-500 text-white font-semibold",
                       isTeamsStyle &&
                         pathname !== item.href &&
-                        "border-transparent text-gray-300 hover:text-white hover:border-gray-300"
+                        "border-transparent text-gray-300 hover:text-orange-400 hover:border-orange-500"
                     )}
                     style={
-                      isMyTaskStyle && pathname === item.href
+                      (isMyTaskStyle || isTeamsStyle) && pathname === item.href
                         ? {
                             marginBottom: '-1px',
                           }
@@ -313,8 +316,8 @@ const PageLayout = ({ children }: PageLayoutProps) => {
                 </li>
               ))}
 
-              {/* Plus button for inbox style */}
-              {isInboxStyle && showTabsPlus && (
+              {/* Plus button for inbox and teams style */}
+              {(isInboxStyle || isTeamsStyle) && showTabsPlus && (
                 <li className="ml-auto">
                   <button
                     className="p-1.5 rounded-md transition-colors"

@@ -293,37 +293,46 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
     showTabsPlus: false,
   },
 
-  '/teams': {
-    title: '',
-    customHeaderContent: () => null, // Will be handled by the teams-specific component
+  '/teams/:id': {
+    title: 'Team', // This will be dynamic based on team data
+    isDynamic: true,
+    avatarConfig: {
+      type: 'icon',
+      icon: USER_ICONS.users,
+      bgColor: 'blue-500',
+    },
     navItems: [
       {
         label: 'Overview',
-        href: '/teams',
+        href: (params) => `/teams/${params.id}/overview`,
         icon: LAYOUT_ICONS.grid,
       },
       {
-        label: 'All work',
-        href: '/teams/all-work',
+        label: 'Members',
+        href: (params) => `/teams/${params.id}/members`,
+        icon: USER_ICONS.users,
+      },
+      {
+        label: 'All Work',
+        href: (params) => `/teams/${params.id}/all-work`,
         icon: LAYOUT_ICONS.list,
       },
-      {
-        label: 'Messages',
-        href: '/teams/messages',
-        icon: COMMUNICATION_ICONS.message,
-      },
+
       {
         label: 'Calendar',
-        href: '/teams/calendar',
+        href: (params) => `/teams/${params.id}/calendar`,
         icon: LAYOUT_ICONS.calendar,
       },
       {
-        label: 'Knowledge',
-        href: '/teams/knowledge',
-        icon: FILE_ICONS.document,
+        label: 'Messages',
+        href: (params) => `/teams/${params.id}/messages`,
+        icon: COMMUNICATION_ICONS.message,
       },
+
     ],
     actions: [],
-    showTabsPlus: true,
+    showTabsPlus: false,
   },
+
+
 };

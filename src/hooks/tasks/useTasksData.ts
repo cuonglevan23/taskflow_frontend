@@ -1,6 +1,8 @@
 // Task Data Hooks - Pure data fetching with SWR
+import React from 'react';
 import useSWR from 'swr';
 import { tasksService } from '@/services/tasks';
+import { projectsService } from '@/services/projects';
 import type { TaskFilter, TaskSort } from '@/services/tasks';
 
 // SWR Key generators for consistent cache keys
@@ -19,6 +21,10 @@ export const taskKeys = {
     [...taskKeys.myTasks(), 'list', params] as const,
   myTasksSummary: (params?: { page?: number; size?: number; sortBy?: string; sortDir?: 'asc' | 'desc' }) => 
     [...taskKeys.myTasks(), 'summary', params] as const,
+  
+  // Team Tasks keys
+  teamTasks: (teamId: number) => [...taskKeys.all, 'team', teamId] as const,
+  teamAllTasks: (teamId: number) => [...taskKeys.teamTasks(teamId), 'all-tasks'] as const,
 };
 
 // Hook: Get tasks with filters, sorting, and pagination
@@ -170,6 +176,53 @@ export const useMyTasksSummaryData = (params?: {
     pageSize: data?.pageSize || 20,
     isLoading,
     error,
+    revalidate,
+  };
+};
+
+// Hook: Get all tasks from all projects of a team (for calendar/dashboard views)
+export const useTeamAllTasks = (teamId: number | null) => {
+  // Generate cache key
+  const cacheKey = teamId ? taskKeys.teamAllTasks(teamId) : null;
+
+  const { data, error, isLoading, mutate: revalidate } = useSWR(
+    cacheKey,
+    async () => {
+      if (!teamId) {
+        return null;
+      }
+      
+      try {
+        const result = await projectsService.getTeamAllTasks(teamId);
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+    {
+      revalidateOnFocus: true, // ✅ Enable focus revalidation for debugging
+      revalidateOnReconnect: true,
+      revalidateIfStale: true, // ✅ Enable stale revalidation for debugging  
+      dedupingInterval: 2000, // ✅ Reduce to 2 seconds for debugging
+      errorRetryCount: 3,
+      errorRetryInterval: 5000,
+      keepPreviousData: false, // ✅ Disable for debugging
+      refreshInterval: 0,
+    }
+  );
+
+
+  // Force manual revalidation if needed
+  React.useEffect(() => {
+    if (teamId && !isLoading && !data?.length) {
+      revalidate();
+    }
+  }, [teamId, isLoading, data?.length, revalidate]);
+
+  return {
+    tasks: data || [],
+    error,
+    isLoading,
     revalidate,
   };
 };

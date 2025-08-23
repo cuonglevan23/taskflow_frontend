@@ -7,6 +7,11 @@ import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskListItem } from '@/components/TaskList/types';
 import { formatTaskDate } from '@/components/TaskList/utils';
 import { MoreHorizontal, GripVertical } from 'lucide-react';
+import Avatar from '@/components/ui/Avatar/Avatar';
+
+interface ExtendedTaskItem extends TaskListItem {
+  assignedEmails?: string[];
+}
 
 interface SortableTaskCardProps {
   task: TaskListItem;
@@ -17,9 +22,9 @@ interface SortableTaskCardProps {
 const SortableTaskCard = ({ 
   task, 
   onClick,
-  isDragging = false,
 }: SortableTaskCardProps) => {
   const { theme } = useTheme();
+  const extendedTask = task as ExtendedTaskItem;
   const {
     attributes,
     listeners,
@@ -56,7 +61,7 @@ const SortableTaskCard = ({
         borderColor: isSortableDragging ? '#3B82F6' : theme.border.default,
         border: `1px solid ${isSortableDragging ? '#3B82F6' : theme.border.default}`,
       }}
-      onClick={(e) => {
+      onClick={() => {
         // Only handle click if not dragging
         if (!isSortableDragging) {
           onClick?.(task);
@@ -147,27 +152,34 @@ const SortableTaskCard = ({
             )}
           </div>
 
-          {task.assignees && task.assignees.length > 0 && (
+          {((task.assignees && task.assignees.length > 0) || (extendedTask.assignedEmails && extendedTask.assignedEmails.length > 0)) && (
             <div className="flex -space-x-1 ml-2">
-              {task.assignees.slice(0, 3).map((assignee, index) => (
-                <div
+              {/* Show assignees */}
+              {task.assignees?.slice(0, 2).map((assignee) => (
+                <Avatar
                   key={assignee.id}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white"
-                  style={{ backgroundColor: theme.colors?.primary || '#3B82F6' }}
-                  title={assignee.name}
-                >
-                  {assignee.name.charAt(0).toUpperCase()}
-                </div>
+                  name={assignee.name}
+                  size="sm"
+                  className="w-6 h-6 border-2 border-white"
+                />
               ))}
-              {task.assignees.length > 3 && (
+              
+              {/* Show assigned emails */}
+              {(extendedTask.assignedEmails || []).slice(0, Math.max(0, 2 - (task.assignees?.length || 0))).map((email: string) => (
+                <Avatar
+                  key={email}
+                  name={email}
+                  size="sm"
+                  className="w-6 h-6 border-2 border-white"
+                />
+              ))}
+              
+              {/* Show count if more than 2 total */}
+              {((task.assignees?.length || 0) + (extendedTask.assignedEmails?.length || 0)) > 2 && (
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 border-white"
-                  style={{ 
-                    backgroundColor: theme.background.secondary,
-                    color: theme.text.secondary 
-                  }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 border-white bg-gray-500 text-white"
                 >
-                  +{task.assignees.length - 3}
+                  +{((task.assignees?.length || 0) + (extendedTask.assignedEmails?.length || 0)) - 2}
                 </div>
               )}
             </div>

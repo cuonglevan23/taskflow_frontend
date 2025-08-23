@@ -1,11 +1,15 @@
 export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',   // Quản trị viên cao nhất
+  // System Level
   ADMIN = 'ADMIN',               // Quản trị viên hệ thống
-  OWNER = 'OWNER',               // Chủ sở hữu workspace
-  PM = 'PM',                     // Project Manager
-  LEADER = 'LEADER',             // Team Leader
-  MEMBER = 'MEMBER',             // Thành viên
-  GUEST = 'GUEST',               // Khách
+  MEMBER = 'MEMBER',             // Thành viên thông thường
+
+  // Team Level
+  TEAM_OWNER = 'TEAM_OWNER',     // Chủ sở hữu team
+  TEAM_MEMBER = 'TEAM_MEMBER',   // Thành viên team
+
+  // Project Level  
+  PROJECT_OWNER = 'PROJECT_OWNER', // Chủ sở hữu project
+  PROJECT_MEMBER = 'PROJECT_MEMBER' // Thành viên project
 }
 
 export enum Permission {
@@ -96,38 +100,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_RESOURCES,
   ],
 
-  [UserRole.PM]: [
-    Permission.VIEW_MEMBERS,
-    Permission.CREATE_PROJECT,
-    Permission.UPDATE_PROJECT,
-    Permission.MANAGE_PROJECT_SETTINGS,
-    Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
-    Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
-    Permission.UPDATE_TASK,
-    Permission.DELETE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.GENERATE_REPORTS,
-    Permission.VIEW_REPORTS,
-    Permission.MANAGE_RESOURCES,
-    Permission.VIEW_RESOURCES,
-  ],
-
-  [UserRole.LEADER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.VIEW_PROJECT,
-    Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
-    Permission.UPDATE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.VIEW_REPORTS,
-    Permission.MANAGE_TEAM,
-    Permission.MANAGE_RESOURCES,
-    Permission.VIEW_RESOURCES,
-  ],
 
   [UserRole.MEMBER]: [
     Permission.VIEW_MEMBERS,
@@ -140,9 +112,5 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_RESOURCES,
   ],
 
-  [UserRole.GUEST]: [
-    Permission.VIEW_PROJECT,
-    Permission.VIEW_TASK,
-    Permission.VIEW_RESOURCES,
-  ],
+
 };

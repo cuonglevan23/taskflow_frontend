@@ -136,7 +136,7 @@ const BucketTaskList = ({
     const taskData = {
       name: newTaskName.trim(),
       status: 'TODO' as const,
-      actionTime: editingSection,
+      actionTime: editingSection || undefined,
     };
     
     onTaskCreate?.(taskData);
@@ -162,7 +162,9 @@ const BucketTaskList = ({
   const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
     // Call the provided edit handler
     console.log('Save task updates:', taskId, updates);
-    onTaskEdit?.(updates);
+    if (updates.id) {
+      onTaskEdit?.(updates as TaskListItem);
+    }
     handleClosePanel();
   };
 
@@ -270,76 +272,94 @@ const BucketTaskList = ({
               {/* Tasks */}
               {!bucket.collapsed && (
                 <div>
-                  <SortableContext items={bucket.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                    {bucket.tasks.map((task) => (
-                      <SortableTaskRow
-                        key={task.id}
-                        task={task}
-                        onTaskClick={handleTaskClick}
-                        onMoveTask={onTaskMove}
-                        onTaskEdit={onTaskEdit}
-                        onTaskDelete={onTaskDelete}
-                        onTaskStatusChange={onTaskStatusChange}
-                        onTaskAssign={onTaskAssign}
-                      />
-                    ))}
-                  </SortableContext>
+                  {(() => {
+                    try {
+                      const validTasks = Array.isArray(bucket.tasks) 
+                        ? bucket.tasks.filter(task => task && typeof task === 'object' && task.id && typeof task.id === 'string')
+                        : [];
+                      
+                      const taskIds = validTasks.map(t => t.id);
+                      
+                      return (
+                        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+                          {validTasks.map((task, index) => (
+                            <SortableTaskRow
+                              key={`${bucket.id}-${task.id}-${index}`}
+                              task={task}
+                              onTaskClick={handleTaskClick}
+                              onMoveTask={onTaskMove}
+                              onTaskEdit={onTaskEdit}
+                              onTaskDelete={onTaskDelete}
+                              onTaskStatusChange={onTaskStatusChange}
+                              onTaskAssign={onTaskAssign}
+                            />
+                          ))}
+                        </SortableContext>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering tasks for bucket:', bucket.id, error);
+                      return (
+                        <div className="p-4 text-red-500 text-sm">
+                          Error loading tasks for this section. Please try refreshing the page.
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+              )}
 
-                  {/* Add Task Input - Enhanced */}
-                  {editingSection === bucket.id ? (
-                    <div className="flex items-center py-3 px-4 border-l-2 border-l-blue-500 bg-gray-800/50">
-                      <div className="flex-shrink-0 mr-3">
-                        <div className="w-4 h-4 rounded-full border-2 border-blue-400 animate-pulse" />
-                      </div>
-                      <div className="flex-1 min-w-[300px] px-2">
-                        <input
-                          type="text"
-                          value={newTaskName}
-                          onChange={(e) => setNewTaskName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault(); // ← Senior: Prevent form submission
-                              e.stopPropagation(); // ← Senior: Prevent event bubbling
-                              handleSaveTask();
-                            }
-                            if (e.key === 'Escape') {
-                              e.preventDefault(); // ← Senior: Prevent default behavior
-                              e.stopPropagation(); // ← Senior: Stop propagation
-                              handleCancelTask();
-                            }
-                          }}
-                          onBlur={handleSaveTask}
-                          placeholder="Write a task name"
-                          className="w-full bg-transparent text-white text-sm font-medium outline-none placeholder-gray-400"
-                          autoFocus
-                        />
-                      </div>
-                      <div className="w-[120px] px-2">
-                        <span className="text-xs text-gray-500">Press Enter to save</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div 
-                      className="group flex items-center py-3 px-4 cursor-pointer transition-all duration-200 border-l-2 border-l-transparent hover:border-l-gray-600"
-
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover;
+              {/* Add Task Input - Enhanced */}
+              {editingSection === bucket.id ? (
+                <div className="flex items-center py-3 px-4 border-l-2 border-l-blue-500 bg-gray-800/50">
+                  <div className="flex-shrink-0 mr-3">
+                    <div className="w-4 h-4 rounded-full border-2 border-blue-400 animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-[300px] px-2">
+                    <input
+                      type="text"
+                      value={newTaskName}
+                      onChange={(e) => setNewTaskName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSaveTask();
+                        }
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleCancelTask();
+                        }
                       }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      onClick={() => handleAddTask(bucket.id)}
-                    >
-                      <div className="flex-shrink-0 mr-3">
-                        <Plus className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
-                      </div>
-                      <div className="flex-1 min-w-[300px] px-2">
-                        <span className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors">
-                          Add task...
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                      onBlur={handleSaveTask}
+                      placeholder="Write a task name"
+                      className="w-full bg-transparent text-white text-sm font-medium outline-none placeholder-gray-400"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="w-[120px] px-2">
+                    <span className="text-xs text-gray-500">Press Enter to save</span>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="group flex items-center py-3 px-4 cursor-pointer transition-all duration-200 border-l-2 border-l-transparent hover:border-l-gray-600"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                  onClick={() => handleAddTask(bucket.id)}
+                >
+                  <div className="flex-shrink-0 mr-3">
+                    <Plus className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" />
+                  </div>
+                  <div className="flex-1 min-w-[300px] px-2">
+                    <span className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors">
+                      Add task...
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -349,7 +369,6 @@ const BucketTaskList = ({
         {/* Add Section Button */}
         <div 
           className="flex items-center py-2 px-4 cursor-pointer transition-colors"
-
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover;
           }}

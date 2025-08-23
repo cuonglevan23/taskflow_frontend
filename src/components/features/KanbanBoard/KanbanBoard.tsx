@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { TaskListItem, TaskStatus, TaskListActions } from "@/components/TaskList/types";
 import { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
+import Avatar from '@/components/ui/Avatar/Avatar';
 
 import EmptySearchState from "@/components/ui/EmptySearchState";
 import DragAndDropContext from "./DragAndDropContext";
@@ -345,68 +346,165 @@ const KanbanBoard = ({
           onReset={handleClearSearch}
         />
       ) : (
-        <DragAndDropContext
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          activeTask={activeTask}
-        >
-          <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6">
-            {columns.map((column) => (
-              <DroppableColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                color={column.color}
-                tasks={filteredTasksByAssignmentDate[column.id] || []}
-                onTaskClick={handleTaskClick}
-                onAddTask={handleAddTask}
-                isAddingTask={editingTask === `new-${column.id}`}
-                newTaskInput={
-                  editingTask === `new-${column.id}` ? (
+        <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6">
+          {columns.map((column) => (
+            <div
+              key={column.id}
+              className="flex-shrink-0 w-80"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderRadius: '12px',
+                border: `1px solid ${theme.border.default}`,
+              }}
+            >
+              {/* Column Header */}
+              <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <div
-                      className="p-3 mb-2 rounded-lg border transition-all"
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: column.color }}
+                    />
+                    <h3 className="font-medium" style={{ color: theme.text.primary }}>
+                      {column.title}
+                    </h3>
+                    <span
+                      className="text-sm px-2 py-1 rounded-full"
                       style={{
-                        backgroundColor: theme.background.primary,
-                        borderColor: theme.border.default,
-                        border: `1px solid ${theme.border.default}`,
+                        backgroundColor: theme.background.tertiary,
+                        color: theme.text.secondary,
                       }}
                     >
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 mt-1">
-                          <div 
-                            className="w-4 h-4 rounded border-2"
-                            style={{ borderColor: theme.text.secondary }}
-                          />
-                        </div>
-                        
-                        <input
-                          type="text"
-                          value={newTaskName}
-                          onChange={(e) => setNewTaskName(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveNewTask();
-                            } else if (e.key === 'Escape') {
-                              handleCancelNewTask();
-                            }
+                      {(filteredTasksByAssignmentDate[column.id] || []).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column Content */}
+              <div
+                className="p-4 space-y-3"
+                style={{
+                  maxHeight: 'calc(100vh - 280px)',
+                  overflowY: 'auto',
+                }}
+              >
+                {/* Tasks */}
+                {(filteredTasksByAssignmentDate[column.id] || []).map((task, index) => (
+                  <div
+                    key={`${column.id}-${task.id}-${index}`}
+                    className="p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md"
+                    style={{
+                      backgroundColor: theme.background.primary,
+                      borderColor: theme.border.default,
+                    }}
+                    onClick={() => handleTaskClick(task)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div
+                          className={`w-4 h-4 rounded border-2 cursor-pointer hover:scale-110 transition-transform ${
+                            task.completed ? 'bg-green-500 border-green-500' : ''
+                          }`}
+                          style={{
+                            borderColor: task.completed ? '#10B981' : theme.text.secondary,
                           }}
-                          onBlur={handleSaveNewTask}
-                          placeholder="Write a task name"
-                          className="flex-1 bg-transparent border-none outline-none text-sm font-medium"
-                          style={{ color: theme.text.primary }}
-                          autoFocus
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the task detail click
+                            actions?.onTaskComplete?.(task);
+                          }}
                         />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm font-medium mb-1 ${
+                            task.completed ? 'line-through' : ''
+                          }`}
+                          style={{ color: theme.text.primary }}
+                        >
+                          {task.name}
+                        </p>
+                        {task.description && (
+                          <p
+                            className="text-xs mb-2 line-clamp-2"
+                            style={{ color: theme.text.secondary }}
+                          >
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            {task.priority && (
+                              <span
+                                className={`px-2 py-1 rounded-full ${
+                                  task.priority === 'HIGH'
+                                    ? 'bg-red-100 text-red-800'
+                                    : task.priority === 'MEDIUM'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-green-100 text-green-800'
+                                }`}
+                              >
+                                {task.priority}
+                              </span>
+                            )}
+                            {task.deadline && (
+                              <span style={{ color: theme.text.secondary }}>
+                                Due: {task.deadline}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Avatar display */}
+                          {(task.assignees?.length > 0 || (task as any).assignedEmails?.length > 0) && (
+                            <div className="flex items-center -space-x-1">
+                              {/* Show assignees */}
+                              {task.assignees?.slice(0, 2).map((assignee: any) => (
+                                <Avatar
+                                  key={assignee.id}
+                                  name={assignee.name}
+                                  size="sm"
+                                  className="w-5 h-5 border border-white"
+                                />
+                              ))}
+                              
+                              {/* Show assigned emails */}
+                              {((task as any).assignedEmails || []).slice(0, Math.max(0, 2 - (task.assignees?.length || 0))).map((email: string) => (
+                                <Avatar
+                                  key={email}
+                                  name={email}
+                                  size="sm"
+                                  className="w-5 h-5 border border-white"
+                                />
+                              ))}
+                              
+                              {/* Show count if more than 2 total */}
+                              {((task.assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) > 2 && (
+                                <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                                  +{((task.assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) - 2}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  ) : undefined
-                }
-              />
-            ))}
-          </div>
-        </DragAndDropContext>
-      )}
+                  </div>
+                ))}
 
+                {/* Empty State */}
+                {(filteredTasksByAssignmentDate[column.id] || []).length === 0 && (
+                  <div
+                    className="flex items-center justify-center h-32 text-sm transition-opacity duration-200 opacity-50"
+                    style={{ color: theme.text.secondary }}
+                  >
+                    No tasks in this column
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

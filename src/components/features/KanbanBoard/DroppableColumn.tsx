@@ -96,9 +96,9 @@ const DroppableColumn = ({
           {isAddingTask && newTaskInput}
 
           {/* Existing Tasks */}
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <SortableTaskCard
-              key={task.id}
+              key={`${id}-${task.id}-${index}`}
               task={task}
               onClick={onTaskClick}
             />

@@ -3,6 +3,7 @@ export interface CreateProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
     onCreateProject?: (projectData: ProjectFormData) => void;
+    teamId?: number; // Auto-assign project to specific team
 }
 
 export interface ProjectFormData {

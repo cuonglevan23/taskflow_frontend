@@ -1,4 +1,7 @@
+'use client';
+
 import { UserRole, Permission } from '@/constants/auth';
+import { UserWithRole } from '@/types/roles';
 import React from 'react';
 import {
   Home,
@@ -18,40 +21,46 @@ import {
   Plus,
 } from 'lucide-react';
 
-export interface NavigationItem {
+interface NavigationItem {
   id: string;
   label: string;
   href: string;
-  icon?: any;
-  external?: boolean;
-  badge?: {
-    count?: number;
-    text?: string;
-    color?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
-  };
-  // RBAC properties
+  icon?: React.ReactNode;
   allowedRoles?: UserRole[];
+  badge?: {
+    count: number;
+    color: string;
+  };
+  dynamic?: boolean;
+  childItems?: NavigationItem[];
   requiredPermissions?: Permission[];
-  minimumRole?: UserRole;
 }
 
-export interface NavigationSection {
+interface NavigationSection {
   id: string;
   title?: string;
   items: NavigationItem[];
   collapsible?: boolean;
   defaultExpanded?: boolean;
-  // RBAC properties
   allowedRoles?: UserRole[];
-  requiredPermissions?: Permission[];
-  minimumRole?: UserRole;
 }
 
-/**
- * Main Navigation Sections với RBAC - Updated theo yêu cầu OWNER structure
- */
+interface QuickAction {
+  id: string;
+  label: string;
+  href: string;
+  icon?: React.ReactNode;
+  allowedRoles?: UserRole[];
+}
+
+interface FooterAction {
+  id: string;
+  label: string;
+  href: string;
+  allowedRoles?: UserRole[];
+}
+
 export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
-  // Main Navigation - Tất cả authenticated users  
   {
     id: 'main',
     items: [
@@ -60,30 +69,28 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         label: 'Home',
         href: '/home',
         icon: React.createElement(Home, { size: 20, className: "text-gray-300" }),
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
       {
         id: 'my-tasks',
-        label: 'My Task',
+        label: 'My Tasks',
         href: '/my-tasks',
         icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-        badge: { count: 0, color: 'default' }, // Will be updated dynamically
+        allowedRoles: [UserRole.MEMBER],
+        badge: { count: 0, color: 'default' },
       },
       {
         id: 'inbox',
         label: 'Inbox',
         href: '/inbox',
         icon: React.createElement(Inbox, { size: 20, className: "text-gray-300" }),
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
     ],
     defaultExpanded: true,
   },
-
-  // Insights Section - Available for all roles (MEMBER+)
-  {
-    id: 'insights',
+      {
+    id: 'analytics',
     title: 'Insights',
     items: [
       {
@@ -91,50 +98,102 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         label: 'Goals',
         href: '/goals',
         icon: React.createElement(Target, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.MEMBER,
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
       {
         id: 'reports',
         label: 'Reports',
         href: '/reporting',
         icon: React.createElement(BarChart3, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.MEMBER,
-        requiredPermissions: [Permission.VIEW_REPORTS],
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
       {
-        id: 'portfolios',
-        label: 'Portfolios',
-        href: '/portfolios',
-        icon: React.createElement(Folder, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.MEMBER,
+        id: 'portfolio',
+        label: 'Portfolio',
+        href: '/portfolio',
+        icon: React.createElement(Star, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
     ],
     collapsible: true,
     defaultExpanded: true,
-    minimumRole: UserRole.MEMBER,
   },
-
-  // Projects Section - All roles can see projects (with role-based filtering)
   {
     id: 'projects',
     title: 'Projects',
-    items: [], // Will be populated dynamically with user's projects
+    items: [
+      {
+        id: 'projects-overview',
+        label: 'All Projects',
+        href: '/projects',
+        icon: React.createElement(Folder, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
+      },
+      {
+        id: 'my-projects',
+        label: 'My Projects',
+        href: '/projects/my-projects',
+        icon: React.createElement(Star, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+        dynamic: true,
+        childItems: [],
+      },
+      {
+        id: 'project-tasks',
+        label: 'Project Tasks',
+        href: '/projects/tasks',
+        icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+      },
+      {
+        id: 'project-management',
+        label: 'Project Management',
+        href: '/projects/manage',
+        icon: React.createElement(Users, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+      },
+    ],
     collapsible: true,
     defaultExpanded: true,
-    minimumRole: UserRole.MEMBER, // All roles from MEMBER and above
   },
-
-  // Teams Section - All roles can see teams (with role-based filtering)
-  {
+      {
     id: 'teams',
-    title: 'Teams ',
-    items: [], // Will be populated dynamically with user's teams
+    title: 'Teams',
+    items: [
+      {
+        id: 'teams-overview',
+        label: 'All Teams',
+        href: '/teams',
+        icon: React.createElement(Users, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
+      },
+      {
+        id: 'my-teams',
+        label: 'My Teams',
+        href: '/teams/my-teams',
+        icon: React.createElement(Star, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+        dynamic: true,
+      },
+      {
+        id: 'team-tasks',
+        label: 'Team Tasks',
+        href: '/teams/tasks',
+        icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+      },
+      {
+        id: 'team-management',
+        label: 'Team Management',
+        href: '/teams/manage',
+        icon: React.createElement(UserPlus, { size: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.MEMBER],
+      },
+    ],
     collapsible: true,
     defaultExpanded: true,
-    minimumRole: UserRole.MEMBER, // All roles from MEMBER and above
   },
 
-  // Management Center Section - Role-based access
   {
     id: 'management',
     title: 'Management',
@@ -144,160 +203,129 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         label: 'Management Center',
         href: '/manager',
         icon: React.createElement(Settings, { size: 20, className: "text-gray-300" }),
-        minimumRole: UserRole.LEADER,
-        requiredPermissions: [Permission.VIEW_REPORTS], // Basic management permission
+        allowedRoles: [UserRole.ADMIN],
+        requiredPermissions: [Permission.VIEW_REPORTS],
       },
     ],
     collapsible: true,
     defaultExpanded: true,
-    minimumRole: UserRole.LEADER,
+    allowedRoles: [UserRole.ADMIN],
   },
 ];
 
-/**
- * Quick Actions dựa trên role
- */
-export const RBAC_QUICK_ACTIONS = [
+export const RBAC_QUICK_ACTIONS: QuickAction[] = [
   {
-    id: 'create-projects',
+    id: 'create-project',
     label: 'Create Project',
     href: '/projects/create',
     icon: React.createElement(Plus, { size: 16, className: "text-gray-300" }),
-    minimumRole: UserRole.PM,
-    requiredPermissions: [Permission.CREATE_PROJECT],
+    allowedRoles: [UserRole.MEMBER],
   },
   {
     id: 'create-team',
     label: 'Create Team',
     href: '/teams/create',
     icon: React.createElement(Plus, { size: 16, className: "text-gray-300" }),
-    minimumRole: UserRole.PM,
-    requiredPermissions: [Permission.CREATE_TEAM],
+    allowedRoles: [UserRole.MEMBER],
   },
   {
-    id: 'invite-user',
-    label: 'Invite User',
-    href: '/teams/invite',
-    icon: React.createElement(UserPlus, { size: 16, className: "text-gray-300" }),
-    minimumRole: UserRole.PM,
-    requiredPermissions: [Permission.INVITE_USERS],
+    id: 'create-task',
+    label: 'Create Task',
+    href: '/tasks/create',
+    icon: React.createElement(Plus, { size: 16, className: "text-gray-300" }),
+    allowedRoles: [UserRole.MEMBER],
   },
+  {
+    id: 'invite-member',
+    label: 'Invite Member',
+    href: '/invite',
+    icon: React.createElement(UserPlus, { size: 16, className: "text-gray-300" }),
+    allowedRoles: [UserRole.MEMBER],
+  }
 ];
 
-/**
- * Footer actions dựa trên role
- */
-export const RBAC_FOOTER_ACTIONS = [
+export const RBAC_FOOTER_ACTIONS: FooterAction[] = [
   {
-    id: 'upgrade',
-    label: 'Upgrade Plan',
-    href: '/owner/billing',
-    minimumRole: UserRole.OWNER,
-    requiredPermissions: [Permission.MANAGE_BILLING],
+    id: 'system-settings',
+    label: 'System Settings',
+    href: '/admin/settings',
+    allowedRoles: [UserRole.ADMIN],
+  },
+  {
+    id: 'user-settings',
+    label: 'User Settings',
+    href: '/settings',
+    allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
   },
   {
     id: 'support',
     label: 'Support',
     href: '/support',
-    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-  },
+    allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
+  }
 ];
-
-/**
- * Helper functions để filter navigation dựa trên user permissions
- */
-import { UserWithRole } from '@/types/roles';
-import { canAccessRoute } from '@/utils/rbac';
 
 export function getVisibleNavigationSections(user: UserWithRole | null): NavigationSection[] {
   if (!user) return [];
 
+  const userRole = UserRole[user.role.toUpperCase() as keyof typeof UserRole];
+
   return RBAC_NAVIGATION_SECTIONS.filter(section => {
     // Check section level permissions
-    if (section.allowedRoles && section.allowedRoles.length > 0) {
-      if (!canAccessRoute(user, section.allowedRoles, section.requiredPermissions || [])) {
-        return false;
-      }
-    } else if (section.minimumRole) {
-      if (!canAccessRoute(user, [section.minimumRole], section.requiredPermissions || [])) {
-        return false;
-      }
-    } else if (section.requiredPermissions && section.requiredPermissions.length > 0) {
-      if (!canAccessRoute(user, [], section.requiredPermissions)) {
-        return false;
-      }
+    if (section.allowedRoles && !section.allowedRoles.includes(userRole)) {
+      return false;
     }
-    
-    // Filter items within section
+
+    // Filter items based on roles
     const visibleItems = section.items.filter(item => {
       if (item.allowedRoles && item.allowedRoles.length > 0) {
-        return canAccessRoute(user, item.allowedRoles, item.requiredPermissions || []);
-      } else if (item.minimumRole) {
-        return canAccessRoute(user, [item.minimumRole], item.requiredPermissions || []);
-      } else if (item.requiredPermissions && item.requiredPermissions.length > 0) {
-        return canAccessRoute(user, [], item.requiredPermissions);
+        return item.allowedRoles.includes(userRole);
       }
       return true;
     });
-    
-    // Only show section if it has visible items
-    // Exception: Projects and Teams sections are populated dynamically, always show if user has access
-    if (section.id === 'projects' || section.id === 'teams') {
-      return true; // These will be populated dynamically in PrivateSidebar
-    }
-    
+
     return visibleItems.length > 0;
   }).map(section => ({
     ...section,
     items: section.items.filter(item => {
       if (item.allowedRoles && item.allowedRoles.length > 0) {
-        return canAccessRoute(user, item.allowedRoles, item.requiredPermissions || []);
-      } else if (item.minimumRole) {
-        return canAccessRoute(user, [item.minimumRole], item.requiredPermissions || []);
-      } else if (item.requiredPermissions && item.requiredPermissions.length > 0) {
-        return canAccessRoute(user, [], item.requiredPermissions);
+        return item.allowedRoles.includes(userRole);
       }
       return true;
+    }).map(item => {
+      if (item.dynamic) {
+        return {
+          ...item,
+          childItems: [], // Will be populated by the sidebar component
+        };
+      }
+      return item;
     })
   }));
 }
 
-export function getVisibleQuickActions(user: UserWithRole | null) {
+export function getVisibleQuickActions(user: UserWithRole | null): QuickAction[] {
   if (!user) return [];
 
+  const userRole = UserRole[user.role.toUpperCase() as keyof typeof UserRole];
+
   return RBAC_QUICK_ACTIONS.filter(action => {
-    if (action.allowedRoles && !canAccessRoute(user, action.allowedRoles)) {
-      return false;
+    if (action.allowedRoles && action.allowedRoles.length > 0) {
+      return action.allowedRoles.includes(userRole);
     }
-    
-    if (action.minimumRole && !canAccessRoute(user, [action.minimumRole])) {
-      return false;
-    }
-    
-    if (action.requiredPermissions && !canAccessRoute(user, [], action.requiredPermissions)) {
-      return false;
-    }
-    
     return true;
   });
 }
 
-export function getVisibleFooterActions(user: UserWithRole | null) {
+export function getVisibleFooterActions(user: UserWithRole | null): FooterAction[] {
   if (!user) return [];
 
+  const userRole = UserRole[user.role.toUpperCase() as keyof typeof UserRole];
+
   return RBAC_FOOTER_ACTIONS.filter(action => {
-    if (action.allowedRoles && !canAccessRoute(user, action.allowedRoles)) {
-      return false;
+    if (action.allowedRoles && action.allowedRoles.length > 0) {
+      return action.allowedRoles.includes(userRole);
     }
-    
-    if (action.minimumRole && !canAccessRoute(user, [action.minimumRole])) {
-      return false;
-    }
-    
-    if (action.requiredPermissions && !canAccessRoute(user, [], action.requiredPermissions)) {
-      return false;
-    }
-    
     return true;
   });
 }

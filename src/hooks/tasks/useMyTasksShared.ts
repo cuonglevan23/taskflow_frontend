@@ -32,6 +32,7 @@ interface MyTasksSharedReturn {
   actions: {
     onTaskClick: (task: TaskListItem | Task) => void;
     onTaskEdit: (task: TaskListItem) => Promise<void>;
+    onTaskComplete: (task: TaskListItem) => Promise<void>;
     onCreateTask: (taskData: any) => Promise<void>;
     onTaskDelete: (taskId: string) => Promise<void>;
     onTaskStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
@@ -129,35 +130,94 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   // Shared task actions
   const actions = useMemo(() => ({
     onTaskClick: (task: TaskListItem | Task) => {
-      const taskId = 'id' in task ? task.id.toString() : task.id.toString();
+      const taskId = typeof task.id === 'string' ? task.id : task.id.toString();
       setSelectedTaskId(taskId);
       console.log('Task clicked:', task);
     },
     
     onTaskEdit: async (task: TaskListItem) => {
       try {
-        const backendData = {
-          title: task.name,
-          description: task.description || '',
-          status: task.status === 'DONE' ? 'DONE' : 
-                 task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
-                 task.status === 'REVIEW' ? 'REVIEW' : 'TODO',
-          priority: task.priority === 'LOW' ? 'LOW' :
-                   task.priority === 'MEDIUM' ? 'MEDIUM' :
-                   task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
-          startDate: task.startDate || new Date().toISOString().split('T')[0],
-          deadline: task.deadline || task.dueDate || null,
-          groupId: null,
-          projectId: null,
-          assignedToIds: task.assignees.map(a => a.id).filter(id => !id.startsWith('temp-')),
-        };
+        // Determine if this is a project task or personal task
+        const isProjectTask = task.project && task.project !== 'Default Project';
         
-        await updateTask({ 
-          id: task.id, 
-          data: backendData
-        });
+        if (isProjectTask) {
+          // Use project task API for project tasks
+          const projectTaskService = await import('@/services/tasks/projectTaskService');
+          const backendData = {
+            title: task.name,
+            description: task.description || '',
+            status: task.status === 'DONE' ? 'DONE' : 
+                   task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
+                   task.status === 'REVIEW' ? 'REVIEW' : 'TODO',
+            priority: task.priority === 'LOW' ? 'LOW' :
+                     task.priority === 'MEDIUM' ? 'MEDIUM' :
+                     task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
+            startDate: task.startDate || new Date().toISOString().split('T')[0],
+            deadline: task.deadline || task.dueDate || undefined,
+          };
+          
+          await projectTaskService.projectTaskService.updateTask(
+            parseInt(task.id), 
+            backendData as any
+          );
+        } else {
+          // Use personal task API for my-tasks
+          const backendData = {
+            title: task.name,
+            description: task.description || '',
+            status: task.status === 'DONE' ? 'DONE' : 
+                   task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
+                   task.status === 'REVIEW' ? 'REVIEW' : 'TODO',
+            priority: task.priority === 'LOW' ? 'LOW' :
+                     task.priority === 'MEDIUM' ? 'MEDIUM' :
+                     task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
+            startDate: task.startDate || new Date().toISOString().split('T')[0],
+            deadline: task.deadline || task.dueDate || undefined,
+            groupId: undefined,
+            projectId: undefined,
+            assignedToIds: task.assignees.map(a => parseInt(a.id)).filter(id => !isNaN(id)),
+          };
+          
+          await updateTask({ 
+            id: task.id, 
+            data: backendData
+          });
+        }
+        
+        // Revalidate data after edit
+        revalidate();
       } catch (error) {
         console.error('Failed to update task:', error);
+        throw error;
+      }
+    },
+
+    onTaskComplete: async (task: TaskListItem) => {
+      try {
+        // Determine if this is a project task or personal task
+        const isProjectTask = task.project && task.project !== 'Default Project';
+        
+        if (isProjectTask) {
+          // Use project task API for project tasks
+          const projectTaskService = await import('@/services/tasks/projectTaskService');
+          const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
+          await projectTaskService.projectTaskService.updateTaskStatus(
+            parseInt(task.id), 
+            newStatus
+          );
+        } else {
+          // Use personal task API for my-tasks
+          const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
+          await updateTaskStatus({ 
+            id: task.id, 
+            status: newStatus
+          });
+        }
+        
+        // Revalidate data after status change
+        revalidate();
+      } catch (error) {
+        console.error('Failed to toggle task completion:', error);
         throw error;
       }
     },
@@ -190,7 +250,21 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     
     onTaskDelete: async (taskId: string) => {
       try {
-        await deleteTask(taskId);
+        // Find the task to determine if it's a project task or personal task
+        const task = taskListItems.find(t => t.id === taskId);
+        const isProjectTask = task?.project && task.project !== 'Default Project';
+        
+        if (isProjectTask) {
+          // Use project task API for project tasks
+          const projectTaskService = await import('@/services/tasks/projectTaskService');
+          await projectTaskService.projectTaskService.deleteTask(parseInt(taskId));
+        } else {
+          // Use personal task API for my-tasks
+          await deleteTask(taskId);
+        }
+        
+        // Revalidate data after deletion
+        revalidate();
       } catch (error) {
         console.error('Failed to delete task:', error);
         throw error;

@@ -430,6 +430,84 @@ const projectsService = {
     }
   },
 
+  // Get team projects (projects belonging to a specific team)
+  getTeamProjects: async (teamId: number, params?: {
+    page?: number;
+    size?: number;
+    status?: ProjectStatus[];
+    priority?: ProjectPriority[];
+  }): Promise<{
+    projects: Project[];
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }> => {
+    try {
+      const {
+        page = 0,
+        size = 20,
+        status,
+        priority,
+      } = params || {};
+
+      // Call team projects endpoint as documented in TEAM_API_DOCUMENTATION.md
+      const response = await api.get(`/api/teams/${teamId}/projects`);
+
+      // Handle both paginated and simple array responses
+      if (response.data?.content && Array.isArray(response.data.content)) {
+        // Paginated response
+        const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+        const projects = content.map(transformBackendProject);
+        
+        return {
+          projects,
+          totalElements,
+          totalPages,
+          currentPage: number,
+          pageSize,
+        };
+      } else if (Array.isArray(response.data)) {
+        // Simple array response
+        const projects = response.data.map(transformBackendProject);
+        
+        return {
+          projects,
+          totalElements: projects.length,
+          totalPages: 1,
+          currentPage: 0,
+          pageSize: projects.length,
+        };
+      } else {
+        // Empty or unexpected response
+        return {
+          projects: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: 0,
+        };
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch team projects:', error);
+      throw error;
+    }
+  },
+
+  // Get all tasks from all projects of a team
+  getTeamAllTasks: async (teamId: number): Promise<any[]> => {
+    try {
+      // Call team all-tasks endpoint as documented in TEAM_API_DOCUMENTATION.md
+      const response = await api.get(`/api/teams/${teamId}/all-tasks`);
+
+      // Return tasks array directly as documented
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('❌ Failed to fetch team all tasks:', error);
+      throw error;
+    }
+  },
+
   // Get my projects (user is owner or member)
   getMyProjects: async (params?: {
     page?: number;

@@ -33,8 +33,10 @@ const UserAvatarGroup = forwardRef<HTMLDivElement, UserAvatarGroupProps>(
     },
     ref
   ) => {
-    const visibleUsers = users.slice(0, max);
-    const remainingCount = Math.max(0, users.length - max);
+    // Add null checking to prevent crash when users is undefined
+    const safeUsers = users || [];
+    const visibleUsers = safeUsers.slice(0, max);
+    const remainingCount = Math.max(0, safeUsers.length - max);
 
     const spacingClasses = {
       tight: "-space-x-1",
@@ -64,34 +66,39 @@ const UserAvatarGroup = forwardRef<HTMLDivElement, UserAvatarGroupProps>(
         {visibleUsers.map((user, index) => (
           <div
             key={user.id}
-            className="relative ring-2 ring-white hover:z-10 transition-all duration-200"
+            className="relative hover:z-10 transition-all duration-200"
             style={{ zIndex: visibleUsers.length - index }}
           >
-            <UserAvatar
-              user={user}
-              size={size}
-              variant={variant}
-              showTooltip={showTooltip}
-              onClick={() => onUserClick?.(user)}
-              className="transition-transform hover:scale-110"
-            />
+            <div className="ring-2 ring-gray-900 rounded-full transition-all duration-200 hover:ring-gray-700">
+              <UserAvatar
+                user={user}
+                size={size}
+                variant={variant}
+                showTooltip={showTooltip}
+                onClick={() => onUserClick?.(user)}
+                className="transition-all duration-200 hover:scale-110 shadow-md hover:shadow-xl"
+              />
+            </div>
           </div>
         ))}
 
         {remainingCount > 0 && (
-          <div
-            className={cn(
-              "relative ring-2 ring-white hover:z-10 transition-all duration-200",
-              "flex items-center justify-center bg-gray-200 text-gray-600 font-medium",
-              variant === "circle" ? "rounded-full" : variant === "rounded" ? "rounded-lg" : "rounded-none",
-              sizeClasses[size],
-              onMoreClick && "cursor-pointer hover:bg-gray-300 hover:scale-110"
-            )}
-            onClick={onMoreClick}
-            title={showTooltip ? `+${remainingCount} more users` : undefined}
-            style={{ zIndex: 0 }}
-          >
-            +{remainingCount}
+          <div className="relative hover:z-10 transition-all duration-200" style={{ zIndex: 0 }}>
+            <div className="ring-2 ring-gray-900 rounded-full transition-all duration-200 hover:ring-gray-700">
+              <div
+                className={cn(
+                  "flex items-center justify-center bg-gray-600 text-gray-200 font-medium shadow-md",
+                  "transition-all duration-200",
+                  variant === "circle" ? "rounded-full" : variant === "rounded" ? "rounded-lg" : "rounded-none",
+                  sizeClasses[size],
+                  onMoreClick && "cursor-pointer hover:bg-gray-500 hover:scale-110 hover:shadow-xl hover:text-white"
+                )}
+                onClick={onMoreClick}
+                title={showTooltip ? `+${remainingCount} more users` : undefined}
+              >
+                +{remainingCount}
+              </div>
+            </div>
           </div>
         )}
       </div>

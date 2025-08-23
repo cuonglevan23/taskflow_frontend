@@ -44,24 +44,20 @@ export function normalizeRole(roleString: string): UserRole {
     return UserRole.MEMBER;
   }
 
-  // console.log('🔍 Normalizing role:', roleString); // Disabled to prevent spam
   
   // Try direct match first (uppercase)
   if (Object.values(UserRole).includes(roleString as UserRole)) {
-    // console.log('✅ Direct role match:', roleString); // Disabled to prevent spam
     return roleString as UserRole;
   }
   
   // Try legacy mapping (both case-sensitive và case-insensitive)
   const exactMatch = LEGACY_ROLE_MAPPING[roleString];
   if (exactMatch) {
-    // console.log('✅ Exact legacy mapping:', roleString, '->', exactMatch); // Disabled to prevent spam
     return exactMatch;
   }
 
   const lowercaseMatch = LEGACY_ROLE_MAPPING[roleString.toLowerCase()];
   if (lowercaseMatch) {
-    // console.log('✅ Lowercase legacy mapping:', roleString, '->', lowercaseMatch); // Disabled to prevent spam
     return lowercaseMatch;
   }
   
@@ -272,27 +268,10 @@ export function createRBACHelper(user: UserWithRole | null): RBACHelper {
  */
 export function debugUserPermissions(user: UserWithRole | null): void {
   if (!user) {
-    console.log('No user provided');
     return;
   }
 
   const normalizedRole = normalizeRole(user.role as string);
   const permissions = getUserPermissions(user);
   const rbac = createRBACHelper(user);
-
-  console.group(`🔐 RBAC Debug for ${user.name} (${user.email})`);
-  console.log('Original Role:', user.role);
-  console.log('Normalized Role:', normalizedRole);
-  console.log('Role Level:', ROLE_HIERARCHY[normalizedRole]);
-  console.log('Permissions:', permissions);
-  console.log('RBAC Helper:', {
-    isSuperAdmin: rbac.isSuperAdmin,
-    isAdmin: rbac.isAdmin,
-    isOwner: rbac.isOwner,
-    isProjectManager: rbac.isProjectManager,
-    isLeader: rbac.isLeader,
-    isMember: rbac.isMember,
-    isGuest: rbac.isGuest,
-  });
-  console.groupEnd();
 }

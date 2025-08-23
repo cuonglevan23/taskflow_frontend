@@ -273,6 +273,7 @@ export interface ProjectFilters {
   priority?: ProjectPriority[];
   ownerId?: number;
   organizationId?: number;
+  teamId?: number; // Filter by team
   startDateFrom?: string;
   startDateTo?: string;
   endDateFrom?: string;

@@ -1,7 +1,8 @@
-// SWR Hooks for Projects - Data fetching with caching and revalidation
-import useSWR from 'swr';
+import React from 'react';
+import useSWR, { KeyedMutator } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
+import type { ProjectStatus } from '@/types/project';
 import { projectsService } from '@/services/projects';
 import type {
   Project,
@@ -22,6 +23,7 @@ const projectKeys = {
   detail: (id: number) => [...projectKeys.details(), id] as const,
   stats: () => [...projectKeys.all, 'stats'] as const,
   myProjects: () => [...projectKeys.all, 'my-projects'] as const,
+  teamProjects: (teamId: number) => [...projectKeys.all, 'team', teamId] as const,
   projectTasks: (id: number) => [...projectKeys.detail(id), 'tasks'] as const,
   projectProgress: (id: number) => [...projectKeys.detail(id), 'progress'] as const,
 } as const;
@@ -61,10 +63,44 @@ export const useMyProjects = (params?: {
   status?: string[];
   priority?: string[];
 }) => {
+  const key = React.useMemo(() => 
+    projectKeys.list(params), 
+    [params?.page, params?.size, params?.status, params?.priority]
+  );
+
   return useSWR(
-    projectKeys.myProjects(),
-    () => projectsService.getMyProjects(params)
-    // Use global SWR config from SWRProvider
+    key,
+    () => projectsService.getMyProjects(params).then(data => 
+      Array.isArray(data) ? data : data?.projects || []
+    ),
+    {
+      revalidateOnMount: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 10000, // 10 seconds
+      errorRetryCount: 3,
+      errorRetryInterval: 5000,
+    }
+  );
+};
+
+// Get team projects with optimized caching
+export const useTeamProjects = (teamId: number | null, params?: {
+  page?: number;
+  size?: number;
+  status?: string[];
+  priority?: string[];
+}) => {
+  return useSWR(
+    teamId ? projectKeys.teamProjects(teamId) : null,
+    () => teamId ? projectsService.getTeamProjects(teamId, params) : null,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      keepPreviousData: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 5000,
+    }
   );
 };
 

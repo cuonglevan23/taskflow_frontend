@@ -116,11 +116,16 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
 
 // Tasks Service - Main CRUD Operations
 export const tasksService = {
+  // Debug method for authentication checking
+  debugAuth: (): void => {
+    CookieAuth.debugAuth();
+  },
+
   // Get task by ID
   getTask: async (id: string): Promise<Task> => {
     try {
 
-      const response = await api.get<BackendTask>(`/api/tasks/${id}`);
+      const response = await api.get<BackendTask>(`/api/tasks/my-tasks/${id}`);
       const backendTask = response.data;
 
       return transformBackendTask(backendTask);
@@ -130,10 +135,16 @@ export const tasksService = {
     }
   },
 
-  // Create task
+  // Create task (My Tasks)
   createTask: async (data: CreateTaskDTO): Promise<Task> => {
     try {
-
+      // Check authentication first
+      const token = CookieAuth.getAccessToken();
+      if (!token) {
+        console.error('❌ No access token found in cookies');
+        throw new Error('Authentication required: No access token found');
+      }
+      console.log('✅ Access token found:', token.substring(0, 20) + '...');
       
       // Get current user ID from cookies for creatorId
       const userInfo = CookieAuth.getUserInfo();
@@ -150,7 +161,6 @@ export const tasksService = {
       } else {
         startDate = new Date().toISOString().split('T')[0];
       }
-      console.log('Task status:', data.status);
 
       const backendData = {
         title: data.title,
@@ -164,15 +174,9 @@ export const tasksService = {
         creatorId: data.creatorId || tokenPayload?.userId || parseInt(userInfo.id || '1'),
         assignedToIds: data.assignedToIds || [],
       };
-
-      console.log('📤 TaskService: Sending to backend:', JSON.stringify(backendData, null, 2));
       
-      const response = await api.post<BackendTask>('/api/tasks', backendData);
-
-      
+      const response = await api.post<BackendTask>('/api/tasks/my-tasks', backendData);
       const transformedTask = transformBackendTask(response.data);
-
-      
       return transformedTask;
     } catch (error: unknown) {
       console.error('❌ Failed to create task:', error);
@@ -180,9 +184,17 @@ export const tasksService = {
     }
   },
 
-  // Update task
+    // Update task (My Tasks)
   updateTask: async (id: string, data: UpdateTaskDTO): Promise<Task> => {
     try {
+      // Check authentication first
+      const token = CookieAuth.getAccessToken();
+      if (!token) {
+        console.error('❌ No access token found in cookies');
+        throw new Error('Authentication required: No access token found');
+      }
+      console.log('✅ Access token found for update:', token.substring(0, 20) + '...');
+      
       const backendData: Record<string, unknown> = {};
       
       if (data.title !== undefined) backendData.title = data.title;
@@ -204,7 +216,7 @@ export const tasksService = {
         backendData.startDate = data.dueDate;
       }
 
-      const response = await api.put<BackendTask>(`/api/tasks/${id}`, backendData);
+      const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, backendData);
       return transformBackendTask(response.data);
     } catch (error) {
       console.error('❌ Failed to update task:', error);
@@ -212,23 +224,20 @@ export const tasksService = {
     }
   },
 
-  // Delete task
+  // Delete task (My Tasks)
   deleteTask: async (id: string): Promise<void> => {
     try {
-
-      await api.delete(`/api/tasks/${id}`);
-
+      await api.delete(`/api/tasks/my-tasks/${id}`);
     } catch (error) {
       console.error('❌ Failed to delete task:', error);
       throw error;
     }
   },
 
-  // Update task status
+  // Update task status (My Tasks)
   updateTaskStatus: async (id: string, status: string): Promise<Task> => {
     try {
-
-      const response = await api.put<BackendTask>(`/api/tasks/${id}`, {
+      const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
         status: toBackendStatus(status)
       });
       return transformBackendTask(response.data);
@@ -349,7 +358,7 @@ export const tasksService = {
     }
   },
 
-  // Get My Tasks Summary (Lightweight) with pagination
+  // Get My Tasks Summary (Lightweight) with pagination - Updated to use main endpoint
   getMyTasksSummary: async (params?: {
     page?: number;
     size?: number;
@@ -364,13 +373,14 @@ export const tasksService = {
   }> => {
     const {
       page = 0,
-      size = 20,
-      sortBy = 'priority',
-      sortDir = 'asc'
+      size = 10,
+      sortBy = 'createdAt',
+      sortDir = 'desc'
     } = params || {};
 
     try {
-      const response = await api.get<PaginatedResponse<MyTasksSummaryItem>>('/api/tasks/my-tasks/summary', {
+      // Use the main my-tasks endpoint as documented
+      const response = await api.get<PaginatedResponse<MyTasksSummaryItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
@@ -384,7 +394,7 @@ export const tasksService = {
           totalElements: 0,
           totalPages: 0,
           currentPage: 0,
-          pageSize: 20,
+          pageSize: 10,
         };
       }
       
@@ -399,12 +409,12 @@ export const tasksService = {
       };
     } catch (error: any) {
       const status = error?.status;
-      console.error(`❌ My Tasks Summary API failed with status ${status}:`, (error as { message?: string })?.message);
+      console.error(`❌ My Tasks API failed with status ${status}:`, (error as { message?: string })?.message);
       
       if (status === 404) {
-        console.warn('🚧 Backend endpoint /api/tasks/my-tasks/summary not implemented yet');
+        console.warn('🚧 Backend endpoint /api/tasks not found');
       } else if (status === 500) {
-        console.warn('💥 Backend server error on /api/tasks/my-tasks/summary');
+        console.warn('💥 Backend server error on /api/tasks');
       }
       
       return {
@@ -471,7 +481,7 @@ export const tasksService = {
   assignTask: async (id: string, userId: string): Promise<Task> => {
     try {
 
-      const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
+      const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
         assignedToIds: [userId]
       });
       return transformBackendTask(response.data);
@@ -485,7 +495,7 @@ export const tasksService = {
   unassignTask: async (id: string): Promise<Task> => {
     try {
 
-      const response = await api.patch<BackendTask>(`/api/tasks/${id}`, {
+      const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
         assignedToIds: []
       });
       return transformBackendTask(response.data);
@@ -513,11 +523,22 @@ export const tasksService = {
   testAuth: async (): Promise<boolean> => {
     try {
       console.log('🧪 Testing authentication...');
-      const response = await api.get('/api/tasks');
-
+      
+      // First check if we have token
+      const token = CookieAuth.getAccessToken();
+      if (!token) {
+        console.error('❌ No access token found');
+        return false;
+      }
+      
+      console.log('✅ Token found:', token.substring(0, 20) + '...');
+      CookieAuth.debugAuth();
+      
+      const response = await api.get('/api/tasks/my-tasks');
+      console.log('✅ Authentication test successful');
       return true;
     } catch (error) {
-      console.error('❌ Authentication test failed');
+      console.error('❌ Authentication test failed:', error);
       return false;
     }
   }

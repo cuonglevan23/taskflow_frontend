@@ -6,6 +6,7 @@ import { TaskListHeader } from '@/components/TaskList';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { DynamicProjectProvider } from './components/DynamicProjectProvider';
+import { ProjectTasksProvider } from './context/ProjectTasksProvider';
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
@@ -92,9 +93,11 @@ export default function ProjectLayout({ children }: ProjectLayoutProps) {
   return (
     <PageLayout>
       <DynamicProjectProvider>
-        <ProjectContent>
-          {children}
-        </ProjectContent>
+        <ProjectTasksProvider>
+          <ProjectContent>
+            {children}
+          </ProjectContent>
+        </ProjectTasksProvider>
       </DynamicProjectProvider>
     </PageLayout>
   );
