@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
 type RouteParams = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const teamId = params.id;
+    const { id: teamId } = await params;
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/teams/${teamId}`;
 
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const teamId = params.id;
+    const { id: teamId } = await params;
     const body = await request.json();
     
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const teamId = params.id;
+    const { id: teamId } = await params;
     
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/teams/${teamId}`;

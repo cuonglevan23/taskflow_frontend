@@ -8,15 +8,18 @@ export interface BackendTask {
   status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   deadline?: string; // LocalDate format: YYYY-MM-DD (optional)
+  startDate?: string; // LocalDate format: YYYY-MM-DD
   start_date?: string; // LocalDate format: YYYY-MM-DD (backend uses snake_case)
-  startDate?: string; // LocalDate format: YYYY-MM-DD (legacy camelCase support)
+  comment?: string; // Task comment field
+  urlFile?: string; // File URL
   createdAt: string; // Only for creation timestamp
   updatedAt: string;
   groupId?: number;
   projectId?: number;
   creatorId: number;
   assignedToIds?: number[];
-  // checklists?: ChecklistItem[];
+  assignedToEmails?: string[];
+  checklists?: unknown[];
 }
 
 // New My Tasks Response interfaces

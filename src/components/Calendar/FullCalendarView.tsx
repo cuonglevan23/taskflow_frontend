@@ -4,8 +4,10 @@ import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import type { EventClickArg } from "@fullcalendar/core";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import type { Task } from "@/types";
+import Avatar from '@/components/ui/Avatar/Avatar';
 
 interface CalendarEvent {
   id: string;
@@ -29,17 +31,15 @@ interface CalendarEvent {
 
 export interface FullCalendarViewProps {
   tasks: Task[];
-  onEventClick: (task: Task) => void;
-  onDateClick: (dateStr: string) => void;
-  onEventDrop?: (taskId: string, newDate: string) => void;
-  onEventResize?: (taskId: string, newStartDate: string, newEndDate: string) => void;
+  onEventClick: (task: Task) => void; // For viewing task details
+  onDateClick: (dateStr: string) => void; // For viewing date's tasks
   height?: string;
   className?: string;
   key?: string | number; // Simple trigger for re-render when layout changes
 }
 
 // Convert tasks to FullCalendar events
-const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => any): CalendarEvent[] => {
+const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => { backgroundColor: string; borderColor: string }): CalendarEvent[] => {
   if (!tasks || !Array.isArray(tasks)) {
     return [];
   }
@@ -148,8 +148,6 @@ export const FullCalendarView = ({
   tasks,
   onEventClick,
   onDateClick,
-  onEventDrop,
-  onEventResize,
   height = "100%",
   className = ""
 }: FullCalendarViewProps) => {
@@ -219,9 +217,11 @@ export const FullCalendarView = ({
     window.addEventListener('resize', handleResize);
     // Also trigger on any layout changes
     const observer = new ResizeObserver(handleResize);
-    const calendarElement = calendarRef.current?.elRef?.current;
-    if (calendarElement) {
-      observer.observe(calendarElement.parentElement || calendarElement);
+    if (calendarRef.current) {
+      const element = (calendarRef.current as unknown as { el: HTMLElement }).el;
+      if (element) {
+        observer.observe(element.parentElement || element);
+      }
     }
 
     return () => {
@@ -231,20 +231,22 @@ export const FullCalendarView = ({
   }, []);
 
   // Event handlers
-  const handleEventClick = useCallback((info: any) => {
+  const handleEventClick = useCallback((info: EventClickArg) => {
     const originalTask = info.event.extendedProps.originalTask;
     if (originalTask) {
       onEventClick(originalTask);
     }
   }, [onEventClick]);
 
-  const handleDateClick = useCallback((info: any) => {
+  const lastClickTime = useRef<number>(0);
+  
+  const handleDateClick = useCallback((info: { date: Date; dateStr: string }) => {
     // ✅ FIX: Prevent duplicate clicks with debouncing
     const now = Date.now();
-    if (handleDateClick.lastClickTime && now - handleDateClick.lastClickTime < 1000) {
+    if (lastClickTime.current && now - lastClickTime.current < 1000) {
       return;
     }
-    handleDateClick.lastClickTime = now;
+    lastClickTime.current = now;
     
     const clickedDate = info.date || new Date(info.dateStr);
     const year = clickedDate.getFullYear();
@@ -255,65 +257,60 @@ export const FullCalendarView = ({
     onDateClick(localDateStr);
   }, [onDateClick]);
 
-  const handleEventDrop = useCallback((info: any) => {
-    const taskId = info.event.id;
-    const newStart = info.event.start;
-    const newEnd = info.event.end;
-
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const startDateStr = formatDate(newStart);
-
-    // If task has end date (multi-day), preserve the duration
-    if (newEnd) {
-      // FullCalendar end is exclusive, so subtract 1 day for actual end date
-      const actualEndDate = new Date(newEnd);
-      actualEndDate.setDate(actualEndDate.getDate() - 1);
-      const endDateStr = formatDate(actualEndDate);
-
-
-
-      // Use resize handler for multi-day tasks to preserve both start and end
-      onEventResize?.(taskId, startDateStr, endDateStr);
-    } else {
-      // Single day task - use original drop handler
-
-      onEventDrop?.(taskId, startDateStr);
-    }
-  }, [onEventDrop, onEventResize]);
-
-  const handleEventResize = useCallback((info: any) => {
-    const taskId = info.event.id;
-    const newStart = info.event.start;
-    const newEnd = info.event.end;
+  // Custom event content renderer to show avatars
+  const renderEventContent = useCallback((eventInfo: { event: { title: string; extendedProps?: { originalTask?: unknown } } }) => {
+    const task = eventInfo.event.extendedProps?.originalTask as {
+      assignees?: { id: string; name: string }[];
+      assignedEmails?: string[];
+    } | undefined;
     
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    
-    const startDateStr = formatDate(newStart);
-    // FullCalendar end is exclusive, so subtract 1 day for actual end date
-    const actualEndDate = new Date(newEnd);
-    actualEndDate.setDate(actualEndDate.getDate() - 1);
-    const endDateStr = formatDate(actualEndDate);
-    
-    console.log('🔧 Event resized:', { 
-      taskId, 
-      newStart: startDateStr, 
-      newEnd: endDateStr,
-      rawEnd: formatDate(newEnd)
-    });
-    
-    onEventResize?.(taskId, startDateStr, endDateStr);
-  }, [onEventResize]);
+    if (!task) return null;
+
+    const assignedEmails = task.assignedEmails || [];
+    const assignees = task.assignees || [];
+    const totalAssignees = assignees.length + assignedEmails.length;
+
+    return (
+      <div className="flex items-center justify-between w-full px-1 py-0.5">
+        <span className="text-xs font-medium truncate flex-1 mr-1">
+          {eventInfo.event.title}
+        </span>
+        
+        {totalAssignees > 0 && (
+          <div className="flex items-center -space-x-1 flex-shrink-0">
+            {/* Show first 2 assignees */}
+            {assignees.slice(0, 2).map((assignee, index: number) => (
+              <Avatar
+                key={assignee.id || index}
+                name={assignee.name}
+                size="sm"
+                className="w-4 h-4 border border-white"
+              />
+            ))}
+            
+            {/* Show first 2 email assignees */}
+            {assignedEmails.slice(0, Math.max(0, 2 - assignees.length)).map((email: string) => (
+              <Avatar
+                key={email}
+                name={email}
+                size="sm"
+                className="w-4 h-4 border border-white"
+              />
+            ))}
+            
+            {/* Show count if more than 2 total */}
+            {totalAssignees > 2 && (
+              <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                +{totalAssignees - 2}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }, []);
+
+  // Removed event handlers for drag, drop, and resize since calendar is read-only
 
   return (
     <div className={`w-full transition-all duration-300 ${className}`} style={{ height }}>
@@ -329,19 +326,20 @@ export const FullCalendarView = ({
         height="100%"
         events={calendarEvents}
         
-        // Drag & Drop & Resize Settings
-        editable={true}
-        droppable={true}
-        selectable={true}
-        selectMirror={true}
-        eventResizableFromStart={true}  // Allow resize from both start and end
-        eventDurationEditable={true}
+        // Calendar Interaction Settings
+        editable={false} // Disable drag & drop
+        droppable={false} // Disable dropping
+        selectable={false} // Disable date selection
+        selectMirror={false} // Disable selection mirror
+        eventResizableFromStart={false} // Disable resizing
+        eventDurationEditable={false} // Disable duration editing
         
         // Event Handlers
-        eventClick={handleEventClick}
-        dateClick={handleDateClick}
-        eventDrop={handleEventDrop}
-        eventResize={handleEventResize}
+        eventClick={handleEventClick} // Keep event click for viewing details
+        dateClick={handleDateClick} // Keep date click for view only
+        
+        // Custom event content with avatars
+        eventContent={renderEventContent}
         
         // Styling
         dayMaxEvents={false}

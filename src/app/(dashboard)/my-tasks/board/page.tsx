@@ -11,6 +11,10 @@ interface MyTaskBoardPageProps {
 }
 
 const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
+  // State for task detail panel
+  const [selectedTask, setSelectedTask] = React.useState<TaskListItem | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = React.useState(false);
+
   // Use shared hook for all data and actions
   const {
     taskListItems,
@@ -72,22 +76,31 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
     };
   }, [taskListItems]);
 
-  // Task management object for compatibility
-  const taskManagement = {
-    tasks: taskListItems,
-    isLoading,
-    error: error?.message || null,
-    updateTask: actions.onTaskEdit,
-    deleteTask: actions.onTaskDelete,
-    tasksByAssignmentDate,
-    selectedTask: null,
-    isPanelOpen: false,
-    closeTaskPanel: () => {},
+  // Task click handlers
+  const handleTaskClick = (task: TaskListItem) => {
+    setSelectedTask(task);
+    setIsPanelOpen(true);
+  };
+
+  const handleTaskComplete = async (task: TaskListItem) => {
+    await actions.onTaskEdit({ ...task, completed: !task.completed });
+  };
+
+  const closeTaskPanel = () => {
+    setIsPanelOpen(false);
+    setSelectedTask(null);
+  };
+
+  // Enhanced actions with task panel handlers
+  const enhancedActions = {
+    ...actions,
+    onTaskClick: handleTaskClick,
+    onTaskComplete: handleTaskComplete,
   };
 
   // Task detail panel logic
   const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
-    const task = taskManagement.tasks.find(t => t.id === taskId);
+    const task = taskListItems.find(t => t.id === taskId);
     if (task) {
       actions.onTaskEdit({ ...task, ...updates });
     }
@@ -102,9 +115,9 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
       <div className="h-full overflow-hidden">
         <KanbanBoard
           searchValue={searchValue}
-          tasks={taskManagement.tasks}
-          tasksByAssignmentDate={taskManagement.tasksByAssignmentDate}
-          actions={actions}
+          tasks={taskListItems}
+          tasksByAssignmentDate={tasksByAssignmentDate}
+          actions={enhancedActions}
           onTaskMove={(taskId: string, sectionId: string) => {
             // Move task based on section, update due date accordingly
             const today = new Date();
@@ -130,18 +143,18 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
                 break;
             }
             
-            actions.onTaskEdit({ ...taskManagement.tasks.find(t => t.id === taskId)!, ...updates });
+            actions.onTaskEdit({ ...taskListItems.find((t: TaskListItem) => t.id === taskId)!, ...updates });
           }}
-          loading={taskManagement.isLoading}
-          error={taskManagement.error}
+          loading={isLoading}
+          error={error?.message || null}
         />
       </div>
 
       {/* Task Detail Panel */}
       <TaskDetailPanel
-        task={taskManagement.selectedTask}
-        isOpen={taskManagement.isPanelOpen}
-        onClose={taskManagement.closeTaskPanel}
+        task={selectedTask}
+        isOpen={isPanelOpen}
+        onClose={closeTaskPanel}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
       />

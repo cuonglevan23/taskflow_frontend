@@ -4,10 +4,7 @@ import React from 'react';
 import { KanbanBoard } from '@/components/features/KanbanBoard';
 import { TaskDetailPanel } from '@/components/TaskDetailPanel';
 import { useProject } from '../components/DynamicProjectProvider';
-import { 
-  useProjectTasksByProject, 
-  useProjectTaskActions 
-} from '@/hooks/tasks/useProjectTasks';
+import { useProjectTasksContext } from '../context/ProjectTasksProvider';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import type { 
   ProjectTaskResponseDto,
@@ -23,22 +20,18 @@ function ProjectBoardContent({ searchValue = "" }: ProjectBoardPageProps) {
   const { project } = useProject();
   const projectId = project?.id ? Number(project.id) : null;
   
-  // Use API hooks instead of context
+  // Use shared context instead of individual hooks
   const { 
     tasks: projectTasks, 
     loading, 
     error,
-    revalidate 
-  } = useProjectTasksByProject(projectId || 0, 0, 100);
-  
-  const {
     createTask,
     updateTask,
     deleteTask,
     updateTaskStatus,
     assignTask,
     loading: actionLoading
-  } = useProjectTaskActions();
+  } = useProjectTasksContext();
   
   // Local state for task detail panel
   const [selectedTask, setSelectedTask] = React.useState<any>(null);
@@ -150,7 +143,6 @@ function ProjectBoardContent({ searchValue = "" }: ProjectBoardPageProps) {
         };
         
         await createTask(createTaskRequest);
-        revalidate();
       } catch (error) {
         console.error('Failed to create task:', error);
       }

@@ -20,7 +20,7 @@ export async function GET(
     const queryString = searchParams.toString();
     const backendUrl = `${BACKEND_URL}/api/project-tasks/project/${projectId}${queryString ? `?${queryString}` : ''}`;
 
-    console.log('📋 Fetching tasks for project:', projectId);
+
 
     const response = await fetch(backendUrl, {
       method: 'GET',
@@ -40,7 +40,7 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('✅ Project tasks fetched for project:', projectId, '- Count:', data.content?.length || 0);
+
     
     return NextResponse.json(data);
   } catch (error: any) {

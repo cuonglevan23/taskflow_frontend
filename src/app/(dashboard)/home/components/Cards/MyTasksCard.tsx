@@ -5,6 +5,7 @@ import { useTheme } from "@/layouts/hooks/useTheme";
 import { useUser } from "@/contexts/UserContext";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
+import Avatar from "@/components/ui/Avatar/Avatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
@@ -287,6 +288,38 @@ const MyTasksCard = () => {
           </span>
 
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Avatar display for assignees */}
+            {((task as any).assignees?.length > 0 || (task as any).assignedEmails?.length > 0) && (
+              <div className="flex items-center -space-x-1">
+                {/* Show assignees */}
+                {((task as any).assignees || []).slice(0, 2).map((assignee: any, index: number) => (
+                  <Avatar
+                    key={assignee.id || index}
+                    name={assignee.name}
+                    size="sm"
+                    className="w-5 h-5 border border-white"
+                  />
+                ))}
+                
+                {/* Show assigned emails */}
+                {((task as any).assignedEmails || []).slice(0, Math.max(0, 2 - ((task as any).assignees?.length || 0))).map((email: string) => (
+                  <Avatar
+                    key={email}
+                    name={email}
+                    size="sm"
+                    className="w-5 h-5 border border-white"
+                  />
+                ))}
+                
+                {/* Show count if more than 2 total */}
+                {(((task as any).assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) > 2 && (
+                  <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                    +{(((task as any).assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) - 2}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Creator Info */}
             {task.creatorName && (
               <span 

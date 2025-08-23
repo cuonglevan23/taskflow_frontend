@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import { BucketTaskList, TaskListItem, TaskActionTime, type TaskBucket } from "@/components/TaskList";
+import { BucketTaskList, TaskListItem, TaskActionTime, type TaskBucket, type TaskPriority, type TaskStatus } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useMyTasksSummary } from "@/hooks/tasks";
 import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/tasks/useTasksActions";
@@ -26,6 +26,15 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   // Get notification actions
   const { actions: notificationActions } = useNotifications();
   
+  // Clean SWR action hooks - Next.js 15 compliant (moved before early return)
+  const { createTask, isCreating } = useCreateTask();
+  const { updateTask, isUpdating } = useUpdateTask();
+  const { deleteTask, isDeleting } = useDeleteTask();
+  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
+
+  // Action time management hook
+  const { moveTaskToActionTime } = useTaskActionTime();
+  
   // Use modern SWR hooks for data fetching - with error handling
   const {
     tasks,
@@ -34,8 +43,8 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     revalidate
   } = useMyTasksSummary({
     page: 0,
-    size: 1000,
-    sortBy: 'startDate',
+    size: 10,
+    sortBy: 'createdAt',
     sortDir: 'desc'
   });
 
@@ -43,15 +52,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   if (error && (error.status === 401 || error.message?.includes('401'))) {
     return null;
   }
-
-  // Clean SWR action hooks - Next.js 15 compliant
-  const { createTask, isCreating } = useCreateTask();
-  const { updateTask, isUpdating } = useUpdateTask();
-  const { deleteTask, isDeleting } = useDeleteTask();
-  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
-
-  // Action time management hook
-  const { moveTaskToActionTime } = useTaskActionTime();
 
   // Helper function for notifications
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -204,36 +204,41 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   // Convert tasks to TaskListItem format - Clean and simple
   const taskListItems = useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return [];
-    const mappedTasks = tasks.map(task => {
-      const mappedTask = {
-        id: task.id.toString(),
-        name: task.title,
-        description: task.description,
-        assignees: task.creatorName ? [{
-          id: 'creator',
-          name: task.creatorName,
-          avatar: task.creatorName.split(' ').map(n => n[0]).join('').toUpperCase()
-        }] : [],
-        dueDate: task.dueDate !== 'No due date' ? task.dueDate : undefined,
-        startDate: task.startDate ? task.startDate.toISOString().split('T')[0] : undefined,
-        endDate: task.endDate ? task.endDate.toISOString().split('T')[0] : undefined,
-        deadline: task.dueDateISO ? task.dueDateISO.toISOString().split('T')[0] : (task.dueDate !== 'No due date' ? task.dueDate : undefined),
-        priority: task.priority,
-        status: task.status,
-        completed: task.completed || task.status === 'completed' || task.status === 'DONE',
-        tags: task.tags || [],
-        project: task.tagText || undefined,
-        createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
-        updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
-      };
-      
-
-      
-      return mappedTask;
-    });
     
+    const mappedTasks = tasks
+      .filter(task => task && task.id) // Filter out invalid tasks
+      .map((task, index) => {
+        const taskId = task.id?.toString() || `fallback-${index}`;
+        const mappedTask = {
+          id: taskId,
+          name: task.title,
+          description: task.description,
+          assignees: task.creatorName ? [{
+            id: 'creator',
+            name: task.creatorName,
+            avatar: task.creatorName.split(' ').map(n => n[0]).join('').toUpperCase()
+          }] : [],
+          dueDate: task.dueDate !== 'No due date' ? task.dueDate : undefined,
+          startDate: task.startDate ? task.startDate.toISOString().split('T')[0] : undefined,
+          endDate: task.endDate ? task.endDate.toISOString().split('T')[0] : undefined,
+          deadline: task.dueDateISO ? task.dueDateISO.toISOString().split('T')[0] : (task.dueDate !== 'No due date' ? task.dueDate : undefined),
+          priority: (task.priority?.toUpperCase() as TaskPriority) || 'MEDIUM',
+          status: (task.status?.toUpperCase() as TaskStatus) || 'TODO',
+          completed: task.completed || task.status === 'completed' || task.status === 'DONE',
+          tags: task.tags || [],
+          project: task.tagText || undefined,
+          createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
+          updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
+        };
+        return mappedTask;
+      });
 
-    return mappedTasks;
+    // Remove any duplicate IDs
+    const uniqueTasks = mappedTasks.filter((task, index, array) => 
+      array.findIndex(t => t.id === task.id) === index
+    );
+
+    return uniqueTasks;
   }, [tasks]);
 
   // Business Logic: Bucket configuration for My Tasks page
@@ -276,11 +281,11 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     taskListItems.forEach(task => {
       let bucketId = 'do-later'; // default
       
-      if (task.status === 'TODO' || task.status === 'todo') {
+      if (task.status === 'TODO') {
         bucketId = 'do-today';
-      } else if (task.status === 'IN_PROGRESS' || task.status === 'in-progress') {
+      } else if (task.status === 'IN_PROGRESS') {
         bucketId = 'do-today';
-      } else if (task.status === 'DONE' || task.status === 'completed') {
+      } else if (task.status === 'DONE') {
         bucketId = 'do-later';
       }
       
@@ -374,9 +379,9 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     closeTaskPanel: handleClosePanel,
     stats: {
       total: taskListItems.length,
-      completed: taskListItems.filter(t => t.completed || t.status === 'DONE' || t.status === 'completed').length,
-      inProgress: taskListItems.filter(t => t.status === 'IN_PROGRESS' || t.status === 'in-progress').length,
-      todo: taskListItems.filter(t => t.status === 'TODO' || t.status === 'todo' || t.status === 'pending').length,
+      completed: taskListItems.filter(t => t.completed || t.status === 'DONE').length,
+      inProgress: taskListItems.filter(t => t.status === 'IN_PROGRESS').length,
+      todo: taskListItems.filter(t => t.status === 'TODO').length,
     }
   }), [
     taskListItems,

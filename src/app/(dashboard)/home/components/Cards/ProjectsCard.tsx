@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import BaseCard, { type ActionButtonConfig } from "@/components/ui/BaseCard";
 import { FaPlus } from "react-icons/fa";
@@ -12,13 +13,28 @@ import type { ProjectResponseDto } from "@/types/projects";
 // Professional ProjectsCard using BaseCard & Real SWR API Integration
 const ProjectsCard = () => {
   const { theme } = useTheme();
+  const router = useRouter();
 
-  // Use cached global data - no API calls
-  const { data: projectsData, isLoading: loading, error } = useMyProjects();
+  // Use SWR hook with revalidation settings
+  const { data: projectsData, isLoading: loading, error, mutate } = useMyProjects();
   
   // Local state for show more functionality
   const [showAllProjects, setShowAllProjects] = React.useState(false);
   const initialLimit = 4;
+  
+  // Revalidate data on mount and when component becomes visible
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        mutate();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [mutate]);
 
   // Extract projects array with null safety
   const projects = React.useMemo(() => {
@@ -43,9 +59,14 @@ const ProjectsCard = () => {
   const ProjectItem = ({ project }: { project: ProjectResponseDto }) => {
     const IconComponent = GrProjects; // Use default icon for API projects
 
+    const handleProjectClick = () => {
+      router.push(`/projects/${project.id}`);
+    };
+
     return (
       <div
         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105"
+        onClick={handleProjectClick}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.background.secondary;
         }}
@@ -78,9 +99,14 @@ const ProjectsCard = () => {
   const FeaturedProject = ({ project }: { project: ProjectResponseDto }) => {
     const IconComponent = GrProjects; // Use default icon for API projects
 
+    const handleFeaturedProjectClick = () => {
+      router.push(`/projects/${project.id}`);
+    };
+
     return (
       <div
         className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105"
+        onClick={handleFeaturedProjectClick}
         style={{
           backgroundColor: '#8b5cf620', // 20% opacity purple
           border: '1px solid #8b5cf640' // 40% opacity purple border

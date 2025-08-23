@@ -4,10 +4,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ProjectTaskListLayout } from '@/components/TaskList/ProjectTaskList';
 import { TaskListItem } from '@/components/TaskList';
 import { useProject } from '../components/DynamicProjectProvider';
-import { 
-  useProjectTasksByProject, 
-  useProjectTaskActions 
-} from '@/hooks/tasks/useProjectTasks';
+import { useProjectTasksContext } from '../context/ProjectTasksProvider';
 import type { 
   ProjectTaskResponseDto,
   CreateProjectTaskRequest 
@@ -21,21 +18,18 @@ function ProjectTaskListContent({ searchValue = "" }: ProjectListPageProps) {
   const { project } = useProject();
   const projectId = project?.id ? Number(project.id) : null;
   
-  // Use API hooks instead of context
+  // Use shared context instead of individual hooks
   const { 
     tasks: projectTasks, 
     loading, 
-    error
-  } = useProjectTasksByProject(projectId || 0, 0, 100);
-  
-  const {
+    error,
     createTask,
     updateTask,
     deleteTask,
     updateTaskStatus,
     assignTask,
     loading: actionLoading
-  } = useProjectTaskActions();
+  } = useProjectTasksContext();
 
   // Local state for search
   const [searchInput, setSearchInput] = useState(searchValue);

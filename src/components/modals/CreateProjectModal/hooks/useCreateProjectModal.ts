@@ -8,9 +8,10 @@ import { PRIVACY_OPTIONS, TOTAL_STEPS } from '../constants';
 interface UseCreateProjectModalProps {
     onClose: () => void;
     onCreateProject?: (data: ProjectFormData) => void;
+    teamId?: number; // Auto-assign project to specific team
 }
 
-export function useCreateProjectModal({ onClose, onCreateProject }: UseCreateProjectModalProps) {
+export function useCreateProjectModal({ onClose, onCreateProject, teamId }: UseCreateProjectModalProps) {
     // Optimistic mutation for creating project with instant UI updates
     const { trigger: createProject, isMutating: isCreating } = useCreateProject();
     const { data: session } = useSession();
@@ -20,7 +21,10 @@ export function useCreateProjectModal({ onClose, onCreateProject }: UseCreatePro
 
     // Form data
     const [projectName, setProjectName] = React.useState("");
-    const [selectedPrivacy, setSelectedPrivacy] = React.useState<PrivacyOption>(PRIVACY_OPTIONS[0]);
+    // Auto-select team privacy if teamId is provided, otherwise default to personal
+    const [selectedPrivacy, setSelectedPrivacy] = React.useState<PrivacyOption>(
+        teamId ? { ...PRIVACY_OPTIONS[1], teamId } : PRIVACY_OPTIONS[0]
+    );
     const [startDate, setStartDate] = React.useState("");
     const [endDate, setEndDate] = React.useState("");
     

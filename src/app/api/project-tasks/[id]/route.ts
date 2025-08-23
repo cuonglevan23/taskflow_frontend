@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const { id: taskId } = await params;
-    console.log('📋 Fetching project task:', taskId);
+
 
     const response = await fetch(`${BACKEND_URL}/api/project-tasks/${taskId}`, {
       method: 'GET',
@@ -34,7 +34,7 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('✅ Project task fetched:', data);
+
     
     return NextResponse.json(data);
   } catch (error: any) {
@@ -58,7 +58,7 @@ export async function PUT(
 
     const { id: taskId } = await params;
     const body = await request.json();
-    console.log('🔄 Updating project task:', taskId, body);
+
 
     const response = await fetch(`${BACKEND_URL}/api/project-tasks/${taskId}`, {
       method: 'PUT',
@@ -79,7 +79,7 @@ export async function PUT(
     }
 
     const data = await response.json();
-    console.log('✅ Project task updated:', data);
+
     
     return NextResponse.json(data);
   } catch (error: any) {

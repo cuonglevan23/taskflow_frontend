@@ -17,16 +17,20 @@ import type {
 
 // Transform backend response to frontend type
 const transformTeamResponse = (backendTeam: TeamResponseDto): Team => {
+  if (!backendTeam) {
+    throw new Error('Team data is required');
+  }
+  
   return {
     id: backendTeam.id,
-    name: backendTeam.name,
-    description: backendTeam.description,
+    name: backendTeam.name || 'Unnamed Team',
+    description: backendTeam.description || '',
     leaderId: backendTeam.leaderId,
     createdById: backendTeam.createdById,
-    isDefaultWorkspace: backendTeam.isDefaultWorkspace,
+    isDefaultWorkspace: backendTeam.isDefaultWorkspace || false,
     organizationId: backendTeam.organizationId,
-    createdAt: new Date(backendTeam.createdAt),
-    updatedAt: new Date(backendTeam.updatedAt),
+    createdAt: backendTeam.createdAt ? new Date(backendTeam.createdAt) : new Date(),
+    updatedAt: backendTeam.updatedAt ? new Date(backendTeam.updatedAt) : new Date(),
   };
 };
 
@@ -118,17 +122,21 @@ export const teamsService = {
       const response = await api.post('/api/teams', requestData);
       
       // Transform response - backend handles user IDs automatically
-      const teamData = response.data;
+      const teamData = response.data as TeamResponseDto;
+      if (!teamData || typeof teamData !== 'object') {
+        throw new Error('Invalid team data received from server');
+      }
+      
       const newTeam: Team = {
         id: teamData.id,
-        name: teamData.name,
+        name: teamData.name || 'Unnamed Team',
         description: teamData.description || '',
         leaderId: teamData.leaderId,
         createdById: teamData.createdById,
         isDefaultWorkspace: teamData.isDefaultWorkspace || false,
         organizationId: teamData.organizationId || null,
-        createdAt: new Date(teamData.createdAt || new Date()),
-        updatedAt: new Date(teamData.updatedAt || new Date()),
+        createdAt: teamData.createdAt ? new Date(teamData.createdAt) : new Date(),
+        updatedAt: teamData.updatedAt ? new Date(teamData.updatedAt) : new Date(),
       };
       
       // If member emails provided, invite them after team creation
@@ -153,14 +161,15 @@ export const teamsService = {
   // Update team
   updateTeam: async (id: number, formData: UpdateTeamFormData): Promise<Team> => {
     try {
-
-      
       const requestData: UpdateTeamRequestDto = {
         name: formData.name?.trim(),
         description: formData.description?.trim(),
       };
 
-      const response = await api.put(`/api/teams/${id}`, requestData);
+      const response = await api.put<TeamResponseDto>(`/api/teams/${id}`, requestData);
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid team data received from server');
+      }
       return transformTeamResponse(response.data);
     } catch (error) {
       console.error('❌ Failed to update team:', error);
@@ -221,13 +230,42 @@ export const teamsService = {
   // Get team members
   getTeamMembers: async (teamId: number): Promise<TeamMember[]> => {
     try {
-
+      console.log(`Fetching members for team ${teamId}...`);
       const response = await api.get(`/api/teams/${teamId}/members`);
-
-      return response.data;
+      console.log('API Response:', response);
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        console.error('Invalid response format from API:', response);
+        return [];
+      }
+      
+      // Transform the API response to match the TeamMember type
+      return response.data.map((member: any) => {
+        // Combine firstName and lastName if available, otherwise use a default name
+        const name = member.firstName && member.lastName 
+          ? `${member.firstName} ${member.lastName}`.trim()
+          : member.name || `User ${member.userId || member.id}`;
+          
+        return {
+          id: member.id,
+          userId: member.userId,
+          name: name,
+          email: member.email || `user${member.userId || member.id}@example.com`,
+          // Default to MEMBER if role is not provided
+          role: (member.role || 'MEMBER').toUpperCase(),
+          // Default to ACTIVE if status is not provided
+          status: (member.status || 'ACTIVE').toUpperCase(),
+          joinedAt: member.joinedAt || new Date().toISOString(),
+          department: member.department || 'Not specified',
+          aboutMe: member.aboutMe || '',
+          // Include additional fields that might be useful
+          jobTitle: member.jobTitle || '',
+          avatar: member.avatarUrl || ''
+        };
+      });
     } catch (error) {
       console.error('❌ Failed to fetch team members:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -251,8 +289,10 @@ export const teamsService = {
       const response = await api.get(`/api/users/${userId}/teams`);
 
       return response.data;
-    } catch (error) {
-      if (error.response?.status === 403) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 
+          'status' in error.response && error.response.status === 403) {
         throw new Error('Access denied: You can only view your own teams or need OWNER/ADMIN role');
       }
       console.error('❌ Failed to fetch user teams:', error);
@@ -267,8 +307,10 @@ export const teamsService = {
       const response = await api.get(`/api/users/${userId}/teams/created`);
 
       return response.data;
-    } catch (error) {
-      if (error.response?.status === 403) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 
+          'status' in error.response && error.response.status === 403) {
         throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
       }
       console.error('❌ Failed to fetch user created teams:', error);
@@ -283,7 +325,7 @@ export const teamsService = {
     try {
       const { teams } = await teamsService.getTeams({ search: query, size: 50 });
       return teams;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Failed to search teams:', error);
       throw error;
     }

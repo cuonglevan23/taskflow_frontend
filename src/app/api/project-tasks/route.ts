@@ -15,18 +15,14 @@ export async function GET(request: NextRequest) {
     const queryString = searchParams.toString();
     const backendUrl = `${BACKEND_URL}/api/project-tasks${queryString ? `?${queryString}` : ''}`;
 
-    console.log('🔄 Proxying GET request to backend:', backendUrl);
-
     const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.user.accessToken}`,
-        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      console.error('❌ Backend error:', response.status, response.statusText);
       const errorData = await response.text();
       return NextResponse.json(
         { error: `Backend error: ${response.statusText}`, details: errorData },
@@ -35,11 +31,9 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ Project tasks fetched:', data.content?.length || 0, 'tasks');
     
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Project tasks GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch project tasks', details: error.message },
       { status: 500 }
@@ -55,7 +49,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('🚀 Creating project task:', body);
 
     const response = await fetch(`${BACKEND_URL}/api/project-tasks`, {
       method: 'POST',
@@ -67,7 +60,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error('❌ Backend error:', response.status, response.statusText);
       const errorData = await response.text();
       return NextResponse.json(
         { error: `Backend error: ${response.statusText}`, details: errorData },
@@ -76,11 +68,9 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ Project task created:', data);
     
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Project task creation error:', error);
     return NextResponse.json(
       { error: 'Failed to create project task', details: error.message },
       { status: 500 }

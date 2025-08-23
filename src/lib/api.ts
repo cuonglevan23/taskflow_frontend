@@ -57,6 +57,7 @@ class ApiClient {
         if (token && config.headers) {
           // Add Bearer token to Authorization header
           config.headers['Authorization'] = `Bearer ${token}`;
+          console.log('✅ Adding Authorization header:', token.substring(0, 20) + '...');
           
           // Add user context headers for backend compatibility
           const payload = CookieAuth.getTokenPayload();
@@ -72,6 +73,8 @@ class ApiClient {
               );
             }
           }
+        } else {
+          console.warn('⚠️ No access token found - request will be unauthorized');
         }
         
         return config;
@@ -205,9 +208,7 @@ class ApiClient {
   // Health check
   async healthCheck(): Promise<boolean> {
     try {
-      console.log('🏥 Performing health check...');
       const response = await this.get('/actuator/health');
-      console.log('✅ Backend is healthy:', response.status);
       return true;
     } catch (error) {
       SafeLogger.error('❌ Backend health check failed:', error);
@@ -218,7 +219,6 @@ class ApiClient {
   // Authentication test
   async testAuthentication(): Promise<boolean> {
     try {
-      console.log('🧪 Testing authentication...');
       
       const testEndpoints = [
         '/api/user/me',
@@ -230,10 +230,8 @@ class ApiClient {
       for (const endpoint of testEndpoints) {
         try {
           const response = await this.get(endpoint);
-          console.log(`✅ Authentication test successful on ${endpoint}:`, response.status);
           return true;
         } catch (error: any) {
-          console.log(`❌ Failed ${endpoint}:`, error.status);
         }
       }
       
@@ -249,7 +247,6 @@ class ApiClient {
   updateBaseURL(newBaseURL: string): void {
     this.config.baseURL = newBaseURL;
     this.instance.defaults.baseURL = newBaseURL;
-    console.log('🔧 API base URL updated to:', newBaseURL);
   }
 
   getConfig(): ApiConfig {

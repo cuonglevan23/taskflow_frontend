@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Calendar, User, Plus, ChevronDown, X, Globe } from 'lucide-react';
+import { Calendar, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar/Avatar';
-import AvatarGroup from '@/components/ui/Avatar/AvatarGroup';
 import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
 import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
+import CommentsList from './CommentsList';
 
 interface TaskDetailContentProps {
   task: TaskListItem | null;
@@ -24,8 +24,10 @@ const TaskDetailContent = ({
   setDescription,
   onSave
 }: TaskDetailContentProps) => {
-  const [showDescriptionEditor, setShowDescriptionEditor] = useState(false);
   const [activeTab, setActiveTab] = useState<'comments' | 'activity'>('comments');
+  
+  // Use the custom hook to get and update task description
+  const taskId = task?.id ? String(task.id) : null;
 
   const handleSave = () => {
     onSave();
@@ -55,20 +57,64 @@ const TaskDetailContent = ({
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-300 w-20">Assignee</span>
           <div className="flex items-center gap-2 flex-1">
-            {task?.assignees?.[0] ? (
-              <div className="flex items-center gap-2">
-                <Avatar
-                  name={task.assignees[0].name}
-                  size="sm"
-                  className="ml-12  w-6 h-6"
-                />
-                <span className="text-sm text-gray-300">{task.assignees[0].name}</span>
-                <Button variant="ghost" size="sm" className="p-0 h-auto text-gray-400">
-                  <X className="w-4 h-4" />
+            {(task?.assignees?.length > 0 || (task as any)?.assignedEmails?.length > 0) ? (
+              <div className="flex items-center gap-3 ml-12">
+                {/* Avatar Group for all assignees */}
+                <div className="flex items-center -space-x-2">
+                  {/* Show user assignees */}
+                  {task.assignees?.slice(0, 3).map((assignee, index) => (
+                    <Avatar
+                      key={assignee.id || index}
+                      name={assignee.name}
+                      size="sm"
+                      className="w-8 h-8 border-2 border-gray-700"
+                    />
+                  ))}
+                  
+                  {/* Show email assignees */}
+                  {((task as any)?.assignedEmails || []).slice(0, Math.max(0, 3 - (task.assignees?.length || 0))).map((email: string) => (
+                    <Avatar
+                      key={email}
+                      name={email}
+                      size="sm"
+                      className="w-8 h-8 border-2 border-gray-700"
+                    />
+                  ))}
+                  
+                  {/* Show count if more than 3 total */}
+                  {((task.assignees?.length || 0) + ((task as any)?.assignedEmails?.length || 0)) > 3 && (
+                    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border-2 border-gray-700">
+                      +{((task.assignees?.length || 0) + ((task as any)?.assignedEmails?.length || 0)) - 3}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Names list */}
+                <div className="flex flex-col gap-1">
+                  {task.assignees?.slice(0, 2).map((assignee, index) => (
+                    <span key={assignee.id || index} className="text-sm text-gray-300">
+                      {assignee.name}
+                    </span>
+                  ))}
+                  {((task as any)?.assignedEmails || []).slice(0, Math.max(0, 2 - (task.assignees?.length || 0))).map((email: string) => (
+                    <span key={email} className="text-sm text-gray-300">
+                      {email}
+                    </span>
+                  ))}
+                  {((task.assignees?.length || 0) + ((task as any)?.assignedEmails?.length || 0)) > 2 && (
+                    <span className="text-xs text-gray-400">
+                      +{((task.assignees?.length || 0) + ((task as any)?.assignedEmails?.length || 0)) - 2} more...
+                    </span>
+                  )}
+                </div>
+                
+                <Button variant="ghost" size="sm" className="p-0 h-auto text-gray-400 ml-auto">
+                  <Plus className="w-4 h-4" />
                 </Button>
               </div>
             ) : (
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-200 text-sm">
+              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-200 text-sm ml-12">
+                <Plus className="w-4 h-4 mr-2" />
                 Assign
               </Button>
             )}
@@ -129,26 +175,19 @@ const TaskDetailContent = ({
         </div>
       </div>
 
-      {/* Description */}
+      {/* Task Comment Field */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-gray-300">Description</label>
-
-            <div className="transition-all duration-300 ease-in-out transform pt-3">
-              <MinimalTiptap
-                  content={description}
-                  onChange={(content) => {
-                    setDescription(content);
-                    handleSave();
-                  }}
-                  placeholder="What is this task about?"
-
-              />
-            </div>
-
-
-
-
-
+        <div className="transition-all duration-300 ease-in-out transform pt-3">
+          <MinimalTiptap
+            content={description}
+            onChange={(content) => {
+              setDescription(content);
+              handleSave();
+            }}
+            placeholder="What is this task about?"
+          />
+        </div>
       </div>
 
       {/* Add Subtask */}
@@ -162,7 +201,7 @@ const TaskDetailContent = ({
       {/* Comments/Activity Section */}
       <div 
         className="space-y-6 border-t pt-6"
-        style={{ borderColor: DARK_THEME.border.color }}
+        style={{ borderColor: DARK_THEME.border.default }}
       >
         {/* Comments Tabs */}
         <div className="flex gap-6">
@@ -191,46 +230,8 @@ const TaskDetailContent = ({
         {/* Tab Content */}
         {activeTab === 'comments' && (
           <div className="space-y-4">
-            {/* Recent Comments */}
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
-                  <span className="text-gray-500 text-xs">· 2 minutes ago</span>
-                </div>
-                <div 
-                  className="text-sm text-gray-200 rounded-lg p-3 border"
-                  style={{
-                    backgroundColor: DARK_THEME.background.weakHover,
-                    borderColor: DARK_THEME.border.color
-                  }}
-                >
-                  d
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
-                  <span className="text-gray-500 text-xs">· Just now</span>
-                </div>
-                <div className="text-sm text-gray-200 bg-gray-800 rounded-lg p-3 border border-gray-600">
-                  j
-                </div>
-              </div>
-            </div>
+            {/* Comment List component */}
+            <CommentsList taskId={taskId} />
           </div>
         )}
 
@@ -259,7 +260,7 @@ const TaskDetailContent = ({
               />
               <div className="flex-1">
                 <div className="text-sm text-gray-400">
-                  <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> moved this task from "Do today" to "Recently assigned" in <span className="text-blue-400">My tasks</span> · <span className="text-gray-500">3 minutes ago</span>
+                  <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> moved this task from &quot;Do today&quot; to &quot;Recently assigned&quot; in <span className="text-blue-400">My tasks</span> · <span className="text-gray-500">3 minutes ago</span>
                 </div>
               </div>
             </div>

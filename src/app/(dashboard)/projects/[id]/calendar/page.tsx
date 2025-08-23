@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { ProjectCalendar } from '@/components/Calendar';
 import { TaskListItem } from '@/components/TaskList';
-import { useProjectTasks, useCreateProjectTask, useUpdateProjectTask, useDeleteProjectTask } from '@/hooks/tasks/useProjectTasks';
+import { useProjectTasksContext } from '../context/ProjectTasksProvider';
 import { useProject } from '../components/DynamicProjectProvider';
 import { useTheme } from '@/layouts/hooks/useTheme';
 
@@ -16,17 +16,15 @@ function ProjectCalendarContent({ searchValue = "" }: ProjectCalendarPageProps) 
   const { project } = useProject();
   const projectId = project?.id;
   
-  // Use real API data
+  // Use shared context instead of individual hooks
   const {
     tasks: projectTasks,
     loading,
-    error
-  } = useProjectTasks({ projectId: projectId, page: 0, size: 100 });
-
-  // Import mutations from separate hooks
-  const { trigger: createTask } = useCreateProjectTask();
-  const { trigger: updateTask } = useUpdateProjectTask(); 
-  const { trigger: deleteTask } = useDeleteProjectTask();
+    error,
+    createTask,
+    updateTask,
+    deleteTask
+  } = useProjectTasksContext();
 
   // Convert API project tasks to calendar format
   const calendarTasks = useMemo(() => {
@@ -156,7 +154,7 @@ function ProjectCalendarContent({ searchValue = "" }: ProjectCalendarPageProps) 
 
   const handleTaskSave = useCallback(async (taskId: string, updates: Partial<TaskListItem>) => {
     try {
-      await updateTask?.(taskId, updates);
+      await updateTask(Number(taskId), updates);
       console.log('Project calendar task saved:', { taskId, updates });
     } catch (error) {
       console.error('Failed to save project calendar task:', error);
@@ -165,7 +163,7 @@ function ProjectCalendarContent({ searchValue = "" }: ProjectCalendarPageProps) 
 
   const handleTaskDelete = useCallback(async (taskId: string) => {
     try {
-      await deleteTask?.(taskId);
+      await deleteTask(Number(taskId));
       console.log('Project calendar task deleted:', taskId);
     } catch (error) {
       console.error('Failed to delete project calendar task:', error);

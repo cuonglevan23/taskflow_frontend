@@ -17,8 +17,8 @@ export function SWRProvider({ children }: SWRProviderProps) {
         revalidateOnReconnect: false,       // Disable reconnect revalidation
         revalidateIfStale: false,           // Disable stale revalidation
         
-        // Deduplication settings - Optimized for better cache sharing
-        dedupingInterval: 60000,            // 60 seconds global deduping for better cache reuse
+        // Deduplication settings - Aggressive caching for team data
+        dedupingInterval: 300000,           // 5 minutes global deduping for team data persistence
         
         // Error handling
         errorRetryCount: 2,

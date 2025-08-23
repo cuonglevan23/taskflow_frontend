@@ -27,7 +27,6 @@ export class CookieAuth {
     ];
     
     document.cookie = cookieOptions.join('; ');
-    console.log(`🍪 Set cookie: ${name}`);
   }
   
   // Get cookie value
@@ -55,7 +54,6 @@ export class CookieAuth {
     if (typeof window === 'undefined') return;
     
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
-    console.log(`🗑️ Deleted cookie: ${name}`);
   }
   
   // Access Token Management
@@ -122,7 +120,6 @@ export class CookieAuth {
   
   // Clear all authentication data
   static clearAuth(): void {
-    console.log('🧹 Clearing all authentication cookies...');
     
     const authCookies = [
       this.ACCESS_TOKEN_KEY,
@@ -190,24 +187,8 @@ export class CookieAuth {
     const userInfo = this.getUserInfo();
     const payload = this.getTokenPayload();
     
-    console.log('📋 Authentication Status:');
-    console.log('  Access Token:', token ? `Present (${token.length} chars)` : 'Missing');
-    console.log('  Refresh Token:', this.getRefreshToken() ? 'Present' : 'Missing');
-    console.log('  Is Authenticated:', this.isAuthenticated());
-    
-    console.log('👤 User Info:');
-    console.log('  ID:', userInfo.id);
-    console.log('  Email:', userInfo.email);
-    console.log('  Role:', userInfo.role);
-    console.log('  Name:', userInfo.name);
     
     if (payload) {
-      console.log('🔍 Token Payload:');
-      console.log('  User ID:', payload.userId);
-      console.log('  Email:', payload.email);
-      console.log('  Roles:', payload.roles);
-      console.log('  Expires:', new Date(payload.exp * 1000).toLocaleString());
-      console.log('  Is Expired:', payload.exp * 1000 < Date.now());
     }
     
     console.groupEnd();

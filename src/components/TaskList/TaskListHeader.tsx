@@ -90,37 +90,37 @@ const TaskListHeader = ({
           >
             <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
               <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Status</div>
-              <DropdownItem onClick={() => console.log('Filter by To Do')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 To Do
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by In Progress')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 In Progress
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by Review')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Review
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by Done')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Done
               </DropdownItem>
               <DropdownSeparator />
               <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Priority</div>
-              <DropdownItem onClick={() => console.log('Filter by Low')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Low
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by Medium')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Medium
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by High')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 High
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Filter by Urgent')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Urgent
               </DropdownItem>
@@ -154,26 +154,26 @@ const TaskListHeader = ({
             placement="bottom-right"
           >
             <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => console.log('Sort by Name')}>
+              <DropdownItem onClick={() => {}}>
                 Name
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Sort by Due Date')}>
+              <DropdownItem onClick={() => {}}>
                 Due Date
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Sort by Priority')}>
+              <DropdownItem onClick={() => {}}>
                 Priority
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Sort by Status')}>
+              <DropdownItem onClick={() => {}}>
                 Status
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Sort by Created Date')}>
+              <DropdownItem onClick={() => {}}>
                 Created Date
               </DropdownItem>
               <DropdownSeparator />
-              <DropdownItem onClick={() => console.log('Sort Ascending')}>
+              <DropdownItem onClick={() => {}}>
                 Ascending
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Sort Descending')}>
+              <DropdownItem onClick={() => {}}>
                 Descending
               </DropdownItem>
             </div>
@@ -206,28 +206,28 @@ const TaskListHeader = ({
             placement="bottom-right"
           >
             <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => console.log('Group by Status')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-blue-600" />
                 Status
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Group by Priority')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Priority
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Group by Assignment Date')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Assignment Date
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Group by Project')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Project
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Group by Assignee')}>
+              <DropdownItem onClick={() => {}}>
                 <Check className="w-4 h-4 text-transparent" />
                 Assignee
               </DropdownItem>
               <DropdownSeparator />
-              <DropdownItem onClick={() => console.log('No Grouping')}>
+              <DropdownItem onClick={() => {}}>
                 No Grouping
               </DropdownItem>
             </div>
@@ -260,24 +260,24 @@ const TaskListHeader = ({
             placement="bottom-right"
           >
             <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => console.log('View Settings')}>
+              <DropdownItem onClick={() => {}}>
                 View Settings
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Column Settings')}>
+              <DropdownItem onClick={() => {}}>
                 Column Settings
               </DropdownItem>
               <DropdownSeparator />
-              <DropdownItem onClick={() => console.log('Export Tasks')}>
+              <DropdownItem onClick={() => {}}>
                 Export Tasks
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Import Tasks')}>
+              <DropdownItem onClick={() => {}}>
                 Import Tasks
               </DropdownItem>
               <DropdownSeparator />
-              <DropdownItem onClick={() => console.log('Keyboard Shortcuts')}>
+              <DropdownItem onClick={() => {}}>
                 Keyboard Shortcuts
               </DropdownItem>
-              <DropdownItem onClick={() => console.log('Help & Support')}>
+              <DropdownItem onClick={() => {}}>
                 Help & Support
               </DropdownItem>
             </div>

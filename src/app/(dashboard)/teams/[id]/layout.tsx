@@ -1,14 +1,15 @@
-import React from 'react'
-import { PageLayout } from '@/layouts/page'
-import { Metadata } from 'next'
-import { DynamicTeamProvider } from './components/DynamicTeamProvider'
-import { teamsService } from '@/services/teams/teamsService'
+import React from 'react';
+import { PageLayout } from '@/layouts/page';
+import { Metadata } from 'next';
+import { DynamicTeamProvider } from './components/DynamicTeamProvider';
+import { TeamProvider } from '@/contexts/TeamContext';
+import TeamLayoutClient from './components/TeamLayoutClient';
 
 interface TeamLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 // Generate metadata for dynamic teams pages
@@ -36,9 +37,15 @@ const TeamLayout = async ({ children, params }: TeamLayoutProps) => {
   
   return (
     <DynamicTeamProvider teamId={resolvedParams.id}>
-      <PageLayout>{children}</PageLayout>
+      <TeamProvider>
+        <PageLayout>
+          <TeamLayoutClient>
+            {children}
+          </TeamLayoutClient>
+        </PageLayout>
+      </TeamProvider>
     </DynamicTeamProvider>
-  )
-}
+  );
+};
 
-export default TeamLayout
+export default TeamLayout;

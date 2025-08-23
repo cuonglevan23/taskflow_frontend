@@ -102,7 +102,51 @@ export const useCreateTask = () => {
           false
         );
 
-        // Cache update already handled by optimistic update above
+        // ✅ INSTANT UI UPDATE: No revalidation = no loading state
+        // Task appears immediately in UI through optimistic update above
+        
+        // ✅ SILENT BACKGROUND SYNC: Only update cache with real data when API succeeds
+        // Replace optimistic task with real task from server
+        mutate(
+          ['tasks', 'my-tasks', 'summary', {
+            page: 0,
+            size: 1000,
+            sortBy: 'startDate',
+            sortDir: 'desc'
+          }],
+          (currentData: any) => {
+            if (currentData?.tasks) {
+              // Silently replace optimistic task with real task
+              const updatedTasks = currentData.tasks.map((task: Task) => 
+                String(task.id) === String(optimisticTask.id) ? newTask : task
+              );
+              return {
+                ...currentData,
+                tasks: updatedTasks
+              };
+            }
+            return currentData;
+          },
+          false // ⚠️ CRITICAL: false = no revalidation = no loading state
+        );
+
+        // ✅ SILENT CACHE UPDATES: Update other views silently in background
+        // This ensures consistency across all components without loading UI
+        setTimeout(() => {
+          // Update stats cache silently
+          mutate(
+            (key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'stats',
+            undefined,
+            { revalidate: false, populateCache: false }
+          );
+          
+          // Update general tasks list silently
+          mutate(
+            (key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'list',
+            undefined,  
+            { revalidate: false, populateCache: false }
+          );
+        }, 100); // Small delay to avoid UI glitches
 
         return newTask;
       } catch (error) {
