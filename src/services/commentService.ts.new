@@ -224,7 +224,7 @@ export class CommentService {
       // Ensure taskId is a number
       const numericTaskId = typeof data.taskId === 'string' ? parseInt(data.taskId as string, 10) : data.taskId;
       
-      console.log('📝 Creating comment with data:', {
+      console.log('Creating comment with data:', {
         ...data,
         taskId: numericTaskId
       });
@@ -234,10 +234,10 @@ export class CommentService {
         taskId: numericTaskId
       });
       
-      console.log('✅ Create comment response:', response.status, response.data);
+      console.log('Create comment response:', response.data);
       return response.data as TaskComment;
     } catch (error) {
-      console.error('❌ Failed to create comment:');
+      console.error('Failed to create comment:');
       logAxiosError(error);
       
       // Return a mock comment as fallback for UI

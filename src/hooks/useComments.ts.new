@@ -15,20 +15,12 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
     {
       revalidateOnFocus: false,
       dedupingInterval: 5000,
-      errorRetryCount: 1, // Reduce retry count for better UX
-      errorRetryInterval: 2000, // Shorter retry interval
+      errorRetryCount: 2, // Retry only twice
+      errorRetryInterval: 3000, // Wait 3 seconds between retries
       shouldRetryOnError: (err) => {
-        // Don't retry on 404, 403, 500 errors
-        const status = err?.response?.status;
-        return !(status === 404 || status === 403 || status === 500);
+        // Don't retry on 404 errors
+        return !(err?.response?.status === 404);
       },
-      onError: (error) => {
-        console.error('Error fetching task comments:', {
-          taskId: numericTaskId,
-          error: error?.response?.data || error?.message,
-          status: error?.response?.status
-        });
-      }
     }
   );
 
@@ -52,20 +44,12 @@ export function useCommentCount(taskId: string | number | null) {
     {
       revalidateOnFocus: false,
       dedupingInterval: 5000,
-      errorRetryCount: 1, // Reduce retry count
-      errorRetryInterval: 2000, // Shorter retry interval
+      errorRetryCount: 2,
+      errorRetryInterval: 3000,
       shouldRetryOnError: (err) => {
-        // Don't retry on 404, 403, 500 errors
-        const status = err?.response?.status;
-        return !(status === 404 || status === 403 || status === 500);
+        // Don't retry on 404 errors
+        return !(err?.response?.status === 404);
       },
-      onError: (error) => {
-        console.error('Error fetching comment count:', {
-          taskId: numericTaskId,
-          error: error?.response?.data || error?.message,
-          status: error?.response?.status
-        });
-      }
     }
   );
 
@@ -97,13 +81,10 @@ export function useCommentActions(taskId: number | string | null) {
   }, [notificationActions]);
 
   const createComment = useCallback(async (content: string) => {
-    if (!numericTaskId) {
-      throw new Error('Task ID is required to create a comment');
-    }
+    if (!numericTaskId) return;
     
     setIsCreating(true);
     try {
-      console.log('Creating comment:', { taskId: numericTaskId, content });
       const newComment = await CommentService.createComment({ 
         taskId: numericTaskId, 
         content 
@@ -134,22 +115,8 @@ export function useCommentActions(taskId: number | string | null) {
       
       showNotification('Comment added successfully', 'success');
       return newComment;
-    } catch (error: any) {
-      console.error('Failed to create comment:', {
-        taskId: numericTaskId,
-        error: error?.response?.data || error?.message,
-        status: error?.response?.status
-      });
-      
-      // Show specific error messages based on status
-      const status = error?.response?.status;
-      if (status === 403) {
-        showNotification('You do not have permission to add comments to this task', 'error');
-      } else if (status === 500) {
-        showNotification('Server error: Unable to add comment. Please try again later.', 'error');
-      } else {
-        showNotification('Failed to add comment', 'error');
-      }
+    } catch (error) {
+      showNotification('Failed to add comment', 'error');
       throw error;
     } finally {
       setIsCreating(false);

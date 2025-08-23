@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -24,6 +24,8 @@ export async function GET(
       );
     }
 
+    // Await params to fix Next.js 15 requirement
+    const params = await context.params;
     const { id } = params;
 
     // Get backend base URL
@@ -64,7 +66,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -85,6 +87,8 @@ export async function PUT(
       );
     }
 
+    // Await params to fix Next.js 15 requirement
+    const params = await context.params;
     const { id } = params;
     const body = await request.json();
 
@@ -128,7 +132,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -149,6 +153,8 @@ export async function DELETE(
       );
     }
 
+    // Await params to fix Next.js 15 requirement
+    const params = await context.params;
     const { id } = params;
 
     // Get backend base URL

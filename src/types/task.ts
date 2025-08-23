@@ -17,9 +17,22 @@ export interface BackendTask {
   groupId?: number;
   projectId?: number;
   creatorId: number;
-  assignedToIds?: number[];
-  assignedToEmails?: string[];
+  assignedToEmails?: string[]; // Use emails only, no IDs
   checklists?: unknown[];
+  
+  // Assignee details from backend  
+  assignees?: BackendAssignee[];
+  creatorName?: string;
+  creatorEmail?: string;
+}
+
+export interface BackendAssignee {
+  id: number;
+  name?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
 }
 
 // New My Tasks Response interfaces
@@ -100,6 +113,18 @@ export interface Task {
   completionPercentage?: number;
   assigneeCount?: number;
   checklistCount?: number;
+  
+  // Assignees data for UI display
+  assignees?: TaskAssignee[];
+  assignedEmails?: string[];
+  assignedToIds?: number[];
+}
+
+export interface TaskAssignee {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
 }
 
 // Data Transfer Objects (DTOs)
@@ -131,7 +156,9 @@ export interface UpdateTaskDTO {
   assigneeId?: number;
   projectId?: number;
   groupId?: number;
-  assignedToIds?: number[];
+  assignedToEmails?: string[]; // Replace all assignees
+  addAssigneeEmails?: string[]; // Add new assignees (don't remove existing)
+  removeAssigneeEmails?: string[]; // Remove specific assignees
 }
 
 // API Response interfaces
