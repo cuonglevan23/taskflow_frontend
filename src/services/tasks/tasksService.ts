@@ -24,6 +24,14 @@ import type {
 
 // Transform backend task to frontend format
 export const transformBackendTask = (backendTask: BackendTask): Task => {
+  // Debug log to see backend data
+  console.log('🔍 Backend Task Data:', {
+    id: backendTask.id,
+    title: backendTask.title,
+    assignedToEmails: backendTask.assignedToEmails,
+    assignedToIds: backendTask.assignedToIds
+  });
+
   // Use startDate as primary field (REQUIRED)
   let dueDateString = 'No date';
   let dueDateISO = new Date();
@@ -34,6 +42,24 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     dueDateISO = safeParseDate(dateSource);
     dueDateString = formatDateString(dateSource);
   }
+
+  // Transform assignees from backend emails 
+  const assignees: Task['assignees'] = [];
+  
+  // Use assignedToEmails to create assignee objects
+  if (backendTask.assignedToEmails && Array.isArray(backendTask.assignedToEmails) && backendTask.assignedToEmails.length > 0) {
+    assignees.push(...backendTask.assignedToEmails.map(email => ({
+      id: email, // Use email as ID
+      name: email.split('@')[0], // Use email prefix as name
+      email: email,
+      avatar: undefined
+    })));
+  }
+
+  console.log('✅ Transformed assignees:', assignees);
+  
+  // Add assignedEmails field for backward compatibility
+  const assignedEmails = backendTask.assignedToEmails || [];
 
   return {
     id: backendTask.id,
@@ -47,6 +73,8 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     hasTag: false,
     projectId: backendTask.projectId,
     tags: [],
+    assignees: assignees.length > 0 ? assignees : undefined,
+    assignedEmails: assignedEmails.length > 0 ? assignedEmails : undefined,
     createdAt: safeParseDate(backendTask.createdAt),
     updatedAt: safeParseDate(backendTask.updatedAt),
     // Multi-day task support
@@ -202,6 +230,17 @@ export const tasksService = {
       if (data.status !== undefined) backendData.status = toBackendStatus(data.status);
       if (data.priority !== undefined) backendData.priority = toBackendPriority(data.priority);
       
+      // Handle assignee emails - Support 3 modes from docs
+      if (data.assignedToEmails !== undefined) {
+        backendData.assignedToEmails = data.assignedToEmails; // Replace all
+      }
+      if (data.addAssigneeEmails !== undefined) {
+        backendData.addAssigneeEmails = data.addAssigneeEmails; // Add new
+      }
+      if (data.removeAssigneeEmails !== undefined) {
+        backendData.removeAssigneeEmails = data.removeAssigneeEmails; // Remove specific
+      }
+      
       // Handle date fields for different scenarios
       if (data.startDate !== undefined && data.deadline !== undefined) {
         backendData.startDate = data.startDate;
@@ -215,6 +254,8 @@ export const tasksService = {
         backendData.deadline = data.dueDate;
         backendData.startDate = data.dueDate;
       }
+
+      console.log('🔍 Updating task:', id, 'with data:', backendData);
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, backendData);
       return transformBackendTask(response.data);
@@ -312,7 +353,7 @@ export const tasksService = {
     }
   },
 
-  // Get My Tasks (Full Data) with pagination
+  // Get My Tasks (Full Data) with pagination - Uses /api/tasks/my-tasks endpoint
   getMyTasks: async (params?: {
     page?: number;
     size?: number;
@@ -333,17 +374,18 @@ export const tasksService = {
         sortDir = 'desc'
       } = params || {};
 
-
+      console.log('🔍 Fetching my tasks from /api/tasks/my-tasks:', { page, size, sortBy, sortDir });
       
-      const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
+      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
+      console.log('✅ My tasks response:', response.data);
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
-      const tasks = content.map(transformMyTasksFull);
+      const tasks = content.map(transformBackendTask);
 
-
+      console.log('✅ Transformed tasks:', tasks.length);
 
       return {
         tasks,
@@ -477,12 +519,12 @@ export const tasksService = {
     }
   },
 
-  // Assign task to user
-  assignTask: async (id: string, userId: string): Promise<Task> => {
+  // Assign task to user by email
+  assignTask: async (id: string, email: string): Promise<Task> => {
     try {
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
-        assignedToIds: [userId]
+        assignedToEmails: [email]
       });
       return transformBackendTask(response.data);
     } catch (error) {
@@ -491,12 +533,12 @@ export const tasksService = {
     }
   },
 
-  // Unassign task from user
+  // Unassign task from user  
   unassignTask: async (id: string): Promise<Task> => {
     try {
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
-        assignedToIds: []
+        assignedToEmails: []
       });
       return transformBackendTask(response.data);
     } catch (error) {

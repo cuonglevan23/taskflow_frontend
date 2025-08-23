@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar/Avatar';
 import CommentItem from './CommentItem';
+import ApiDebugger from './ApiDebugger';
 import { useTaskComments, useCommentActions, useCommentCount } from '@/hooks/useComments';
 
 interface CommentsListProps {
@@ -65,40 +66,20 @@ const CommentsList = ({
   }
 
   if (error) {
-    const errorStatus = error?.response?.status;
-    const errorMessage = error?.response?.data?.message || error?.message;
-    
-    let displayMessage = 'Failed to load comments';
-    let showRetry = true;
-    
-    if (errorStatus === 403) {
-      displayMessage = 'You do not have permission to view comments for this task';
-      showRetry = false;
-    } else if (errorStatus === 500) {
-      displayMessage = 'Server error: Unable to load comments. Please try again later.';
-    } else if (errorStatus === 404) {
-      displayMessage = 'Task not found or comments unavailable';
-      showRetry = false;
-    }
-    
     return (
       <div className="text-red-400 text-center py-8">
-        <div className="mb-2">{displayMessage}</div>
-        {errorMessage && (
-          <div className="text-xs text-gray-500 mb-3 max-w-md mx-auto">
-            {errorMessage}
-          </div>
-        )}
-        {showRetry && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => revalidate()}
-            className="text-blue-400 hover:text-blue-300"
-          >
-            Try again
-          </Button>
-        )}
+        <div className="mb-2">Failed to load comments</div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => revalidate()}
+          className="text-blue-400 hover:text-blue-300"
+        >
+          Try again
+        </Button>
+        
+        {/* Add the API debugger component */}
+        <ApiDebugger taskId={numericTaskId} />
       </div>
     );
   }

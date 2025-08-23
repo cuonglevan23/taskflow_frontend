@@ -156,10 +156,10 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
       await updateTask({
         id: taskId,
         data: {
-          assignedToIds: [assigneeData.id],
+          assignedToEmails: [assigneeData.email], // Use email instead of ID
         }
       });
-      showNotification(`Task assigned to ${assigneeData.name}`, 'success');
+      showNotification(`Task assigned to ${assigneeData.email}`, 'success');
     } catch (error) {
       showNotification('Failed to assign task', 'error');
       console.error('Failed to assign task:', error);

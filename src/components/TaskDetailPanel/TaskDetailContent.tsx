@@ -16,6 +16,8 @@ interface TaskDetailContentProps {
   onSave: () => void;
 }
 
+type TabType = 'comments' | 'activity';
+
 const TaskDetailContent = ({
   task,
   title,
@@ -24,10 +26,9 @@ const TaskDetailContent = ({
   setDescription,
   onSave
 }: TaskDetailContentProps) => {
-  const [activeTab, setActiveTab] = useState<'comments' | 'activity'>('comments');
-  
   // Use the custom hook to get and update task description
   const taskId = task?.id ? String(task.id) : null;
+  const [activeTab, setActiveTab] = useState<TabType>('comments');
 
   const handleSave = () => {
     onSave();
@@ -153,39 +154,22 @@ const TaskDetailContent = ({
               variant="ghost"
               size="sm"
               className="ml-10 text-gray-400 hover:text-gray-200 text-sm"
-          >
-            dependencies
-          </Button>
-        </div>
-
-
-        {/* My tasks fields */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">My tasks fields</span>
-          <div className="flex items-center gap-2 flex-1">
-            <div
-                className="flex items-center gap-2 rounded px-3 py-1 flex-1"
-              style={{ backgroundColor: DARK_THEME.background.weakHover }}
             >
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-300">timer</span>
-              <div className="ml-auto text-sm text-gray-400">—</div>
-            </div>
-          </div>
+              <Plus className="w-4 h-4 mr-2" />
+              Add dependencies
+            </Button>
         </div>
       </div>
 
-      {/* Task Comment Field */}
+      {/* Task Description */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-300">Description</label>
-        <div className="transition-all duration-300 ease-in-out transform pt-3">
-          <MinimalTiptap
-            content={description}
-            onChange={(content) => {
-              setDescription(content);
-              handleSave();
-            }}
-            placeholder="What is this task about?"
+        <h3 className="text-sm font-medium text-gray-300">Description</h3>
+        <div className="min-h-[120px] border rounded-lg overflow-hidden" style={{ borderColor: DARK_THEME.border.default }}>
+          <MinimalTiptap 
+            content={description} 
+            onChange={setDescription}
+            onBlur={handleSave}
+            placeholder="Add a description..." 
           />
         </div>
       </div>
@@ -198,113 +182,109 @@ const TaskDetailContent = ({
         </Button>
       </div>
 
-      {/* Comments/Activity Section */}
+      {/* Comments & Activity Section */}
       <div 
         className="space-y-6 border-t pt-6"
         style={{ borderColor: DARK_THEME.border.default }}
       >
-        {/* Comments Tabs */}
+        {/* Tabs */}
         <div className="flex gap-6">
           <button 
-            onClick={() => setActiveTab('comments')}
             className={`pb-3 text-sm font-medium transition-colors ${
               activeTab === 'comments' 
                 ? 'text-white border-b-2 border-white' 
-                : 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-400 hover:text-gray-200'
             }`}
+            onClick={() => setActiveTab('comments')}
           >
             Comments
           </button>
           <button 
-            onClick={() => setActiveTab('activity')}
             className={`pb-3 text-sm font-medium transition-colors ${
               activeTab === 'activity' 
                 ? 'text-white border-b-2 border-white' 
-                : 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-400 hover:text-gray-200'
             }`}
+            onClick={() => setActiveTab('activity')}
           >
             All activity
           </button>
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'comments' && (
-          <div className="space-y-4">
-            {/* Comment List component */}
+        <div className="space-y-4">
+          {activeTab === 'comments' ? (
+            /* Comments Content */
             <CommentsList taskId={taskId} />
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="space-y-4">
-            {/* Activity Item 1 */}
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="text-sm text-gray-400">
-                  <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> created this task · <span className="text-gray-500">2 hours ago</span>
+          ) : (
+            /* Activity Content */
+            <>
+              {/* Activity Item 1 */}
+              <div className="flex items-start gap-3">
+                <Avatar
+                  name="cuonglv.21ad@vku.udn.vn"
+                  size="sm"
+                  className="w-8 h-8 bg-pink-500"
+                />
+                <div className="flex-1">
+                  <div className="text-sm text-gray-400">
+                    <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> created this task · <span className="text-gray-500">2 hours ago</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Activity Item 2 */}
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="text-sm text-gray-400">
-                  <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> moved this task from &quot;Do today&quot; to &quot;Recently assigned&quot; in <span className="text-blue-400">My tasks</span> · <span className="text-gray-500">3 minutes ago</span>
+              {/* Activity Item 2 */}
+              <div className="flex items-start gap-3">
+                <Avatar
+                  name="cuonglv.21ad@vku.udn.vn"
+                  size="sm"
+                  className="w-8 h-8 bg-pink-500"
+                />
+                <div className="flex-1">
+                  <div className="text-sm text-gray-400">
+                    <span className="text-blue-400 font-medium">cuonglv.21ad@vku.udn.vn</span> moved this task from &quot;Do today&quot; to &quot;Recently assigned&quot; in <span className="text-blue-400">My tasks</span> · <span className="text-gray-500">3 minutes ago</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Recent Comments in Activity */}
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
-                  <span className="text-gray-500 text-xs">· 2 minutes ago</span>
-                </div>
-                <div className="text-sm text-gray-200 bg-gray-800 rounded-lg p-3 border border-gray-600">
-                  d
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Avatar
-                name="cuonglv.21ad@vku.udn.vn"
-                size="sm"
-                className="w-8 h-8 bg-pink-500"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
-                  <span className="text-gray-500 text-xs">· Just now</span>
-                </div>
-                <div className="text-sm text-gray-200 bg-gray-800 rounded-lg p-3 border border-gray-600">
-                  j
+              {/* Recent Activity */}
+              <div className="flex items-start gap-3">
+                <Avatar
+                  name="cuonglv.21ad@vku.udn.vn"
+                  size="sm"
+                  className="w-8 h-8 bg-pink-500"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
+                    <span className="text-gray-500 text-xs">· 2 minutes ago</span>
+                  </div>
+                  <div className="text-sm text-gray-200 bg-gray-800 rounded-lg p-3 border border-gray-600">
+                    d
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-
+              <div className="flex items-start gap-3">
+                <Avatar
+                  name="cuonglv.21ad@vku.udn.vn"
+                  size="sm"
+                  className="w-8 h-8 bg-pink-500"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-blue-400 font-medium text-sm">cuonglv.21ad@vku.udn.vn</span>
+                    <span className="text-gray-500 text-xs">· Just now</span>
+                  </div>
+                  <div className="text-sm text-gray-200 bg-gray-800 rounded-lg p-3 border border-gray-600">
+                    j
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-
     </div>
   );
 };

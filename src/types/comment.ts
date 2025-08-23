@@ -1,23 +1,24 @@
 // Comment types for task management
 export interface TaskComment {
-  id: string;
-  taskId: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorEmail: string;
-  createdAt: Date;
-  updatedAt: Date;
-  isEdited?: boolean;
+  id: number;                 // ID của comment
+  content: string;            // Nội dung comment
+  createdAt: string;          // Thời gian tạo (ISO 8601)
+  updatedAt: string;          // Thời gian cập nhật (ISO 8601)
+  taskId: number;             // ID của task
+  userId: number;             // ID của user tạo comment
+  userEmail: string;          // Email của user
+  userName: string;           // Tên đầy đủ của user
+  userAvatar: string | null;  // URL avatar của user
+  isEdited?: boolean;         // Có đang được chỉnh sửa không
 }
 
 export interface CreateCommentRequest {
-  taskId: string;
+  taskId: number;
   content: string;
 }
 
 export interface UpdateCommentRequest {
-  id: string;
+  id: number;
   content: string;
 }
 

@@ -7,8 +7,8 @@ import { DARK_THEME } from '@/constants/theme';
 
 interface CommentItemProps {
   comment: TaskComment;
-  onEdit: (commentId: string, content: string) => void;
-  onDelete: (commentId: string) => void;
+  onEdit: (commentId: number, content: string) => void;
+  onDelete: (commentId: number) => void;
   isEditing?: boolean;
   isDeleting?: boolean;
   canEdit?: boolean;
@@ -40,14 +40,24 @@ const CommentItem = ({
     setIsEditMode(false);
   };
 
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  const formatTimeAgo = (date: Date | string) => {
+    try {
+      const parsedDate = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(parsedDate.getTime())) {
+        return 'Invalid date';
+      }
+      
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - parsedDate.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown';
+    }
   };
 
   return (
@@ -57,14 +67,14 @@ const CommentItem = ({
       onMouseLeave={() => setShowActions(false)}
     >
       <Avatar
-        name={comment.authorName}
+        name={comment.userName}
         size="sm"
         className="w-8 h-8 bg-blue-500"
       />
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-blue-400 font-medium text-sm">{comment.authorName}</span>
-          <span className="text-gray-500 text-xs">· {formatTimeAgo(comment.createdAt)}</span>
+          <span className="text-blue-400 font-medium text-sm">{comment.userName}</span>
+          <span className="text-gray-500 text-xs">· {formatTimeAgo(new Date(comment.createdAt))}</span>
           {comment.isEdited && (
             <span className="text-gray-500 text-xs">(edited)</span>
           )}

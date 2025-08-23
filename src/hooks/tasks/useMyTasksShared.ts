@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useMyTasksSummary, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
+import { useMyTasksData, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
 import { useTasksContext } from '@/contexts/TasksContext';
 import { CookieAuth } from '@/utils/cookieAuth';
 import type { Task, CreateTaskDTO } from '@/types';
@@ -60,8 +60,8 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   // Get UI state from context
   const { setSelectedTaskId } = useTasksContext();
   
-  // SWR data fetching
-  const { tasks, isLoading, error, revalidate } = useMyTasksSummary({
+  // SWR data fetching - Use detailed endpoint instead of summary
+  const { tasks, isLoading, error, revalidate } = useMyTasksData({
     page,
     size,
     sortBy,
@@ -288,17 +288,20 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       }
     },
     
-    onTaskAssign: async (taskId: string, assigneeId: string) => {
+    onTaskAssign: async (taskId: string, assigneeEmail: string) => {
       try {
+        console.log('🎯 Assigning task:', taskId, 'to email:', assigneeEmail);
+        
         const backendData = {
-          assignedToIds: [assigneeId],
-          startDate: new Date().toISOString().split('T')[0]
+          addAssigneeEmails: [assigneeEmail], // Use addAssigneeEmails to add without removing existing
         };
         
         await updateTask({ 
           id: taskId, 
           data: backendData
         });
+        
+        console.log('✅ Task assigned successfully');
       } catch (error) {
         console.error('Failed to assign task:', error);
         throw error;
