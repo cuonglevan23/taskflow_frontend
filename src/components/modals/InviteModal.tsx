@@ -25,6 +25,9 @@ interface Props {
   onClose: () => void;
   onSubmit?: (data: InviteFormData) => Promise<void>;
   projects?: Project[];
+  showProjectSelection?: boolean; // New prop to control project selection visibility
+  modalTitle?: string; // Custom title for the modal
+  requireSameDomain?: boolean; // New prop to control domain validation
 }
 
 /* ===================== Mock Data ===================== */
@@ -41,6 +44,9 @@ export default function InviteModal({
   onClose,
   onSubmit,
   projects = MOCK_PROJECTS,
+  showProjectSelection = true, // Default to true for backward compatibility
+  modalTitle = "Invite people to My workspace", // Default title
+  requireSameDomain = true, // Default to true for backward compatibility
 }: Props) {
   const { theme } = useTheme();
   const { user } = useAuth();
@@ -96,8 +102,8 @@ export default function InviteModal({
         continue;
       }
 
-      // Check if email domain matches user's domain
-      if (userDomain) {
+      // Check if email domain matches user's domain (only if required)
+      if (requireSameDomain && userDomain) {
         const emailDomain = email.split("@")[1];
         if (emailDomain !== userDomain) {
           wrongDomainEmails.push(email);
@@ -231,7 +237,7 @@ export default function InviteModal({
             className="text-xl font-semibold"
             style={{ color: theme.text.primary }}
           >
-            Invite people to My workspace
+            {modalTitle}
           </h1>
           <button
             onClick={handleClose}
@@ -261,7 +267,11 @@ export default function InviteModal({
             <textarea
               value={emails}
               onChange={handleEmailChange}
-              placeholder={`${user?.email}, name@${userDomain || "company.com"}, ...`}
+              placeholder={
+                requireSameDomain 
+                  ? `${user?.email}, name@${userDomain || "company.com"}, ...`
+                  : `user@example.com, another@domain.com, ...`
+              }
               rows={4}
               className={`w-full px-3 py-2 border rounded-lg resize-none ${
                 emailError ? "border-red-500" : ""
@@ -277,15 +287,16 @@ export default function InviteModal({
             )}
           </div>
 
-          {/* Add to projects */}
-          <div>
-            <label 
-              className="flex items-center gap-1 text-sm font-medium mb-2"
-              style={{ color: theme.text.primary }}
-            >
-              Add to projects
-              <Info className="w-4 h-4 text-gray-400" />
-            </label>
+          {/* Add to projects - Only show if showProjectSelection is true */}
+          {showProjectSelection && (
+            <div>
+              <label 
+                className="flex items-center gap-1 text-sm font-medium mb-2"
+                style={{ color: theme.text.primary }}
+              >
+                Add to projects
+                <Info className="w-4 h-4 text-gray-400" />
+              </label>
             
             {/* Selected Projects - Tag Style */}
             {selectedProjects.length > 0 && (
@@ -360,7 +371,8 @@ export default function InviteModal({
                 All projects added
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -390,6 +402,3 @@ export default function InviteModal({
     </div>
   );
 }
-
-/* ===================== Export Types ===================== */
-export type { InviteFormData };

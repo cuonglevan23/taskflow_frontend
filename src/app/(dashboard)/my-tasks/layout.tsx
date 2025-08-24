@@ -120,7 +120,7 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Tab Content */}
-      <div className="h-[calc(100vh-228px)] overflow-y-auto">
+      <div className="h-[calc(100vh-228px)] overflow-y-auto w-full" style={{ width: "100%", minWidth: "100%" }}>
         {childrenWithProps}
       </div>
     </>

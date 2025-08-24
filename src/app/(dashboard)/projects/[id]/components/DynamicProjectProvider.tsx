@@ -1,14 +1,25 @@
 "use client";
 
-import { createContext, useContext, useEffect, ReactNode } from 'react';
-import { useParams } from 'next/navigation';
+import { createContext, useContext, useEffect, ReactNode, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useProject as useSWRProject } from '@/hooks/projects/useProjects';
-import type { Project } from '@/types/project';
+// Use the Project type from projects to match the hook return type
+import type { Project } from '@/types/projects';
+
+// Type for API errors
+interface APIError extends Error {
+  status?: number;
+  response?: {
+    status: number;
+    data?: unknown;
+  };
+}
 
 interface ProjectContextValue {
   project: Project | null;
   loading: boolean;
   error: string | null;
+  isRedirecting: boolean;
   updatePageTitle: (title: string) => void;
 }
 
@@ -20,6 +31,7 @@ interface DynamicProjectProviderProps {
 
 export function DynamicProjectProvider({ children }: DynamicProjectProviderProps) {
   const params = useParams();
+  const router = useRouter();
   const projectId = params?.id as string;
   
   // Convert string ID to number for SWR hook
@@ -27,6 +39,9 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
   
   // Use SWR hook for project data with caching and auto-sync
   const { data: project, error: swrError, isLoading } = useSWRProject(numericProjectId);
+  
+  // Track if we're redirecting due to permission error
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Function to update page title with retry mechanism
   const updatePageTitle = (title: string) => {
@@ -50,6 +65,14 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
     }
   };
 
+  // Handle permission errors and redirect
+  useEffect(() => {
+    if (swrError) {
+      setIsRedirecting(true);
+      router.replace('/404');
+    }
+  }, [swrError, router]);
+
   // Update page title when project data changes
   useEffect(() => {
     if (isLoading) {
@@ -72,14 +95,27 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
 
   const value: ProjectContextValue = {
     project: project || null,
-    loading: isLoading,
+    loading: isLoading || isRedirecting,
     error: swrError?.message || (swrError ? 'Failed to load project' : (!projectId ? 'No project ID provided' : null)),
+    isRedirecting,
     updatePageTitle,
   };
 
+  // Only render children if project is valid and not redirecting
+  const shouldRenderChildren = !isRedirecting && !swrError && project;
   return (
     <ProjectContext.Provider value={value}>
-      {children}
+      {/* Show loading while redirecting or error, never render children if error/redirecting */}
+      {isRedirecting || swrError || !project ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Redirecting...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </ProjectContext.Provider>
   );
 }

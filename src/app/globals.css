@@ -219,3 +219,70 @@ main {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom CSS for Frappe Gantt */
+
+/* High priority tasks */
+.high-priority .bar {
+  fill: #ef4444 !important;
+}
+
+.high-priority .bar-progress {
+  fill: #b91c1c !important;
+}
+
+/* Medium priority tasks */
+.medium-priority .bar {
+  fill: #f97316 !important;
+}
+
+.medium-priority .bar-progress {
+  fill: #c2410c !important;
+}
+
+/* Low priority tasks */
+.low-priority .bar {
+  fill: #10b981 !important;
+}
+
+.low-priority .bar-progress {
+  fill: #047857 !important;
+}
+
+/* Modify the popup styles */
+.gantt-popup {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Timeline header */
+.gantt .grid-header {
+  background-color: #0f172a !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.gantt .grid-header .grid-row {
+  background-color: #1e293b !important;
+}
+
+/* Timeline rows */
+.gantt .grid-body .grid-row:nth-child(even) {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+.gantt .grid-body .grid-row {
+  border-bottom: 1px solid #334155 !important;
+}
+
+/* Text color */
+.gantt .grid-row .grid-cell {
+  color: #e2e8f0 !important;
+}
+
+/* Date headers */
+.gantt .lower-text, .gantt .upper-text {
+  color: #cbd5e1 !important;
+}

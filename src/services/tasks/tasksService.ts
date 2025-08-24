@@ -24,14 +24,6 @@ import type {
 
 // Transform backend task to frontend format
 export const transformBackendTask = (backendTask: BackendTask): Task => {
-  // Debug log to see backend data
-  console.log('🔍 Backend Task Data:', {
-    id: backendTask.id,
-    title: backendTask.title,
-    assignedToEmails: backendTask.assignedToEmails,
-    assignedToIds: backendTask.assignedToIds
-  });
-
   // Use startDate as primary field (REQUIRED)
   let dueDateString = 'No date';
   let dueDateISO = new Date();
@@ -42,24 +34,6 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     dueDateISO = safeParseDate(dateSource);
     dueDateString = formatDateString(dateSource);
   }
-
-  // Transform assignees from backend emails 
-  const assignees: Task['assignees'] = [];
-  
-  // Use assignedToEmails to create assignee objects
-  if (backendTask.assignedToEmails && Array.isArray(backendTask.assignedToEmails) && backendTask.assignedToEmails.length > 0) {
-    assignees.push(...backendTask.assignedToEmails.map(email => ({
-      id: email, // Use email as ID
-      name: email.split('@')[0], // Use email prefix as name
-      email: email,
-      avatar: undefined
-    })));
-  }
-
-  console.log('✅ Transformed assignees:', assignees);
-  
-  // Add assignedEmails field for backward compatibility
-  const assignedEmails = backendTask.assignedToEmails || [];
 
   return {
     id: backendTask.id,
@@ -73,20 +47,19 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     hasTag: false,
     projectId: backendTask.projectId,
     tags: [],
-    assignees: assignees.length > 0 ? assignees : undefined,
-    assignedEmails: assignedEmails.length > 0 ? assignedEmails : undefined,
     createdAt: safeParseDate(backendTask.createdAt),
     updatedAt: safeParseDate(backendTask.updatedAt),
     // Multi-day task support
     startDate: dueDateISO,
-    endDate: dueDateISO,
+    deadline: backendTask.deadline,
+    // Email assignment support
+    assignedEmails: backendTask.assignedToEmails || [],
   };
 };
 
 // Transform My Tasks Summary Item to Task format
 export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
   const taskStartDate = safeParseDate(item.startDate);
-  const taskEndDate = safeParseDate(item.deadline);
   const displayDate = item.startDate || item.deadline;
   const taskDueDateISO = safeParseDate(displayDate);
 
@@ -107,7 +80,7 @@ export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
     updatedAt: new Date(),
     // Multi-day task support
     startDate: taskStartDate,
-    endDate: taskEndDate,
+    deadline: item.deadline, // Keep backend deadline string
     // Additional fields from summary
     creatorName: item.creatorName,
     participationType: item.participationType,
@@ -138,7 +111,7 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
     updatedAt: safeParseDate(item.updatedAt),
     // Multi-day task support
     startDate: taskDueDateISO,
-    endDate: taskDueDateISO,
+    deadline: item.deadline,
   };
 };
 
@@ -165,6 +138,7 @@ export const tasksService = {
 
   // Create task (My Tasks)
   createTask: async (data: CreateTaskDTO): Promise<Task> => {
+    console.log('🔥 tasksService.createTask called with:', data);
     try {
       // Check authentication first
       const token = CookieAuth.getAccessToken();
@@ -172,11 +146,12 @@ export const tasksService = {
         console.error('❌ No access token found in cookies');
         throw new Error('Authentication required: No access token found');
       }
-      console.log('✅ Access token found:', token.substring(0, 20) + '...');
+      console.log('🔑 Authentication token found');
       
       // Get current user ID from cookies for creatorId
       const userInfo = CookieAuth.getUserInfo();
       const tokenPayload = CookieAuth.getTokenPayload();
+      console.log('👤 User info retrieved:', { userInfo, tokenPayload });
       
       // Generate start_date from calendar click
       let startDate: string;
@@ -203,8 +178,13 @@ export const tasksService = {
         assignedToIds: data.assignedToIds || [],
       };
       
+      console.log('📤 Sending POST to /api/tasks/my-tasks with:', backendData);
+      
       const response = await api.post<BackendTask>('/api/tasks/my-tasks', backendData);
+      console.log('✅ POST response received:', response.data);
+      
       const transformedTask = transformBackendTask(response.data);
+      console.log('🔄 Task transformed:', transformedTask);
       return transformedTask;
     } catch (error: unknown) {
       console.error('❌ Failed to create task:', error);
@@ -221,7 +201,6 @@ export const tasksService = {
         console.error('❌ No access token found in cookies');
         throw new Error('Authentication required: No access token found');
       }
-      console.log('✅ Access token found for update:', token.substring(0, 20) + '...');
       
       const backendData: Record<string, unknown> = {};
       
@@ -230,16 +209,10 @@ export const tasksService = {
       if (data.status !== undefined) backendData.status = toBackendStatus(data.status);
       if (data.priority !== undefined) backendData.priority = toBackendPriority(data.priority);
       
-      // Handle assignee emails - Support 3 modes from docs
-      if (data.assignedToEmails !== undefined) {
-        backendData.assignedToEmails = data.assignedToEmails; // Replace all
-      }
-      if (data.addAssigneeEmails !== undefined) {
-        backendData.addAssigneeEmails = data.addAssigneeEmails; // Add new
-      }
-      if (data.removeAssigneeEmails !== undefined) {
-        backendData.removeAssigneeEmails = data.removeAssigneeEmails; // Remove specific
-      }
+      // Handle email assignment fields
+      if (data.addAssigneeEmails !== undefined) backendData.addAssigneeEmails = data.addAssigneeEmails;
+      if (data.removeAssigneeEmails !== undefined) backendData.removeAssigneeEmails = data.removeAssigneeEmails;
+      if (data.assignedToEmails !== undefined) backendData.assignedToEmails = data.assignedToEmails;
       
       // Handle date fields for different scenarios
       if (data.startDate !== undefined && data.deadline !== undefined) {
@@ -254,8 +227,6 @@ export const tasksService = {
         backendData.deadline = data.dueDate;
         backendData.startDate = data.dueDate;
       }
-
-      console.log('🔍 Updating task:', id, 'with data:', backendData);
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, backendData);
       return transformBackendTask(response.data);
@@ -353,7 +324,7 @@ export const tasksService = {
     }
   },
 
-  // Get My Tasks (Full Data) with pagination - Uses /api/tasks/my-tasks endpoint
+  // Get My Tasks (Full Data) with pagination
   getMyTasks: async (params?: {
     page?: number;
     size?: number;
@@ -374,18 +345,17 @@ export const tasksService = {
         sortDir = 'desc'
       } = params || {};
 
-      console.log('🔍 Fetching my tasks from /api/tasks/my-tasks:', { page, size, sortBy, sortDir });
+
       
-      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
+      const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
-      console.log('✅ My tasks response:', response.data);
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
-      const tasks = content.map(transformBackendTask);
+      const tasks = content.map(transformMyTasksFull);
 
-      console.log('✅ Transformed tasks:', tasks.length);
+
 
       return {
         tasks,
@@ -421,8 +391,8 @@ export const tasksService = {
     } = params || {};
 
     try {
-      // Use the main my-tasks endpoint as documented
-      const response = await api.get<PaginatedResponse<MyTasksSummaryItem>>('/api/tasks/my-tasks', {
+      // Use the main my-tasks endpoint as documented - returns BackendTask[]
+      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
@@ -440,7 +410,8 @@ export const tasksService = {
         };
       }
       
-      const tasks = content.map(transformMyTasksSummary);
+      // Use transformBackendTask instead of transformMyTasksSummary
+      const tasks = content.map(transformBackendTask);
 
       return {
         tasks,
@@ -519,12 +490,12 @@ export const tasksService = {
     }
   },
 
-  // Assign task to user by email
-  assignTask: async (id: string, email: string): Promise<Task> => {
+  // Assign task to user
+  assignTask: async (id: string, userId: string): Promise<Task> => {
     try {
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
-        assignedToEmails: [email]
+        assignedToIds: [userId]
       });
       return transformBackendTask(response.data);
     } catch (error) {
@@ -533,12 +504,12 @@ export const tasksService = {
     }
   },
 
-  // Unassign task from user  
+  // Unassign task from user
   unassignTask: async (id: string): Promise<Task> => {
     try {
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, {
-        assignedToEmails: []
+        assignedToIds: []
       });
       return transformBackendTask(response.data);
     } catch (error) {
@@ -564,8 +535,6 @@ export const tasksService = {
   // Test authentication
   testAuth: async (): Promise<boolean> => {
     try {
-      console.log('🧪 Testing authentication...');
-      
       // First check if we have token
       const token = CookieAuth.getAccessToken();
       if (!token) {
@@ -573,11 +542,9 @@ export const tasksService = {
         return false;
       }
       
-      console.log('✅ Token found:', token.substring(0, 20) + '...');
       CookieAuth.debugAuth();
       
-      const response = await api.get('/api/tasks/my-tasks');
-      console.log('✅ Authentication test successful');
+      await api.get('/api/tasks/my-tasks');
       return true;
     } catch (error) {
       console.error('❌ Authentication test failed:', error);

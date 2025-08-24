@@ -18,34 +18,26 @@ const API_ENDPOINTS = {
   TASK_COMMENTS_BY_TASK: (taskId: number | string) => {
     // Make sure taskId is always a number without decimals
     const numericId = typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
-    // Log the exact endpoint for debugging
-    const endpoint = `/api/task-comments/task/${numericId}`;
-    console.log('Constructed API endpoint:', endpoint);
-    return endpoint;
+    // Return the exact endpoint
+    return `/api/task-comments/task/${numericId}`;
   },
   
   // Comment count by task ID
   TASK_COMMENTS_COUNT: (taskId: number | string) => {
     const numericId = typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
-    const endpoint = `/api/task-comments/task/${numericId}/count`;
-    console.log('Constructed count endpoint:', endpoint);
-    return endpoint;
+    return `/api/task-comments/task/${numericId}/count`;
   },
   
   // Paginated comments by task ID
   TASK_COMMENTS_PAGINATED: (taskId: number | string) => {
     const numericId = typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
-    const endpoint = `/api/task-comments/task/${numericId}/paginated`;
-    console.log('Constructed paginated endpoint:', endpoint);
-    return endpoint;
+    return `/api/task-comments/task/${numericId}/paginated`;
   },
   
   // Comment by ID
   TASK_COMMENT_BY_ID: (commentId: number | string) => {
     const numericId = typeof commentId === 'string' ? parseInt(commentId, 10) : commentId;
-    const endpoint = `/api/task-comments/${numericId}`;
-    console.log('Constructed comment ID endpoint:', endpoint);
-    return endpoint;
+    return `/api/task-comments/${numericId}`;
   },
 };
 
@@ -56,22 +48,16 @@ export class CommentService {
       // Make sure taskId is a valid number
       const numericTaskId = typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
       if (isNaN(numericTaskId)) {
-        console.error('Invalid taskId:', taskId);
         return { comments: [], total: 0, page, size };
       }
       
-      console.log(`📣 Fetching comments for task: ${numericTaskId} (Page: ${page}, Size: ${size})`);
-      
       // Get the endpoint from our constant
       const endpoint = API_ENDPOINTS.TASK_COMMENTS_BY_TASK(numericTaskId);
-      console.log('🔗 Calling API endpoint:', endpoint);
       
       // Ensure we send the numeric ID
       const response = await api.get(endpoint, {
         params: { page, size }
       });
-      
-      console.log('✅ API Response:', response.status, response.data);
       
       // API returns array directly as per documentation
       if (Array.isArray(response.data)) {
@@ -91,7 +77,21 @@ export class CommentService {
         };
       }
     } catch (error) {
-      console.error('❌ Failed to fetch task comments:');
+      // Enhanced error handling for debugging
+      const axiosError = error as any;
+      
+      // Check for specific error types
+      if (axiosError?.response?.status === 403) {
+        // User doesn't have permission to view comments for this task
+        throw new Error('Access denied: You do not have permission to view comments for this task');
+      } else if (axiosError?.response?.status === 404) {
+        // Task not found
+        throw new Error('Task not found or you do not have access to it');
+      } else if (axiosError?.response?.status === 401) {
+        // Authentication error
+        throw new Error('Authentication required: Please log in again');
+      }
+      
       logAxiosError(error);
       
       // Provide a default response to prevent UI crashes
@@ -224,20 +224,41 @@ export class CommentService {
       // Ensure taskId is a number
       const numericTaskId = typeof data.taskId === 'string' ? parseInt(data.taskId as string, 10) : data.taskId;
       
-      console.log('📝 Creating comment with data:', {
-        ...data,
-        taskId: numericTaskId
-      });
+      // Validate required fields
+      if (!data.content || !data.content.trim()) {
+        throw new Error('Comment content is required');
+      }
       
-      const response = await api.post(API_ENDPOINTS.TASK_COMMENTS, {
-        content: data.content,
-        taskId: numericTaskId
-      });
+      if (!numericTaskId || isNaN(numericTaskId)) {
+        throw new Error('Valid task ID is required');
+      }
       
-      console.log('✅ Create comment response:', response.status, response.data);
+      const requestBody = {
+        content: data.content.trim(),
+        taskId: numericTaskId
+      };
+      
+      const response = await api.post(API_ENDPOINTS.TASK_COMMENTS, requestBody);
       return response.data as TaskComment;
     } catch (error) {
-      console.error('❌ Failed to create comment:');
+      // Enhanced error handling for comment creation
+      const axiosError = error as any;
+      
+      if (axiosError?.response?.status === 403) {
+        throw new Error('Access denied: You do not have permission to comment on this task');
+      } else if (axiosError?.response?.status === 404) {
+        throw new Error('Task not found or you do not have access to it');
+      } else if (axiosError?.response?.status === 401) {
+        throw new Error('Authentication required: Please log in again');
+      } else if (axiosError?.response?.status === 400) {
+        const errorData = axiosError?.response?.data;
+        if (errorData?.validationErrors) {
+          const errors = Object.values(errorData.validationErrors).join(', ');
+          throw new Error(`Validation error: ${errors}`);
+        }
+        throw new Error('Invalid comment data');
+      }
+      
       logAxiosError(error);
       
       // Return a mock comment as fallback for UI

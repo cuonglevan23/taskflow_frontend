@@ -31,6 +31,8 @@ const transformTeamResponse = (backendTeam: TeamResponseDto): Team => {
     organizationId: backendTeam.organizationId,
     createdAt: backendTeam.createdAt ? new Date(backendTeam.createdAt) : new Date(),
     updatedAt: backendTeam.updatedAt ? new Date(backendTeam.updatedAt) : new Date(),
+    // Handle currentUserRole from backend
+    currentUserRole: backendTeam.currentUserRole || 'MEMBER',
   };
 };
 
@@ -241,26 +243,37 @@ export const teamsService = {
       
       // Transform the API response to match the TeamMember type
       return response.data.map((member: any) => {
-        // Combine firstName and lastName if available, otherwise use a default name
-        const name = member.firstName && member.lastName 
-          ? `${member.firstName} ${member.lastName}`.trim()
-          : member.name || `User ${member.userId || member.id}`;
+        // Debug log to check full backend structure first
+        console.log('🔍 Full backend member data:', member);
+        
+        // Extract user info - backend might have nested user object
+        const user = member.user || member;
+        const userInfo = {
+          firstName: user.firstName || member.firstName,
+          lastName: user.lastName || member.lastName,
+          email: user.email || member.email,
+          department: user.department || member.department,
+          jobTitle: user.jobTitle || member.jobTitle,
+          avatar: user.avatar || user.avatarUrl || member.avatar || member.avatarUrl
+        };
+        
+        // Combine firstName and lastName if available
+        const name = userInfo.firstName && userInfo.lastName 
+          ? `${userInfo.firstName} ${userInfo.lastName}`.trim()
+          : user.name || member.name || user.fullName || member.fullName || `User ${member.userId || member.id}`;
           
         return {
           id: member.id,
-          userId: member.userId,
+          userId: member.userId || user.id || member.id,
           name: name,
-          email: member.email || `user${member.userId || member.id}@example.com`,
-          // Default to MEMBER if role is not provided
+          email: userInfo.email || `user${member.userId || member.id}@example.com`,
           role: (member.role || 'MEMBER').toUpperCase(),
-          // Default to ACTIVE if status is not provided
-          status: (member.status || 'ACTIVE').toUpperCase(),
-          joinedAt: member.joinedAt || new Date().toISOString(),
-          department: member.department || 'Not specified',
-          aboutMe: member.aboutMe || '',
-          // Include additional fields that might be useful
-          jobTitle: member.jobTitle || '',
-          avatar: member.avatarUrl || ''
+          status: (member.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'PENDING' | 'INACTIVE',
+          joinedAt: member.joinedAt || member.createdAt || new Date().toISOString(),
+          department: userInfo.department || 'Not specified',
+          aboutMe: user.aboutMe || member.aboutMe || '',
+          jobTitle: userInfo.jobTitle || '',
+          avatar: userInfo.avatar || ''
         };
       });
     } catch (error) {

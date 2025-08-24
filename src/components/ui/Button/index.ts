@@ -1,4 +1,11 @@
 export { default as Button } from './Button';
 export { default as ButtonIcon } from './ButtonIcon';
+export { default as BulkActions } from './BulkActions';
+export { default as SelectAllControl } from './SelectAllControl';
+export { default as ItemSelection } from './ItemSelection';
+export { default as SelectionBadge } from './FileSelectionBadge';
+export { default as ShareButton } from './ShareButton';
+export { default as DeleteButton } from './DeleteButton';
+export { default as DownloadButton } from './DownloadButton';
 export type { ButtonProps } from './Button';
 export type { ButtonIconProps } from './ButtonIcon';

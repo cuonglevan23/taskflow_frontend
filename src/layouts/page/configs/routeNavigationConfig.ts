@@ -177,11 +177,6 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
         icon: LAYOUT_ICONS.list,
       },
       {
-        label: 'Board',
-        href: '/projects/board',
-        icon: LAYOUT_ICONS.board,
-      },
-      {
         label: 'Calendar',
         href: '/projects/calendar',
         icon: LAYOUT_ICONS.calendar,
@@ -323,11 +318,7 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
         href: (params) => `/teams/${params.id}/calendar`,
         icon: LAYOUT_ICONS.calendar,
       },
-      {
-        label: 'Messages',
-        href: (params) => `/teams/${params.id}/messages`,
-        icon: COMMUNICATION_ICONS.message,
-      },
+    
 
     ],
     actions: [],

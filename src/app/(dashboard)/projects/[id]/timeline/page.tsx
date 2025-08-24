@@ -1,195 +1,248 @@
 "use client";
 
-import React, { useState } from 'react';
-import { TimelineGantt } from '@/components/TimelineGantt';
+import React, { useState, ReactNode } from 'react';
+import { useParams } from 'next/navigation';
+import { Loader2, List, AlertCircle, Clock, Calendar as CalendarIcon, CalendarCheck, CalendarDays } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SimpleGantt from '@/components/TimelineGantt/SimpleGantt';
+import { useProject } from '../components/DynamicProjectProvider';
+import { useProjectTasksContext } from '../context/ProjectTasksProvider';
 
-import { TaskConnection } from '@/components/TimelineGantt/hooks/useWorkflowConnection'; // ✅ Add import
-import { ProjectTimelineProvider, useProjectTimeline } from './context/ProjectTimelineContext';
-import { useProjectTimelineActions } from './hooks/useProjectTimelineActions';
-import { useTheme } from '@/layouts/hooks/useTheme';
-import { ViewMode, VIEW_MODES } from '@/components/features/Timeline/ZoomControls';
+const Alert = ({ children }: { children: ReactNode }) => (
+  <div className="bg-muted/20 border border-border/50 p-4 rounded-lg shadow-sm">
+    {children}
+  </div>
+);
 
-interface ProjectTimelinePageProps {
-  searchValue?: string;
-}
+const AlertTitle = ({ children }: { children: ReactNode }) => (
+  <h5 className="font-medium mb-2 text-foreground flex items-center gap-2">{children}</h5>
+);
 
-function ProjectTimelineContent({ searchValue = "" }: ProjectTimelinePageProps) {
-  const { theme } = useTheme();
-  const [viewMode, setViewMode] = useState<ViewMode>('resourceTimelineWeek');
-  const [connections, setConnections] = useState<TaskConnection[]>([]);
+const AlertDescription = ({ children }: { children: ReactNode }) => (
+  <p className="text-sm text-muted-foreground">{children}</p>
+);
 
-  const {
-    ganttTasks,
-    tasksBySection,
-    loading,
-    error,
-    projectName,
-    handleTaskClick,
-    handleSectionToggle,
-    handleAddSection
-  } = useProjectTimeline();
+export default function TimelinePage() {
+  // Get params but don't use directly - needed for context providers
+  useParams();
+  
+  const { project } = useProject();
+  const { tasks } = useProjectTasksContext();
+  
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'quarter' | 'year'>('week');
+  const [sidebarFilter, setSidebarFilter] = useState<string>('all');
+  
+  const isLoading = !project || !tasks;
 
-  // Create demo connections after ganttTasks are loaded  
-  React.useEffect(() => {
-    if (ganttTasks.length >= 3 && connections.length === 0) {
-      const demoConnections: TaskConnection[] = [
-        {
-          id: 'demo-conn-1',
-          fromTaskId: ganttTasks[0].id, // First task
-          toTaskId: ganttTasks[1].id,   // Second task
-          type: 'finish-to-start',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: 'demo-conn-2', 
-          fromTaskId: ganttTasks[1].id, // Second task
-          toTaskId: ganttTasks[2].id,   // Third task
-          type: 'finish-to-start',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-      
-      console.log('🎯 Setting demo connections with real task IDs:', demoConnections);
-      setConnections(demoConnections);
-      console.log('📊 Demo connections set, should trigger TimelineGantt re-render');
-    }
-  }, [ganttTasks, connections.length]);
-
-  const handleViewChange = (newView: ViewMode) => {
-    setViewMode(newView);
+  const handleViewModeChange = (value: string) => {
+    setViewMode(value as 'day' | 'week' | 'month' | 'quarter' | 'year');
   };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-red-500 text-lg font-medium mb-2">
-            {error}
-          </div>
-          <p className="text-gray-600">
-            Please try refreshing the page.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const handleTaskClick = (taskId: string) => {
+    // Just log the task click
+    console.log('Task clicked:', taskId);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-3">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></div>
-          <span style={{ color: theme.text.secondary }}>Loading timeline...</span>
-        </div>
-      </div>
-    );
-  }
+  // Process tasks for different time categories
+  const today = new Date();
+  const nextWeekDate = new Date(today);
+  nextWeekDate.setDate(today.getDate() + 7);
+  
+  // Format tasks for the Gantt chart and different time categories
+  const formattedTasks = tasks ? tasks.map(task => ({
+    id: String(task.id),
+    title: task.title,
+    startDate: task.startDate || new Date().toISOString(),
+    endDate: task.deadline || 
+             (task.startDate ? new Date(new Date(task.startDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : 
+             new Date().toISOString()),
+    priority: (task.priority || 'medium') as 'low' | 'medium' | 'high',
+    status: task.status || 'TODO', // Use original status string
+    description: task.description || `Task #${task.id} - ${task.title}`,
+    assignee: task.assigneeId ? {
+      id: String(task.assigneeId),
+      name: task.assigneeName || 'Assignee',
+      avatar: undefined
+    } : undefined
+  })) : [];
+  
+  // Add some demo tasks if there are no tasks
+  const sampleTasks = formattedTasks.length === 0 ? [
+    {
+      id: "demo1",
+      title: "Complete UI Design",
+      startDate: new Date(2025, 7, 20).toISOString(),
+      endDate: new Date(2025, 7, 25).toISOString(),
+      priority: 'high' as 'low' | 'medium' | 'high',
+      status: 'DONE',
+      description: "Finalize all UI designs for the dashboard",
+      assignee: {
+        id: "user1",
+        name: "John Doe",
+        avatar: undefined
+      }
+    },
+    {
+      id: "demo2",
+      title: "Backend Integration",
+      startDate: new Date(2025, 7, 22).toISOString(),
+      endDate: new Date(2025, 7, 28).toISOString(),
+      priority: 'medium' as 'low' | 'medium' | 'high',
+      status: 'IN_PROGRESS',
+      description: "Integrate frontend with backend API",
+      assignee: {
+        id: "user2",
+        name: "Jane Smith",
+        avatar: undefined
+      }
+    },
+    {
+      id: "demo3",
+      title: "Testing Phase",
+      startDate: new Date(2025, 7, 26).toISOString(),
+      endDate: new Date(2025, 8, 5).toISOString(),
+      priority: 'low' as 'low' | 'medium' | 'high',
+      status: 'TODO',
+      description: "Run QA tests on all features",
+      assignee: {
+        id: "user3",
+        name: "Alex Johnson",
+        avatar: undefined
+      }
+    }
+  ] : [];
+  
+  // Combine real tasks with sample tasks if needed
+  const allTasks = formattedTasks.length > 0 ? formattedTasks : sampleTasks;
+  
+  // Filter tasks based on sidebar selection
+  const filteredTasks = allTasks.filter(task => {
+    const taskDate = new Date(task.startDate);
+    
+    switch (sidebarFilter) {
+      case 'recently':
+        // Tasks assigned in the last 3 days
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(today.getDate() - 3);
+        return taskDate >= threeDaysAgo;
+      case 'today':
+        // Tasks for today
+        return taskDate.toDateString() === today.toDateString();
+      case 'next-week':
+        // Tasks for the next week
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+        return taskDate > today && taskDate <= nextWeek;
+      case 'later':
+        // Tasks scheduled more than a week later
+        const weekLater = new Date();
+        weekLater.setDate(today.getDate() + 7);
+        return taskDate > weekLater;
+      default:
+        return true; // Show all tasks
+    }
+  });
 
   return (
-    <div className="h-screen flex flex-col" style={{ backgroundColor: theme.background.secondary }}>
+    <div className="flex h-full w-full" style={{ width: "100%", minWidth: "100%", height: "100%", display: "flex" }}>
+      {/* Sidebar with task filters */}
+      <div className="w-64 border-r border-border/40 bg-muted/5 flex-shrink-0 p-4" style={{ flexShrink: 0 }}>
+        <div className="mb-6">
+          <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-2">
+            Time Filter
+          </h2>
+          <nav className="space-y-1">
+            {[
+              { id: 'all', label: 'All Tasks', icon: List },
+              { id: 'recently', label: 'Recently Assigned', icon: Clock },
+              { id: 'today', label: 'Do Today', icon: CalendarDays },
+              { id: 'next-week', label: 'Do Next Week', icon: CalendarCheck },
+              { id: 'later', label: 'Do Later', icon: CalendarIcon },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSidebarFilter(item.id)}
+                className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                  sidebarFilter === item.id
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'hover:bg-muted/20 text-muted-foreground'
+                }`}
+              >
+                {React.createElement(item.icon, { size: 16, className: "mr-2" })}
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
 
-      
-      {/* Timeline Gantt - Full remaining height */}
-      <div className="flex-1 min-h-0">
-        <TimelineGantt
-          key={`timeline-${connections.length}`} // ✅ Force re-render when connections change
-          tasks={ganttTasks}
-          tasksBySection={tasksBySection}
-          onTaskClick={handleTaskClick}
-          onSectionToggle={handleSectionToggle}
-          enableWorkflow={true}
-          initialConnections={connections} // ✅ Use actual connections state
-          workflowConfig={{
-            allowSelfConnection: false,
-            allowCircularDependencies: false,
-            maxConnectionsPerTask: 3,
-            validateConnection: async (fromTask, toTask) => {
-              // Business logic validation
-              if (fromTask.priority === 'low' && toTask.priority === 'urgent') {
-                return { valid: false, error: 'Cannot connect low priority task to urgent task' };
-              }
-              return { valid: true };
-            }
-          }}
-          onConnectionCreate={async (connection) => {
-            console.log('🎉 Connection handler called with:', connection);
-            console.log('📊 Current connections before add:', connections.length);
-            
-            // ✅ Add to state immediately for UI update
-            setConnections(prev => {
-              const newConnections = [...prev, connection];
-              console.log('📊 Connections after add:', newConnections.length);
-              return newConnections;
-            });
-            
-            // Here you would save to your API/database
-            try {
-              // await api.createTaskConnection(connection);
-              console.log('✅ Connection saved to database');
-            } catch (error) {
-              console.error('❌ Failed to save connection:', error);
-              // Rollback on API failure
-              setConnections(prev => prev.filter(c => c.id !== connection.id));
-            }
-          }}
-          onConnectionDelete={async (connectionId) => {
-            console.log('🗑️ Connection deleted:', connectionId);
-            // ✅ Remove from state immediately for UI update
-            const deletedConnection = connections.find(c => c.id === connectionId);
-            setConnections(prev => prev.filter(c => c.id !== connectionId));
-            
-            try {
-              // await api.deleteTaskConnection(connectionId);
-              console.log('✅ Connection deleted from database');
-            } catch (error) {
-              console.error('❌ Failed to delete connection:', error);
-              // Rollback on API failure
-              if (deletedConnection) {
-                setConnections(prev => [...prev, deletedConnection]);
-              }
-            }
-          }}
-          onConnectionUpdate={async (connectionId, updates) => {
-            console.log('📝 Connection updated:', connectionId, updates);
-            // ✅ Update state immediately for UI update
-            const originalConnection = connections.find(c => c.id === connectionId);
-            setConnections(prev => prev.map(c => 
-              c.id === connectionId 
-                ? { ...c, ...updates, updatedAt: new Date() }
-                : c
-            ));
-            
-            try {
-              // await api.updateTaskConnection(connectionId, updates);
-              console.log('✅ Connection updated in database');
-            } catch (error) {
-              console.error('❌ Failed to update connection:', error);
-              // Rollback on API failure
-              if (originalConnection) {
-                setConnections(prev => prev.map(c => 
-                  c.id === connectionId ? originalConnection : c
-                ));
-              }
-            }
-          }}
-          loading={loading}
-          error={error}
-          className="h-full"
-          slotMinWidth={VIEW_MODES[viewMode].slotWidth}
-          viewMode={viewMode}
-          onViewModeChange={handleViewChange}
-        />
+      {/* Main content */}
+      <div className="flex-1 p-6 overflow-auto w-full" style={{ 
+        width: "100%", 
+        minWidth: "100%", 
+        flex: 1, 
+        display: "flex", 
+        flexDirection: "column",
+        height: "100%"
+      }}>
+        {/* Simple header */}
+        <div className="flex justify-between items-center mb-6 w-full" style={{ width: "100%" }}>
+          {isLoading ? (
+            <div className="flex items-center">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : (
+            <h1 className="text-lg font-medium">
+              {sidebarFilter === 'all' ? 'All Tasks' : 
+              sidebarFilter === 'recently' ? 'Recently Assigned' : 
+              sidebarFilter === 'today' ? 'Do Today' : 
+              sidebarFilter === 'next-week' ? 'Do Next Week' : 'Do Later'}
+            </h1>
+          )}
+          
+          <Select value={viewMode} onValueChange={handleViewModeChange}>
+            <SelectTrigger className="w-[110px] h-8 text-xs">
+              <SelectValue placeholder="View mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Day View</SelectItem>
+              <SelectItem value="week">Week View</SelectItem>
+              <SelectItem value="month">Month View</SelectItem>
+              <SelectItem value="quarter">Quarter View</SelectItem>
+              <SelectItem value="year">Year View</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Timeline */}
+        <div className="w-full" style={{ 
+          width: "100%", 
+          minWidth: "100%", 
+          display: "flex", 
+          flexDirection: "column",
+          flex: 1,
+          height: "100%"
+        }}>
+          {isLoading ? (
+            <SimpleGantt tasks={[]} isLoading={true} />
+          ) : formattedTasks.length === 0 ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No tasks found</AlertTitle>
+              <AlertDescription>
+                There are no tasks available for this time period.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <SimpleGantt 
+              tasks={filteredTasks} 
+              viewMode={viewMode}
+              onTaskClick={handleTaskClick}
+            />
+          )}
+        </div>
       </div>
     </div>
-  );
-}
-
-export default function ProjectTimelinePage({ searchValue }: ProjectTimelinePageProps) {
-  return (
-    <ProjectTimelineProvider>
-      <ProjectTimelineContent searchValue={searchValue} />
-    </ProjectTimelineProvider>
   );
 }

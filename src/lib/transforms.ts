@@ -92,12 +92,16 @@ export const toBackendStatus = (frontendStatus: string): string => {
   switch (status) {
     case 'completed':
     case 'done':
-      return 'COMPLETED';
+      return 'DONE'; // ✅ FIX: Map to 'DONE' to match backend enum
     case 'in-progress':
     case 'in_progress':
       return 'IN_PROGRESS';
     case 'review':
       return 'REVIEW';
+    case 'testing':
+      return 'TESTING';
+    case 'blocked':
+      return 'BLOCKED';
     case 'todo':
     case 'pending':
     default:

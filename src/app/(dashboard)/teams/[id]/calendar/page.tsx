@@ -2,10 +2,31 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { useParams } from "next/navigation";
-import { TeamCalendar } from '@/components/Calendar';
+import { EnhancedTeamCalendar } from '@/components/Calendar';
 import { DARK_THEME } from "@/constants/theme";
 import { useTeamAllTasks } from '@/hooks/tasks/useTasksData';
 import { useTeam } from '@/hooks/useTeam';
+
+// Define type for calendar task
+interface CalendarTask {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  deadline?: string;
+  dueDate?: string;
+  color: string;
+  assignee: string;
+  assigneeName?: string;
+  avatar: string;
+  projectId?: number;
+  projectName?: string;
+  actualProjectName?: string; // Added field for the actual project name
+  priority?: string;
+  status?: string;
+  description?: string;
+  teamId?: string;
+}
 
 const TeamCalendarPage = React.memo(() => {
   const params = useParams();
@@ -25,94 +46,94 @@ const TeamCalendarPage = React.memo(() => {
     revalidate 
   } = useTeamAllTasks(teamId);
 
-  // Transform backend task data to calendar format
+  // Convert task data to calendar-friendly format
   const tasks = useMemo(() => {
-    return rawTasks.map(task => ({
-      id: task.id?.toString() || '',
-      title: task.title || 'Untitled Task',
-      startDate: task.startDate ? new Date(task.startDate) : new Date(),
-      endDate: task.deadline ? new Date(task.deadline) : new Date(Date.now() + 60 * 60 * 1000),
-      color: task.priority === 'HIGH' ? '#EF4444' : 
-             task.priority === 'MEDIUM' ? '#F97316' : 
-             task.priority === 'LOW' ? '#10B981' : '#6B7280',
-      assignee: task.creatorId ? `User ${task.creatorId}` : 'Unassigned',
-      avatar: task.creatorId ? `U${task.creatorId}` : 'UA',
-    }));
-  }, [rawTasks]);
-
-  // Team calendar handlers with real data integration
-  const handleEventClick = useCallback((task: any) => {
-    // Open task details - navigate to project with task focus
-    if (task.id && task.projectId) {
-      window.location.href = `/projects/${task.projectId}?taskId=${task.id}`;
+    // Debug full task data structure
+    if (rawTasks?.length) {
+      console.log('📊 Raw Team Tasks Data (sample):', rawTasks[0]);
     }
+    
+    if (!rawTasks?.length) return [];
+    
+    return rawTasks.map(task => {
+      let startDate = new Date();
+      let endDate = new Date();
+      
+      // Parse start date if available
+      if (task.startDate) {
+        startDate = new Date(task.startDate);
+      } else {
+        // Default to today if no start date
+        startDate = new Date();
+      }
+      
+      // Parse deadline if available
+      if (task.deadline) {
+        endDate = new Date(task.deadline);
+        // because FullCalendar uses exclusive end dates
+        endDate.setDate(endDate.getDate() + 1); 
+      } else {
+        // If no deadline, make it at least a 1-day event
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 1);
+      }
+      
+      // Log the processed dates
+      console.log('📅 Team calendar processed dates:', {
+        id: task.id,
+        title: task.title,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        rawStartDate: task.startDate,
+        rawDeadline: task.deadline,
+        project: task.project?.name || "Unknown", // Log project info to debug
+        projectId: task.projectId,
+        projectName: task.projectName
+      });
+      
+      // Get actual project name from task data
+      const actualProjectName = task.project?.name || null;
+      
+      // Create the calendar task with all required properties
+      return {
+        id: task.id?.toString() || '',
+        title: task.title || 'Untitled Task',
+        startDate: startDate,
+        endDate: endDate,
+        // Make sure these properties are present for FullCalendarView
+        deadline: task.deadline, 
+        dueDate: task.deadline, // Add dueDate as alternative field
+        color: task.priority === 'HIGH' ? '#EF4444' : 
+               task.priority === 'MEDIUM' ? '#F97316' : 
+               task.priority === 'LOW' ? '#10B981' : '#6B7280',
+        assignee: task.creatorId ? `User ${task.creatorId}` : 'Unassigned',
+        assigneeName: task.assigneeName || task.creatorId ? `User ${task.creatorId}` : 'Unassigned',
+        avatar: task.creatorId ? `U${task.creatorId}` : 'UA',
+        projectId: task.projectId, // Include projectId for context
+        projectName: task.project?.name || task.projectName || `Project ${task.projectId}`, // Try both project.name and projectName
+        actualProjectName: actualProjectName, // Store the actual project name separately
+        priority: task.priority,
+        status: task.status,
+        description: task.description || '',
+        teamId: teamId.toString(), // Include teamId for context
+      };
+    });
+  }, [rawTasks, teamId]);
+
+  // Team calendar handlers - view-only mode
+  const handleEventClick = useCallback((task: CalendarTask) => {
+    // Just log the click event - the TeamCalendar component will handle showing the detail panel
+    console.log('Team calendar task clicked:', {
+      id: task.id,
+      title: task.title,
+      projectId: task.projectId,
+      projectName: task.projectName,
+      actualProjectName: task.actualProjectName // Log the actual project name
+    });
+    
+    // Do not navigate to project page
+    // TeamCalendar component already handles showing the detail panel
   }, []);
-
-  const handleDateClick = useCallback((dateStr: string) => {
-    // TODO: Open create task modal for this date and team
-    console.log('Create task for team on date:', { teamId, dateStr });
-  }, [teamId]);
-
-  const handleEventDrop = useCallback(async (taskId: string, newDateStr: string) => {
-    try {
-      // TODO: Update task date via tasksService
-      console.log('Moving team task:', { taskId, newDateStr });
-      
-      // Optimistic update would be handled by SWR mutation
-      // For now, revalidate to get fresh data
-      await revalidate();
-    } catch (error) {
-      console.error('Failed to move team task:', error);
-    }
-  }, [revalidate]);
-
-  const handleEventResize = useCallback(async (taskId: string, newStartDate: string, newEndDate: string) => {
-    try {
-      // TODO: Update task dates via tasksService
-      console.log('Resizing team task:', { taskId, newStartDate, newEndDate });
-      
-      // Revalidate to get fresh data
-      await revalidate();
-    } catch (error) {
-      console.error('Failed to resize team task:', error);
-    }
-  }, [revalidate]);
-
-  const handleTaskCreate = useCallback(async (taskData: any) => {
-    try {
-      // TODO: Create task via tasksService
-      console.log('Creating team task:', taskData);
-      
-      // After creation, revalidate to get fresh data
-      await revalidate();
-    } catch (error) {
-      console.error('Failed to create team task:', error);
-    }
-  }, [revalidate]);
-
-  const handleTaskSave = useCallback(async (taskId: string, updates: any) => {
-    try {
-      // TODO: Save task via tasksService
-      console.log('Saving team task:', { taskId, updates });
-      
-      // Revalidate to get fresh data
-      await revalidate();
-    } catch (error) {
-      console.error('Failed to save team task:', error);
-    }
-  }, [revalidate]);
-
-  const handleTaskDelete = useCallback(async (taskId: string) => {
-    try {
-      // TODO: Delete task via tasksService
-      console.log('Deleting team task:', taskId);
-      
-      // Revalidate to get fresh data
-      await revalidate();
-    } catch (error) {
-      console.error('Failed to delete team task:', error);
-    }
-  }, [revalidate]);
 
   // Handle error state
   if (error) {
@@ -139,7 +160,7 @@ const TeamCalendarPage = React.memo(() => {
       className="h-screen"
       style={{ backgroundColor: DARK_THEME.background.primary }}
     >
-      <TeamCalendar
+      <EnhancedTeamCalendar
         tasks={tasks}
         teamId={teamId.toString()}
         teamName={team?.name || `Team ${teamId}`}
@@ -147,14 +168,15 @@ const TeamCalendarPage = React.memo(() => {
         error={error?.message || null}
         height="calc(100vh - 80px)"
         
-        // Team-specific handlers with real data integration
+        // View-only mode: only allow viewing, no interactions
         onEventClick={handleEventClick}
-        onDateClick={handleDateClick}
-        onEventDrop={handleEventDrop}
-        onEventResize={handleEventResize}
-        onTaskCreate={handleTaskCreate}
-        onTaskSave={handleTaskSave}
-        onTaskDelete={handleTaskDelete}
+        // Disable all editing features
+        onDateClick={undefined}
+        onEventDrop={undefined}
+        onEventResize={undefined}
+        onTaskCreate={undefined}
+        onTaskSave={undefined}
+        onTaskDelete={undefined}
         className="h-full"
       />
     </div>

@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import type { EventClickArg } from "@fullcalendar/core";
+import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import type { Task } from "@/types";
 import Avatar from '@/components/ui/Avatar/Avatar';
@@ -31,8 +31,11 @@ interface CalendarEvent {
 
 export interface FullCalendarViewProps {
   tasks: Task[];
-  onEventClick: (task: Task) => void; // For viewing task details
-  onDateClick: (dateStr: string) => void; // For viewing date's tasks
+  onEventClick?: (task: Task) => void; // For viewing task details
+  onDateClick?: (dateStr: string) => void; // For viewing date's tasks
+  onEventDrop?: (taskId: string, newDateStr: string) => void; // For dragging tasks
+  onEventResize?: (taskId: string, newStartDate: string, newEndDate: string) => void; // For resizing tasks
+  onTaskCreate?: (taskData: any) => void; // For creating tasks
   height?: string;
   className?: string;
   key?: string | number; // Simple trigger for re-render when layout changes
@@ -44,12 +47,25 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
     return [];
   }
   
+      console.log('🔍 FullCalendarView: Converting tasks:', tasks.map(t => ({
+    id: t.id,
+    title: t.title,
+    startDate: t.startDate,
+    deadline: t.deadline,
+    dueDate: t.dueDate,
+    dueDateISO: t.dueDateISO
+  })));
+  
   return tasks.map(task => {
     try {
       let startDate: string;
       let endDate: string | undefined;
       
-      // Handle different date formats for start date
+      console.log('📅 Processing task for calendar:', {
+        id: task.id,
+        startDate: task.startDate,
+        deadline: task.deadline
+      });      // Handle different date formats for start date
       if (task.startDate) {
         if (Array.isArray(task.startDate) && task.startDate.length >= 3) {
           const [year, month, day] = task.startDate.map(Number);
@@ -88,41 +104,121 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
         startDate = `${year}-${month}-${day}`;
       }
 
-      // Handle end date for multi-day tasks
-      if (task.endDate && task.startDate) {
-        let taskEndDate: Date;
+  // Handle end date for multi-day tasks
+      // Use deadline field from backend
+      if (task.deadline && task.startDate) {
+        let taskStartDate: Date;
         
-        if (Array.isArray(task.endDate) && task.endDate.length >= 3) {
-          const [year, month, day] = task.endDate.map(Number);
-          taskEndDate = new Date(year, month - 1, day);
+        // Parse start date
+        if (Array.isArray(task.startDate) && task.startDate.length >= 3) {
+          const [year, month, day] = task.startDate.map(Number);
+          taskStartDate = new Date(year, month - 1, day);
         } else {
-          taskEndDate = new Date(task.endDate);
+          taskStartDate = new Date(task.startDate);
         }
         
-        // FullCalendar expects EXCLUSIVE end date (next day after actual end)
+        // Parse deadline (end date)
+        const taskEndDate = new Date(task.deadline);
+        
+        console.log('🔍 Project Calendar - Task dates:', {
+          taskId: task.id,
+          title: task.title,
+          startDate: taskStartDate.toISOString().split('T')[0],
+          deadline: taskEndDate.toISOString().split('T')[0],
+          isMultiDay: taskEndDate.getTime() !== taskStartDate.getTime()
+        });
+        
+        // Always set endDate for tasks with deadline (even if same as start date)
+        // This ensures the event is resizable in FullCalendar
+        // For FullCalendar, we need EXCLUSIVE end date (next day after actual end)
         const nextDay = new Date(taskEndDate);
         nextDay.setDate(nextDay.getDate() + 1);
         const year = nextDay.getFullYear();
         const month = String(nextDay.getMonth() + 1).padStart(2, '0');
         const day = String(nextDay.getDate()).padStart(2, '0');
         endDate = `${year}-${month}-${day}`;
+            
+        console.log('📅 Calendar event dates will be:', { startDate, endDate });
+      } else if (task.dueDate && task.startDate && task.dueDate !== 'No deadline') {
+        // Handle dueDate vs startDate for multi-day display
+        let taskStartDate: Date;
+        let taskDueDate: Date;
+        
+        // Parse start date
+        if (Array.isArray(task.startDate) && task.startDate.length >= 3) {
+          const [year, month, day] = task.startDate.map(Number);
+          taskStartDate = new Date(year, month - 1, day);
+        } else {
+          taskStartDate = new Date(task.startDate);
+        }
+        
+        // Parse due date
+        if (typeof task.dueDate === 'string' && task.dueDate !== 'No deadline') {
+          taskDueDate = new Date(task.dueDate);
+          
+          // Only set endDate if task spans multiple days
+          if (taskDueDate.getTime() !== taskStartDate.getTime()) {
+            // FullCalendar expects EXCLUSIVE end date (next day after actual end)
+            const nextDay = new Date(taskDueDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const year = nextDay.getFullYear();
+            const month = String(nextDay.getMonth() + 1).padStart(2, '0');
+            const day = String(nextDay.getDate()).padStart(2, '0');
+            endDate = `${year}-${month}-${day}`;
+          }
+        }
       }
 
+      // Always make deadline the day after start if missing
+      if (!task.deadline && task.startDate) {
+        const startDateObj = new Date(task.startDate);
+        startDateObj.setDate(startDateObj.getDate() + 1);
+        task.deadline = startDateObj.toISOString().split('T')[0];
+        console.log('📝 Added default deadline to task:', {
+          id: task.id,
+          title: task.title,
+          startDate: task.startDate,
+          deadline: task.deadline
+        });
+      }
+      
       // Get colors using local function
       const { backgroundColor, borderColor } = getTaskColorsFunc(task);
       
       // Check task status
       const isCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
       const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
-      const isMultiDay = !!endDate && endDate !== startDate;
+
+      // Check if this task is a multiday task
+      let hasMultipleDays = false;
+      if (task.startDate && task.deadline) {
+        const startDateStr = typeof task.startDate === 'string' 
+          ? task.startDate 
+          : new Date(task.startDate).toISOString().split('T')[0];
+          
+        const deadlineStr = typeof task.deadline === 'string' 
+          ? task.deadline 
+          : new Date(task.deadline).toISOString().split('T')[0];
+          
+        hasMultipleDays = startDateStr !== deadlineStr;
+      }
+        
+      console.log('🎯 Task multiday status:', {
+        id: task.id,
+        title: task.title,
+        startDate: task.startDate,
+        deadline: task.deadline,
+        hasMultipleDays,
+        endDate
+      });
 
 
 
       return {
         id: task.id?.toString() || Math.random().toString(),
-        title: `${task.title || 'Untitled Task'}${isCompleted ? ' ✓' : ''}${isOverdue ? ' ⚠️' : ''}${isMultiDay ? ' 📅' : ''}`,
+        title: `${task.title || 'Untitled Task'}${isCompleted ? ' ✓' : ''}${isOverdue ? ' ⚠️' : ''}${hasMultipleDays ? ' 📅' : ''}`,
         start: startDate,
-        end: endDate,
+        end: endDate,  // This is set for all tasks with deadline 
         allDay: true,
         backgroundColor,
         borderColor,
@@ -134,7 +230,7 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
           project: task.projectId?.toString() || '',
           status: task.status || 'pending',
           priority: task.priority || 'low',
-          isMultiDay
+          isMultiDay: hasMultipleDays
         }
       };
     } catch (error) {
@@ -148,6 +244,8 @@ export const FullCalendarView = ({
   tasks,
   onEventClick,
   onDateClick,
+  onEventDrop,
+  onEventResize,
   height = "100%",
   className = ""
 }: FullCalendarViewProps) => {
@@ -230,10 +328,77 @@ export const FullCalendarView = ({
     };
   }, []);
 
+  // Event handlers for drag & drop
+  const handleEventDrop = useCallback((info: EventDropArg) => {
+    if (!onEventDrop) return;
+    
+    const taskId = info.event.id;
+    const newDate = info.event.start;
+    if (!newDate) return;
+    
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, '0');
+    const day = String(newDate.getDate()).padStart(2, '0');
+    const newDateStr = `${year}-${month}-${day}`;
+    
+    onEventDrop(taskId, newDateStr);
+  }, [onEventDrop]);
+
+  const handleEventResize = useCallback((info: { event: { id: string; start: Date | null; end: Date | null; extendedProps?: any } }) => {
+    if (!onEventResize) return;
+    
+    const taskId = info.event.id;
+    const startDate = info.event.start;
+    let endDate = info.event.end;
+    const originalTask = info.event.extendedProps?.originalTask;
+    
+    if (!startDate) return;
+    
+    console.log('⚡ FullCalendarView: Event resize detected:', { 
+      taskId, 
+      title: originalTask?.title,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate?.toISOString().split('T')[0],
+      originalStart: originalTask?.startDate,
+      originalDeadline: originalTask?.deadline
+    });
+    
+    // FullCalendar uses exclusive end dates (the end date is the day after the last day)
+    // We need to subtract one day to get the actual end date for the API
+    if (endDate) {
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
+      endDate = adjustedEndDate;
+      
+      console.log('📅 FullCalendarView: Adjusted end date:', endDate.toISOString().split('T')[0]);
+    } else {
+      endDate = startDate;
+    }
+    
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+    
+    console.log('🔄 FullCalendarView: Resizing task with formatted dates:', { 
+      taskId, 
+      formattedStartDate, 
+      formattedEndDate,
+      daysSpan: Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    });
+    
+    onEventResize(taskId, formattedStartDate, formattedEndDate);
+  }, [onEventResize]);
+
   // Event handlers
   const handleEventClick = useCallback((info: EventClickArg) => {
     const originalTask = info.event.extendedProps.originalTask;
-    if (originalTask) {
+    if (originalTask && onEventClick) {
       onEventClick(originalTask);
     }
   }, [onEventClick]);
@@ -254,7 +419,9 @@ export const FullCalendarView = ({
     const day = String(clickedDate.getDate()).padStart(2, '0');
     const localDateStr = `${year}-${month}-${day}`;
     
-    onDateClick(localDateStr);
+    if (onDateClick) {
+      onDateClick(localDateStr);
+    }
   }, [onDateClick]);
 
   // Custom event content renderer to show avatars
@@ -326,17 +493,19 @@ export const FullCalendarView = ({
         height="100%"
         events={calendarEvents}
         
-        // Calendar Interaction Settings
-        editable={false} // Disable drag & drop
-        droppable={false} // Disable dropping
-        selectable={false} // Disable date selection
+                // Calendar Interaction Settings - Enable drag & drop when handlers are provided
+        editable={!!onEventDrop || !!onEventResize} // Enable drag & drop if handlers provided
+        droppable={!!onEventDrop} // Enable dropping if handler provided
+        selectable={false} // Keep date selection disabled
         selectMirror={false} // Disable selection mirror
-        eventResizableFromStart={false} // Disable resizing
-        eventDurationEditable={false} // Disable duration editing
+        eventResizableFromStart={!!onEventResize} // Enable resizing from start if handler provided
+        eventDurationEditable={!!onEventResize} // Enable duration editing if handler provided
         
         // Event Handlers
         eventClick={handleEventClick} // Keep event click for viewing details
-        dateClick={handleDateClick} // Keep date click for view only
+        dateClick={handleDateClick} // Keep date click for creating tasks
+        eventDrop={onEventDrop ? handleEventDrop : undefined} // Add drop handler
+        eventResize={onEventResize ? handleEventResize : undefined} // Add resize handler
         
         // Custom event content with avatars
         eventContent={renderEventContent}
@@ -548,9 +717,6 @@ export const FullCalendarView = ({
        
         }
         
-
-
-
 
 
       `}</style>

@@ -21,7 +21,7 @@ export interface TeamMember {
   userId?: number;
   name: string;
   email?: string;
-  role: 'MEMBER' | 'LEADER';
+  role: string; // Allow any role string from backend
   status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
   joinedAt?: string;
   department?: string;
@@ -104,7 +104,7 @@ export default function MembersTable({
               >
                 <UserAvatar 
                   name={member.name} 
-                  src={member.avatar} 
+                  avatar={member.avatar} 
                   size="sm"
                 />
                 <div>
@@ -146,7 +146,8 @@ export default function MembersTable({
               >
                 <span 
                   className={`text-sm px-2 py-1 rounded-full ${
-                    member.role === 'LEADER' ? 'bg-blue-500 bg-opacity-20 text-blue-400' : 
+                    member.role === 'OWNER' ? 'bg-blue-500 bg-opacity-20 text-blue-400' : 
+                    member.role === 'ADMIN' || member.role === 'LEADER' ? 'bg-purple-500 bg-opacity-20 text-purple-400' :
                     'bg-gray-500 bg-opacity-20 text-gray-400'
                   }`}
                 >

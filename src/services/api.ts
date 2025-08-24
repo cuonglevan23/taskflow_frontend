@@ -170,8 +170,8 @@ export const api = {
 // Health Check Function
 export const healthCheck = async (): Promise<boolean> => {
   try {
-    await api.get('/actuator/health');
-    return true;
+    const response = await fetch('/api/health');
+    return response.ok;
   } catch {
     // Health check failed
     return false;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useProject } from '../../components/DynamicProjectProvider';
 
 export interface ProjectFile {
@@ -26,20 +26,8 @@ export interface ProjectFile {
   folder: string;
 }
 
-export interface FileFolder {
-  id: string;
-  name: string;
-  parentId: string | null;
-  createdAt: string;
-  updatedAt: string;
-  color: string;
-  isShared: boolean;
-}
-
 interface ProjectFilesContextValue {
   files: ProjectFile[];
-  folders: FileFolder[];
-  currentFolder: FileFolder | null;
   loading: boolean;
   error: string | null;
   
@@ -47,15 +35,8 @@ interface ProjectFilesContextValue {
   uploadFile: (file: File, folderId?: string) => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
   updateFile: (fileId: string, updates: Partial<ProjectFile>) => Promise<void>;
-  moveFile: (fileId: string, targetFolderId: string) => Promise<void>;
   shareFile: (fileId: string, userIds: string[]) => Promise<void>;
   bulkDeleteFiles: (fileIds: string[]) => Promise<void>;
-  
-  // Folder operations
-  createFolder: (name: string, parentId?: string) => Promise<void>;
-  deleteFolder: (folderId: string) => Promise<void>;
-  updateFolder: (folderId: string, updates: Partial<FileFolder>) => Promise<void>;
-  navigateToFolder: (folderId: string | null) => void;
   
   // File selection and preview
   selectedFiles: string[];
@@ -138,7 +119,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     version: 1,
     isShared: true,
     sharedWith: ['sarah.wilson'],
-    folder: 'assets'
+    folder: 'root'
   },
   {
     id: `${projectId}-file-demo-image-3`,
@@ -159,7 +140,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     version: 2,
     isShared: false,
     sharedWith: [],
-    folder: 'assets'
+    folder: 'root'
   },
   {
     id: `${projectId}-file-2`,
@@ -180,7 +161,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     version: 3,
     isShared: false,
     sharedWith: [],
-    folder: 'docs'
+    folder: 'root'
   },
   {
     id: `${projectId}-file-3`,
@@ -201,7 +182,7 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     version: 1,
     isShared: true,
     sharedWith: ['sarah.wilson', 'alex.taylor'],
-    folder: 'assets'
+    folder: 'root'
   },
   {
     id: `${projectId}-file-4`,
@@ -222,54 +203,13 @@ const generateMockFiles = (projectId: string, projectName: string): ProjectFile[
     version: 2,
     isShared: true,
     sharedWith: ['john.doe'],
-    folder: 'database'
-  }
-];
-
-const generateMockFolders = (projectId: string): FileFolder[] => [
-  {
-    id: 'root',
-    name: 'Root',
-    parentId: null,
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    color: '#6B7280',
-    isShared: false
-  },
-  {
-    id: 'docs',
-    name: 'Documentation',
-    parentId: 'root',
-    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    color: '#3B82F6',
-    isShared: true
-  },
-  {
-    id: 'assets',
-    name: 'Assets',
-    parentId: 'root',
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    color: '#10B981',
-    isShared: true
-  },
-  {
-    id: 'database',
-    name: 'Database',
-    parentId: 'root',
-    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    color: '#F59E0B',
-    isShared: false
+    folder: 'root'
   }
 ];
 
 export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
-  const { project, loading: projectLoading } = useProject();
+  const { project } = useProject();
   const [files, setFiles] = useState<ProjectFile[]>([]);
-  const [folders, setFolders] = useState<FileFolder[]>([]);
-  const [currentFolder, setCurrentFolder] = useState<FileFolder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
@@ -287,12 +227,9 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
         // In real app, this would be API calls
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
         
-        const mockFiles = generateMockFiles(project.id, project.name);
-        const mockFolders = generateMockFolders(project.id);
+        const mockFiles = generateMockFiles(project.id.toString(), project.name);
         
         setFiles(mockFiles);
-        setFolders(mockFolders);
-        setCurrentFolder(mockFolders.find(f => f.id === 'root') || null);
         
       } catch (err) {
         setError('Failed to load projects files');
@@ -386,10 +323,6 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
     }
   };
 
-  const moveFile = async (fileId: string, targetFolderId: string) => {
-    await updateFile(fileId, { folder: targetFolderId });
-  };
-
   const shareFile = async (fileId: string, userIds: string[]) => {
     await updateFile(fileId, { isShared: userIds.length > 0, sharedWith: userIds });
   };
@@ -400,107 +333,12 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
       await new Promise(resolve => setTimeout(resolve, 500));
       setFiles(prev => prev.filter(file => !fileIds.includes(file.id)));
       setSelectedFiles([]);
-      
     } catch (err) {
       setError('Failed to delete files');
       console.error('Error deleting files:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Folder operations
-  const createFolder = async (name: string, parentId: string = 'root') => {
-    if (!project) return;
-    
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const newFolder: FileFolder = {
-        id: `folder-${Date.now()}`,
-        name,
-        parentId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        color: '#6B7280',
-        isShared: false
-      };
-      
-      setFolders(prev => [...prev, newFolder]);
-      
-    } catch (err) {
-      setError('Failed to create folder');
-      console.error('Error creating folder:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteFolder = async (folderId: string) => {
-    if (folderId === 'root') return; // Cannot delete root folder
-    
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Move files in this folder to parent
-      const folder = folders.find(f => f.id === folderId);
-      if (folder) {
-        const filesToMove = files.filter(f => f.folder === folderId);
-        const parentFolderId = folder.parentId || 'root';
-        
-        setFiles(prev => prev.map(file => 
-          file.folder === folderId 
-            ? { ...file, folder: parentFolderId }
-            : file
-        ));
-      }
-      
-      setFolders(prev => prev.filter(folder => folder.id !== folderId));
-      
-      // Navigate to parent if current folder was deleted
-      if (currentFolder?.id === folderId) {
-        const parentFolder = folders.find(f => f.id === currentFolder.parentId) || 
-                            folders.find(f => f.id === 'root');
-        setCurrentFolder(parentFolder || null);
-      }
-      
-    } catch (err) {
-      setError('Failed to delete folder');
-      console.error('Error deleting folder:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateFolder = async (folderId: string, updates: Partial<FileFolder>) => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setFolders(prev => prev.map(folder => 
-        folder.id === folderId 
-          ? { ...folder, ...updates, updatedAt: new Date().toISOString() }
-          : folder
-      ));
-      
-      if (currentFolder?.id === folderId) {
-        setCurrentFolder(prev => prev ? { ...prev, ...updates } : null);
-      }
-      
-    } catch (err) {
-      setError('Failed to update folder');
-      console.error('Error updating folder:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const navigateToFolder = (folderId: string | null) => {
-    const folder = folderId ? folders.find(f => f.id === folderId) : folders.find(f => f.id === 'root');
-    setCurrentFolder(folder || null);
-    setSelectedFiles([]);
   };
 
   // File preview
@@ -512,28 +350,28 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
     setSelectedFile(null);
   };
 
+  // Context value
   const contextValue: ProjectFilesContextValue = {
     files,
-    folders,
-    currentFolder,
-    loading: loading || projectLoading,
+    loading,
     error,
+    
+    // File operations
     uploadFile,
     deleteFile,
     updateFile,
-    moveFile,
     shareFile,
     bulkDeleteFiles,
-    createFolder,
-    deleteFolder,
-    updateFolder,
-    navigateToFolder,
+    
+    // File selection and preview
     selectedFiles,
     setSelectedFiles,
     selectedFile,
     previewFile,
     closePreview,
-    projectId: project?.id || '',
+    
+    // Project context
+    projectId: project?.id?.toString() || '',
     projectName: project?.name || '',
   };
 
@@ -546,7 +384,7 @@ export function ProjectFilesProvider({ children }: ProjectFilesProviderProps) {
 
 export function useProjectFiles() {
   const context = useContext(ProjectFilesContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useProjectFiles must be used within a ProjectFilesProvider');
   }
   return context;

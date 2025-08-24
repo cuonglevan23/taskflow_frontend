@@ -41,8 +41,8 @@ export const TaskRow = ({
   // Simple task action handlers that call the provided parent handlers
   const handleCompleteTask = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Use consistent lowercase status values that match toBackendStatus mapping
-    const isCurrentlyCompleted = task.status === 'DONE' || task.status === 'completed' || task.status === 'done' || task.completed;
+    // ✅ FIX: Use same completion check logic as MyTasksCard
+    const isCurrentlyCompleted = task.completed || (task.status as string) === 'completed' || task.status === 'DONE';
     const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
 
     onTaskStatusChange?.(task.id, newStatus);
@@ -202,8 +202,8 @@ export const TaskRow = ({
     handleCancelAssignee();
   };
 
-  const handleInviteUserByEmail = () => {
-    handleInviteUser(editState.assigneeInputValue);
+  const handleInviteUserByEmail = (email: string) => {
+    handleInviteUser(email);
     handleCancelAssignee();
   };
 

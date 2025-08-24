@@ -10,6 +10,7 @@ import UserMenu from "./UserMenu";
 import { CreateButton } from "@/components/features/create";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { DARK_THEME } from "@/constants/theme";
+import { ServerStatus } from "@/components/ui/ServerStatus";
 
 
 
@@ -101,6 +102,11 @@ export default function PrivateHeader({
 
       {/* Right Section */}
       <div className="flex items-center space-x-3">
+        {/* Server Status */}
+        <div className="hidden md:flex">
+          <ServerStatus showText={false} className="mr-2" />
+        </div>
+
         {/*/!* Current Role Indicator *!/*/}
         {/*<div className="hidden md:flex items-center space-x-2">*/}
         {/*  <span className="text-xs text-gray-400">Role:</span>*/}

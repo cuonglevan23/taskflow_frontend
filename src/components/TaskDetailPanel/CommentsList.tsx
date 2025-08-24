@@ -9,125 +9,51 @@ interface CommentsListProps {
   currentUserEmail?: string;
 }
 
-const CommentsList = ({
-  taskId,
-  currentUserEmail = "cuonglv.21ad@vku.udn.vn"
-}: CommentsListProps) => {
-  // Use custom hooks for data and actions
-  const numericTaskId = taskId ? parseInt(taskId, 10) : null;
+const CommentsList: React.FC<CommentsListProps> = ({ taskId }) => {
+  const numericTaskId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
   
-  // Log the ID being used
-  console.log('Task ID for comments:', { original: taskId, numeric: numericTaskId });
-  
-  const { comments, isLoading, error, revalidate } = useTaskComments(numericTaskId);
-  const { count: commentCount, isLoading: isCountLoading } = useCommentCount(numericTaskId);
-  const { updateComment, deleteComment, isUpdating, isDeleting } = useCommentActions(numericTaskId);
+  const {
+    comments,
+    total,
+    isLoading,
+    error,
+    revalidate
+  } = useTaskComments(numericTaskId);
 
-  const handleEditComment = async (commentId: number, content: string) => {
-    try {
-      await updateComment(commentId, content);
-    } catch (error) {
-      console.error('Failed to update comment:', error);
-    }
-  };
-
-  const handleDeleteComment = async (commentId: number) => {
-    try {
-      await deleteComment(commentId);
-    } catch (error) {
-      console.error('Failed to delete comment:', error);
-    }
-  };
-
-  if (!taskId) {
-    return (
-      <div className="text-gray-400 text-center py-8">
-        Select a task to view comments
-      </div>
-    );
-  }
+  const { createComment, updateComment, deleteComment } = useCommentActions(numericTaskId);
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {/* Loading skeleton */}
-        {[1, 2].map((i) => (
-          <div key={i} className="flex items-start gap-3 animate-pulse">
-            <div className="w-8 h-8 bg-gray-600 rounded-full"></div>
-            <div className="flex-1">
-              <div className="h-3 bg-gray-600 rounded w-1/3 mb-2"></div>
-              <div className="h-16 bg-gray-600 rounded"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <div>Loading comments...</div>;
   }
 
   if (error) {
-    const errorStatus = error?.response?.status;
-    const errorMessage = error?.response?.data?.message || error?.message;
-    
-    let displayMessage = 'Failed to load comments';
-    let showRetry = true;
-    
-    if (errorStatus === 403) {
-      displayMessage = 'You do not have permission to view comments for this task';
-      showRetry = false;
-    } else if (errorStatus === 500) {
-      displayMessage = 'Server error: Unable to load comments. Please try again later.';
-    } else if (errorStatus === 404) {
-      displayMessage = 'Task not found or comments unavailable';
-      showRetry = false;
+    // Show user-friendly error messages
+    if (error.message?.includes('Access denied')) {
+      return <div className="text-yellow-500">You don't have permission to view comments for this task.</div>;
+    } else if (error.message?.includes('not found')) {
+      return <div className="text-yellow-500">This task was not found or you don't have access to it.</div>;
+    } else if (error.message?.includes('Authentication required')) {
+      return <div className="text-red-500">Please log in again to view comments.</div>;
     }
-    
-    return (
-      <div className="text-red-400 text-center py-8">
-        <div className="mb-2">{displayMessage}</div>
-        {errorMessage && (
-          <div className="text-xs text-gray-500 mb-3 max-w-md mx-auto">
-            {errorMessage}
-          </div>
-        )}
-        {showRetry && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => revalidate()}
-            className="text-blue-400 hover:text-blue-300"
-          >
-            Try again
-          </Button>
-        )}
-      </div>
-    );
+    return <div className="text-red-500">Error loading comments. Please try again.</div>;
   }
 
   return (
     <div className="space-y-4">
-      {/* Existing Comments */}
-      {comments.length > 0 ? (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-400 mb-2">
-            {commentCount} Comment{commentCount !== 1 ? 's' : ''}
-          </div>
+      <h3 className="text-lg font-semibold">Comments ({total})</h3>
+      
+      {comments.length === 0 ? (
+        <p className="text-gray-500">No comments yet.</p>
+      ) : (
+        <div className="space-y-3">
           {comments.map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
-              onEdit={handleEditComment}
-              onDelete={handleDeleteComment}
-              isEditing={isUpdating}
-              isDeleting={isDeleting}
-              canEdit={comment.userEmail === currentUserEmail}
-              canDelete={comment.userEmail === currentUserEmail}
+              onUpdate={updateComment}
+              onDelete={deleteComment}
             />
           ))}
-        </div>
-      ) : (
-        <div className="text-gray-400 text-center py-8">
-          <div className="text-lg mb-2">No comments yet</div>
-          <div className="text-sm">Be the first to add a comment</div>
         </div>
       )}
     </div>

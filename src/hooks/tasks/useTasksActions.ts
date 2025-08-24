@@ -422,13 +422,13 @@ export const useUpdateTaskStatus = () => {
   };
 };
 
-// Mutation Hook: Assign task by email
+// Mutation Hook: Assign task
 export const useAssignTask = () => {
   const { trigger, isMutating, error } = useSWRMutation(
     taskKeys.all,
-    async (key, { arg }: { arg: { id: string; email: string } }) => {
-      const { id, email } = arg;
-      const updatedTask = await tasksService.assignTask(id, email);
+    async (key, { arg }: { arg: { id: string; userId: string } }) => {
+      const { id, userId } = arg;
+      const updatedTask = await tasksService.assignTask(id, userId);
       
       // Update cache
       mutate(taskKeys.detail(id), updatedTask, false);

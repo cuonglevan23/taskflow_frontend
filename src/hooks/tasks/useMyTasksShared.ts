@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import { useMyTasksData, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
+import { useMemo, useCallback, useRef } from 'react';
+import { useMyTasksSummary, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
 import { useTasksContext } from '@/contexts/TasksContext';
 import { CookieAuth } from '@/utils/cookieAuth';
 import type { Task, CreateTaskDTO } from '@/types';
@@ -33,7 +33,7 @@ interface MyTasksSharedReturn {
     onTaskClick: (task: TaskListItem | Task) => void;
     onTaskEdit: (task: TaskListItem) => Promise<void>;
     onTaskComplete: (task: TaskListItem) => Promise<void>;
-    onCreateTask: (taskData: any) => Promise<void>;
+    onCreateTask: (taskData: Record<string, unknown>) => Promise<void>;
     onTaskDelete: (taskId: string) => Promise<void>;
     onTaskStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
     onTaskAssign: (taskId: string, assigneeId: string) => Promise<void>;
@@ -60,8 +60,8 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   // Get UI state from context
   const { setSelectedTaskId } = useTasksContext();
   
-  // SWR data fetching - Use detailed endpoint instead of summary
-  const { tasks, isLoading, error, revalidate } = useMyTasksData({
+  // SWR data fetching
+  const { tasks, isLoading, error, revalidate } = useMyTasksSummary({
     page,
     size,
     sortBy,
@@ -70,9 +70,12 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   
   // SWR mutation hooks
   const { updateTask, isUpdating } = useUpdateTask();
-  const { updateTaskStatus, isUpdating: isUpdatingStatus } = useUpdateTaskStatus();
+  const { updateTaskStatus } = useUpdateTaskStatus();
   const { deleteTask, isDeleting } = useDeleteTask();
   const { createTask, isCreating } = useCreateTask();
+
+  // Static flag to prevent duplicate date clicks
+  const dateClickInProgress = useRef(false);
 
   // Helper function to format dates consistently
   const formatDate = useCallback((date: Date | string | null | undefined) => {
@@ -86,7 +89,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
 
   // Convert Task to TaskListItem - Memoized for performance
   const convertTaskToTaskListItem = useCallback((task: Task): TaskListItem => {
-    return {
+    const taskListItem = {
       id: task.id.toString(),
       name: task.title,
       description: task.description || '',
@@ -95,21 +98,26 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         name: task.creatorName,
         email: '',
       }] : [],
+      // Map assignedEmails field for email assignment display
+      assignedEmails: task.assignedEmails || [],
       dueDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : undefined,
       startDate: formatDate(task.startDate),
-      deadline: formatDate(task.endDate),
+      deadline: formatDate(task.deadline),
       startTime: '',
       endTime: '',
       hasStartTime: false,
       hasEndTime: false,
-      priority: (task.priority as any) || 'MEDIUM',
-      status: task.status === 'DONE' ? 'DONE' : 
-              task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'TODO',
+      priority: (task.priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT') || 'MEDIUM',
+      status: (task.status === 'DONE' ? 'DONE' : 
+              task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'TODO') as TaskStatus,
+      completed: task.completed || task.status === 'DONE', // ✅ FIX: Use both completed field and status check
       tags: task.tags || [],
       project: task.tagText || 'Default Project',
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
     };
+
+    return taskListItem;
   }, [formatDate]);
 
   // Transform tasks to TaskListItem format - Memoized
@@ -132,7 +140,6 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     onTaskClick: (task: TaskListItem | Task) => {
       const taskId = typeof task.id === 'string' ? task.id : task.id.toString();
       setSelectedTaskId(taskId);
-      console.log('Task clicked:', task);
     },
     
     onTaskEdit: async (task: TaskListItem) => {
@@ -146,19 +153,19 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
           const backendData = {
             title: task.name,
             description: task.description || '',
-            status: task.status === 'DONE' ? 'DONE' : 
+            status: (task.status === 'DONE' ? 'DONE' : 
                    task.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
-                   task.status === 'REVIEW' ? 'REVIEW' : 'TODO',
-            priority: task.priority === 'LOW' ? 'LOW' :
+                   task.status === 'REVIEW' ? 'REVIEW' : 'TODO') as 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE',
+            priority: (task.priority === 'LOW' ? 'LOW' :
                      task.priority === 'MEDIUM' ? 'MEDIUM' :
-                     task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
+                     task.priority === 'HIGH' ? 'HIGH' : 'CRITICAL') as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
             startDate: task.startDate || new Date().toISOString().split('T')[0],
             deadline: task.deadline || task.dueDate || undefined,
           };
           
           await projectTaskService.projectTaskService.updateTask(
             parseInt(task.id), 
-            backendData as any
+            backendData
           );
         } else {
           // Use personal task API for my-tasks
@@ -223,27 +230,80 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     },
     
     onCreateTask: async (taskData: Record<string, unknown>) => {
+      console.log('🚀 useMyTasksShared.onCreateTask called with:', taskData);
       try {
-        const backendData = {
-          title: taskData.name || 'New Task',
-          description: taskData.description || '',
+        // Get user information for proper task creation
+        const tokenPayload = CookieAuth.getTokenPayload();
+        const userInfo = CookieAuth.getUserInfo();
+        console.log('👤 User info:', { tokenPayload, userInfo });
+        
+        // Get current date for task
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Map actionTime to due date (for bucket-based creation)
+        let dueDate = todayStr;
+        let dueDateISO = today;
+        
+        if (taskData.actionTime) {
+          const nextWeek = new Date(today);
+          nextWeek.setDate(today.getDate() + 7);
+          const later = new Date(today);
+          later.setDate(today.getDate() + 14);
+          
+          switch (taskData.actionTime) {
+            case 'do-today':
+              dueDate = todayStr;
+              dueDateISO = today;
+              break;
+            case 'do-next-week':
+              dueDate = nextWeek.toISOString().split('T')[0];
+              dueDateISO = nextWeek;
+              break;
+            case 'do-later':
+              dueDate = later.toISOString().split('T')[0];
+              dueDateISO = later;
+              break;
+            case 'recently-assigned':
+            default:
+              dueDate = todayStr;
+              dueDateISO = today;
+              break;
+          }
+        }
+
+        // Create proper CreateTaskDTO object like calendar does
+        const createTaskDto: CreateTaskDTO = {
+          title: (taskData.name as string) || 'New Task',
+          description: (taskData.description as string) || '',
           status: taskData.status === 'DONE' ? 'DONE' : 
                  taskData.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
                  taskData.status === 'REVIEW' ? 'REVIEW' : 'TODO',
           priority: taskData.priority === 'LOW' ? 'LOW' :
                    taskData.priority === 'MEDIUM' ? 'MEDIUM' :
                    taskData.priority === 'HIGH' ? 'HIGH' : 'MEDIUM',
-          startDate: taskData.startDate || new Date().toISOString().split('T')[0],
-          deadline: taskData.dueDate || taskData.endDate || null,
-          groupId: taskData.groupId || null,
-          projectId: taskData.projectId || null,
-          creatorId: taskData.creatorId || null,
-          assignedToIds: taskData.assignedToIds || [],
+          startDate: (taskData.startDate as string) || todayStr,
+          deadline: (taskData.deadline as string) || dueDate,
+          dueDate: (taskData.dueDate as string) || dueDate,
+          dueDateISO: dueDateISO,
+          groupId: (taskData.groupId as number) || undefined,
+          projectId: (taskData.projectId as number) || undefined,
+          creatorId: (taskData.creatorId as number) || tokenPayload?.userId || parseInt(userInfo.id || '1'),
+          assignedToIds: (taskData.assignedToIds as number[]) || [],
         };
         
-        await createTask(backendData);
+        console.log('📝 CreateTaskDTO prepared:', createTaskDto);
+        
+        // Use the same createTask method as calendar
+        console.log('🔄 Calling createTask...');
+        await createTask(createTaskDto);
+        console.log('✅ Task created successfully');
+        
+        // Revalidate data after creation
+        revalidate();
+        console.log('🔄 Data revalidated');
       } catch (error) {
-        console.error('Failed to create task:', error);
+        console.error('❌ Failed to create task in useMyTasksShared:', error);
         throw error;
       }
     },
@@ -271,29 +331,30 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       }
     },
     
-    onTaskStatusChange: async (taskId: string, status: TaskStatus) => {
+    onTaskStatusChange: async (taskId: string, status: TaskStatus | string) => {
       try {
-        const backendStatus = status === 'DONE' ? 'DONE' : 
-                            status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 
-                            status === 'REVIEW' ? 'REVIEW' : 'TODO';
+        // ✅ FIX: Use same approach as MyTasksCard - use updateTask instead of updateTaskStatus
+        const backendStatus = status.toString().toLowerCase() === 'completed' ? 'completed' : 'todo';
         
-        // ✅ FIX: Use updateTaskStatus instead of updateTask for status changes
-        await updateTaskStatus({ 
+        // ✅ FIX: Use updateTask like MyTasksCard does
+        await updateTask({ 
           id: taskId, 
-          status: backendStatus
+          data: { status: backendStatus }
         });
+        
+        // ✅ FIX: Revalidate data after status change
+        revalidate();
       } catch (error) {
         console.error('Failed to update task status:', error);
         throw error;
       }
     },
     
-    onTaskAssign: async (taskId: string, assigneeEmail: string) => {
+    onTaskAssign: async (taskId: string, assigneeId: string) => {
       try {
-        console.log('🎯 Assigning task:', taskId, 'to email:', assigneeEmail);
-        
         const backendData = {
-          addAssigneeEmails: [assigneeEmail], // Use addAssigneeEmails to add without removing existing
+          assignedToIds: [parseInt(assigneeId)].filter(id => !isNaN(id)),
+          startDate: new Date().toISOString().split('T')[0]
         };
         
         await updateTask({ 
@@ -301,14 +362,15 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
           data: backendData
         });
         
-        console.log('✅ Task assigned successfully');
+        // ✅ FIX: Revalidate data after assignment
+        revalidate();
       } catch (error) {
         console.error('Failed to assign task:', error);
         throw error;
       }
     },
     
-    onBulkAction: async (taskIds: string[], action: 'delete' | 'complete') => {
+    onBulkAction: async (taskIds: string[], action: string) => {
       try {
         if (action === 'delete') {
           await Promise.all(taskIds.map(id => deleteTask(id)));
@@ -325,12 +387,11 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
 
     // Calendar-specific actions
     onDateClick: async (dateStr: string) => {
-      // ✅ FIX: Prevent duplicate execution
-      if (actions.onDateClick.isCreating) {
-
+      // Simple duplicate prevention using ref
+      if (dateClickInProgress.current) {
         return;
       }
-      actions.onDateClick.isCreating = true;
+      dateClickInProgress.current = true;
       
       try {
         const tokenPayload = CookieAuth.getTokenPayload();
@@ -355,30 +416,63 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         dueDateISO: selectedDate,
         creatorId: tokenPayload?.userId || parseInt(userInfo.id || '1'),
         assignedToIds: [],
-        projectId: null,
-        groupId: null,
+        projectId: undefined,
+        groupId: undefined,
       };
       
-          const newTask = await createTask(taskData);
-          return newTask;
+          await createTask(taskData);
         } catch (error) {
           console.error('Failed to create task on date click:', error);
           throw error;
         } finally {
           // Reset flag after completion
-          actions.onDateClick.isCreating = false;
+          dateClickInProgress.current = false;
         }
       },
 
     onTaskDrop: async (task: Task, newDate: Date) => {
-      const localDate = new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(), 12, 0, 0, 0);
-      const simpleDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+      const newStartDate = new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(), 12, 0, 0, 0);
+      const newStartStr = `${newStartDate.getFullYear()}-${String(newStartDate.getMonth() + 1).padStart(2, '0')}-${String(newStartDate.getDate()).padStart(2, '0')}`;
       
       try {
-        await updateTask({ 
-          id: task.id.toString(), 
-          data: { deadline: simpleDate }
-        });
+        // Simple logic: calculate offset and move both dates
+        const originalStart = task.startDate ? new Date(task.startDate) : null;
+        const originalDeadline = task.deadline ? new Date(task.deadline) : null;
+        
+        if (originalStart && originalDeadline) {
+          // Calculate how many days the task was moved
+          const offsetDays = Math.floor((newStartDate.getTime() - originalStart.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Move deadline by same offset
+          const newDeadlineDate = new Date(originalDeadline);
+          newDeadlineDate.setDate(newDeadlineDate.getDate() + offsetDays);
+          const newDeadlineStr = `${newDeadlineDate.getFullYear()}-${String(newDeadlineDate.getMonth() + 1).padStart(2, '0')}-${String(newDeadlineDate.getDate()).padStart(2, '0')}`;
+          
+          console.log('� Moving task:', {
+            taskId: task.id,
+            offsetDays,
+            from: { start: task.startDate, deadline: task.deadline },
+            to: { start: newStartStr, deadline: newDeadlineStr }
+          });
+          
+          await updateTask({ 
+            id: task.id.toString(), 
+            data: { 
+              startDate: newStartStr,
+              deadline: newDeadlineStr
+            }
+          });
+        } else {
+          // Single date task
+          await updateTask({ 
+            id: task.id.toString(), 
+            data: { 
+              startDate: newStartStr,
+              deadline: newStartStr
+            }
+          });
+        }
+        
         setTimeout(() => revalidate(), 100);
       } catch (error) {
         console.error('Failed to drop task:', error);
@@ -407,7 +501,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         throw error;
       }
     },
-  }), [updateTask, createTask, deleteTask, setSelectedTaskId, revalidate]);
+  }), [updateTask, updateTaskStatus, createTask, deleteTask, setSelectedTaskId, revalidate, taskListItems]);
 
   return {
     // Data

@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -24,9 +24,7 @@ export async function GET(
       );
     }
 
-    // Await params to fix Next.js 15 requirement
-    const params = await context.params;
-    const { id } = params;
+    const { id } = await params;
 
     // Get backend base URL
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
@@ -66,7 +64,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -87,9 +85,7 @@ export async function PUT(
       );
     }
 
-    // Await params to fix Next.js 15 requirement
-    const params = await context.params;
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Get backend base URL
@@ -132,7 +128,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Get session from NextAuth
@@ -153,9 +149,7 @@ export async function DELETE(
       );
     }
 
-    // Await params to fix Next.js 15 requirement
-    const params = await context.params;
-    const { id } = params;
+    const { id } = await params;
 
     // Get backend base URL
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';

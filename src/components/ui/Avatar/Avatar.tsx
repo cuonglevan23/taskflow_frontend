@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export interface AvatarProps {
@@ -33,6 +33,17 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     },
     ref
   ) => {
+    const [imageError, setImageError] = useState(false);
+    const [imageLoading, setImageLoading] = useState(false); // Start as false to show initials immediately
+
+    // Reset error state when src changes to avoid cross-contamination
+    useEffect(() => {
+      if (src) {
+        setImageError(false);
+        setImageLoading(false); // Don't show loading, show initials first
+      }
+    }, [src]);
+
     const sizeClasses = {
       xs: "h-6 w-6 text-xs",
       sm: "h-8 w-8 text-sm",
@@ -63,6 +74,19 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         .slice(0, 2);
     };
 
+    const handleImageError = () => {
+      setImageError(true);
+      setImageLoading(false);
+    };
+
+    const handleImageLoad = () => {
+      setImageError(false);
+      setImageLoading(false);
+    };
+
+    // Only show image if src exists, no error, and not loading
+    const shouldShowImage = src && !imageError && !imageLoading;
+
     return (
       <div
         ref={ref}
@@ -76,11 +100,14 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         onClick={onClick}
         {...props}
       >
-        {src ? (
+        {/* Conditional rendering: either image OR initials, never both */}
+        {shouldShowImage ? (
           <img
             src={src}
             alt={alt || name}
             className="h-full w-full object-cover"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
           />
         ) : (
           <span className="font-medium text-gray-600">{getInitials(name)}</span>

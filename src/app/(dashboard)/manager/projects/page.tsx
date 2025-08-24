@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import { useTheme } from '@/layouts/hooks/useTheme';
-import { FolderOpen, Plus, Search, Filter, MoreHorizontal } from 'lucide-react';
+import { FolderOpen, Plus, MoreHorizontal, AlertCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 interface ProjectsPageProps {
@@ -56,6 +57,22 @@ const mockProjects = [
 const ProjectsPage = ({ searchValue = "" }: ProjectsPageProps) => {
   const { theme } = useTheme();
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Handle URL error parameters
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'project_not_accessible') {
+      setErrorMessage('� Project not accessible: The project you requested cannot be accessed or does not exist.');
+    }
+    
+    // Clear error after 5 seconds
+    if (error) {
+      const timer = setTimeout(() => setErrorMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   // Filter projects based on search
   const filteredProjects = mockProjects.filter(project =>
@@ -95,6 +112,24 @@ const ProjectsPage = ({ searchValue = "" }: ProjectsPageProps) => {
 
   return (
     <div className="h-full overflow-y-auto p-6">
+      {/* Error Notification */}
+      {errorMessage && (
+        <div 
+          className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between text-red-800"
+        >
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 mr-3" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-red-600 hover:text-red-800"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div 

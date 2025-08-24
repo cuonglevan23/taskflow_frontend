@@ -11,6 +11,7 @@ export interface TeamResponseDto {
   organizationId?: number | null;      // FK to Organization.id, optional
   createdAt: string;                   // ISO 8601 datetime
   updatedAt: string;                   // ISO 8601 datetime
+  currentUserRole?: string;            // Current user's role in this team
 }
 
 // ===== API Request Types (to backend) =====
@@ -31,12 +32,12 @@ export interface UpdateTeamRequestDto {
 export interface TeamInvitationRequestDto {
   email: string;                       // Required, email của user được mời
   message?: string;                    // Optional, tin nhắn kèm theo (max 500 chars)
-  role?: 'MEMBER' | 'LEADER';          // Optional, default: 'MEMBER'
+  role?: string;                       // Optional, default: 'MEMBER' - allow any role from backend
 }
 
 export interface AddMemberRequestDto {
   userId: number;                      // Required, ID của user
-  role?: 'MEMBER' | 'LEADER';          // Optional, default: 'MEMBER'
+  role?: string;                       // Optional, default: 'MEMBER' - allow any role from backend
 }
 
 // ===== Frontend Types =====
@@ -51,6 +52,7 @@ export interface Team {
   createdAt: Date;
   updatedAt: Date;
   memberCount?: number;                // Computed field
+  currentUserRole?: string;            // Current user's role in this team
 }
 
 // ===== Form Data Types =====
@@ -68,18 +70,24 @@ export interface UpdateTeamFormData {
 // ===== Team Member Types =====
 export interface TeamMember {
   id: number;
+  userId?: number;                     // User ID reference
   email: string;
   name?: string;
-  role: 'MEMBER' | 'LEADER';
+  role: string;                        // Allow any role string from backend
   joinedAt: string;
   status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
+  // Profile information fields
+  department?: string;                 // User's department
+  jobTitle?: string;                   // User's job title/position
+  avatar?: string;                     // Avatar/profile image URL
+  aboutMe?: string;                    // User bio/description
 }
 
 export interface TeamInvitation {
   id: number;
   teamId: number;
   email: string;
-  role: 'MEMBER' | 'LEADER';
+  role: string; // Allow any role string from backend
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
   invitedBy: number;
   invitedAt: string;

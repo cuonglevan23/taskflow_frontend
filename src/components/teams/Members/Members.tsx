@@ -52,7 +52,7 @@ const Members = ({
         {/* Member Avatars */}
         {members.map((member) => (
           <Avatar
-            key={member.id}
+            key={`${member.id}-${member.name}`}
             name={member.name}
             src={member.avatarUrl}
             size="md"

@@ -79,11 +79,7 @@ export const projectTaskService = {
   // Create new project task
   createTask: async (taskData: CreateProjectTaskRequest): Promise<ProjectTaskResponseDto> => {
     try {
-      console.log('🚀 Creating project task:', taskData);
-      
       const response = await api.post<ProjectTaskResponseDto>('/api/project-tasks', taskData);
-      
-      console.log('✅ Project task created:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to create project task:', error);
@@ -101,11 +97,7 @@ export const projectTaskService = {
         }
       });
 
-      console.log('📋 Fetching project tasks with filters:', filters);
-      
       const response = await api.get<PaginatedProjectTasksResponse>(`/api/project-tasks?${params}`);
-      
-      console.log('✅ Project tasks fetched:', response.data.content.length, 'tasks');
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch project tasks:', error);
@@ -116,13 +108,13 @@ export const projectTaskService = {
   // Get tasks by specific project
   getTasksByProject: async (projectId: number, page = 0, size = 20): Promise<PaginatedProjectTasksResponse> => {
     try {
-      console.log('📋 Fetching tasks for project:', projectId);
+
       
       const response = await api.get<PaginatedProjectTasksResponse>(
         `/api/project-tasks/project/${projectId}?page=${page}&size=${size}`
       );
       
-      console.log('✅ Project tasks fetched for project:', projectId, '- Count:', response.data.content.length);
+
       return response.data;
     } catch (error: any) {
       // Check if endpoint not found - try alternative approach
@@ -135,7 +127,7 @@ export const projectTaskService = {
             `/api/project-tasks?projectId=${projectId}&page=${page}&size=${size}`
           );
           
-          console.log('✅ Project tasks fetched via general endpoint for project:', projectId, '- Count:', response.data.content.length);
+
           return response.data;
         } catch (fallbackError) {
           console.warn('⚠️ Both project task endpoints unavailable, backend may not be fully implemented yet');
@@ -151,11 +143,7 @@ export const projectTaskService = {
   // Get single task by ID
   getTaskById: async (taskId: number): Promise<ProjectTaskResponseDto> => {
     try {
-      console.log('📋 Fetching project task:', taskId);
-      
       const response = await api.get<ProjectTaskResponseDto>(`/api/project-tasks/${taskId}`);
-      
-      console.log('✅ Project task fetched:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch project task:', taskId, error);
@@ -166,14 +154,35 @@ export const projectTaskService = {
   // Update existing task
   updateTask: async (taskId: number, updates: UpdateProjectTaskRequest): Promise<ProjectTaskResponseDto> => {
     try {
-      console.log('🔄 Updating project task:', taskId, updates);
+      console.log('📤 Updating project task:', taskId, 'with data:', JSON.stringify(updates, null, 2));
       
-      const response = await api.put<ProjectTaskResponseDto>(`/api/project-tasks/${taskId}`, updates);
+      // Validate updates object
+      if (!updates || typeof updates !== 'object') {
+        throw new Error('Invalid updates object');
+      }
       
-      console.log('✅ Project task updated:', response.data);
+      // Clean up undefined values that might cause backend issues
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([, value]) => value !== undefined)
+      );
+      
+      console.log('📤 Cleaned updates:', JSON.stringify(cleanUpdates, null, 2));
+      
+      const response = await api.put<ProjectTaskResponseDto>(`/api/project-tasks/${taskId}`, cleanUpdates);
+      
+      console.log('✅ Project task updated successfully:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('❌ Failed to update project task:', taskId, error);
+    } catch (error: any) {
+      console.error('❌ Failed to update project task:', taskId);
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        url: error?.config?.url,
+        method: error?.config?.method,
+        requestData: error?.config?.data
+      });
       throw error;
     }
   },
@@ -181,11 +190,7 @@ export const projectTaskService = {
   // Delete task
   deleteTask: async (taskId: number): Promise<void> => {
     try {
-      console.log('🗑️ Deleting project task:', taskId);
-      
       await api.delete(`/api/project-tasks/${taskId}`);
-      
-      console.log('✅ Project task deleted:', taskId);
     } catch (error) {
       console.error('❌ Failed to delete project task:', taskId, error);
       throw error;
@@ -200,11 +205,7 @@ export const projectTaskService = {
   // Update task progress
   updateTaskProgress: async (taskId: number, progressPercentage: number): Promise<void> => {
     try {
-      console.log('📊 Updating task progress:', taskId, progressPercentage);
-      
       await api.put(`/api/project-tasks/${taskId}/progress?progressPercentage=${progressPercentage}`);
-      
-      console.log('✅ Task progress updated:', taskId, progressPercentage);
     } catch (error) {
       console.error('❌ Failed to update task progress:', taskId, error);
       throw error;
@@ -214,11 +215,7 @@ export const projectTaskService = {
   // Assign task to user
   assignTask: async (taskId: number, userId: number): Promise<void> => {
     try {
-      console.log('👤 Assigning task:', taskId, 'to user:', userId);
-      
       await api.put(`/api/project-tasks/${taskId}/assign/${userId}`);
-      
-      console.log('✅ Task assigned:', taskId, 'to user:', userId);
     } catch (error) {
       console.error('❌ Failed to assign task:', taskId, error);
       throw error;
@@ -228,11 +225,7 @@ export const projectTaskService = {
   // Get project task statistics
   getProjectTaskStats: async (projectId: number): Promise<any> => {
     try {
-      console.log('📊 Fetching project task stats:', projectId);
-      
       const response = await api.get(`/api/project-tasks/project/${projectId}/stats`);
-      
-      console.log('✅ Project task stats fetched:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch project task stats:', projectId, error);
@@ -243,11 +236,7 @@ export const projectTaskService = {
   // Get overdue tasks by project
   getOverdueTasks: async (projectId: number): Promise<ProjectTaskResponseDto[]> => {
     try {
-      console.log('⏰ Fetching overdue tasks for project:', projectId);
-      
       const response = await api.get<ProjectTaskResponseDto[]>(`/api/project-tasks/project/${projectId}/overdue`);
-      
-      console.log('✅ Overdue tasks fetched:', response.data.length);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch overdue tasks:', projectId, error);
@@ -258,11 +247,7 @@ export const projectTaskService = {
   // Get subtasks
   getSubtasks: async (taskId: number): Promise<ProjectTaskResponseDto[]> => {
     try {
-      console.log('📋 Fetching subtasks for task:', taskId);
-      
       const response = await api.get<ProjectTaskResponseDto[]>(`/api/project-tasks/${taskId}/subtasks`);
-      
-      console.log('✅ Subtasks fetched:', response.data.length);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch subtasks:', taskId, error);

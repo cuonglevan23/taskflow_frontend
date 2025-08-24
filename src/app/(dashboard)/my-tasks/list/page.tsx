@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import { BucketTaskList, TaskListItem, TaskActionTime, type TaskBucket, type TaskPriority, type TaskStatus } from "@/components/TaskList";
+import { BucketTaskList } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
-import { useMyTasksSummary } from "@/hooks/tasks";
-import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/tasks/useTasksActions";
+import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
+import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
 
-import { useTasksContext, type Task } from "@/contexts";
-import { useTaskActionTime } from "@/hooks/tasks/useTaskActionTime";
-import { useNotifications } from "@/contexts/NotificationContext";
+interface TaskBucket {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+  tasks: TaskListItem[];
+  collapsed?: boolean;
+}
 
 interface MyTaskListPageProps {
   searchValue?: string;
@@ -20,468 +25,186 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   
-  // Get UI state from context
-  const { activeFilters } = useTasksContext();
-  
-  // Get notification actions
-  const { actions: notificationActions } = useNotifications();
-  
-  // Clean SWR action hooks - Next.js 15 compliant (moved before early return)
-  const { createTask, isCreating } = useCreateTask();
-  const { updateTask, isUpdating } = useUpdateTask();
-  const { deleteTask, isDeleting } = useDeleteTask();
-  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
-
-  // Action time management hook
-  const { moveTaskToActionTime } = useTaskActionTime();
-  
-  // Use modern SWR hooks for data fetching - with error handling
+  // Use shared hook - same as board/calendar pages
   const {
-    tasks,
+    taskListItems,
     isLoading,
     error,
-    revalidate
-  } = useMyTasksSummary({
+    actions
+  } = useMyTasksShared({
     page: 0,
-    size: 10,
-    sortBy: 'createdAt',
-    sortDir: 'desc'
+    size: 1000,
+    sortBy: 'startDate',
+    sortDir: 'desc',
+    searchValue: searchInput
   });
 
-  // Don't render if there's a 401 error to prevent infinite loops
-  if (error && (error.status === 401 || error.message?.includes('401'))) {
-    return null;
-  }
+  // Action time buckets logic (same as board page)
+  const taskBuckets = useMemo((): TaskBucket[] => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  // Helper function for notifications
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    notificationActions.addNotification({
-      title: type === 'success' ? 'Success' : 'Error',
-      message,
-      type: type === 'success' ? 'success' : 'error',
-      priority: 'medium',
-      status: 'unread',
-      isRead: false,
-      isBookmarked: false,
-      isArchived: false,
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    // Filter tasks based on search
+    const filteredTasks = searchInput.trim() 
+      ? taskListItems.filter(task => 
+          task.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+          task.description?.toLowerCase().includes(searchInput.toLowerCase())
+        )
+      : taskListItems;
+
+    // Filter tasks based on assignment date and due date
+    const recentlyAssigned = filteredTasks.filter(task => {
+      const createdAt = new Date(task.createdAt);
+      const daysDiff = (today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+      return daysDiff <= 7; // Tasks created in last 7 days
     });
-  }, [notificationActions]);
 
-  // CRUD Handlers - All API logic handled at page level for better inheritance
+    const doToday = filteredTasks.filter(task => {
+      if (!task.dueDate) return false;
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate.getTime() === today.getTime();
+    });
+
+    const doNextWeek = filteredTasks.filter(task => {
+      if (!task.dueDate) return false;
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate > today && dueDate <= nextWeek;
+    });
+
+    const doLater = filteredTasks.filter(task => {
+      if (!task.dueDate) return true; // Tasks without due date go to "Do later"
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate > nextWeek;
+    });
+
+    return [
+      {
+        id: "recently-assigned",
+        title: "Recently assigned",
+        description: `Tasks created in the last 7 days (${recentlyAssigned.length})`,
+        color: "#8b5cf6",
+        tasks: recentlyAssigned,
+      },
+      {
+        id: "do-today",
+        title: "Do today",
+        description: `Tasks due today (${doToday.length})`,
+        color: "#ef4444",
+        tasks: doToday,
+      },
+      {
+        id: "do-next-week",
+        title: "Do next week",
+        description: `Tasks due within next week (${doNextWeek.length})`,
+        color: "#f59e0b", 
+        tasks: doNextWeek,
+      },
+      {
+        id: "do-later",
+        title: "Do later",
+        description: `Tasks due later or without due date (${doLater.length})`,
+        color: "#10b981",
+        tasks: doLater,
+      },
+    ];
+  }, [taskListItems, searchInput]);
+
+  // Notification helper
+  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    // Could be replaced with actual toast notification system
+  }, []);
+
+  // Panel handlers
   const handleTaskClick = useCallback((task: TaskListItem) => {
     setSelectedTaskId(task.id);
     setIsPanelOpen(true);
   }, []);
-
-  const handleTaskCreate = useCallback(async (taskData: {
-    name: string;
-    description?: string;
-    status?: string;
-    priority?: string;
-    startDate?: string;
-    deadline?: string;
-    actionTime?: string;
-  }) => {
-    try {
-      await createTask({
-        title: taskData.name,
-        description: taskData.description || '',
-        status: taskData.status || 'TODO',
-        priority: taskData.priority || 'MEDIUM',
-        startDate: taskData.startDate || new Date().toISOString().split('T')[0],
-        deadline: taskData.deadline,
-      });
-      showNotification('Task created successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to create task', 'error');
-      console.error('Failed to create task:', error);
-    }
-  }, [createTask, showNotification]);
-
-  const handleTaskEdit = useCallback(async (task: TaskListItem) => {
-    try {
-      await updateTask({
-        id: task.id,
-        data: {
-          title: task.name,
-          description: task.description,
-          status: task.status,
-          priority: task.priority,
-          startDate: task.startDate,
-          deadline: task.deadline,
-        }
-      });
-      showNotification(`Task "${task.name}" updated successfully`, 'success');
-    } catch (error) {
-      showNotification('Failed to update task', 'error');
-      console.error('Failed to update task:', error);
-    }
-  }, [updateTask, showNotification]);
-
-  const handleTaskDelete = useCallback(async (taskId: string) => {
-    try {
-      await deleteTask(taskId);
-      showNotification('Task deleted successfully', 'success');
-      // Close panel if deleting current task
-      if (selectedTaskId === taskId) {
-        setIsPanelOpen(false);
-        setSelectedTaskId(null);
-      }
-    } catch (error) {
-      showNotification('Failed to delete task', 'error');
-      console.error('Failed to delete task:', error);
-    }
-  }, [deleteTask, showNotification, selectedTaskId]);
-
-  // Clean task status change with optimistic updates
-  const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
-
-    
-    try {
-      await updateTaskStatus({ id: taskId, status });
-      showNotification(`Task status updated to ${status}`, 'success');
-
-    } catch (error) {
-      showNotification('Failed to update task status', 'error');
-      console.error('❌ Failed to update task status:', error);
-    }
-  }, [updateTaskStatus, showNotification]);
-
-  const handleTaskAssign = useCallback(async (taskId: string, assigneeData: {
-    id: string;
-    name: string;
-    email: string;
-  }) => {
-    try {
-      await updateTask({
-        id: taskId,
-        data: {
-          assignedToEmails: [assigneeData.email], // Use email instead of ID
-        }
-      });
-      showNotification(`Task assigned to ${assigneeData.email}`, 'success');
-    } catch (error) {
-      showNotification('Failed to assign task', 'error');
-      console.error('Failed to assign task:', error);
-    }
-  }, [updateTask, showNotification]);
-
-  const handleBulkAction = useCallback(async (taskIds: string[], action: 'delete' | 'complete' | 'archive') => {
-    try {
-      switch (action) {
-        case 'delete':
-          await Promise.all(taskIds.map(id => deleteTask(id)));
-          showNotification(`${taskIds.length} tasks deleted`, 'success');
-          break;
-        case 'complete':
-          // Use clean SWR pattern for bulk status updates
-          await Promise.all(taskIds.map(id => updateTaskStatus({ id, status: 'completed' })));
-          showNotification(`${taskIds.length} tasks completed`, 'success');
-          break;
-        case 'archive':
-          // Add archive logic if needed
-          showNotification(`${taskIds.length} tasks archived`, 'success');
-          break;
-      }
-    } catch (error) {
-      showNotification(`Failed to ${action} tasks`, 'error');
-      console.error(`Failed to ${action} tasks:`, error);
-    }
-  }, [deleteTask, updateTaskStatus, showNotification]);
-
-  // Handle task move between buckets - No manual revalidation needed
-  const handleTaskMove = useCallback(async (taskId: string, bucketId: string) => {
-    try {
-      await moveTaskToActionTime(taskId, bucketId as TaskActionTime);
-      showNotification(`Task moved to ${bucketId.replace('-', ' ')}`, 'success');
-      // ✅ No manual revalidate() - optimistic updates handle this automatically
-    } catch (error) {
-      showNotification('Failed to move task', 'error');
-      console.error('Failed to move task:', error);
-    }
-  }, [moveTaskToActionTime, showNotification]);
-
-  // Convert tasks to TaskListItem format - Clean and simple
-  const taskListItems = useMemo(() => {
-    if (!tasks || !Array.isArray(tasks)) return [];
-    
-    const mappedTasks = tasks
-      .filter(task => task && task.id) // Filter out invalid tasks
-      .map((task, index) => {
-        const taskId = task.id?.toString() || `fallback-${index}`;
-        const mappedTask = {
-          id: taskId,
-          name: task.title,
-          description: task.description,
-          assignees: task.creatorName ? [{
-            id: 'creator',
-            name: task.creatorName,
-            avatar: task.creatorName.split(' ').map(n => n[0]).join('').toUpperCase()
-          }] : [],
-          dueDate: task.dueDate !== 'No due date' ? task.dueDate : undefined,
-          startDate: task.startDate ? task.startDate.toISOString().split('T')[0] : undefined,
-          endDate: task.endDate ? task.endDate.toISOString().split('T')[0] : undefined,
-          deadline: task.dueDateISO ? task.dueDateISO.toISOString().split('T')[0] : (task.dueDate !== 'No due date' ? task.dueDate : undefined),
-          priority: (task.priority?.toUpperCase() as TaskPriority) || 'MEDIUM',
-          status: (task.status?.toUpperCase() as TaskStatus) || 'TODO',
-          completed: task.completed || task.status === 'completed' || task.status === 'DONE',
-          tags: task.tags || [],
-          project: task.tagText || undefined,
-          createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
-          updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
-        };
-        return mappedTask;
-      });
-
-    // Remove any duplicate IDs
-    const uniqueTasks = mappedTasks.filter((task, index, array) => 
-      array.findIndex(t => t.id === task.id) === index
-    );
-
-    return uniqueTasks;
-  }, [tasks]);
-
-  // Business Logic: Bucket configuration for My Tasks page
-  const getBucketInfo = useCallback((bucketId: string, taskCount: number) => {
-    const bucketConfigs = {
-      'recently-assigned': { 
-        title: 'Recently assigned', 
-        description: `Mới được giao (${taskCount})`,
-        color: '#6B7280' 
-      },
-      'do-today': { 
-        title: 'Do today', 
-        description: `Làm hôm nay (${taskCount})`,
-        color: '#DC2626' 
-      },
-      'do-next-week': { 
-        title: 'Do next week', 
-        description: `Làm tuần sau (${taskCount})`,
-        color: '#F59E0B' 
-      },
-      'do-later': { 
-        title: 'Do later', 
-        description: `Để sau (${taskCount})`,
-        color: '#10B981' 
-      },
-    };
-    return bucketConfigs[bucketId as keyof typeof bucketConfigs] || bucketConfigs['do-later'];
-  }, []);
-
-  // Business Logic: Task grouping by status for My Tasks page
-  const taskBuckets = useMemo((): TaskBucket[] => {
-    const bucketMap = new Map<string, TaskListItem[]>();
-    
-    // Initialize buckets
-    ['recently-assigned', 'do-today', 'do-next-week', 'do-later'].forEach(bucket => {
-      bucketMap.set(bucket, []);
-    });
-
-    // Group tasks by status (business logic specific to My Tasks)
-    taskListItems.forEach(task => {
-      let bucketId = 'do-later'; // default
-      
-      if (task.status === 'TODO') {
-        bucketId = 'do-today';
-      } else if (task.status === 'IN_PROGRESS') {
-        bucketId = 'do-today';
-      } else if (task.status === 'DONE') {
-        bucketId = 'do-later';
-      }
-      
-      const bucketTasks = bucketMap.get(bucketId) || [];
-      bucketTasks.push(task);
-      bucketMap.set(bucketId, bucketTasks);
-    });
-
-    // Create buckets with business logic
-    return [
-      'recently-assigned',
-      'do-today', 
-      'do-next-week',
-      'do-later'
-    ].map(bucketId => {
-      const bucketTasks = bucketMap.get(bucketId) || [];
-      const bucketInfo = getBucketInfo(bucketId, bucketTasks.length);
-      
-      return {
-        id: bucketId,
-        title: bucketInfo.title,
-        description: bucketInfo.description,
-        color: bucketInfo.color,
-        tasks: bucketTasks,
-      };
-    });
-  }, [taskListItems, getBucketInfo]);
-
-  // Get selected task for detail panel
-  const selectedTask = useMemo(() => {
-    if (!selectedTaskId) return null;
-    return taskListItems.find(task => task.id === selectedTaskId) || null;
-  }, [selectedTaskId, taskListItems]);
-
-  // Task detail panel handlers
-  const handleTaskSave = useCallback(async (taskId: string, updates: Partial<TaskListItem>) => {
-    try {
-      await updateTask({
-        id: taskId,
-        data: {
-          title: updates.name,
-          description: updates.description,
-          status: updates.status,
-          priority: updates.priority,
-          startDate: updates.startDate,
-          deadline: updates.deadline,
-        }
-      });
-      showNotification('Task saved successfully', 'success');
-      setIsPanelOpen(false);
-      setSelectedTaskId(null);
-    } catch (error) {
-      showNotification('Failed to save task', 'error');
-      console.error('Failed to save task:', error);
-    }
-  }, [updateTask, showNotification]);
 
   const handleClosePanel = useCallback(() => {
     setIsPanelOpen(false);
     setSelectedTaskId(null);
   }, []);
 
-  // Enhanced search handler
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchInput(value);
-  }, []);
-
-  // Apply search filter to tasks
-  const filteredTasks = useMemo(() => {
-    if (!taskListItems || !Array.isArray(taskListItems)) return [];
-    if (!searchInput.trim()) return taskListItems;
-    
-    const searchLower = searchInput.toLowerCase();
-    return taskListItems.filter(task => 
-      task.name?.toLowerCase().includes(searchLower) ||
-      task.description?.toLowerCase().includes(searchLower)
-    );
-  }, [taskListItems, searchInput]);
-
-  // Task management object - Clean and simple
-  const taskManagement = useMemo(() => ({
-    tasks: taskListItems,
-    buckets: taskBuckets,
-    filteredTasks,
-    isLoading,
-    isUpdating: isUpdating || isCreating || isDeleting || isStatusUpdating,
-    isDeleting,
-    error: error?.message || null,
-    selectedTask,
-    isPanelOpen,
-    closeTaskPanel: handleClosePanel,
-    stats: {
-      total: taskListItems.length,
-      completed: taskListItems.filter(t => t.completed || t.status === 'DONE').length,
-      inProgress: taskListItems.filter(t => t.status === 'IN_PROGRESS').length,
-      todo: taskListItems.filter(t => t.status === 'TODO').length,
+  const handleTaskSave = useCallback(async (taskId: string, updates: Partial<TaskListItem>) => {
+    try {
+      const task = taskListItems.find(t => t.id === taskId);
+      if (task) {
+        await actions.onTaskEdit({ ...task, ...updates });
+        showNotification('Task updated successfully');
+        handleClosePanel();
+      }
+    } catch (error) {
+      showNotification('Failed to update task', 'error');
+      console.error('Task save error:', error);
     }
-  }), [
-    taskListItems,
-    taskBuckets,
-    filteredTasks,
-    isLoading,
-    isUpdating,
-    isCreating,
-    isDeleting,
-    isStatusUpdating,
-    error,
-    selectedTask,
-    isPanelOpen,
-    handleClosePanel
-  ]);
+  }, [taskListItems, actions, showNotification, handleClosePanel]);
 
-  // Enhanced task actions object - Pass specific handlers instead of generic actions
-  const taskActions = useMemo(() => ({
-    onTaskClick: handleTaskClick,
-    onTaskEdit: handleTaskEdit,
-    onCreateTask: handleTaskCreate,
-    onTaskDelete: handleTaskDelete,
-    onTaskStatusChange: handleTaskStatusChange,
-    onTaskAssign: handleTaskAssign,
-    onBulkAction: handleBulkAction,
-  }), [
-    handleTaskClick,
-    handleTaskEdit,
-    handleTaskCreate,
-    handleTaskDelete,
-    handleTaskStatusChange,
-    handleTaskAssign,
-    handleBulkAction,
-  ]);
+  // Wrapper functions to match BucketTaskList interface expectations
+  const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
+    try {
+      await actions.onTaskStatusChange(taskId, status as TaskStatus);
+      showNotification('Task status updated successfully');
+    } catch (error) {
+      showNotification('Failed to update task status', 'error');
+      console.error('Task status change error:', error);
+    }
+  }, [actions, showNotification]);
 
-  // Loading state with better UX
-  if (taskManagement.isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
-        <div className="text-gray-600 text-lg">Loading your tasks...</div>
-        <div className="text-gray-400 text-sm mt-2">Please wait a moment</div>
-      </div>
-    );
+  const handleTaskAssign = useCallback(async (taskId: string, assigneeData: { id: string; name: string; email: string }) => {
+    try {
+      await actions.onTaskAssign(taskId, assigneeData.email);
+      showNotification('Task assigned successfully');
+    } catch (error) {
+      showNotification('Failed to assign task', 'error');
+      console.error('Task assign error:', error);
+    }
+  }, [actions, showNotification]);
+
+  // Get selected task
+  const selectedTask = useMemo(() => {
+    return taskListItems.find(task => task.id === selectedTaskId) || null;
+  }, [taskListItems, selectedTaskId]);
+
+  // Loading and error states
+  if (isLoading) {
+    return <div>Loading tasks...</div>;
   }
 
-  // Error state with retry option
-  if (taskManagement.error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-6xl mb-4">⚠️</div>
-        <div className="text-red-600 text-lg font-medium mb-2">
-          Failed to load tasks
-        </div>
-        <div className="text-gray-500 text-sm mb-4">
-          {taskManagement.error}
-        </div>
-        <button
-          onClick={() => revalidate()}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-        >
-          Try Again
-        </button>
-      </div>
-    );
+  if (error) {
+    return <div>Error loading tasks: {error.message}</div>;
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Main Task List - Clean separation of concerns */}
-        <BucketTaskList
-          buckets={taskManagement.buckets}
-          loading={taskManagement.isLoading}
-          error={taskManagement.error ?? undefined}
-          searchValue={searchInput}
-          onSearchChange={handleSearchChange}
-          onTaskClick={handleTaskClick}
-          onTaskCreate={handleTaskCreate}
-          onTaskEdit={handleTaskEdit}
-          onTaskDelete={handleTaskDelete}
-          onTaskStatusChange={handleTaskStatusChange}
+    <div className="p-6 space-y-6">
+      <BucketTaskList
+        buckets={taskBuckets}
+        loading={isLoading}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onTaskClick={handleTaskClick}
+        onTaskCreate={actions.onCreateTask}
+        onTaskEdit={actions.onTaskEdit}
+        onTaskDelete={actions.onTaskDelete}
+        onTaskStatusChange={handleTaskStatusChange}
+        onTaskAssign={handleTaskAssign}
+      />
 
-          onTaskAssign={handleTaskAssign}
-          onBulkAction={handleBulkAction}
-        />
-      </div>
-
-      {/* Enhanced Task Detail Panel */}
-      {taskManagement.isPanelOpen && taskManagement.selectedTask && (
+      {/* Task Detail Panel */}
+      {isPanelOpen && selectedTask && (
         <TaskDetailPanel
-          task={taskManagement.selectedTask}
-          isOpen={taskManagement.isPanelOpen}
-          onClose={taskManagement.closeTaskPanel}
+          task={selectedTask}
+          isOpen={isPanelOpen}
+          onClose={handleClosePanel}
           onSave={handleTaskSave}
-          onDelete={(taskId: string) => handleTaskDelete(taskId)}
-          onStatusChange={handleTaskStatusChange}
         />
       )}
-    </>
+    </div>
   );
 };
 

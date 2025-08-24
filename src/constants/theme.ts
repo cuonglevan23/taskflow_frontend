@@ -173,6 +173,9 @@ export const LIGHT_THEME = {
 
 // Dark Theme
 export const DARK_THEME = {
+  chart: {
+    column: 'rgb(184, 172, 255)', // Main chart column color
+  },
   // Background Colors
   background: {
     primary: '#1e1f21', // Updated background-page
