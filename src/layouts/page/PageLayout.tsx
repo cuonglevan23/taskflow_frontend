@@ -346,7 +346,14 @@ const PageLayout = ({ children }: PageLayoutProps) => {
         </div>
 
         {/* Content */}
-        <div>
+        <div className="w-full h-full flex-1" style={{ 
+          width: "100%", 
+          minWidth: "100%",
+          height: "100%",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column"
+        }}>
           {children}
         </div>
       </div>

@@ -1,0 +1,124 @@
+"use client";
+
+import React, { useCallback, useMemo } from 'react';
+import { useParams } from "next/navigation";
+import { TeamCalendar } from '@/components/Calendar';
+import { DARK_THEME } from "@/constants/theme";
+import { useTeamAllTasks } from '@/hooks/tasks/useTasksData';
+import { useTeam } from '@/hooks/useTeam';
+
+// Define type for calendar task
+interface CalendarTask {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  deadline?: string;
+  dueDate?: string;
+  color: string;
+  assignee: string;
+  assigneeName?: string;
+  avatar: string;
+  projectId?: number;
+  projectName?: string;
+  priority?: string;
+  status?: string;
+  description?: string;
+  teamId?: string;
+}
+
+const TeamCalendarPage = React.memo(() => {
+  const params = useParams();
+  const teamId = useMemo(() => {
+    const id = params.id as string;
+    return parseInt(id, 10);
+  }, [params.id]);
+
+  // Fetch team data for context
+  const { team } = useTeam(teamId);
+
+  // Fetch all tasks from all projects of the team
+  const { 
+    tasks: rawTasks, 
+    isLoading, 
+    error, 
+    revalidate 
+  } = useTeamAllTasks(teamId);
+
+  // Convert task data to calendar-friendly format
+  const tasks = useMemo(() => {
+    // Debug full task data structure
+    if (rawTasks?.length) {
+      console.log('📊 Raw Team Tasks Data (sample):', rawTasks[0]);
+    }
+    
+    if (!rawTasks?.length) return [];
+    
+    return rawTasks.map(task => {
+      let startDate = new Date();
+      let endDate = new Date();
+
+  // Team calendar handlers - view-only mode
+  const handleEventClick = useCallback((task: CalendarTask) => {
+    // Just log the click event - the TeamCalendar component will handle showing the detail panel
+    console.log('Team calendar task clicked:', {
+      id: task.id,
+      title: task.title,
+      projectId: task.projectId
+    });
+    
+    // Do not navigate to project page
+    // TeamCalendar component already handles showing the detail panel
+  }, []);
+
+  // Handle error state
+  if (error) {
+    return (
+      <div 
+        className="h-screen flex items-center justify-center"
+        style={{ backgroundColor: DARK_THEME.background.primary }}
+      >
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Failed to load team tasks: {error.message}</p>
+          <button 
+            onClick={() => revalidate()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="h-screen"
+      style={{ backgroundColor: DARK_THEME.background.primary }}
+    >
+      <TeamCalendar
+        tasks={tasks}
+        teamId={teamId.toString()}
+        teamName={team?.name || `Team ${teamId}`}
+        loading={isLoading}
+        error={error?.message || null}
+        height="calc(100vh - 80px)"
+        
+        // View-only mode: only allow viewing, no interactions
+        onEventClick={handleEventClick}
+        // Disable all editing features
+        onDateClick={undefined}
+        onEventDrop={undefined}
+        onEventResize={undefined}
+        onTaskCreate={undefined}
+        onTaskSave={undefined}
+        onTaskDelete={undefined}
+        className="h-full"
+      />
+    </div>
+  );
+});
+
+TeamCalendarPage.displayName = 'TeamCalendarPage';
+
+export default TeamCalendarPage;

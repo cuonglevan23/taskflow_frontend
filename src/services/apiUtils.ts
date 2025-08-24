@@ -233,8 +233,8 @@ export async function safeApiCall<T>(
 export const apiHealth = {
   check: async (): Promise<boolean> => {
     try {
-      await api.get('/actuator/health');
-      return true;
+      const response = await fetch('/api/health');
+      return response.ok;
     } catch (error) {
       return false;
     }

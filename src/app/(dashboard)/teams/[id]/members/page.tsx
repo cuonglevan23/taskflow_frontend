@@ -2,12 +2,15 @@
 
 import React, { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { DARK_THEME } from "@/constants/theme";
-import { MembersHeader, MembersTable, type TeamMember } from "@/components/teams";
+import { MembersHeader, MembersTable } from "@/components/teams";
 import { useTeam } from "@/hooks/useTeam";
+import { transformTeamMemberForMembersTable, type MembersTableData } from "@/types/shared-teams";
 
 const TeamMembersPage = React.memo(() => {
   const params = useParams();
+  const { data: session } = useSession();
   const teamId = useMemo(() => {
     const id = params.id as string;
     return parseInt(id, 10);
@@ -15,11 +18,10 @@ const TeamMembersPage = React.memo(() => {
   
   // Use TeamContext for real data with automatic fetching
   const {
+    team,
     members,
     membersLoading,
     membersError,
-    addMember,
-    kickMember,
     refresh
   } = useTeam(teamId);
 
@@ -36,29 +38,19 @@ const TeamMembersPage = React.memo(() => {
     // TODO: Open search functionality
   }, []);
 
-  const handleMemberAction = useCallback((member: TeamMember) => {
-    // TODO: Show member options menu (edit, remove, etc.)
-  }, []);
-
   // Transform members data to match the expected format
-  const transformedMembers = useMemo(() => {
-    if (!members) return [];
+  const transformedMembers: MembersTableData[] = useMemo(() => {
+    if (!members || !team || !session?.user) return [];
     
-    return members.map(member => ({
-      ...member,
-      // Ensure required fields have values
-      name: member.name || `User ${member.id}`,
-      email: member.email || `user${member.id}@example.com`,
-      // Add any additional fields needed by the MembersTable
-      jobTitle: member.jobTitle,
-    }));
-  }, [members]);
+    return members.map(transformTeamMemberForMembersTable);
+  }, [members, team, session?.user]);
 
   // Debug logs
+  console.log('Team data:', team);
   console.log('Original members:', members);
+  console.log('Current user role from team:', team?.currentUserRole);
   console.log('Transformed members:', transformedMembers);
   console.log('Loading state:', membersLoading);
-  console.log('Error state:', membersError);
 
   // Handle loading and error states
   if (membersError) {
@@ -109,7 +101,6 @@ const TeamMembersPage = React.memo(() => {
             <MembersTable
               members={transformedMembers}
               onAddMember={handleAddMember}
-              onMemberAction={handleMemberAction}
             />
           )}
         </div>

@@ -16,6 +16,18 @@ interface ApiConfig {
   timeout: number;
   headers: Record<string, string>;
   withCredentials: boolean;
+  maxRetries: number;
+  retryDelay: number;
+  circuitBreakerThreshold: number;
+  circuitBreakerTimeout: number;
+}
+
+// Circuit breaker state
+interface CircuitBreakerState {
+  isOpen: boolean;
+  failureCount: number;
+  lastFailureTime: number;
+  nextAttemptTime: number;
 }
 
 const DEFAULT_CONFIG: ApiConfig = {
@@ -26,6 +38,10 @@ const DEFAULT_CONFIG: ApiConfig = {
     'Accept': 'application/json',
   },
   withCredentials: false, // JWT-only authentication
+  maxRetries: 2,
+  retryDelay: 1000,
+  circuitBreakerThreshold: 5, // Open circuit after 5 consecutive failures
+  circuitBreakerTimeout: 30000, // 30 seconds timeout
 };
 
 // Error normalization interface
@@ -34,16 +50,26 @@ interface NormalizedError {
   status?: number;
   code?: string;
   details?: Record<string, unknown>;
+  isConnectionError?: boolean;
+  isServerError?: boolean;
+  userMessage?: string; // User-friendly message
 }
 
 // Create main API instance
 class ApiClient {
   private instance: AxiosInstance;
   private config: ApiConfig;
+  private circuitBreaker: CircuitBreakerState;
 
   constructor(config: Partial<ApiConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.instance = axios.create(this.config);
+    this.circuitBreaker = {
+      isOpen: false,
+      failureCount: 0,
+      lastFailureTime: 0,
+      nextAttemptTime: 0
+    };
     this.setupInterceptors();
   }
 
@@ -85,13 +111,20 @@ class ApiClient {
       }
     );
 
-    // Response Interceptor - Error Handling & Token Refresh
+    // Response Interceptor - Error Handling & Circuit Breaker
     this.instance.interceptors.response.use(
       (response: AxiosResponse): AxiosResponse => {
+        // Reset circuit breaker on successful response
+        this.resetCircuitBreaker();
         return response;
       },
       async (error: AxiosError) => {
         const normalizedError = this.normalizeError(error);
+        
+        // Update circuit breaker on network errors and connection issues
+        if (!normalizedError.status || normalizedError.status >= 500 || normalizedError.isConnectionError) {
+          this.recordFailure();
+        }
         
         // Handle specific error cases
         if (normalizedError.status === 401) {
@@ -112,12 +145,39 @@ class ApiClient {
   }
 
   private normalizeError(error: unknown): NormalizedError {
-    const axiosError = error as any; // Type assertion for axios error
+    const axiosError = error as AxiosError;
     const method = axiosError?.config?.method?.toUpperCase() || 'REQUEST';
     const url = axiosError?.config?.url || 'unknown';
     const status = axiosError?.response?.status;
     const statusText = axiosError?.response?.statusText || '';
     const data = axiosError?.response?.data;
+
+    // Check for connection errors
+    const isConnectionError = 
+      axiosError?.code === 'ECONNREFUSED' ||
+      axiosError?.code === 'ENOTFOUND' ||
+      axiosError?.code === 'ETIMEDOUT' ||
+      axiosError?.message?.includes('Network Error') ||
+      axiosError?.message?.includes('fetch failed') ||
+      !status;
+
+    const isServerError = status ? status >= 500 : false;
+
+    // Create user-friendly message
+    let userMessage = '';
+    if (isConnectionError) {
+      userMessage = 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau vài phút.';
+    } else if (isServerError) {
+      userMessage = 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.';
+    } else if (status === 401) {
+      userMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+    } else if (status === 403) {
+      userMessage = 'Bạn không có quyền thực hiện thao tác này.';
+    } else if (status === 404) {
+      userMessage = 'Không tìm thấy dữ liệu yêu cầu.';
+    } else {
+      userMessage = 'Có lỗi xảy ra. Vui lòng thử lại.';
+    }
 
     // Log the error safely
     if (status) {
@@ -127,11 +187,15 @@ class ApiClient {
     }
 
     // Return normalized error structure
+    const errorData = data as Record<string, unknown> | undefined;
     return {
-      message: data?.message || axiosError?.message || `${method} ${url} failed`,
+      message: errorData?.message as string || axiosError?.message || `${method} ${url} failed`,
       status,
-      code: data?.code || axiosError?.code,
-      details: data?.details || data,
+      code: errorData?.code as string || axiosError?.code,
+      details: errorData?.details as Record<string, unknown> || errorData,
+      isConnectionError,
+      isServerError,
+      userMessage,
     };
   }
 
@@ -153,29 +217,82 @@ class ApiClient {
     }
   }
 
+  // Circuit Breaker Methods
+  private recordFailure(): void {
+    this.circuitBreaker.failureCount++;
+    this.circuitBreaker.lastFailureTime = Date.now();
+    
+    if (this.circuitBreaker.failureCount >= this.config.circuitBreakerThreshold) {
+      this.circuitBreaker.isOpen = true;
+      this.circuitBreaker.nextAttemptTime = Date.now() + this.config.circuitBreakerTimeout;
+      SafeLogger.warn('🔌 Circuit breaker OPEN - Server appears to be down');
+    }
+  }
+
+  private resetCircuitBreaker(): void {
+    if (this.circuitBreaker.isOpen || this.circuitBreaker.failureCount > 0) {
+      SafeLogger.info('✅ Circuit breaker CLOSED - Server is back online');
+    }
+    
+    this.circuitBreaker.isOpen = false;
+    this.circuitBreaker.failureCount = 0;
+    this.circuitBreaker.lastFailureTime = 0;
+    this.circuitBreaker.nextAttemptTime = 0;
+  }
+
+  private isCircuitBreakerOpen(): boolean {
+    if (!this.circuitBreaker.isOpen) return false;
+    
+    // Check if we should try again (half-open state)
+    if (Date.now() >= this.circuitBreaker.nextAttemptTime) {
+      SafeLogger.info('🔄 Circuit breaker HALF-OPEN - Attempting to reconnect...');
+      return false;
+    }
+    
+    return true;
+  }
+
+  private async executeWithCircuitBreaker<T>(
+    operation: () => Promise<AxiosResponse<T>>
+  ): Promise<AxiosResponse<T>> {
+    // Check circuit breaker state
+    if (this.isCircuitBreakerOpen()) {
+      const timeUntilRetry = Math.ceil((this.circuitBreaker.nextAttemptTime - Date.now()) / 1000);
+      const error = new Error(`Service temporarily unavailable. Retrying in ${timeUntilRetry}s`) as Error & {
+        status: number;
+        code: string;
+      };
+      error.status = 503;
+      error.code = 'SERVICE_UNAVAILABLE';
+      throw error;
+    }
+
+    return operation();
+  }
+
   // HTTP Methods
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.get<T>(url, config);
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.executeWithCircuitBreaker(() => this.instance.get<T>(url, config));
   }
 
   async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.post<T>(url, data, config);
+    return this.executeWithCircuitBreaker(() => this.instance.post<T>(url, data, config));
   }
 
   async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.put<T>(url, data, config);
+    return this.executeWithCircuitBreaker(() => this.instance.put<T>(url, data, config));
   }
 
   async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.patch<T>(url, data, config);
+    return this.executeWithCircuitBreaker(() => this.instance.patch<T>(url, data, config));
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.instance.delete<T>(url, config);
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+    return this.executeWithCircuitBreaker(() => this.instance.delete<T>(url, config));
   }
 
   // File upload with progress
-  async upload<T = any>(
+  async upload<T = unknown>(
     url: string,
     formData: FormData,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
@@ -208,7 +325,7 @@ class ApiClient {
   // Health check
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await this.get('/actuator/health');
+      await this.get('/actuator/health');
       return true;
     } catch (error) {
       SafeLogger.error('❌ Backend health check failed:', error);
@@ -229,9 +346,10 @@ class ApiClient {
       
       for (const endpoint of testEndpoints) {
         try {
-          const response = await this.get(endpoint);
+          await this.get(endpoint);
           return true;
-        } catch (error: any) {
+        } catch {
+          // Continue to next endpoint
         }
       }
       

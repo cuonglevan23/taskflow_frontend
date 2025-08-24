@@ -132,8 +132,37 @@ const TaskDetailContent = ({
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-300 w-20">Due date</span>
           <div className="flex items-center gap-2 flex-1">
-            <Calendar className="ml-12  w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-400">No due date</span>
+            <Calendar className="ml-12 w-4 h-4 text-gray-400" />
+            {task?.deadline || task?.dueDate ? (
+              <span className="text-sm text-gray-300">
+                {new Date(task.deadline || task.dueDate || '').toLocaleDateString('vi-VN', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </span>
+            ) : (
+              <span className="text-sm text-gray-400">No due date</span>
+            )}
+          </div>
+        </div>
+
+        {/* Start date - Added for calendar tasks */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-300 w-20">Start date</span>
+          <div className="flex items-center gap-2 flex-1">
+            <Calendar className="ml-12 w-4 h-4 text-gray-400" />
+            {task?.startDate ? (
+              <span className="text-sm text-gray-300">
+                {new Date(task.startDate || '').toLocaleDateString('vi-VN', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </span>
+            ) : (
+              <span className="text-sm text-gray-400">No start date</span>
+            )}
           </div>
         </div>
 
@@ -141,9 +170,15 @@ const TaskDetailContent = ({
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-300 w-20">Projects</span>
           <div className="flex items-center gap-2 flex-1">
-            <Button variant="ghost" size="sm" className="ml-10  text-gray-400 hover:text-gray-200 text-sm">
-              Add to projects
-            </Button>
+            {task?.project || task?.projectName ? (
+              <div className="flex items-center gap-2 ml-12">
+                <span className="text-sm text-gray-300">{task.project || task.projectName}</span>
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" className="ml-10 text-gray-400 hover:text-gray-200 text-sm">
+                Add to projects
+              </Button>
+            )}
           </div>
         </div>
 
@@ -168,7 +203,6 @@ const TaskDetailContent = ({
           <MinimalTiptap 
             content={description} 
             onChange={setDescription}
-            onBlur={handleSave}
             placeholder="Add a description..." 
           />
         </div>

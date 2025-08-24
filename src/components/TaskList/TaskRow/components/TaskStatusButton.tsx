@@ -10,8 +10,9 @@ export const TaskStatusButton = ({
   task, 
   onToggle 
 }: TaskStatusButtonProps) => {
-  // Check if task is completed using all possible status formats
-  const isCompleted = task.status === 'DONE' || task.status === 'done' || task.status === 'completed' || task.completed;
+  // ✅ FIX: Use same completion check logic as MyTasksCard
+  const isCompleted = task.completed || (task.status as string) === 'completed' || task.status === 'DONE';
+  
   return (
     <div className="flex-shrink-0 mr-3">
       <button

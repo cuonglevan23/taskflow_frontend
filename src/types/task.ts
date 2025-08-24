@@ -17,22 +17,9 @@ export interface BackendTask {
   groupId?: number;
   projectId?: number;
   creatorId: number;
-  assignedToEmails?: string[]; // Use emails only, no IDs
+  assignedToIds?: number[];
+  assignedToEmails?: string[];
   checklists?: unknown[];
-  
-  // Assignee details from backend  
-  assignees?: BackendAssignee[];
-  creatorName?: string;
-  creatorEmail?: string;
-}
-
-export interface BackendAssignee {
-  id: number;
-  name?: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
 }
 
 // New My Tasks Response interfaces
@@ -104,7 +91,7 @@ export interface Task {
   
   // Multi-day task support for calendar rendering
   startDate?: Date;
-  endDate?: Date;
+  deadline?: string; // Backend deadline field (YYYY-MM-DD format)
   
   // Additional fields from My Tasks Summary API
   creatorName?: string;
@@ -114,17 +101,15 @@ export interface Task {
   assigneeCount?: number;
   checklistCount?: number;
   
-  // Assignees data for UI display
-  assignees?: TaskAssignee[];
+  // Email assignment support
   assignedEmails?: string[];
-  assignedToIds?: number[];
-}
-
-export interface TaskAssignee {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
+  
+  // Legacy assignees support for backward compatibility
+  assignees?: Array<{
+    id: string;
+    name: string;
+    email?: string;
+  }>;
 }
 
 // Data Transfer Objects (DTOs)
@@ -156,9 +141,11 @@ export interface UpdateTaskDTO {
   assigneeId?: number;
   projectId?: number;
   groupId?: number;
-  assignedToEmails?: string[]; // Replace all assignees
-  addAssigneeEmails?: string[]; // Add new assignees (don't remove existing)
-  removeAssigneeEmails?: string[]; // Remove specific assignees
+  assignedToIds?: number[];
+  // Email-based assignment fields
+  assignedToEmails?: string[];
+  addAssigneeEmails?: string[];
+  removeAssigneeEmails?: string[];
 }
 
 // API Response interfaces

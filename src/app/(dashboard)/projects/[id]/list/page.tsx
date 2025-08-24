@@ -38,37 +38,49 @@ function ProjectTaskListContent({ searchValue = "" }: ProjectListPageProps) {
   const taskListItems = useMemo((): TaskListItem[] => {
     if (!projectTasks || !Array.isArray(projectTasks)) return [];
 
-    return projectTasks.map((task: ProjectTaskResponseDto) => ({
-      id: task.id.toString(),
-      name: task.title,
-      description: task.description || '',
-      assignees: [
-        ...(task.assigneeName ? [{
-          id: task.assigneeId?.toString() || '',
-          name: task.assigneeName,
-          email: task.assigneeEmail || '',
-        }] : []),
-        ...(task.additionalAssignees || []).map(assignee => ({
-          id: assignee.id.toString(),
-          name: assignee.name,
-          email: assignee.email,
-        }))
-      ],
-      dueDate: task.deadline,
-      deadline: task.deadline,
-      startDate: task.startDate,
-      endDate: task.deadline,
-      priority: task.priority as any || 'MEDIUM',
-      status: task.status as any || 'TODO',
-      tags: [], // API doesn't have tags yet
-      project: task.projectName || project?.name || '',
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      completed: task.status === 'DONE',
-      progressPercentage: task.progressPercentage || 0,
-      estimatedHours: task.estimatedHours || 0,
-      actualHours: task.actualHours || 0,
-    }));
+    return projectTasks.map((task: ProjectTaskResponseDto) => {
+      const taskListItem = {
+        id: task.id.toString(), // Ensure this is string
+        name: task.title,
+        description: task.description || '',
+        assignees: [
+          ...(task.assigneeName ? [{
+            id: task.assigneeId?.toString() || '',
+            name: task.assigneeName,
+            email: task.assigneeEmail || '',
+          }] : []),
+          ...(task.additionalAssignees || []).map(assignee => ({
+            id: assignee.id.toString(),
+            name: assignee.name,
+            email: assignee.email,
+          }))
+        ],
+        dueDate: task.deadline,
+        deadline: task.deadline,
+        startDate: task.startDate,
+        endDate: task.deadline,
+        priority: task.priority as any || 'MEDIUM',
+        status: task.status as any || 'TODO',
+        tags: [], // API doesn't have tags yet
+        project: task.projectName || project?.name || '',
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        completed: task.status === 'DONE',
+        progressPercentage: task.progressPercentage || 0,
+        estimatedHours: task.estimatedHours || 0,
+        actualHours: task.actualHours || 0,
+      };
+      
+      // Debug log to verify task conversion
+      console.log('🔍 Converting project task:', {
+        originalId: task.id,
+        originalIdType: typeof task.id,
+        convertedId: taskListItem.id,
+        convertedIdType: typeof taskListItem.id
+      });
+      
+      return taskListItem;
+    });
   }, [projectTasks, project?.name]);
 
   // Project-specific task handlers (no my-tasks data dependency)
@@ -115,17 +127,68 @@ function ProjectTaskListContent({ searchValue = "" }: ProjectListPageProps) {
 
   const handleTaskEdit = useCallback(async (task: TaskListItem) => {
     try {
-      const updateRequest = {
-        title: task.name,
-        description: task.description,
-        status: task.status as any,
-        priority: task.priority as any,
-        startDate: task.startDate,
-        deadline: task.deadline,
-        progressPercentage: task.progressPercentage || 0,
+      console.log('🔍 Task edit debug:', {
+        taskId: task.id,
+        taskIdType: typeof task.id,
+        taskData: task
+      });
+      
+      // Ensure taskId is valid
+      const taskId = Number(task.id);
+      if (isNaN(taskId)) {
+        throw new Error(`Invalid task ID: ${task.id}`);
+      }
+      
+      // Ensure proper data types and validation with mapping
+      const mapStatus = (status: string): 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW' => {
+        switch (status.toLowerCase()) {
+          case 'completed':
+          case 'done':
+            return 'DONE';
+          case 'in_progress':
+          case 'in-progress':
+          case 'inprogress':
+            return 'IN_PROGRESS';
+          case 'testing':
+            return 'TESTING';
+          case 'blocked':
+            return 'BLOCKED';
+          case 'review':
+            return 'REVIEW';
+          case 'todo':
+          default:
+            return 'TODO';
+        }
       };
 
-      await updateTask(Number(task.id), updateRequest);
+      const mapPriority = (priority: string): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' => {
+        switch (priority.toUpperCase()) {
+          case 'HIGH':
+            return 'HIGH';
+          case 'LOW':
+            return 'LOW';
+          case 'CRITICAL':
+          case 'URGENT':
+            return 'CRITICAL';
+          case 'MEDIUM':
+          default:
+            return 'MEDIUM';
+        }
+      };
+      
+      const updateRequest = {
+        title: task.name,
+        description: task.description || '',
+        status: mapStatus(task.status),
+        priority: mapPriority(task.priority),
+        startDate: task.startDate || undefined,
+        deadline: task.deadline || undefined,
+        progressPercentage: 0, // Default value
+      };
+
+      console.log('🔄 Updating project task:', taskId, 'with data:', updateRequest);
+      await updateTask(taskId, updateRequest);
+      console.log('✅ Project task updated successfully');
 
     } catch (error) {
       console.error('❌ Failed to update project task:', error);
@@ -135,7 +198,14 @@ function ProjectTaskListContent({ searchValue = "" }: ProjectListPageProps) {
 
   const handleTaskDelete = useCallback(async (taskId: string) => {
     try {
-      await deleteTask(Number(taskId));
+      console.log('🔍 Delete debug:', { taskId, taskIdType: typeof taskId });
+      
+      const numericTaskId = Number(taskId);
+      if (isNaN(numericTaskId)) {
+        throw new Error(`Invalid task ID for delete: ${taskId}`);
+      }
+      
+      await deleteTask(numericTaskId);
 
     } catch (error) {
       console.error('❌ Failed to delete project task:', error);
@@ -145,7 +215,39 @@ function ProjectTaskListContent({ searchValue = "" }: ProjectListPageProps) {
 
   const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
     try {
-      await updateTaskStatus({ taskId: Number(taskId), status });
+      console.log('🔍 Status change debug:', { taskId, taskIdType: typeof taskId, status });
+      
+      const numericTaskId = Number(taskId);
+      if (isNaN(numericTaskId)) {
+        throw new Error(`Invalid task ID for status change: ${taskId}`);
+      }
+      
+      // Map frontend status to backend status
+      const mapStatus = (status: string): 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW' => {
+        switch (status.toLowerCase()) {
+          case 'completed':
+          case 'done':
+            return 'DONE';
+          case 'in_progress':
+          case 'in-progress':
+          case 'inprogress':
+            return 'IN_PROGRESS';
+          case 'testing':
+            return 'TESTING';
+          case 'blocked':
+            return 'BLOCKED';
+          case 'review':
+            return 'REVIEW';
+          case 'todo':
+          default:
+            return 'TODO';
+        }
+      };
+      
+      const backendStatus = mapStatus(status);
+      console.log('🔄 Mapped status:', { original: status, mapped: backendStatus });
+      
+      await updateTaskStatus(numericTaskId, backendStatus);
 
     } catch (error) {
       console.error('❌ Failed to change project task status:', error);

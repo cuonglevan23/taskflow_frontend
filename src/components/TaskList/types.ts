@@ -21,8 +21,11 @@ export interface TaskTableColumn {
 export interface TaskListItem {
   id: string;
   name: string;
+  title?: string; // Alternative field for task name used in some components
   description?: string;
   assignees: TaskAssignee[];
+  assigneeName?: string; // For simple display without full assignee object
+  assignedEmails?: string[]; // Email addresses for email-based assignment
   dueDate?: string;
   deadline?: string; // Deadline date for task completion
   startDate?: string; // ISO date string for enhanced calendar
@@ -35,6 +38,10 @@ export interface TaskListItem {
   status: TaskStatus;
   tags?: string[];
   project?: string;
+  projectName?: string; // Project name for display in detail panel
+  projectId?: number; // Project ID for linking
+  teamId?: string; // Team ID for context
+  teamName?: string; // Team name for display
   actionTime?: TaskActionTime; // Personal action time bucket (không ảnh hưởng deadline)
   createdAt: string;
   updatedAt: string;

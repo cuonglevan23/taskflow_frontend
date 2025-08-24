@@ -126,12 +126,17 @@ const BucketTaskList = ({
   };
 
   const handleAddTask = (bucketId: string) => {
+    console.log('➕ BucketTaskList.handleAddTask called for bucket:', bucketId);
     setEditingSection(bucketId);
     setNewTaskName('');
   };
 
   const handleSaveTask = () => {
-    if (!newTaskName.trim()) return;
+    console.log('🔧 BucketTaskList.handleSaveTask called with newTaskName:', newTaskName);
+    if (!newTaskName.trim()) {
+      console.log('⚠️ Task name is empty, skipping save');
+      return;
+    }
     
     const taskData = {
       name: newTaskName.trim(),
@@ -139,6 +144,7 @@ const BucketTaskList = ({
       actionTime: editingSection || undefined,
     };
     
+    console.log('📤 BucketTaskList calling onTaskCreate with:', taskData);
     onTaskCreate?.(taskData);
     setEditingSection(null);
     setNewTaskName('');
@@ -161,7 +167,6 @@ const BucketTaskList = ({
 
   const handleTaskSave = (taskId: string, updates: Partial<TaskListItem>) => {
     // Call the provided edit handler
-    console.log('Save task updates:', taskId, updates);
     if (updates.id) {
       onTaskEdit?.(updates as TaskListItem);
     }
@@ -170,7 +175,6 @@ const BucketTaskList = ({
 
   const handleTaskDeleteFromPanel = (taskId: string) => {
     // Call the provided delete handler
-    console.log('Delete task:', taskId);
     onTaskDelete?.(taskId);
     handleClosePanel();
   };

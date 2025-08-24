@@ -64,10 +64,15 @@ export const transformBackendProject = (backendProject: BackendProject): Project
     startDateString: formatDateString(backendProject.startDate),
     endDateString: formatDateString(backendProject.endDate),
     ownerId: backendProject.ownerId,
-    emailPm: backendProject.emailPm,
+    createdById: backendProject.createdById,
+    emailPm: backendProject.emailPm || undefined,
     organizationId: backendProject.organizationId,
     createdAt,
     updatedAt,
+    
+    // User role and permissions
+    currentUserRole: backendProject.currentUserRole,
+    isCurrentUserMember: backendProject.isCurrentUserMember,
     
     // Computed fields
     duration,

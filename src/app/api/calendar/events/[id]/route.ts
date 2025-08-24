@@ -40,10 +40,9 @@ let MOCK_EVENTS: CalendarEvent[] = [
 // GET /api/calendar/events/[id] - Get single event
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const params = await context.params;
     const { id } = params;
     
     const event = MOCK_EVENTS.find(e => e.id === id);
@@ -69,10 +68,9 @@ export async function GET(
 // PUT /api/calendar/events/[id] - Update event
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const params = await context.params;
     const { id } = params;
     const body = await request.json();
     
@@ -115,10 +113,9 @@ export async function PUT(
 // DELETE /api/calendar/events/[id] - Delete event
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const params = await context.params;
     const { id } = params;
     
     const eventIndex = MOCK_EVENTS.findIndex(e => e.id === id);

@@ -69,20 +69,31 @@ const TeamCalendar: React.FC<TeamCalendarProps> = ({
 
   // Team calendar handlers
   const handleEventClick = useCallback((task: any) => {
-    console.log('Team calendar event clicked:', task);
+    console.log('Team calendar event clicked:', {
+      id: task.id,
+      title: task.title,
+      projectName: task.projectName,
+      projectId: task.projectId
+    });
     
     // Convert to TaskListItem format for detail panel
     const taskItem: TaskListItem = {
       id: task.id,
-      title: task.title,
-      description: '',
-      status: 'TODO',
-      priority: 'MEDIUM',
+      name: task.title, // TaskListItem uses 'name' instead of 'title'
+      description: task.description || '',
+      status: task.status || 'TODO',
+      priority: task.priority || 'MEDIUM',
       startDate: task.startDate?.toISOString(),
       deadline: task.endDate?.toISOString(),
-      assigneeName: task.assignee,
-      projectName: teamName || 'Team',
+      assigneeName: task.assigneeName || task.assignee,
+      // Extract the actual project name (not the fallback)
+      project: task.actualProjectName || task.projectName, // For the project field
+      projectName: task.actualProjectName || task.projectName, // For the projectName field
+      projectId: task.projectId,
       teamId,
+      assignees: [], // Required by the TaskListItem interface
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     setState(prev => ({
@@ -92,7 +103,7 @@ const TeamCalendar: React.FC<TeamCalendarProps> = ({
     }));
 
     onEventClick?.(task);
-  }, [onEventClick, teamName, teamId]);
+  }, [onEventClick, teamId]);
 
   const handleDateClick = useCallback((dateStr: string) => {
     console.log('Team calendar date clicked:', dateStr);
@@ -123,7 +134,15 @@ const TeamCalendar: React.FC<TeamCalendarProps> = ({
     setState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
   }, [onTaskDelete]);
 
-  const handleTaskCreate = useCallback((taskData: any) => {
+  const handleTaskCreate = useCallback((taskData: {
+    name: string;
+    description?: string;
+    status?: string;
+    startDate?: string;
+    deadline?: string;
+    priority?: string;
+    assigneeId?: string;
+  }) => {
     console.log('Team calendar task created:', taskData);
     
     const teamTaskData = {
@@ -173,10 +192,10 @@ const TeamCalendar: React.FC<TeamCalendarProps> = ({
         tasks={tasks}
         height={height}
         onEventClick={handleEventClick}
-        onDateClick={handleDateClick}
-        onEventDrop={handleEventDrop}
-        onEventResize={handleEventResize}
-        onTaskCreate={handleTaskCreate}
+        onDateClick={onDateClick ? handleDateClick : undefined}
+        onEventDrop={onEventDrop ? handleEventDrop : undefined}
+        onEventResize={onEventResize ? handleEventResize : undefined}
+        onTaskCreate={onTaskCreate ? handleTaskCreate : undefined}
         className="h-full"
       />
 

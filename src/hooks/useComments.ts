@@ -10,7 +10,7 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
   const numericTaskId = taskId !== null && typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
   
   const { data, error, isLoading, mutate: revalidate } = useSWR<CommentListResponse>(
-    numericTaskId ? [`/api/task-comments/task/${numericTaskId}`, page, size] : null,
+    numericTaskId ? `/api/task-comments/task/${numericTaskId}` : null,
     numericTaskId ? () => CommentService.getTaskComments(numericTaskId, page, size) : null,
     {
       revalidateOnFocus: false,
@@ -23,11 +23,7 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
         return !(status === 404 || status === 403 || status === 500);
       },
       onError: (error) => {
-        console.error('Error fetching task comments:', {
-          taskId: numericTaskId,
-          error: error?.response?.data || error?.message,
-          status: error?.response?.status
-        });
+        // Silent error handling - logs removed per user request
       }
     }
   );
@@ -60,11 +56,7 @@ export function useCommentCount(taskId: string | number | null) {
         return !(status === 404 || status === 403 || status === 500);
       },
       onError: (error) => {
-        console.error('Error fetching comment count:', {
-          taskId: numericTaskId,
-          error: error?.response?.data || error?.message,
-          status: error?.response?.status
-        });
+        // Silent error handling - logs removed per user request
       }
     }
   );
@@ -97,64 +89,65 @@ export function useCommentActions(taskId: number | string | null) {
   }, [notificationActions]);
 
   const createComment = useCallback(async (content: string) => {
-    if (!numericTaskId) {
-      throw new Error('Task ID is required to create a comment');
-    }
+    if (!taskId || !content.trim()) return;
     
     setIsCreating(true);
     try {
-      console.log('Creating comment:', { taskId: numericTaskId, content });
-      const newComment = await CommentService.createComment({ 
-        taskId: numericTaskId, 
-        content 
-      });
+      const numericTaskId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
+      if (isNaN(numericTaskId)) {
+        throw new Error('Invalid task ID');
+      }
+      
+      // Create optimistic comment for immediate UI update
+      const optimisticComment: TaskComment = {
+        id: Date.now(), // Temporary ID
+        content: content.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        taskId: numericTaskId,
+        userId: 0,
+        userEmail: 'current.user@example.com',
+        userName: 'You',
+        userAvatar: null,
+        isEdited: false
+      };
       
       // Optimistically update the cache
-      mutate(
-        [`/api/task-comments/task/${numericTaskId}`, 0, 10],
-        (data: CommentListResponse | undefined) => {
-          if (!data) return data;
-          return {
-            ...data,
-            comments: [newComment, ...data.comments],
-            total: data.total + 1,
-          };
-        },
-        false
-      );
+      const cacheKey = `/api/task-comments/task/${numericTaskId}`;
+      mutate(cacheKey, (currentData: CommentListResponse | undefined) => {
+        if (!currentData) return { comments: [optimisticComment], total: 1, page: 0, size: 10 };
+        return {
+          ...currentData,
+          comments: [optimisticComment, ...currentData.comments],
+          total: currentData.total + 1
+        };
+      }, false); // Don't revalidate immediately
       
-      // Update comment count cache
-      mutate(
-        `/api/task-comments/task/${numericTaskId}/count`,
-        (countData: { commentCount: number } | undefined) => {
-          return { commentCount: (countData?.commentCount || 0) + 1 };
-        },
-        false
-      );
-      
-      showNotification('Comment added successfully', 'success');
-      return newComment;
-    } catch (error: any) {
-      console.error('Failed to create comment:', {
+      // Fix: Pass the data as an object with the correct interface
+      const newComment = await CommentService.createComment({
         taskId: numericTaskId,
-        error: error?.response?.data || error?.message,
-        status: error?.response?.status
+        content: content.trim()
       });
       
-      // Show specific error messages based on status
-      const status = error?.response?.status;
-      if (status === 403) {
-        showNotification('You do not have permission to add comments to this task', 'error');
-      } else if (status === 500) {
-        showNotification('Server error: Unable to add comment. Please try again later.', 'error');
-      } else {
-        showNotification('Failed to add comment', 'error');
-      }
+      // Force revalidation to get real data from server
+      await mutate(cacheKey, undefined, { revalidate: true });
+      await mutate(`/api/task-comments/task/${numericTaskId}/count`, undefined, { revalidate: true });
+      
+      showNotification('Comment created successfully', 'success');
+      return newComment;
+    } catch (error) {
+      // Revert optimistic update on error
+      const cacheKey = `/api/task-comments/task/${numericTaskId}`;
+      await mutate(cacheKey, undefined, { revalidate: true });
+      
+      // Show specific error messages
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create comment';
+      showNotification(errorMessage, 'error');
       throw error;
     } finally {
       setIsCreating(false);
     }
-  }, [numericTaskId, showNotification]);
+  }, [taskId, showNotification]);
 
   const updateComment = useCallback(async (commentId: number, content: string) => {
     if (!numericTaskId) return;

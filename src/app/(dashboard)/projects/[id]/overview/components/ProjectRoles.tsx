@@ -14,6 +14,15 @@ export function ProjectRoles() {
   const { user } = useUser();
   const { theme } = useTheme();
   
+  // Debug log to check if currentUserRole is available
+  console.log('ProjectRoles - project data:', {
+    id: project?.id,
+    name: project?.name,
+    currentUserRole: project?.currentUserRole,
+    ownerId: project?.ownerId,
+    createdById: project?.createdById
+  });
+  
   // Create default members from project creator and current user
   const defaultMembers = useMemo(() => {
     if (!project || !user) return [];
@@ -21,22 +30,23 @@ export function ProjectRoles() {
     const members = [];
     
     // Add project creator as owner if different from current user
-    if (project.createdBy && project.createdBy !== user.id) {
+    if (project.createdById && project.createdById !== user.id) {
       members.push({
-        id: project.createdBy,
-        name: project.createdByName || `User ${project.createdBy}`,
+        id: project.createdById,
+        name: `User ${project.createdById}`, // TODO: Get actual creator name from API
         role: 'Project Owner',
-        avatar: project.createdByName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U',
-        email: project.createdByEmail || ''
+        avatar: 'U',
+        email: ''
       });
     }
     
-    // Add current user
+    // Add current user with role from backend
+    const currentUserRole = project.currentUserRole === 'OWNER' ? 'Project Owner' : 'Member';
     members.push({
       id: user.id,
       name: user.name || user.email?.split('@')[0] || 'Current User',
-      role: project.createdBy === user.id ? 'Project Owner' : 'Member',
-      avatar: user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U',
+      role: currentUserRole,
+      avatar: user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
       email: user.email || ''
     });
     
@@ -69,7 +79,8 @@ export function ProjectRoles() {
       }));
       
       // Optimistic update - add invited members to list
-      await mutateMembers([...teamMembers, ...newMembers], false);
+      const currentMembers = teamMembers || [];
+      await mutateMembers([...currentMembers, ...newMembers], false);
       
       // TODO: Real API call when backend is ready
       // await projectsService.inviteProjectMembers(Number(project.id), inviteData);
@@ -94,7 +105,8 @@ export function ProjectRoles() {
     setLoading(true);
     try {
       // Optimistic update - instant UI response  
-      const updatedMembers = teamMembers.filter(m => m.id !== memberId);
+      const currentMembers = teamMembers || [];
+      const updatedMembers = currentMembers.filter(m => m.id !== memberId);
       await mutateMembers(updatedMembers, false);
       
       // TODO: Real API call when backend is ready
@@ -158,14 +170,12 @@ export function ProjectRoles() {
           onMouseEnter={(e) => e.currentTarget.style.color = theme.text.primary}
           onMouseLeave={(e) => e.currentTarget.style.color = theme.text.secondary}
         >
-          <Avatar
-            size="sm"
-            variant="circle"
-            className="border border-dashed"
+          <div 
+            className="w-8 h-8 rounded-full border border-dashed flex items-center justify-center"
             style={{ borderColor: theme.border.default, backgroundColor: 'transparent' }}
           >
             <ACTION_ICONS.create size={16} style={{ color: theme.text.secondary }} />
-          </Avatar>
+          </div>
           <span>Invite member</span>
         </button>
       </div>

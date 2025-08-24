@@ -7,6 +7,8 @@ import { ACTION_ICONS } from "@/constants/icons";
 import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
 import { TeamProvider } from "@/contexts/TeamContext";
 import { useTeam } from "@/hooks/useTeam";
+import InviteModal, { type InviteFormData } from "@/components/modals/InviteModal";
+import TeamMemberService from "@/services/teamMemberService";
 import { 
   TeamHeader, 
   CuratedWork, 
@@ -15,6 +17,7 @@ import {
   type WorkItem,
   type TeamMember 
 } from "@/components/teams";
+import { transformTeamMemberForMembersView } from "@/types/shared-teams";
 
 // Helper function to get team initials
 const getTeamInitials = (teamName: string): string => {
@@ -52,6 +55,9 @@ function TeamOverviewContent() {
 
   // Local state for description editing
   const [editingDescription, setEditingDescription] = useState("");
+  
+  // State for invite modal
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   // Event Handlers
   const handleDescriptionChange = async (description: string) => {
@@ -103,15 +109,88 @@ function TeamOverviewContent() {
   };
 
   const handleAddMember = async () => {
+    setIsInviteModalOpen(true);
+  };
+
+  const handleInviteSubmit = async (data: InviteFormData) => {
     try {
-      const email = prompt('Enter member email:');
-      if (email) {
-        await addMember(email);
-        console.log('Member invited successfully');
+      // Parse emails from the form data
+      const emailList = data.emails
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email.length > 0);
+
+      if (emailList.length === 0) {
+        console.error('No valid emails to invite');
+        return;
       }
+
+      console.log(`🔄 Inviting ${emailList.length} member(s) to team ${teamId}...`);
+
+      // Use the TeamMemberService to invite multiple members
+      const result = await TeamMemberService.inviteMultipleMembers(teamId, emailList);
+
+      // Show results summary
+      if (result.successful.length > 0) {
+        console.log(`✅ Successfully invited ${result.successful.length} member(s)`);
+        result.successful.forEach(({ email, data }) => {
+          console.log(`  - ${email}: ${data.firstName} ${data.lastName} (ID: ${data.id})`);
+        });
+      }
+      
+      if (result.failed.length > 0) {
+        console.error(`❌ Failed to invite ${result.failed.length} member(s):`);
+        result.failed.forEach(({ email, error }) => {
+          console.error(`  - ${email}: ${error}`);
+        });
+        // TODO: Show error notification to user with specific errors
+      }
+
+      // Close modal if at least one invitation was successful
+      if (result.successful.length > 0) {
+        setIsInviteModalOpen(false);
+        // TODO: Refresh members list or update local state
+        // You might want to trigger a refetch of team members here
+      }
+
+      // Show summary notification
+      if (result.successful.length === emailList.length) {
+        console.log('🎉 All invitations sent successfully!');
+        // TODO: Show success toast
+      } else if (result.successful.length > 0) {
+        console.log(`⚠️ ${result.successful.length}/${emailList.length} invitations sent successfully`);
+        // TODO: Show partial success toast
+      } else {
+        console.error('💥 All invitations failed');
+        // Check if it's because backend is not implemented
+        const hasNotImplementedError = result.failed.some(f => 
+          f.error.includes('not yet available') || f.error.includes('not implemented')
+        );
+        
+        if (hasNotImplementedError) {
+          console.error('🚧 Backend team invitation API is not implemented yet');
+          // TODO: Show "feature coming soon" message
+        } else {
+          // TODO: Show error toast
+        }
+      }
+      
     } catch (error) {
-      console.error('Failed to invite member:', error);
+      console.error('Failed to process invitations:', error);
+      
+      // Check if it's a "not implemented" error
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('not yet available') || errorMessage.includes('not implemented')) {
+        console.error('🚧 Team invitation feature is not ready yet');
+        // TODO: Show "feature coming soon" notification
+      } else {
+        // TODO: Show error toast/notification
+      }
     }
+  };
+
+  const handleCloseInviteModal = () => {
+    setIsInviteModalOpen(false);
   };
 
   const handleMemberClick = (member: TeamMember) => {
@@ -122,11 +201,19 @@ function TeamOverviewContent() {
   const handleRemoveMember = async (memberId: number) => {
     try {
       if (window.confirm('Are you sure you want to remove this member?')) {
-        await kickMember(memberId);
-        console.log('Member removed successfully');
+        console.log(`🔄 Removing member ${memberId} from team ${teamId}...`);
+        
+        await TeamMemberService.removeMember({
+          teamId: teamId,
+          memberId: memberId
+        });
+        
+        console.log(`✅ Successfully removed member ${memberId}`);
+        // TODO: Refresh members list or update local state
       }
     } catch (error) {
       console.error('Failed to remove member:', error);
+      // TODO: Show error toast/notification
     }
   };
 
@@ -224,14 +311,7 @@ function TeamOverviewContent() {
               {/* Right Sidebar - Aligned with CuratedWork */}
               <div className="w-full lg:w-80 flex flex-col gap-4">
                 <Members 
-                  members={members.map(member => ({
-                    id: member.id.toString(),
-                    name: member.user?.name || member.userName || 'Unknown',
-                    avatar: (member.user?.name || member.userName || 'U').substring(0, 2).toUpperCase(),
-                    color: member.user?.color || '#6B7280',
-                    email: member.user?.email || member.userEmail,
-                    role: member.role
-                  }))}
+                  members={members.map(transformTeamMemberForMembersView)}
                   totalCount={memberCount}
                   onViewAll={handleViewAllMembers}
                   onAddMember={handleAddMember}
@@ -247,6 +327,16 @@ function TeamOverviewContent() {
           </div>
         </div>
       </div>
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onClose={handleCloseInviteModal}
+        onSubmit={handleInviteSubmit}
+        showProjectSelection={false}
+        modalTitle={`Invite people to ${teamName || 'team'}`}
+        requireSameDomain={false}
+      />
     </div>
   );
 }

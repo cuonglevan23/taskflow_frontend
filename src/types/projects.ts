@@ -41,6 +41,8 @@ export interface ProjectResponseDto {
   completedTaskCount?: number;         // Completed tasks
   memberCount?: number;                // Team member count
   teamIds?: number[];                  // Associated team IDs
+  currentUserRole?: 'OWNER' | 'MEMBER'; // Current user's role in this project
+  isCurrentUserMember?: boolean;       // Whether current user is member
 }
 
 // ===== API Request Types (to backend) =====
@@ -87,10 +89,15 @@ export interface Project {
   startDateString: string;             // Formatted date string
   endDateString: string;               // Formatted date string
   ownerId: number;
+  createdById: number;                 // Who created the project
   organizationId?: number | null;
   teamIds: number[];
   createdAt: Date;
   updatedAt: Date;
+  
+  // User role and permissions
+  currentUserRole?: 'OWNER' | 'MEMBER'; // Current user's role in this project
+  isCurrentUserMember?: boolean;         // Whether current user is member
   
   // Computed fields
   duration: number;                    // Days between start and end

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { id: teamId } = await params;
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-    const url = `${backendUrl}/api/team-members/team/${teamId}`;
+    const url = `${backendUrl}/api/teams/${teamId}/members`;
 
     const backendResponse = await fetch(url, {
       method: 'GET',

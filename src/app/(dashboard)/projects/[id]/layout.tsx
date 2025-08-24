@@ -46,9 +46,8 @@ function ProjectContent({ children }: { children: React.ReactNode }) {
     return child;
   });
 
-  // Only show TaskListHeader for task-related pages (board, list, timeline)
-  const showTaskHeader = pathname?.includes('/board') || 
-                         pathname?.includes('/list') || 
+  // Only show TaskListHeader for task-related pages (list, timeline)
+  const showTaskHeader = pathname?.includes('/list') || 
                          pathname?.includes('/timeline');
 
   return (
@@ -73,7 +72,7 @@ function ProjectContent({ children }: { children: React.ReactNode }) {
             onOptionsClick={() => {/* Handle options modal */}}
             showSearch={true}
             showFilters={true}
-            showSort={pathname?.includes('/list') || pathname?.includes('/board')}
+            showSort={pathname?.includes('/list')}
             showGroup={pathname?.includes('/list')}
             showOptions={true}
             className="mb-0"

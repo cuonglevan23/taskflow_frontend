@@ -27,14 +27,6 @@ export const TaskAssignees = ({
   const [showInput, setShowInput] = useState(false);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
-  console.log('🎯 TaskAssignees rendering:', {
-    taskId: task.id,
-    taskName: task.name,
-    assignedEmails: (task as any).assignedEmails,
-    hasAssignedEmails: !!((task as any).assignedEmails) && ((task as any).assignedEmails).length > 0,
-    assigneesCount: task.assignees?.length || 0
-  });
-
   // Handle click outside to close input
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,17 +44,13 @@ export const TaskAssignees = ({
     }
   }, [showInput]);
 
-  const handleEmailKeyDown = (e: React.KeyboardEvent) => {
+    const handleEmailKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
-    console.log('⌨️ Key pressed:', e.key, 'Email:', emailInput);
     if (e.key === 'Enter') {
       if (emailInput.trim() && emailInput.includes('@')) {
-        console.log('✅ Enter pressed with valid email, calling onInviteUser');
         onInviteUser(emailInput.trim());
         setEmailInput('');
         setShowInput(false);
-      } else {
-        console.log('❌ Enter pressed with invalid email:', emailInput);
       }
     } else if (e.key === 'Escape') {
       setEmailInput('');
