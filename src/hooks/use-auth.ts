@@ -2,7 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react"
 import { UserRole, Permission } from "@/constants/auth"
-import * as authUtils from "@/lib/utils/auth"
+
 import type { AuthUser } from "@/lib/auth/types"
 
 export interface UseAuthReturn {
@@ -16,26 +16,11 @@ export interface UseAuthReturn {
   hasAnyRole: (roles: UserRole[]) => boolean
 }
 
-// Cache session check for performance
-let lastStatusCheck = 0;
-let cachedStatus: 'authenticated' | 'unauthenticated' | 'loading' = 'loading';
-const STATUS_CACHE_TIME = 60 * 1000; // 1 minute
-
 export function useAuth(): UseAuthReturn {
-  // Use session with optimized caching strategy
-  const { data: session, status } = useSession({
-    required: false,
-  });
-  
-  // Cache the status for multiple components using useAuth
-  const now = Date.now();
-  if (now - lastStatusCheck > STATUS_CACHE_TIME) {
-    cachedStatus = status;
-    lastStatusCheck = now;
-  }
+  const { data: session, status } = useSession()
   
   const user = session?.user || null
-  const isLoading = cachedStatus === "loading"
+  const isLoading = status === "loading"
   const isAuthenticated = !!session?.user
 
   const login = async (provider: string = "google") => {
@@ -54,15 +39,15 @@ export function useAuth(): UseAuthReturn {
   }
 
   const hasPermission = (permission: Permission): boolean => {
-    return authUtils.hasPermission(user, permission)
+    return require("@/lib/utils/auth").hasPermission(user, permission)
   }
 
   const hasRole = (role: UserRole): boolean => {
-    return authUtils.hasRole(user, role)
+    return require("@/lib/utils/auth").hasRole(user, role)
   }
 
   const hasAnyRole = (roles: UserRole[]): boolean => {
-    return authUtils.hasAnyRole(user, roles)
+    return require("@/lib/utils/auth").hasAnyRole(user, roles)
   }
 
   return {
