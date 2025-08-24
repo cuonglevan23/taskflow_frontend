@@ -39,10 +39,9 @@ const GoalsContext = createContext<GoalsContextValue | undefined>(undefined);
 export function GoalsProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<GoalTab>('my-goals');
   const [filters, setFilters] = useState<GoalFilters>({});
-  const [localGoals, setLocalGoals] = useState<GoalListItem[]>([]); 
 
   // Use SWR to fetch and cache goals data
-  const { data: swrGoals = [], error: fetchError, isLoading, mutate } = useSWR(
+  const { data: goals = [], error: fetchError, isLoading, mutate } = useSWR(
     GOALS_CACHE_KEY, 
     getAllGoals,
     {
@@ -50,27 +49,18 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       dedupingInterval: 5000,    // Avoid duplicate requests within 5 seconds
       keepPreviousData: true,    // Keep showing previous data while loading new data
       errorRetryCount: 2,        // Retry failed requests maximum 2 times
-      onSuccess: (data) => {
-        // Update local state when SWR successfully fetches data
-        setLocalGoals(data);
-      }
     }
   );
   
-  // Use SWR state or fallback to local state
-  const goals = swrGoals || localGoals;
   const loading = isLoading;
   const error = fetchError ? 'Failed to fetch goals' : null;
 
-  // Fetch goals based on filters
+  // Fetch goals - this just triggers SWR's mutate
   const fetchGoals = useCallback(async () => {
     try {
-      // Use mutate to trigger a revalidation
       await mutate();
-      return;
     } catch (error) {
       console.error("Error fetching goals:", error);
-      // Error is already handled by SWR
     }
   }, [mutate]);
 
@@ -78,7 +68,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const createGoal = useCallback(async (data: CreateGoalData) => {
     try {
       // In a real implementation, this would call an API
-      console.log("Creating goal:", data);
+      alert("Creating goal functionality will be implemented");
       
       // For now, just create a mock goal
       const newGoalListItem: GoalListItem = {
@@ -93,11 +83,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         hasRisk: false
       };
 
-      // Update local state
-      setLocalGoals(prev => [...prev, newGoalListItem]);
-      
-      // Update SWR cache
-      await mutate([...goals, newGoalListItem], false);
+      // Update the SWR cache
+      mutate([...(goals || []), newGoalListItem], false);
       
       return newGoalListItem;
     } catch (error) {
@@ -109,18 +96,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Update an existing goal
   const updateGoal = useCallback(async (data: UpdateGoalData) => {
     try {
-      // Update local state first (optimistic update)
-      const updatedGoals = goals.map(goal => 
+      // In a real implementation, this would call an API
+      const updatedGoals = (goals || []).map(goal => 
         goal.id === data.id 
           ? { ...goal, ...data } 
           : goal
       );
       
-      // Update local state
-      setLocalGoals(updatedGoals);
-      
-      // Update SWR cache
-      await mutate(updatedGoals, false);
+      // Update the SWR cache
+      mutate(updatedGoals, false);
       
       // Return the updated goal
       const updatedGoal = updatedGoals.find(goal => goal.id === data.id);
@@ -134,14 +118,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   // Delete a goal
   const deleteGoal = useCallback(async (id: string): Promise<boolean> => {
     try {
-      // Update local state first (optimistic update)
-      const filteredGoals = goals.filter(goal => goal.id !== id);
+      // In a real implementation, this would call an API
+      const filteredGoals = (goals || []).filter(goal => goal.id !== id);
       
-      // Update local state
-      setLocalGoals(filteredGoals);
-      
-      // Update SWR cache
-      await mutate(filteredGoals, false);
+      // Update the SWR cache
+      mutate(filteredGoals, false);
       
       return true;
     } catch (error) {
@@ -152,16 +133,13 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   // Toggle the expanded state of a goal (for UI)
   const toggleGoalExpanded = useCallback((id: string) => {
-    const updatedGoals = goals.map(goal => 
+    const updatedGoals = (goals || []).map(goal => 
       goal.id === id 
         ? { ...goal, isExpanded: !goal.isExpanded } 
         : goal
     );
     
-    // Update local state
-    setLocalGoals(updatedGoals);
-    
-    // Update SWR cache (no await needed for UI updates)
+    // Update the SWR cache
     mutate(updatedGoals, false);
   }, [goals, mutate]);
 
@@ -172,15 +150,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   // Computed filtered goals based on current filters and active tab
   const filteredGoals = useMemo(() => {
-    let result = goals;
+    let result = goals || [];
     
     // Filter by tab
     if (activeTab === 'my-goals') {
       // For "My Goals" tab, show goals without a team or where user is the owner
-      result = goals.filter(goal => !goal.teamName || goal.ownerId === 'current-user');
+      result = result.filter(goal => !goal.teamName || goal.ownerId === 'current-user');
     } else if (activeTab === 'team-goals') {
       // For "Team Goals" tab, show goals with a team
-      result = goals.filter(goal => !!goal.teamName);
+      result = result.filter(goal => !!goal.teamName);
     }
     
     // Apply additional filters
@@ -209,7 +187,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }, [goals, filters, activeTab]);
 
   const value = {
-    goals,
+    goals: goals || [],
     loading,
     error,
     activeTab,

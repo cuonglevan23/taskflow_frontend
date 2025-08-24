@@ -1,8 +1,7 @@
 "use client";
 
 import { SWRConfig } from 'swr';
-import { ReactNode, useEffect } from 'react';
-import { withSessionCaching, initializeSessionCache } from '@/lib/middleware/sessionCaching';
+import { ReactNode } from 'react';
 
 interface SWRProviderProps {
   children: ReactNode;
@@ -10,11 +9,6 @@ interface SWRProviderProps {
 
 // Global SWR configuration optimized for Next.js 15+
 export function SWRProvider({ children }: SWRProviderProps) {
-  // Initialize session caching on client side
-  useEffect(() => {
-    initializeSessionCache();
-  }, []);
-
   return (
     <SWRConfig
       value={{
@@ -40,22 +34,58 @@ export function SWRProvider({ children }: SWRProviderProps) {
         // Next.js 15+ optimizations
         suspense: false,                    // Disable suspense for better control
         
-        // Enhanced fetcher with session caching middleware
+        // Global fetcher with better error handling
         fetcher: (url: string) => {
-          const fetchFn = () => fetch(url).then(res => {
+          // This won't be used as we have specific fetchers in services
+          // But good to have as fallback
+          return fetch(url).then(res => {
             if (!res.ok) throw new Error('Network response was not ok');
             return res.json();
           });
-          
-          // Apply session caching middleware
-          return withSessionCaching(fetchFn)();
         },
         
         // Performance monitoring (can be removed in production)
+        onSuccess: () => {
+          // Success logging removed for cleaner console
+        },
+        
         onError: (error, key) => {
-          if (process.env.NODE_ENV === 'development') {
+          // Check if it's a connection error
+          const isConnError = 
+            error?.isConnectionError ||
+            error?.code === 'ECONNREFUSED' ||
+            error?.status === 503 ||
+            !navigator.onLine;
+
+          if (isConnError) {
+            // Reduce retry frequency for connection errors
+            if (process.env.NODE_ENV === 'development') {
+              console.warn(`🔌 Connection error for: ${Array.isArray(key) ? key.join(',') : key}`);
+            }
+          } else if (process.env.NODE_ENV === 'development') {
             console.error(`❌ SWR Error: ${Array.isArray(key) ? key.join(',') : key}`, error);
           }
+        },
+
+        // Reduce retry frequency for connection errors
+        onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+          // Check if it's a connection error
+          const isConnError = 
+            error?.isConnectionError ||
+            error?.code === 'ECONNREFUSED' ||
+            error?.status === 503 ||
+            !navigator.onLine;
+
+          // Don't retry connection errors as aggressively
+          if (isConnError) {
+            if (retryCount >= 1) return; // Only retry once for connection errors
+            setTimeout(revalidate, 10000); // Wait 10 seconds before retry
+            return;
+          }
+
+          // Default retry logic for other errors
+          if (retryCount >= 3) return;
+          setTimeout(revalidate, Math.pow(2, retryCount) * 1000);
         },
       }}
     >

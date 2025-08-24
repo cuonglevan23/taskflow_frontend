@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { useGoals } from "@/contexts/GoalsContext";
+import { GoalsProvider, useGoals } from "@/contexts/GoalsContext";
 import { CreateGoalButton } from "@/components/goals/GoalNavigation";
 import { GoalTable } from "@/components/goals/GoalTable";
 import { DARK_THEME } from "@/constants/theme";
@@ -94,5 +94,9 @@ function MyGoalsContent() {
 }
 
 export default function MyGoalsPage() {
-  return <MyGoalsContent />;
+  return (
+    <GoalsProvider>
+      <MyGoalsContent />
+    </GoalsProvider>
+  );
 }
