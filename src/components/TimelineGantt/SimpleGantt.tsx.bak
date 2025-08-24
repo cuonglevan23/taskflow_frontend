@@ -1,0 +1,501 @@
+"use client";
+
+import React, { useEffect, useRef, useState } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
+import { format, addDays, differenceInDays, parseISO } from 'date-fns';
+
+interface SimpleGanttProps {
+  tasks: {
+    id: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    priority: 'low' | 'medium' | 'high';
+    status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+    assignee?: {
+      id: string;
+      name: string;
+      avatar?: string;
+    };
+  }[];
+  viewMode?: 'day' | 'week' | 'month' | 'quarter' | 'year';
+  isLoading?: boolean;
+  onTaskClick?: (taskId: string) => void;
+}
+
+const SimpleGantt: React.FC<SimpleGanttProps> = ({
+  tasks = [],
+  viewMode = 'day',
+  isLoading = false,
+  onTaskClick
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [dateHeaders, setDateHeaders] = useState<Date[]>([]);
+
+  // Cell width settings based on view mode
+  const cellWidth = viewMode === 'year' ? '200px' : 
+                    viewMode === 'quarter' ? '150px' : 
+                    viewMode === 'month' ? '100px' : 
+                    viewMode === 'week' ? '60px' : '45px';
+
+  useEffect(() => {
+    generateDateHeaders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, tasks]);
+
+  // Function to generate date headers based on viewMode and tasks
+  const generateDateHeaders = () => {
+    // Default date range if no tasks or we need to ensure display
+    const today = new Date();
+    let headers: Date[] = [];
+    
+    // Function to generate default headers based on view mode
+    const generateDefaultHeaders = () => {
+      if (viewMode === 'year') {
+        // Generate 5 years
+        for (let i = 0; i < 5; i++) {
+          const date = new Date(today);
+          date.setFullYear(today.getFullYear() + i);
+          date.setMonth(0); // January
+          date.setDate(1); // First day of year
+          headers.push(date);
+        }
+      } else if (viewMode === 'quarter') {
+        // Generate 8 quarters (2 years)
+        for (let i = 0; i < 8; i++) {
+          const date = new Date(today);
+          date.setMonth(Math.floor(today.getMonth() / 3) * 3 + (i * 3));
+          date.setDate(1); // First day of quarter
+          headers.push(date);
+        }
+      } else if (viewMode === 'month') {
+        // Generate 6 months
+        for (let i = 0; i < 6; i++) {
+          const date = new Date(today);
+          date.setMonth(today.getMonth() + i);
+          date.setDate(1); // First day of month
+          headers.push(date);
+        }
+      } else if (viewMode === 'week') {
+        // Generate 8 weeks
+        for (let i = 0; i < 8 * 7; i += 7) {
+          headers.push(addDays(today, i));
+        }
+      } else {
+        // Generate 14 days
+        for (let i = 0; i < 14; i++) {
+          headers.push(addDays(today, i));
+        }
+      }
+    };
+    
+    // Generate default headers first
+    generateDefaultHeaders();
+    
+    // If there are tasks, try to adjust headers based on task dates
+    if (tasks.length > 0) {
+      try {
+        // Find earliest start date and latest end date from tasks
+        let earliestDate = tasks.reduce((min, task) => {
+          const startDate = parseISO(task.startDate);
+          return startDate < min ? startDate : min;
+        }, parseISO(tasks[0].startDate));
+        
+        let latestDate = tasks.reduce((max, task) => {
+          const endDate = parseISO(task.endDate);
+          return endDate > max ? endDate : max;
+        }, parseISO(tasks[0].endDate));
+        
+        // Add padding to the date range
+        earliestDate = addDays(earliestDate, -1);
+        latestDate = addDays(latestDate, 1);
+        
+        // Clear headers and regenerate based on task dates
+        headers = [];
+        
+        if (viewMode === 'year') {
+      // Generate yearly headers
+      const startYear = new Date(earliestDate);
+      startYear.setMonth(0); // January
+      startYear.setDate(1); // First day of year
+      
+      const endYear = new Date(latestDate);
+      endYear.setMonth(0); // January
+      endYear.setDate(1); // First day of year
+      
+      const currentYear = new Date(startYear);
+      
+      while (currentYear <= endYear) {
+        headers.push(new Date(currentYear));
+        currentYear.setFullYear(currentYear.getFullYear() + 1);
+      }
+      
+      // Ensure at least 3 years are shown
+      if (headers.length < 3) {
+        const lastYear = headers[headers.length - 1];
+        for (let i = headers.length; i < 3; i++) {
+          const nextYear = new Date(lastYear);
+          nextYear.setFullYear(lastYear.getFullYear() + i - headers.length + 1);
+          headers.push(nextYear);
+        }
+      }
+    } else if (viewMode === 'quarter') {
+      // Generate quarterly headers
+      const startQuarter = new Date(earliestDate);
+      startQuarter.setMonth(Math.floor(startQuarter.getMonth() / 3) * 3); // First month of quarter
+      startQuarter.setDate(1); // First day of month
+      
+      const endQuarter = new Date(latestDate);
+      endQuarter.setMonth(Math.floor(endQuarter.getMonth() / 3) * 3); // First month of quarter
+      endQuarter.setDate(1); // First day of month
+      
+      const currentQuarter = new Date(startQuarter);
+      
+      while (currentQuarter <= endQuarter) {
+        headers.push(new Date(currentQuarter));
+        currentQuarter.setMonth(currentQuarter.getMonth() + 3); // Add 3 months
+      }
+      
+      // Ensure at least 4 quarters are shown
+      if (headers.length < 4) {
+        const lastQuarter = headers[headers.length - 1];
+        for (let i = headers.length; i < 4; i++) {
+          const nextQuarter = new Date(lastQuarter);
+          nextQuarter.setMonth(lastQuarter.getMonth() + (i - headers.length + 1) * 3);
+          headers.push(nextQuarter);
+        }
+      }
+    } else if (viewMode === 'month') {
+      // Generate monthly headers
+      const startMonth = new Date(earliestDate);
+      startMonth.setDate(1); // First day of month
+      
+      const endMonth = new Date(latestDate);
+      endMonth.setDate(1); // First day of month
+      
+      const currentMonth = new Date(startMonth);
+      
+      while (currentMonth <= endMonth) {
+        headers.push(new Date(currentMonth));
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+      }
+      
+      // Ensure at least 3 months are shown
+      if (headers.length < 3) {
+        const lastMonth = headers[headers.length - 1];
+        for (let i = headers.length; i < 3; i++) {
+          const nextMonth = new Date(lastMonth);
+          nextMonth.setMonth(lastMonth.getMonth() + i - headers.length + 1);
+          headers.push(nextMonth);
+        }
+      }
+    } else if (viewMode === 'week') {
+      // Generate weekly headers
+      const dayDiff = Math.max(7, differenceInDays(latestDate, earliestDate));
+      const numWeeks = Math.ceil(dayDiff / 7) + 1;
+      
+      // Start from beginning of the week
+      const startOfWeek = new Date(earliestDate);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      
+      for (let i = 0; i < numWeeks; i++) {
+        headers.push(addDays(startOfWeek, i * 7));
+      }
+    } else {
+      // Generate daily headers
+      const dayDiff = Math.max(7, differenceInDays(latestDate, earliestDate));
+      
+      for (let i = 0; i <= dayDiff; i++) {
+        headers.push(addDays(earliestDate, i));
+      }
+    }
+    
+    setDateHeaders(headers);
+  };
+
+  // Get position for a task based on its dates
+  const getTaskPosition = (task: SimpleGanttProps['tasks'][0]) => {
+    if (!task.startDate || !task.endDate || dateHeaders.length === 0) {
+      return { left: 0, width: 0 };
+    }
+    
+    try {
+      const startDate = parseISO(task.startDate);
+      const endDate = parseISO(task.endDate);
+      
+      // Calculate position based on viewMode
+      if (viewMode === 'year') {
+        // Yearly view positioning
+        const firstHeaderYear = new Date(dateHeaders[0]);
+        const yearsDiff = startDate.getFullYear() - firstHeaderYear.getFullYear();
+        
+        const taskDurationYears = endDate.getFullYear() - startDate.getFullYear() + 1; // +1 to include current year
+        
+        // Calculate width based on number of date headers
+        const cellWidth = 100 / dateHeaders.length;
+        
+        return {
+          left: `${yearsDiff * cellWidth}%`, 
+          width: `${taskDurationYears * cellWidth}%`
+        };
+      } else if (viewMode === 'quarter') {
+        // Quarterly view positioning
+        const firstHeaderQuarter = new Date(dateHeaders[0]);
+        const startQuarter = Math.floor(startDate.getMonth() / 3);
+        const endQuarter = Math.floor(endDate.getMonth() / 3);
+        
+        const quartersDiff = (startDate.getFullYear() - firstHeaderQuarter.getFullYear()) * 4 + 
+                          (startQuarter - Math.floor(firstHeaderQuarter.getMonth() / 3));
+        
+        const taskDurationQuarters = (endDate.getFullYear() - startDate.getFullYear()) * 4 + 
+                                 (endQuarter - startQuarter) + 1; // +1 to include current quarter
+        
+        // Calculate width based on number of date headers
+        const cellWidth = 100 / dateHeaders.length;
+        
+        return {
+          left: `${quartersDiff * cellWidth}%`, 
+          width: `${taskDurationQuarters * cellWidth}%`
+        };
+      } else if (viewMode === 'month') {
+        // Monthly view positioning
+        const firstHeaderMonth = new Date(dateHeaders[0]);
+        const monthsDiff = (startDate.getFullYear() - firstHeaderMonth.getFullYear()) * 12 + 
+                          (startDate.getMonth() - firstHeaderMonth.getMonth());
+        
+        const taskDurationMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                                 (endDate.getMonth() - startDate.getMonth()) + 1; // +1 to include current month
+        
+        // Calculate width based on number of date headers
+        const cellWidth = 100 / dateHeaders.length;
+        
+        return {
+          left: `${monthsDiff * cellWidth}%`, 
+          width: `${taskDurationMonths * cellWidth}%`
+        };
+      } else if (viewMode === 'week') {
+        // Weekly view positioning
+        const firstHeader = dateHeaders[0];
+        const weeksDiff = Math.floor(differenceInDays(startDate, firstHeader) / 7);
+        const taskDurationWeeks = Math.ceil((differenceInDays(endDate, startDate) + 1) / 7);
+        
+        // Calculate width based on number of date headers
+        const cellWidth = 100 / dateHeaders.length;
+        
+        return {
+          left: `${weeksDiff * cellWidth}%`,
+          width: `${taskDurationWeeks * cellWidth}%`
+        };
+      } else {
+        // Daily view positioning
+        const firstHeader = dateHeaders[0];
+        const daysDiff = differenceInDays(startDate, firstHeader);
+        const taskDurationDays = differenceInDays(endDate, startDate) + 1; // +1 to include the end day
+        
+        // Calculate width based on number of date headers
+        const cellWidth = 100 / dateHeaders.length;
+        
+        return {
+          left: `${daysDiff * cellWidth}%`,
+          width: `${taskDurationDays * cellWidth}%`
+        };
+      }
+    } catch (error) {
+      console.error("Error calculating task position:", error);
+      return { left: 0, width: 0 };
+    }
+  };
+
+  // Get background color based on task status
+  const getTaskBackground = (status: string, priority: string) => {
+    if (status === 'completed') return 'bg-green-100 dark:bg-green-900/15';
+    if (status === 'in_progress') return 'bg-blue-100 dark:bg-blue-900/15';
+    if (status === 'on_hold') return 'bg-amber-100 dark:bg-amber-900/15';
+    
+    // Not started - use priority color
+    if (priority === 'high') return 'bg-red-100 dark:bg-red-900/15';
+    if (priority === 'medium') return 'bg-orange-100 dark:bg-orange-900/15';
+    
+    return 'bg-muted/30';
+  };
+
+  // Get border color based on task status
+  const getTaskBorder = (status: string, priority: string) => {
+    if (status === 'completed') return 'border-green-300 dark:border-green-800';
+    if (status === 'in_progress') return 'border-blue-300 dark:border-blue-800';
+    if (status === 'on_hold') return 'border-amber-300 dark:border-amber-800';
+    
+    // Not started - use priority color
+    if (priority === 'high') return 'border-red-300 dark:border-red-800';
+    if (priority === 'medium') return 'border-orange-300 dark:border-orange-800';
+    
+    return 'border-muted';
+  };
+
+  // Handle mouse events for dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    
+    setIsDragging(true);
+    setStartX(e.pageX - containerRef.current.offsetLeft);
+    setScrollLeft(containerRef.current.scrollLeft);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    e.preventDefault();
+    const x = e.pageX - containerRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // Scroll speed multiplier
+    containerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="border border-border/30 rounded-lg bg-card/30 p-6 space-y-4">
+        <div className="flex gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <Skeleton className="h-[250px] w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-border/30 rounded-lg bg-card/30">
+      {isDragging && (
+        <div 
+          className="fixed inset-0 z-50 cursor-grabbing" 
+          onMouseUp={handleMouseUp} 
+          onMouseMove={handleMouseMove}
+        />
+      )}
+      
+      <div 
+        ref={containerRef}
+        className="overflow-x-auto cursor-grab pb-4 scrollbar-hide"
+        style={{ overflowY: 'hidden', padding: '12px' }}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseUp}
+      >
+        {/* Date Headers */}
+        <div className="grid" style={{ 
+          gridTemplateColumns: `repeat(${dateHeaders.length}, minmax(${cellWidth}, 1fr))`,
+          position: 'sticky',
+          top: 0,
+          background: 'var(--color-background-primary)',
+          zIndex: 10,
+          marginBottom: '12px'
+        }}>
+          {dateHeaders.map((date, index) => (
+            <div key={index} className="text-center text-xs font-medium border-r border-border/20 p-2 text-muted-foreground">
+              {viewMode === 'year' 
+                ? format(date, 'yyyy')
+                : viewMode === 'quarter' 
+                ? `Q${Math.floor(date.getMonth() / 3) + 1} ${format(date, 'yyyy')}`
+                : viewMode === 'month' 
+                ? format(date, 'MMM yyyy')
+                : format(date, 'MMM dd')}
+            </div>
+          ))}
+        </div>
+        
+        {/* Tasks Grid */}
+        <div className="relative">
+          {/* Background Grid Lines */}
+          <div className="grid absolute inset-0" style={{ 
+            gridTemplateColumns: `repeat(${dateHeaders.length}, minmax(${cellWidth}, 1fr))`,
+            height: '100%'
+          }}>
+            {dateHeaders.map((_, index) => (
+              <div key={index} className="border-r border-border/10 h-full"></div>
+            ))}
+          </div>
+          
+          {/* Tasks */}
+          <div className="space-y-3 relative">
+            {tasks.length > 0 ? (
+              // Map tasks if there are any
+              tasks.map((task) => (
+                <div key={task.id} className="relative flex items-center"
+                  style={{
+                    height: viewMode === 'year' ? '45px' : 
+                            viewMode === 'quarter' ? '50px' : 
+                            viewMode === 'month' ? '55px' : '60px'
+                  }}>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      left: getTaskPosition(task).left,
+                      width: getTaskPosition(task).width,
+                      height: viewMode === 'year' ? '35px' : 
+                              viewMode === 'quarter' ? '40px' : 
+                              viewMode === 'month' ? '45px' : '50px',
+                      borderRadius: '4px',
+                      border: '1px solid',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onClick={() => onTaskClick && onTaskClick(task.id)}
+                    className={`hover:shadow-lg hover:brightness-105 task-card group ${getTaskBackground(task.status, task.priority)} ${getTaskBorder(task.status, task.priority)}`}
+                  >
+                    <div className="flex justify-between items-center mb-1 px-2 pt-2">
+                      <div className={`font-medium truncate max-w-[150px] text-foreground group-hover:text-foreground/90 ${
+                        viewMode === 'year' ? 'text-[10px]' : 
+                        viewMode === 'quarter' ? 'text-[11px]' : 
+                        viewMode === 'month' ? 'text-xs' : 'text-sm'
+                      }`}>
+                        {task.title}
+                      </div>
+                    </div>
+                    {(viewMode !== 'year') && (
+                      <div className={`text-muted-foreground/80 flex items-center gap-1 px-2 ${
+                        viewMode === 'quarter' ? 'text-[10px]' : 
+                        viewMode === 'month' ? 'text-xs' : 'text-xs'
+                      }`}>
+                        {task.assignee && viewMode !== 'quarter' && (
+                          <span className="inline-block text-[10px] px-1 py-0.5 bg-muted/30 rounded-sm">
+                            {task.assignee.name}
+                          </span>
+                        )}
+                        <span className={viewMode === 'quarter' ? 'text-[9px]' : 'text-[10px] ml-auto'}>
+                          {viewMode === 'quarter' 
+                            ? format(parseISO(task.startDate), 'MMM')
+                            : format(parseISO(task.startDate), 'MMM dd')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Empty placeholder to maintain timeline height when no tasks
+              <div className="min-h-[300px] relative">
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+                  <div className="text-center p-4">
+                    <p>Không có task nào</p>
+                    <p className="text-xs mt-1">Khi có task, chúng sẽ hiển thị ở đây</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SimpleGantt;

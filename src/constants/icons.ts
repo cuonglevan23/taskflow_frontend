@@ -1,14 +1,14 @@
 // Icon Constants - Centralized icon management with Lucide React
+import { CustomHomeIcon } from '@/components/icons/CustomHomeIcon';
+import { CustomTaskIcon } from '@/components/icons/CustomTaskIcon';
+import { CustomInboxIcon } from '@/components/icons/CustomInboxIcon';
+import { CustomReportingIcon } from '@/components/icons/CustomReportingIcon';
+import { CustomGoalIcon } from '@/components/icons/CustomGoalIcon';
 import {
   // Navigation Icons
-  Home,
   Folder,
   FolderOpen,
   CheckSquare,
-  Inbox,
-  BarChart3,
-  Target,
-  Briefcase,
   
   // Action Icons
   Plus,
@@ -113,14 +113,13 @@ export type IconSize = keyof typeof ICON_SIZES;
 
 // Navigation Icons
 export const NAVIGATION_ICONS = {
-  home: Home,
+  home: CustomHomeIcon,
   projects: Folder,
   projectsOpen: FolderOpen,
-  tasks: CheckSquare,
-  inbox: Inbox,
-  reporting: BarChart3,
-  portfolios: Briefcase,
-  goals: Target,
+  tasks: CustomTaskIcon,
+  inbox: CustomInboxIcon,
+  reporting: CustomReportingIcon,
+  goals: CustomGoalIcon,
   teams: Users,
 } as const;
 
@@ -236,19 +235,17 @@ export const CREATE_DROPDOWN_ICONS = {
   project: Folder,
   message: MessageSquare,
   team: Users,
-  portfolio: Briefcase,
-  goal: Target,
+  goal: CustomGoalIcon,
   invite: UserPlus,
 } as const;
 
 // Sidebar Navigation Icons (Semantic mapping)
 export const SIDEBAR_ICONS = {
-  home: Home,
-  myTasks: CheckSquare,
-  inbox: Inbox,
-  reporting: BarChart3,
-  portfolios: Briefcase,
-  goals: Target,
+  home: CustomHomeIcon,
+  myTasks: CustomTaskIcon,
+  inbox: CustomInboxIcon,
+  reporting: CustomReportingIcon,
+  goals: CustomGoalIcon,
   projects: Folder,
   teams: Users,
   createProject: Plus,
@@ -307,7 +304,6 @@ export const ICON_COLORS = {
   project: '#22c55e', // green
   message: '#8b5cf6', // purple
   team: '#6366f1', // indigo
-  portfolio: '#f59e0b', // amber
   goal: '#eab308', // yellow
   invite: '#64748b', // slate
   

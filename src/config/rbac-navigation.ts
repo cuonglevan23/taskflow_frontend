@@ -3,13 +3,9 @@
 import { UserRole, Permission } from '@/constants/auth';
 import { UserWithRole } from '@/types/roles';
 import React from 'react';
+import { SIDEBAR_ICONS } from '@/constants/icons';
 import {
-  Home,
-  CheckSquare,
-  Inbox,
   Folder,
-  BarChart3,
-  Target,
   Users,
   UserPlus,
   Settings,
@@ -68,14 +64,14 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         id: 'home',
         label: 'Home',
         href: '/home',
-        icon: React.createElement(Home, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.home, { width: 20, height: 20, className: "text-gray-300" }),
         allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
       {
         id: 'my-tasks',
         label: 'My Tasks',
         href: '/my-tasks',
-        icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.myTasks, { width: 20, height: 20, className: "text-gray-300" }),
         allowedRoles: [UserRole.MEMBER],
         badge: { count: 0, color: 'default' },
       },
@@ -83,7 +79,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         id: 'inbox',
         label: 'Inbox',
         href: '/inbox',
-        icon: React.createElement(Inbox, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.inbox, { width: 20, height: 20, className: "text-gray-300" }),
         allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
     ],
@@ -97,21 +93,14 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         id: 'goals',
         label: 'Goals',
         href: '/goals',
-        icon: React.createElement(Target, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.goals, { className: "text-gray-300 w-5 h-5" }),
         allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
       {
         id: 'reports',
         label: 'Reports',
         href: '/reporting',
-        icon: React.createElement(BarChart3, { size: 20, className: "text-gray-300" }),
-        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
-      },
-      {
-        id: 'portfolio',
-        label: 'Portfolio',
-        href: '/portfolio',
-        icon: React.createElement(Star, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.reporting, { className: "text-gray-300 w-5 h-5" }),
         allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
       },
     ],
@@ -142,7 +131,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         id: 'project-tasks',
         label: 'Project Tasks',
         href: '/projects/tasks',
-        icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.myTasks, { width: 20, height: 20, className: "text-gray-300" }),
         allowedRoles: [UserRole.MEMBER],
       },
       {
@@ -179,7 +168,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         id: 'team-tasks',
         label: 'Team Tasks',
         href: '/teams/tasks',
-        icon: React.createElement(CheckSquare, { size: 20, className: "text-gray-300" }),
+        icon: React.createElement(SIDEBAR_ICONS.myTasks, { width: 20, height: 20, className: "text-gray-300" }),
         allowedRoles: [UserRole.MEMBER],
       },
       {

@@ -12,7 +12,8 @@ interface RoleGuardProps {
   resource?: string;
   action?: string;
   fallback?: React.ReactNode;
-  contextType?: 'project' | 'team' | 'portfolio';
+  /** Optional context type for role-based permissions */
+  contextType?: 'project' | 'team';
   contextId?: string;
 }
 

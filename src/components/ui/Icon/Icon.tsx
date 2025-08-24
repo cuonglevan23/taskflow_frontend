@@ -96,21 +96,6 @@ export function TeamIcon({
   );
 }
 
-export function PortfolioIcon({
-  size = "md",
-  className,
-  strokeWidth = 2,
-}: BaseIconProps) {
-  return (
-    <Briefcase
-      size={iconSizes[size]}
-      strokeWidth={strokeWidth}
-      className={cn("inline-block", className)}
-      style={{ color: ICON_COLORS.portfolio }}
-    />
-  );
-}
-
 export function GoalIcon({
   size = "md",
   className,

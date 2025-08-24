@@ -134,11 +134,6 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
         icon: LAYOUT_ICONS.list,
       },
       {
-        label: 'Board',
-        href: (params) => `/projects/${params.id}/board`,
-        icon: LAYOUT_ICONS.board,
-      },
-      {
         label: 'Calendar',
         href: (params) => `/projects/${params.id}/calendar`,
         icon: LAYOUT_ICONS.calendar,
