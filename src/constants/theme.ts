@@ -173,9 +173,6 @@ export const LIGHT_THEME = {
 
 // Dark Theme
 export const DARK_THEME = {
-  chart: {
-    column: 'rgb(184, 172, 255)', // Main chart column color
-  },
   // Background Colors
   background: {
     primary: '#1e1f21', // Updated background-page
@@ -203,11 +200,12 @@ export const DARK_THEME = {
   // Component Colors
   sidebar: {
     background: '#2e2e30', // Updated sidebar background
-    text: '#e2e8f0',
+    text: '#f5f4f3', // Updated text color for sidebar
     textMuted: '#94a3b8',
     border: '#424244', // Updated border color
     hover: '#424244', // Updated hover color
     active: THEME_COLORS.primary[500],
+    navigationIcon: '#a2a0a2', // Navigation icon color for dark mode
   },
   
   header: {

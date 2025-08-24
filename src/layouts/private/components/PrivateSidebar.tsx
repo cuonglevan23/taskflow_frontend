@@ -63,7 +63,8 @@ export default function PrivateSidebar({
         className={cn(
           SIDEBAR_CLASSES.CONTAINER,
           sidebarWidth,
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          "sidebar-navigation"
         )}
         style={{ backgroundColor: DARK_THEME.sidebar.background, borderRightColor: DARK_THEME.sidebar.border, borderRightWidth: '1px' }}
       >

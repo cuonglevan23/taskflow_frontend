@@ -10,6 +10,8 @@
   --color-text-primary: #e2e8f0;
   --color-text-secondary: #94a3b8;
   --color-border-default: #424244;
+  --color-navigation-icon: #a2a0a2;
+  --color-navigation-text: #f5f4f3;
   
   /* Search theme variables */
   --color-navigation-search-background: #3d3e40;
@@ -89,6 +91,73 @@ main {
   }
   .dark .border-gray-200 {
     border-color: #374151 !important;
+  }
+  
+  /* Navigation icon color for dark mode */
+  .dark .text-gray-300,
+  .dark .sidebar-navigation svg,
+  .dark .sidebar-navigation svg path,
+  .dark [class*="NAV_ITEM_"] svg,
+  .dark [class*="NAV_ITEM_"] svg path {
+    color: var(--color-navigation-icon) !important;
+    stroke: var(--color-navigation-icon) !important;
+  }
+  
+  /* Custom fill for specific path-based SVGs */
+  .dark .sidebar-navigation svg path:not([stroke]),
+  .dark [class*="NAV_ITEM_"] svg path:not([stroke]) {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Sidebar navigation icon styling */
+  .dark .sidebar-navigation svg,
+  .dark [class*="NAV_ITEM_"] svg {
+    flex-grow: 0;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    display: flex;
+  }
+  
+  /* Custom home icon specific styling */
+  .sidebar-navigation svg[viewBox="0 0 40 40"] path {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Custom task icon specific styling */
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"][data-testid="CheckNavIcon"] path,
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"] path[d*="M20,2.5C10.4,2.5,2.5,10.4,2.5,20S10.4,37.5"] {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Custom inbox icon specific styling */
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"][data-testid="BellNavIcon"] path,
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"] path[d*="M7.5,32L7.5,32h-1c-1.5,0-2.8-0.8-3.4-2c"] {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Custom reporting icon specific styling */
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"][data-testid="ReportingNavIcon"] path,
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"] path[d*="M34.5,6c-2.48,0-4.5,2.02-4.5,4.5"] {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Custom goal icon specific styling */
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"][data-testid="GoalNavIcon"] path,
+  .dark .sidebar-navigation svg[viewBox="0 0 40 40"] path[d*="M35.6,30.1l-6.2-9.6C31,18.5,32,15.9,32,13"] {
+    fill: var(--color-navigation-icon) !important;
+  }
+  
+  /* Sidebar text styling */
+  .dark .sidebar-navigation span,
+  .dark .sidebar-navigation a,
+  .dark .sidebar-navigation .truncate,
+  .dark [class*="NAV_ITEM_"] span {
+    color: var(--color-navigation-text) !important;
+    font-size: 14px !important;
+    line-height: 22px !important;
   }
 }
 
@@ -218,71 +287,4 @@ main {
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Custom CSS for Frappe Gantt */
-
-/* High priority tasks */
-.high-priority .bar {
-  fill: #ef4444 !important;
-}
-
-.high-priority .bar-progress {
-  fill: #b91c1c !important;
-}
-
-/* Medium priority tasks */
-.medium-priority .bar {
-  fill: #f97316 !important;
-}
-
-.medium-priority .bar-progress {
-  fill: #c2410c !important;
-}
-
-/* Low priority tasks */
-.low-priority .bar {
-  fill: #10b981 !important;
-}
-
-.low-priority .bar-progress {
-  fill: #047857 !important;
-}
-
-/* Modify the popup styles */
-.gantt-popup {
-  background-color: #1e293b !important;
-  border: 1px solid #334155 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  color: #e2e8f0 !important;
-}
-
-/* Timeline header */
-.gantt .grid-header {
-  background-color: #0f172a !important;
-  border-bottom: 1px solid #334155 !important;
-}
-
-.gantt .grid-header .grid-row {
-  background-color: #1e293b !important;
-}
-
-/* Timeline rows */
-.gantt .grid-body .grid-row:nth-child(even) {
-  background-color: rgba(30, 41, 59, 0.5) !important;
-}
-
-.gantt .grid-body .grid-row {
-  border-bottom: 1px solid #334155 !important;
-}
-
-/* Text color */
-.gantt .grid-row .grid-cell {
-  color: #e2e8f0 !important;
-}
-
-/* Date headers */
-.gantt .lower-text, .gantt .upper-text {
-  color: #cbd5e1 !important;
 }

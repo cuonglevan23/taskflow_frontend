@@ -17,7 +17,7 @@ import { DARK_THEME } from "@/constants/theme";
 export interface SearchResult {
   id: string;
   title: string;
-  type: "task" | "project" | "people" | "portfolio" | "goal";
+  type: "task" | "project" | "people" | "goal";
   description?: string;
   avatar?: string;
   completed?: boolean;
@@ -68,8 +68,6 @@ const SearchResultItem = ({
         return Folder;
       case "people":
         return Users;
-      case "portfolio":
-        return Briefcase;
       case "goal":
         return Target;
       default:

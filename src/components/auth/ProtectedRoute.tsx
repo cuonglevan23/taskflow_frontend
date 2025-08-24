@@ -15,7 +15,8 @@ interface ProtectedRouteProps {
   action?: string;
   redirectTo?: string;
   fallback?: React.ReactNode;
-  contextType?: 'project' | 'team' | 'portfolio';
+  /** Optional context type for role-based permissions */
+  contextType?: 'project' | 'team';
   contextId?: string;
 }
 

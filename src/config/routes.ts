@@ -167,25 +167,13 @@ export const ROUTES: Record<string, RouteConfig> = {
 
   PROJECT_LIST: {
     path: '/projects/list',
-    title: 'All Projects',
-    layout: 'private',
-    accessRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-    requiredPermissions: [Permission.VIEW_PROJECT],
-    requiresAuth: true,
-    parent: 'PROJECTS',
+    title: 'Project List',
     icon: 'list',
+    subtitle: 'View all your projects in a list view',
+    permissions: [],
   },
 
-  PROJECT_BOARD: {
-    path: '/projects/board',
-    title: 'Project Board',
-    layout: 'private',
-    accessRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-    requiredPermissions: [Permission.VIEW_PROJECT],
-    requiresAuth: true,
-    parent: 'PROJECTS',
-    icon: 'trello',
-  },
+  PROJECT_DASHBOARD: {
 
   PROJECT_CREATE: {
     path: '/projects/create',

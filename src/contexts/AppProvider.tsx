@@ -5,6 +5,7 @@ import { UserProvider } from "./UserContext";
 import { ProjectsProvider } from "./ProjectsContext";
 import { TasksProvider } from "./TasksContext";
 import { NotificationProvider } from "./NotificationContext";
+import { GoalsProvider } from "./GoalsContext";
 
 // Global App Provider - Senior Product Code
 interface AppProviderProps {
@@ -22,7 +23,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       <NotificationProvider>
         <ProjectsProvider>
           <TasksProvider>
-            {children}
+            <GoalsProvider>
+              {children}
+            </GoalsProvider>
           </TasksProvider>
         </ProjectsProvider>
       </NotificationProvider>

@@ -85,15 +85,6 @@ const getDefaultActions = (
     },
   },
   {
-    id: "portfolio",
-    label: "Portfolio",
-    icon: <Briefcase className="w-4 h-4" />,
-    onClick: () => {
-      onActionClick?.("portfolio");
-      console.log("Create Portfolio clicked");
-    },
-  },
-  {
     id: "goal",
     label: "Goal",
     icon: <Target className="w-4 h-4" />,

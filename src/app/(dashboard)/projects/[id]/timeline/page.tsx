@@ -66,54 +66,10 @@ export default function TimelinePage() {
     } : undefined
   })) : [];
   
-  // Add some demo tasks if there are no tasks
-  const sampleTasks = formattedTasks.length === 0 ? [
-    {
-      id: "demo1",
-      title: "Complete UI Design",
-      startDate: new Date(2025, 7, 20).toISOString(),
-      endDate: new Date(2025, 7, 25).toISOString(),
-      priority: 'high' as 'low' | 'medium' | 'high',
-      status: 'DONE',
-      description: "Finalize all UI designs for the dashboard",
-      assignee: {
-        id: "user1",
-        name: "John Doe",
-        avatar: undefined
-      }
-    },
-    {
-      id: "demo2",
-      title: "Backend Integration",
-      startDate: new Date(2025, 7, 22).toISOString(),
-      endDate: new Date(2025, 7, 28).toISOString(),
-      priority: 'medium' as 'low' | 'medium' | 'high',
-      status: 'IN_PROGRESS',
-      description: "Integrate frontend with backend API",
-      assignee: {
-        id: "user2",
-        name: "Jane Smith",
-        avatar: undefined
-      }
-    },
-    {
-      id: "demo3",
-      title: "Testing Phase",
-      startDate: new Date(2025, 7, 26).toISOString(),
-      endDate: new Date(2025, 8, 5).toISOString(),
-      priority: 'low' as 'low' | 'medium' | 'high',
-      status: 'TODO',
-      description: "Run QA tests on all features",
-      assignee: {
-        id: "user3",
-        name: "Alex Johnson",
-        avatar: undefined
-      }
-    }
-  ] : [];
+
   
   // Combine real tasks with sample tasks if needed
-  const allTasks = formattedTasks.length > 0 ? formattedTasks : sampleTasks;
+  const allTasks = formattedTasks.length > 0 ? formattedTasks : [] ;
   
   // Filter tasks based on sidebar selection
   const filteredTasks = allTasks.filter(task => {
@@ -201,18 +157,7 @@ export default function TimelinePage() {
             </h1>
           )}
           
-          <Select value={viewMode} onValueChange={handleViewModeChange}>
-            <SelectTrigger className="w-[110px] h-8 text-xs">
-              <SelectValue placeholder="View mode" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Day View</SelectItem>
-              <SelectItem value="week">Week View</SelectItem>
-              <SelectItem value="month">Month View</SelectItem>
-              <SelectItem value="quarter">Quarter View</SelectItem>
-              <SelectItem value="year">Year View</SelectItem>
-            </SelectContent>
-          </Select>
+      
         </div>
         
         {/* Timeline */}

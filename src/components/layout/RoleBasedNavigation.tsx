@@ -40,12 +40,6 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
     minimumRole: 'leader',
   },
   {
-    label: 'Portfolios',
-    href: '/portfolios',
-    icon: '📊',
-    minimumRole: 'project_manager',
-  },
-  {
     label: 'Goals',
     href: '/goals',
     icon: '🎯',

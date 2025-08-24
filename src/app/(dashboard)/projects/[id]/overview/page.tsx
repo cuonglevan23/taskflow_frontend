@@ -24,7 +24,7 @@ function OverviewContent() {
   return (
     <div 
       className="min-h-screen p-4"
-      style={{ backgroundColor: theme.background.secondary }}
+      style={{ backgroundColor: theme.background.primary }}
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -33,26 +33,13 @@ function OverviewContent() {
             <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
               <ProjectDescription />
             </section>
-            
-            <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
-              <ProjectRoles />
-            </section>
+
             
             <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
               <ConnectedGoals />
             </section>
             
-            <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
-              <ConnectedPortfolios />
-            </section>
-            
-            <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
-              <KeyResources />
-            </section>
-            
-            <section className="p-6 rounded-lg border" style={{ backgroundColor: theme.background.primary, borderColor: theme.border.default }}>
-              <ProjectMilestones />
-            </section>
+
           </main>
 
           {/* Sidebar - Right Panel */}
