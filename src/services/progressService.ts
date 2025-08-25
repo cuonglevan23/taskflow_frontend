@@ -2,7 +2,7 @@ import { GoalListItem, TimePeriod, GoalStatus } from "@/types/goals";
 import api from '@/services/api';  // Import the centralized API client
 
 // Team Progress type from API
-interface TeamProgress {
+export interface TeamProgress {
   id: number;
   teamId: number;
   teamName: string;
@@ -12,10 +12,41 @@ interface TeamProgress {
   lastUpdated: string;
   createdAt: string;
   updatedAt: string;
+  teamOwner: {
+    userId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    jobTitle: string;
+    department: string;
+    aboutMe: string;
+    status: string;
+    avatarUrl: string;
+    isUpgraded: boolean;
+    displayName: string;
+    initials: string;
+  };
+  teamMembers: Array<{
+    userId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    initials: string;
+    avatarUrl: string;
+  }>;
+  lastUpdatedBy: {
+    userId: number;
+    email: string;
+    displayName: string;
+    initials: string;
+    avatarUrl: string;
+  };
 }
 
 // Project Progress type from API
-interface ProjectProgress {
+export interface ProjectProgress {
   id: number;
   projectId: number;
   projectName: string;
@@ -30,7 +61,7 @@ interface ProjectProgress {
 }
 
 // Team-Project Progress type from API
-interface TeamProjectProgress {
+export interface TeamProjectProgress {
   id: number;
   teamId: number;
   teamName: string;
@@ -169,6 +200,18 @@ export async function getTeamProjects(teamId: number): Promise<{ id: number, nam
   }
 }
 
+// Fetch all teams progress using the new API endpoint
+export async function getAllTeamsProgress(): Promise<TeamProgress[]> {
+  try {
+    // Use the new API endpoint to get all teams progress
+    const response = await api.get<TeamProgress[]>('/api/teams/progress/all');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all teams progress:', error);
+    throw error;
+  }
+}
+
 // Fetch all goals (combining projects and teams)
 export async function getAllGoals(): Promise<GoalListItem[]> {
   try {
@@ -196,6 +239,23 @@ export async function getAllGoals(): Promise<GoalListItem[]> {
     return [...teamGoals, ...projectGoals];
   } catch (error) {
     console.error('Error fetching all goals:', error);
+    // Return empty array if there's an error to prevent UI crashes
+    return [];
+  }
+}
+
+// Fetch team goals using the new API endpoint
+export async function getTeamGoals(): Promise<GoalListItem[]> {
+  try {
+    // Use the new API to get all teams progress
+    const teamsProgress = await getAllTeamsProgress();
+    
+    // Convert team progress to goal items
+    const teamGoals = teamsProgress.map(convertTeamToGoal);
+    
+    return teamGoals;
+  } catch (error) {
+    console.error('Error fetching team goals:', error);
     // Return empty array if there's an error to prevent UI crashes
     return [];
   }

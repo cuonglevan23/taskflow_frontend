@@ -9,7 +9,8 @@ import React, {
   useMemo,
   ReactNode 
 } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { signOut } from 'next-auth/react';
+import useSWR from 'swr';
 import { api } from '@/services/api';
 import type { User } from '@/types/auth';
 import { UserRole } from '@/constants/auth';
@@ -96,8 +97,33 @@ export function UserProvider({ children }: UserProviderProps) {
   // Request deduplication - prevent multiple simultaneous API calls
   const [activeRequest, setActiveRequest] = useState<Promise<User | null> | null>(null);
   
-  // Only use NextAuth for authentication (optimized with minimal calls)
-  const { user: authUser, isAuthenticated, isLoading: authLoading, logout: authLogout } = useAuth();
+  // Use SWR for session data to avoid duplicate calls and cache the result
+  const fetcher = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch session');
+    return response.json();
+  };
+  
+  const { data: session, error: sessionError, isLoading: sessionLoading } = useSWR(
+    '/api/auth/session',
+    fetcher,
+    {
+      dedupingInterval: 60000, // Cache for 1 minute
+      revalidateOnFocus: false, // Don't revalidate on focus
+      revalidateOnReconnect: false, // Don't revalidate on reconnect
+      refreshWhenHidden: false, // Don't refresh when hidden
+      errorRetryCount: 2, // Retry only 2 times
+    }
+  );
+  
+  // Memoize auth data to prevent unnecessary re-renders
+  const authData = useMemo(() => ({
+    user: session?.user || null,
+    isAuthenticated: !!session?.user,
+    isLoading: sessionLoading
+  }), [session?.user, sessionLoading]);
+  
+  const { user: authUser, isAuthenticated, isLoading: authLoading } = authData;
 
   // Cache TTL (10 minutes - reduced frequency to prevent spam)
   const CACHE_TTL = 10 * 60 * 1000;
@@ -304,17 +330,18 @@ export function UserProvider({ children }: UserProviderProps) {
     setActiveRequest(null); // Clear any active request
   }, []); // No dependencies - only setState calls
 
-  // Logout function
+    // Logout function
   const logout = useCallback(async () => {
     try {
-      console.log('🚪 Logging out user...');
+      // Clear user data
       clearUserCache();
-      await authLogout();
+      
+      // Sign out from NextAuth
+      await signOut({ callbackUrl: "/login" });
     } catch (error) {
-      console.error('❌ Logout failed:', error);
-      throw error;
+      console.error('Error during logout:', error);
     }
-  }, [authLogout, clearUserCache]);
+  }, [clearUserCache]);
 
   // Initialize user profile when auth changes - ONLY use NextAuth data
   useEffect(() => {

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
 import { useUser } from "@/contexts/UserContext";
-import { useAuth } from "@/hooks/use-auth";
 import {
   LayoutContextValue,
   LayoutActions,

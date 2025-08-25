@@ -7,86 +7,61 @@ interface SWRProviderProps {
   children: ReactNode;
 }
 
-// Global SWR configuration optimized for Next.js 15+
+// Global SWR configuration following v1f guidelines
 export function SWRProvider({ children }: SWRProviderProps) {
   return (
     <SWRConfig
       value={{
-        // Cache optimization
-        revalidateOnFocus: false,           // Disable focus revalidation globally
-        revalidateOnReconnect: false,       // Disable reconnect revalidation
-        revalidateIfStale: false,           // Disable stale revalidation
+        // Global fetcher - will be overridden by individual hooks
+        fetcher: async (url: string) => {
+          const response = await fetch(url);
+          if (!response.ok) {
+            const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw error;
+          }
+          return response.json();
+        },
         
-        // Deduplication settings - Aggressive caching for team data
-        dedupingInterval: 300000,           // 5 minutes global deduping for team data persistence
+        // v1f recommended configuration
+        revalidateOnFocus: true,            // Enable focus revalidation as per v1f
+        revalidateOnReconnect: true,        // Enable reconnect revalidation
+        dedupingInterval: 2000,             // 2 seconds as per v1f
+        
+        // Error retry configuration
+        errorRetryInterval: 5000,           // 5 seconds
+        errorRetryCount: 3,
+        
+        // Background revalidation
+        refreshInterval: 0,                 // Disable by default, enable per hook as needed
+        
+        // Cache configuration
+        shouldRetryOnError: true,
+        keepPreviousData: true,             // Keep previous data during revalidation
+        
+        // Fallback data
+        fallback: {},
         
         // Error handling
-        errorRetryCount: 2,
-        errorRetryInterval: 3000,
+        onError: (error, key) => {
+          console.error('SWR Error:', { error, key });
+          
+          // You can add global error reporting here
+          // e.g., send to error tracking service
+        },
         
-        // Performance optimizations
-        refreshInterval: 0,                 // Disable auto refresh
-        keepPreviousData: true,             // Keep previous data during revalidation
+        // Success callback
+        onSuccess: (data, key) => {
+          // Optional: Global success logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('SWR Success:', { key, data });
+          }
+        },
         
         // Network optimization
         loadingTimeout: 5000,               // 5 second timeout
         
         // Next.js 15+ optimizations
         suspense: false,                    // Disable suspense for better control
-        
-        // Global fetcher with better error handling
-        fetcher: (url: string) => {
-          // This won't be used as we have specific fetchers in services
-          // But good to have as fallback
-          return fetch(url).then(res => {
-            if (!res.ok) throw new Error('Network response was not ok');
-            return res.json();
-          });
-        },
-        
-        // Performance monitoring (can be removed in production)
-        onSuccess: () => {
-          // Success logging removed for cleaner console
-        },
-        
-        onError: (error, key) => {
-          // Check if it's a connection error
-          const isConnError = 
-            error?.isConnectionError ||
-            error?.code === 'ECONNREFUSED' ||
-            error?.status === 503 ||
-            !navigator.onLine;
-
-          if (isConnError) {
-            // Reduce retry frequency for connection errors
-            if (process.env.NODE_ENV === 'development') {
-              console.warn(`🔌 Connection error for: ${Array.isArray(key) ? key.join(',') : key}`);
-            }
-          } else if (process.env.NODE_ENV === 'development') {
-            console.error(`❌ SWR Error: ${Array.isArray(key) ? key.join(',') : key}`, error);
-          }
-        },
-
-        // Reduce retry frequency for connection errors
-        onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-          // Check if it's a connection error
-          const isConnError = 
-            error?.isConnectionError ||
-            error?.code === 'ECONNREFUSED' ||
-            error?.status === 503 ||
-            !navigator.onLine;
-
-          // Don't retry connection errors as aggressively
-          if (isConnError) {
-            if (retryCount >= 1) return; // Only retry once for connection errors
-            setTimeout(revalidate, 10000); // Wait 10 seconds before retry
-            return;
-          }
-
-          // Default retry logic for other errors
-          if (retryCount >= 3) return;
-          setTimeout(revalidate, Math.pow(2, retryCount) * 1000);
-        },
       }}
     >
       {children}
