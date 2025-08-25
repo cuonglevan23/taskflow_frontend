@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useOptimizedSession } from '@/hooks/useOptimizedSession'; // Tối ưu session
 import { DARK_THEME } from "@/constants/theme";
 import { MembersHeader, MembersTable } from "@/components/teams";
 import { useTeam } from "@/hooks/useTeam";
@@ -10,7 +10,7 @@ import { transformTeamMemberForMembersTable, type MembersTableData } from "@/typ
 
 const TeamMembersPage = React.memo(() => {
   const params = useParams();
-  const { data: session } = useSession();
+  const { data: session } = useOptimizedSession(); // Sử dụng session tối ưu
   const teamId = useMemo(() => {
     const id = params.id as string;
     return parseInt(id, 10);
