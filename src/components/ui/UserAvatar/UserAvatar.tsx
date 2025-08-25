@@ -43,7 +43,7 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
     // Extract user data with fallbacks
     const name = user?.name || propName || "";
     const email = user?.email || propEmail || "";
-    const avatar = user?.avatar || propAvatar;
+    const avatar = user?.image || propAvatar;
 
     const sizeClasses = {
       xs: "h-6 w-6 text-xs",
@@ -122,6 +122,8 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
             src={avatar}
             alt={name || "User avatar"}
             className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
             onError={(e) => {
               // Fallback to initials if image fails to load
               const target = e.target as HTMLImageElement;
@@ -130,6 +132,13 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
               if (parent) {
                 parent.innerHTML = `<span class="font-medium text-white">${getInitials(name)}</span>`;
                 parent.className = parent.className.replace("bg-gray-100", getAvatarColor(name));
+              }
+            }}
+            onLoad={(e) => {
+              // Ensure image is visible when loaded successfully
+              const target = e.target as HTMLImageElement;
+              if (target) {
+                target.style.display = "block";
               }
             }}
           />
