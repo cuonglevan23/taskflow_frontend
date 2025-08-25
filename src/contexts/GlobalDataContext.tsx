@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from './SessionContext'; // Sử dụng session chung
+import { User } from '@/types/auth';
 import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
 import { teamsService } from '@/services/teams/teamsService';
@@ -35,7 +37,7 @@ interface GlobalDataProviderProps {
 }
 
 export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
-  const { data: session, status } = useSession();
+  const { data: session, status, isLoading } = useSession(); // Sử dụng session chung
   const [globalData, setGlobalData] = useState<GlobalData>({
     user: null,
     teams: [],

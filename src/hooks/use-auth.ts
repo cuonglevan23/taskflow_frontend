@@ -1,6 +1,7 @@
 "use client"
 
-import { useSession, signIn, signOut } from "next-auth/react"
+import { useOptimizedSession } from "./useOptimizedSession" // Tối ưu session
+import { signIn, signOut } from "next-auth/react"
 import { UserRole, Permission } from "@/constants/auth"
 
 import type { AuthUser } from "@/lib/auth/types"
@@ -17,7 +18,7 @@ export interface UseAuthReturn {
 }
 
 export function useAuth(): UseAuthReturn {
-  const { data: session, status } = useSession()
+  const { data: session, status } = useOptimizedSession() // Sử dụng session tối ưu
   
   const user = session?.user || null
   const isLoading = status === "loading"
