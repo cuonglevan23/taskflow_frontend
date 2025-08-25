@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSession } from 'next-auth/react';
+import { useOptimizedSession } from '@/hooks/useOptimizedSession'; // Tối ưu session
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { Users, Plus, MoreHorizontal, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -67,7 +67,7 @@ const mockTeams = [
 ];
 
 const TeamsPage = ({ searchValue = "" }: TeamsPageProps) => {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useOptimizedSession(); // Sử dụng session tối ưu
   const { theme } = useTheme();
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   

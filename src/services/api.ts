@@ -29,24 +29,9 @@ const apiClient: AxiosInstance = axios.create(API_CONFIG);
 // Request Interceptor - Authentication & Logging
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
-    // Try to get token from NextAuth session first
-    let token: string | null = null;
-    
-    // Import auth dynamically to avoid SSR issues
-    if (typeof window !== 'undefined') {
-      try {
-        const { getSession } = await import('next-auth/react');
-        const session = await getSession();
-        token = session?.user?.accessToken || null;
-      } catch {
-        // Failed to get NextAuth session, will try cookie auth
-      }
-    }
-    
-    // Fallback to cookies if NextAuth session not available
-    if (!token) {
-      token = CookieAuth.getAccessToken();
-    }
+    // OPTIMIZED: Use cookie auth only to avoid session API calls
+    // Session management is handled by SessionProvider with SWR caching
+    const token = CookieAuth.getAccessToken();
     
     if (token && config.headers) {
       // Add Bearer token to Authorization header

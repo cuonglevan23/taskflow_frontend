@@ -5,7 +5,6 @@ import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { AppProvider } from "@/contexts/AppProvider";
 import { NextAuthProvider } from "@/providers";
 import { SWRProvider } from "@/providers/SWRProvider";
-import { GlobalDataProvider } from "@/contexts/GlobalDataContext";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
 const inter = Inter({
@@ -36,15 +35,13 @@ export default function RootLayout({
       >
         {/* Disable StrictMode in production to reduce duplicate renders */}
         <NextAuthProvider>
-          <GlobalDataProvider>
-            <SWRProvider>
-              <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
-                <AppProvider>
-                  <DetailPanelProvider>{children}</DetailPanelProvider>
-                </AppProvider>
-              </ThemeProvider>
-            </SWRProvider>
-          </GlobalDataProvider>
+          <SWRProvider>
+            <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
+              <AppProvider>
+                <DetailPanelProvider>{children}</DetailPanelProvider>
+              </AppProvider>
+            </ThemeProvider>
+          </SWRProvider>
         </NextAuthProvider>
       </body>
     </html>
