@@ -1,4 +1,5 @@
 // Task Domain Types - Clean Type Definitions
+import { UserProfileDto } from './progress';
 
 // Backend Task interface (matches Spring Boot exactly)
 export interface BackendTask {
@@ -53,6 +54,15 @@ export interface MyTasksFullItem {
   creatorId: number;
   projectId?: number;
   teamId?: number;
+  assignedToIds?: number[];
+  assignedToEmails?: string[];
+  comment?: string;
+  urlFile?: string;
+  groupId?: number;
+  checklists?: unknown[];
+  // New fields for full user profile information
+  creatorProfile?: UserProfileDto;
+  assigneeProfiles?: UserProfileDto[];
 }
 
 export interface PaginatedResponse<T> {
@@ -110,6 +120,10 @@ export interface Task {
     name: string;
     email?: string;
   }>;
+  
+  // New fields for full user profile information
+  creatorProfile?: UserProfileDto;
+  assigneeProfiles?: UserProfileDto[];
 }
 
 // Data Transfer Objects (DTOs)

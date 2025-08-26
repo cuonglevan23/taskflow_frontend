@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { TaskListItem } from '../../types';
 import { TaskEditState, MockUser } from '../types';
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface TaskAssigneesProps {
   task: TaskListItem;
@@ -63,7 +64,7 @@ export const TaskAssignees = ({
     setShowInput(true);
   };
 
-  const assignedEmails = (task as any).assignedEmails || [];
+  const assignedEmails = (task as TaskListItem & { assignedEmails?: string[] }).assignedEmails || [];
 
   return (
     <div className="w-[150px] px-4">
@@ -72,19 +73,30 @@ export const TaskAssignees = ({
         {!showInput && (task.assignees?.length > 0 || assignedEmails.length > 0) && (
           <div className="flex items-center -space-x-1">
             {/* Existing assignees avatars */}
-            {task.assignees && task.assignees.slice(0, 2).map((assignee, index) => (
-              <Avatar
-                key={assignee.id || index}
-                name={assignee.name}
-                size="sm"
-                className="w-8 h-8 border border-gray-600"
-              />
-            ))}
+            {task.assignees && task.assignees.slice(0, 2).map((assignee, index) => {
+              // Debug: Log avatar URL to console
+              console.log('🔍 TaskAssignees Debug with UserAvatar:', {
+                name: assignee.name,
+                email: assignee.email,
+                originalAvatar: assignee.avatar,
+              });
+              
+              return (
+                <UserAvatar
+                  key={assignee.id || index}
+                  name={assignee.name}
+                  avatar={assignee.avatar}
+                  email={assignee.email}
+                  size="sm"
+                  className="w-8 h-8 border border-gray-600"
+                />
+              );
+            })}
             
             {/* Email assignees avatars */}
             {assignedEmails.slice(0, 2).map((email: string) => (
               <div key={email} title={email}>
-                <Avatar
+                <UserAvatar
                   name={email}
                   size="sm"
                   className="w-8 h-8 border border-blue-500"
@@ -110,19 +122,23 @@ export const TaskAssignees = ({
             {/* Avatars inside input */}
             <div className="absolute left-1 top-1/2 transform -translate-y-1/2 flex -space-x-1 z-10">
               {/* Existing assignees avatars */}
-              {task.assignees && task.assignees.slice(0, 2).map((assignee, index) => (
-                <Avatar
-                  key={assignee.id || index}
-                  name={assignee.name}
-                  size="sm"
-                  className="w-5 h-5 border border-gray-600"
-                />
-              ))}
+              {task.assignees && task.assignees.slice(0, 2).map((assignee, index) => {
+                return (
+                  <UserAvatar
+                    key={assignee.id || index}
+                    name={assignee.name}
+                    avatar={assignee.avatar}
+                    email={assignee.email}
+                    size="sm"
+                    className="w-5 h-5 border border-gray-600"
+                  />
+                );
+              })}
               
               {/* Email assignees avatars */}
               {assignedEmails.slice(0, 2).map((email: string) => (
                 <div key={email} title={email}>
-                  <Avatar
+                  <UserAvatar
                     name={email}
                     size="sm"
                     className="w-5 h-5 border border-blue-500"

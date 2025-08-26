@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar/Avatar';
 import CommentItem from './CommentItem';
 import { useTaskComments, useCommentActions, useCommentCount } from '@/hooks/useComments';
 

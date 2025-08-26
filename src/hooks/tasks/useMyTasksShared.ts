@@ -89,15 +89,33 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
 
   // Convert Task to TaskListItem - Memoized for performance
   const convertTaskToTaskListItem = useCallback((task: Task): TaskListItem => {
-    const taskListItem = {
+    let assignees: Array<{id: string; name: string; email: string; avatar?: string}> = [];
+
+    // Convert profile information to assignees format for TaskList component
+    if (task.assigneeProfiles && task.assigneeProfiles.length > 0) {
+      assignees = task.assigneeProfiles.map(profile => ({
+        id: profile.userId.toString(),
+        name: profile.displayName || `${profile.firstName} ${profile.lastName}`.trim(),
+        email: profile.email,
+        avatar: profile.avatarUrl,
+      }));
+    }
+
+    // Add creator as assignee if no other assignees (for display purposes)
+    if (assignees.length === 0 && task.creatorProfile) {
+      assignees = [{
+        id: task.creatorProfile.userId.toString(),
+        name: task.creatorProfile.displayName || `${task.creatorProfile.firstName} ${task.creatorProfile.lastName}`.trim(),
+        email: task.creatorProfile.email,
+        avatar: task.creatorProfile.avatarUrl,
+      }];
+    }
+
+    const taskListItem: TaskListItem = {
       id: task.id.toString(),
       name: task.title,
       description: task.description || '',
-      assignees: task.creatorName ? [{
-        id: 'creator',
-        name: task.creatorName,
-        email: '',
-      }] : [],
+      assignees: assignees,
       // Map assignedEmails field for email assignment display
       assignedEmails: task.assignedEmails || [],
       dueDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : undefined,

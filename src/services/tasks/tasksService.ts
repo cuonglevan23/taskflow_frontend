@@ -112,6 +112,11 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
     // Multi-day task support
     startDate: taskDueDateISO,
     deadline: item.deadline,
+    // Email assignment support
+    assignedEmails: item.assignedToEmails || [],
+    // Profile information
+    creatorProfile: item.creatorProfile,
+    assigneeProfiles: item.assigneeProfiles || [],
   };
 };
 
@@ -239,10 +244,40 @@ export const tasksService = {
   // Delete task (My Tasks)
   deleteTask: async (id: string): Promise<void> => {
     try {
-      await api.delete(`/api/tasks/my-tasks/${id}`);
-    } catch (error) {
-      console.error('❌ Failed to delete task:', error);
-      throw error;
+      console.log('🗑️ Attempting to delete task with ID:', id);
+      const response = await api.delete(`/api/tasks/my-tasks/${id}`);
+      console.log('✅ Task deleted successfully:', response.status);
+    } catch (error: unknown) {
+      const axiosError = error as { 
+        message?: string; 
+        response?: { 
+          status?: number; 
+          statusText?: string; 
+          data?: unknown; 
+        }; 
+        config?: { url?: string; }; 
+      };
+      console.error('❌ Failed to delete task:', {
+        taskId: id,
+        error: axiosError.message,
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        data: axiosError.response?.data,
+        url: axiosError.config?.url
+      });
+      
+      // Provide user-friendly error messages
+      if (axiosError.response?.status === 404) {
+        throw new Error('Task not found or already deleted');
+      } else if (axiosError.response?.status === 403) {
+        throw new Error('You do not have permission to delete this task');
+      } else if (axiosError.response?.status === 401) {
+        throw new Error('Please log in again to delete this task');
+      } else if (!axiosError.response) {
+        throw new Error('Network error - please check your connection');
+      } else {
+        throw new Error(`Failed to delete task: ${axiosError.response?.statusText || 'Unknown error'}`);
+      }
     }
   },
 
@@ -391,8 +426,8 @@ export const tasksService = {
     } = params || {};
 
     try {
-      // Use the main my-tasks endpoint as documented - returns BackendTask[]
-      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
+      // Use the main my-tasks endpoint as documented - returns MyTasksFullItem[] with profile info
+      const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
@@ -410,8 +445,8 @@ export const tasksService = {
         };
       }
       
-      // Use transformBackendTask instead of transformMyTasksSummary
-      const tasks = content.map(transformBackendTask);
+      // Use transformMyTasksFull to handle profile information
+      const tasks = content.map(transformMyTasksFull);
 
       return {
         tasks,

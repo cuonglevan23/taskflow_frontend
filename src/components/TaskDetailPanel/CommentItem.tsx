@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Edit, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 import { TaskComment } from '@/types/comment';
 import { DARK_THEME } from '@/constants/theme';
 
@@ -66,10 +66,11 @@ const CommentItem = ({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      <Avatar
+      <UserAvatar
         name={comment.userName}
+        avatar={comment.userAvatar || undefined}
         size="sm"
-        className="w-8 h-8 bg-blue-500"
+        className="w-8 h-8"
       />
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">

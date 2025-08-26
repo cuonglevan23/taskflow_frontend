@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
 import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
@@ -64,9 +64,10 @@ const TaskDetailContent = ({
                 <div className="flex items-center -space-x-2">
                   {/* Show user assignees */}
                   {task.assignees?.slice(0, 3).map((assignee, index) => (
-                    <Avatar
+                    <UserAvatar
                       key={assignee.id || index}
                       name={assignee.name}
+                      avatar={assignee.avatar}
                       size="sm"
                       className="w-8 h-8 border-2 border-gray-700"
                     />
@@ -74,7 +75,7 @@ const TaskDetailContent = ({
                   
                   {/* Show email assignees */}
                   {((task as any)?.assignedEmails || []).slice(0, Math.max(0, 3 - (task.assignees?.length || 0))).map((email: string) => (
-                    <Avatar
+                    <UserAvatar
                       key={email}
                       name={email}
                       size="sm"
@@ -255,10 +256,10 @@ const TaskDetailContent = ({
             <>
               {/* Activity Item 1 */}
               <div className="flex items-start gap-3">
-                <Avatar
+                <UserAvatar
                   name="cuonglv.21ad@vku.udn.vn"
                   size="sm"
-                  className="w-8 h-8 bg-pink-500"
+                  className="w-8 h-8"
                 />
                 <div className="flex-1">
                   <div className="text-sm text-gray-400">
@@ -269,10 +270,10 @@ const TaskDetailContent = ({
 
               {/* Activity Item 2 */}
               <div className="flex items-start gap-3">
-                <Avatar
+                <UserAvatar
                   name="cuonglv.21ad@vku.udn.vn"
                   size="sm"
-                  className="w-8 h-8 bg-pink-500"
+                  className="w-8 h-8"
                 />
                 <div className="flex-1">
                   <div className="text-sm text-gray-400">
@@ -283,10 +284,10 @@ const TaskDetailContent = ({
 
               {/* Recent Activity */}
               <div className="flex items-start gap-3">
-                <Avatar
+                <UserAvatar
                   name="cuonglv.21ad@vku.udn.vn"
                   size="sm"
-                  className="w-8 h-8 bg-pink-500"
+                  className="w-8 h-8"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -300,10 +301,10 @@ const TaskDetailContent = ({
               </div>
 
               <div className="flex items-start gap-3">
-                <Avatar
+                <UserAvatar
                   name="cuonglv.21ad@vku.udn.vn"
                   size="sm"
-                  className="w-8 h-8 bg-pink-500"
+                  className="w-8 h-8"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
