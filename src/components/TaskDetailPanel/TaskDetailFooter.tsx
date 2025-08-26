@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Globe, Triangle, Smile, AtSign, Star, Paperclip, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
 import { useCommentActions } from '@/hooks/useComments';
+import { useUser } from '@/contexts/UserContext';
 
 interface TaskDetailFooterProps {
   task: TaskListItem | null;
@@ -18,6 +19,9 @@ const TaskDetailFooter = ({
   setComment
 }: TaskDetailFooterProps) => {
   const [showCommentEditor, setShowCommentEditor] = useState(false);
+  
+  // Get current user
+  const { user } = useUser();
   
   // Get task ID
   const taskId = task?.id ? String(task.id) : null;
@@ -34,7 +38,7 @@ const TaskDetailFooter = ({
       await createComment(comment.trim());
       setComment('');
       setShowCommentEditor(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create comment:', error);
       // Error notification is already handled in the hook
       // Keep the editor open so user can try again
@@ -53,10 +57,11 @@ const TaskDetailFooter = ({
       <div className="p-6">
         <h3 className="text-sm font-medium text-white mb-4">Add Comment</h3>
         <div className="flex items-start gap-3">
-          <Avatar
-            name="cuonglv.21ad@vku.udn.vn"
+          <UserAvatar
+            name={user?.name || user?.email || 'Current User'}
+            avatar={user?.avatar}
             size="sm"
-            className="w-8 h-8 bg-pink-500"
+            className="w-8 h-8"
           />
           <div className="flex-1">
             {showCommentEditor ? (
@@ -179,9 +184,10 @@ const TaskDetailFooter = ({
             <span className="text-sm font-medium text-gray-300">Collaborators</span>
             <div className="flex items-center gap-1">
               {task?.assignees?.slice(0, 3).map((assignee) => (
-                <Avatar
+                <UserAvatar
                   key={assignee.id}
                   name={assignee.name}
+                  avatar={assignee.avatar}
                   size="sm"
                   className="w-8 h-8 -ml-1 first:ml-0 border-2 border-gray-900"
                 />

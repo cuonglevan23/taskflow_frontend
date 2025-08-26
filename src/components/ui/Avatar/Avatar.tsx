@@ -34,13 +34,15 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     ref
   ) => {
     const [imageError, setImageError] = useState(false);
-    const [imageLoading, setImageLoading] = useState(false); // Start as false to show initials immediately
+    const [imageLoading, setImageLoading] = useState(true); // Start as true, then set to false when loaded or error
 
     // Reset error state when src changes to avoid cross-contamination
     useEffect(() => {
       if (src) {
         setImageError(false);
-        setImageLoading(false); // Don't show loading, show initials first
+        setImageLoading(true); // Start loading when src changes
+      } else {
+        setImageLoading(false); // No src, no loading
       }
     }, [src]);
 
@@ -75,17 +77,27 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     };
 
     const handleImageError = () => {
+      console.log('🔍 Avatar image failed to load:', { src, name, alt });
       setImageError(true);
       setImageLoading(false);
     };
 
     const handleImageLoad = () => {
+      console.log('🔍 Avatar image loaded successfully:', { src, name });
       setImageError(false);
       setImageLoading(false);
     };
 
-    // Only show image if src exists, no error, and not loading
-    const shouldShowImage = src && !imageError && !imageLoading;
+    // Only show image if src exists and no error (allow loading state)
+    const shouldShowImage = src && !imageError;
+    
+    console.log('🔍 Avatar shouldShowImage logic:', { 
+      src: !!src, 
+      imageError, 
+      imageLoading, 
+      shouldShowImage,
+      name 
+    });
 
     return (
       <div

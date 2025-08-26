@@ -180,8 +180,30 @@ export async function DELETE(
       return new NextResponse(null, { status: 204 });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Check content type to handle different response formats
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      return NextResponse.json(data);
+    } else {
+      // Handle text responses (backend might return plain text for delete operations)
+      const textData = await response.text();
+      console.log('📝 Backend returned text response:', textData);
+      
+      // For successful delete operations, return a success response
+      if (response.ok) {
+        return NextResponse.json({ 
+          success: true, 
+          message: textData || 'Task deleted successfully' 
+        });
+      } else {
+        return NextResponse.json(
+          { error: textData || 'Unknown error' },
+          { status: response.status }
+        );
+      }
+    }
 
   } catch (error) {
     console.error('❌ API route error:', error);

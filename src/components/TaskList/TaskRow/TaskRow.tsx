@@ -18,6 +18,7 @@ import { TaskStatusButton } from './components/TaskStatusButton';
 import { TaskNameEdit } from './components/TaskNameEdit';
 import { TaskAssignees } from './components/TaskAssignees';
 import { TaskProjects } from './components/TaskProjects';
+import { TaskContextMenu } from './components/TaskContextMenu';
 
 import ButtonIcon from '@/components/ui/Button/ButtonIcon';
 
@@ -38,6 +39,18 @@ export const TaskRow = ({
   const [startDate, setStartDate] = useState(task.startDate ? new Date(task.startDate) : new Date());
   const [endDate, setEndDate] = useState(task.deadline ? new Date(task.deadline) : null);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Context menu handlers
+  const handleMarkDone = () => {
+    // ✅ FIX: Use same completion check logic as MyTasksCard
+    const isCurrentlyCompleted = task.completed || (task.status as string) === 'completed' || task.status === 'DONE';
+    const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
+    onTaskStatusChange?.(task.id, newStatus);
+  };
+
+  const handleDeleteTask = () => {
+    onTaskDelete?.(task.id);
+  };
   // Simple task action handlers that call the provided parent handlers
   const handleCompleteTask = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -427,6 +440,15 @@ export const TaskRow = ({
         </div>
       </div>
 
+      {/* Context Menu */}
+      <TaskContextMenu
+        task={task}
+        isOpen={menuState.showContextMenu}
+        position={menuState.menuPosition}
+        onClose={hideMenu}
+        onMarkDone={handleMarkDone}
+        onDelete={handleDeleteTask}
+      />
     </>
   );
 };

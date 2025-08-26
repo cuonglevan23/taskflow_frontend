@@ -34,6 +34,7 @@ export interface TaskEditState {
 
 export interface MenuState {
   showMoveMenu: boolean;
+  showContextMenu: boolean;
   menuPosition: { x: number; y: number };
 }
 
