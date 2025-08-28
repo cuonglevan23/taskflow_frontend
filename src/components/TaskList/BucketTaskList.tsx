@@ -228,9 +228,7 @@ const BucketTaskList = ({
         <div className="flex-1 min-w-[300px] px-6">Name</div>
         <div className="w-[120px] px-4">Due date</div>
         <div className="w-[150px] px-4">Collaborators</div>
-        <div className="w-[150px] px-4">Projects</div>
-        <div className="w-[140px] px-4">Task visibility</div>
-
+        <div className="w-[60px] px-2 flex justify-center">Comments</div>
       </div>
 
       <DndContext

@@ -36,6 +36,7 @@ interface MyTasksSharedReturn {
     onCreateTask: (taskData: Record<string, unknown>) => Promise<void>;
     onTaskDelete: (taskId: string) => Promise<void>;
     onTaskStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
+    onTaskPriorityChange: (taskId: string, priority: string) => Promise<void>;
     onTaskAssign: (taskId: string, assigneeId: string) => Promise<void>;
     onBulkAction: (taskIds: string[], action: string) => Promise<void>;
     onDateClick: (dateStr: string) => Promise<void>;
@@ -77,16 +78,6 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   // Static flag to prevent duplicate date clicks
   const dateClickInProgress = useRef(false);
 
-  // Helper function to format dates consistently
-  const formatDate = useCallback((date: Date | string | null | undefined) => {
-    if (!date) return undefined;
-    if (typeof date === 'string') return date;
-    if (date instanceof Date) {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-    return undefined;
-  }, []);
-
   // Convert Task to TaskListItem - Memoized for performance
   const convertTaskToTaskListItem = useCallback((task: Task): TaskListItem => {
     let assignees: Array<{id: string; name: string; email: string; avatar?: string}> = [];
@@ -111,6 +102,16 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       }];
     }
 
+    // ✅ FIX: Properly handle startDate and deadline - ensure both are strings
+    const taskStartDate = task.startDate ? 
+      (task.startDate instanceof Date ? 
+        // Use local timezone conversion to avoid UTC issues
+        `${task.startDate.getFullYear()}-${String(task.startDate.getMonth() + 1).padStart(2, '0')}-${String(task.startDate.getDate()).padStart(2, '0')}` 
+        : String(task.startDate)) 
+      : undefined;
+    
+    const taskDeadline = task.deadline ? String(task.deadline) : undefined;
+
     const taskListItem: TaskListItem = {
       id: task.id.toString(),
       name: task.title,
@@ -118,9 +119,9 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       assignees: assignees,
       // Map assignedEmails field for email assignment display
       assignedEmails: task.assignedEmails || [],
-      dueDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : undefined,
-      startDate: formatDate(task.startDate),
-      deadline: formatDate(task.deadline),
+      dueDate: task.dueDate && task.dueDate !== 'No deadline' ? task.dueDate : taskDeadline,
+      startDate: taskStartDate, // ✅ FIX: Properly formatted start date
+      deadline: taskDeadline,   // ✅ FIX: Properly formatted deadline
       startTime: '',
       endTime: '',
       hasStartTime: false,
@@ -133,10 +134,11 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       project: task.tagText || 'Default Project',
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
+      attachments: task.attachments || [], // ✅ FIX: Include attachments in conversion
     };
 
     return taskListItem;
-  }, [formatDate]);
+  }, []);
 
   // Transform tasks to TaskListItem format - Memoized
   const taskListItems = useMemo(() => {
@@ -161,7 +163,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     },
     
     onTaskEdit: async (task: TaskListItem) => {
-      try {
+      try {        
         // Determine if this is a project task or personal task
         const isProjectTask = task.project && task.project !== 'Default Project';
         
@@ -186,7 +188,8 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
             backendData
           );
         } else {
-          // Use personal task API for my-tasks
+          // Use personal task API for my-tasks - same pattern as project tasks
+          const tasksServiceModule = await import('@/services/tasks/tasksService');
           const backendData = {
             title: task.name,
             description: task.description || '',
@@ -197,16 +200,14 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
                      task.priority === 'MEDIUM' ? 'MEDIUM' :
                      task.priority === 'HIGH' ? 'HIGH' : 'URGENT',
             startDate: task.startDate || new Date().toISOString().split('T')[0],
-            deadline: task.deadline || task.dueDate || undefined,
+            deadline: task.deadline ,
             groupId: undefined,
             projectId: undefined,
             assignedToIds: task.assignees.map(a => parseInt(a.id)).filter(id => !isNaN(id)),
           };
           
-          await updateTask({ 
-            id: task.id, 
-            data: backendData
-          });
+          // Call service directly like project tasks
+          await tasksServiceModule.tasksService.updateTask(task.id, backendData);
         }
         
         // Revalidate data after edit
@@ -248,12 +249,10 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     },
     
     onCreateTask: async (taskData: Record<string, unknown>) => {
-      console.log('🚀 useMyTasksShared.onCreateTask called with:', taskData);
       try {
         // Get user information for proper task creation
         const tokenPayload = CookieAuth.getTokenPayload();
         const userInfo = CookieAuth.getUserInfo();
-        console.log('👤 User info:', { tokenPayload, userInfo });
         
         // Get current date for task
         const today = new Date();
@@ -310,16 +309,11 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
           assignedToIds: (taskData.assignedToIds as number[]) || [],
         };
         
-        console.log('📝 CreateTaskDTO prepared:', createTaskDto);
-        
         // Use the same createTask method as calendar
-        console.log('🔄 Calling createTask...');
         await createTask(createTaskDto);
-        console.log('✅ Task created successfully');
         
         // Revalidate data after creation
         revalidate();
-        console.log('🔄 Data revalidated');
       } catch (error) {
         console.error('❌ Failed to create task in useMyTasksShared:', error);
         throw error;
@@ -351,29 +345,88 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     
     onTaskStatusChange: async (taskId: string, status: TaskStatus | string) => {
       try {
-        // ✅ FIX: Use same approach as MyTasksCard - use updateTask instead of updateTaskStatus
-        const backendStatus = status.toString().toLowerCase() === 'completed' ? 'completed' : 'todo';
+        // Map frontend status to backend status format
+        const statusMappingToBackend: Record<string, string> = {
+          'TODO': 'TODO',
+          'IN_PROGRESS': 'IN_PROGRESS', 
+          'REVIEW': 'REVIEW',
+          'TESTING': 'TESTING',
+          'BLOCKED': 'BLOCKED',
+          'DONE': 'DONE',
+          'CANCELLED': 'CANCELLED',
+          // Legacy support
+          'completed': 'DONE',
+          'todo': 'TODO'
+        };
         
-        // ✅ FIX: Use updateTask like MyTasksCard does
+        const backendStatus = statusMappingToBackend[status.toString()] || status.toString();
+        
         await updateTask({ 
           id: taskId, 
           data: { status: backendStatus }
         });
         
-        // ✅ FIX: Revalidate data after status change
         revalidate();
       } catch (error) {
         console.error('Failed to update task status:', error);
         throw error;
       }
     },
+
+    onTaskPriorityChange: async (taskId: string, priority: string) => {
+      try {
+        // Map frontend priority to backend priority format
+        const priorityMappingToBackend: Record<string, string> = {
+          'LOW': 'LOW',
+          'MEDIUM': 'MEDIUM',
+          'HIGH': 'HIGH', 
+          'URGENT': 'URGENT'
+        };
+        
+        const backendPriority = priorityMappingToBackend[priority.toString()] || priority.toString();
+        
+        await updateTask({ 
+          id: taskId, 
+          data: { priority: backendPriority }
+        });
+        
+        revalidate();
+      } catch (error) {
+        console.error('Failed to update task priority:', error);
+        throw error;
+      }
+    },
     
     onTaskAssign: async (taskId: string, assigneeId: string) => {
       try {
-        const backendData = {
-          assignedToIds: [parseInt(assigneeId)].filter(id => !isNaN(id)),
-          startDate: new Date().toISOString().split('T')[0]
-        };
+        // Validate inputs with proper type checks
+        if (typeof assigneeId !== 'string' || assigneeId.trim() === '' || 
+            typeof taskId !== 'string' || taskId.trim() === '') {
+          return;
+        }
+        
+        // Check if assigneeId is an email or a numeric ID
+        const cleanAssigneeId = assigneeId.trim();
+        const isEmail = cleanAssigneeId.includes('@');
+        
+        let backendData;
+        if (isEmail) {
+          // Send email directly to backend - let backend handle email lookup
+          backendData = {
+            assignedToEmails: [cleanAssigneeId.toLowerCase()],
+            startDate: new Date().toISOString().split('T')[0]
+          };
+        } else {
+          // Send as numeric ID (existing logic)
+          const numericId = parseInt(cleanAssigneeId);
+          if (isNaN(numericId)) {
+            return;
+          }
+          backendData = {
+            assignedToIds: [numericId],
+            startDate: new Date().toISOString().split('T')[0]
+          };
+        }
         
         await updateTask({ 
           id: taskId, 
@@ -465,13 +518,6 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
           const newDeadlineDate = new Date(originalDeadline);
           newDeadlineDate.setDate(newDeadlineDate.getDate() + offsetDays);
           const newDeadlineStr = `${newDeadlineDate.getFullYear()}-${String(newDeadlineDate.getMonth() + 1).padStart(2, '0')}-${String(newDeadlineDate.getDate()).padStart(2, '0')}`;
-          
-          console.log('� Moving task:', {
-            taskId: task.id,
-            offsetDays,
-            from: { start: task.startDate, deadline: task.deadline },
-            to: { start: newStartStr, deadline: newDeadlineStr }
-          });
           
           await updateTask({ 
             id: task.id.toString(), 

@@ -50,10 +50,10 @@ export default function PrivateSidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {isOpen && (
+      {/* Mobile backdrop - chỉ hiện trên mobile */}
+      {isOpen && typeof window !== 'undefined' && window.innerWidth < 1024 && (
         <div
-          className={SIDEBAR_CLASSES.BACKDROP}
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={onClose}
         />
       )}

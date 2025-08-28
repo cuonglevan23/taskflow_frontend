@@ -5,6 +5,7 @@ import { CheckCircle, User, Calendar, Flag, MoreHorizontal } from 'lucide-react'
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { TaskListItem, TaskListActions } from './types';
 import { getPriorityConfig, getStatusConfig, formatDate, isOverdue } from './utils';
+import { TaskCommentIndicator } from './TaskRow/components/TaskCommentIndicator';
 
 interface TaskCardProps {
   task: TaskListItem;
@@ -26,6 +27,14 @@ const TaskCard = ({
   const statusConfig = getStatusConfig(task.status);
   const overdueDate = task.dueDate && isOverdue(task.dueDate);
 
+  // Helper function to check if task is completed
+  const isTaskCompleted = (task: TaskListItem): boolean => {
+    return task.completed || 
+           task.status === 'DONE' || 
+           (task.status as string) === 'completed' ||
+           (task.status as string) === 'done';
+  };
+
   const handleCardClick = () => {
     actions?.onTaskClick?.(task);
   };
@@ -37,7 +46,7 @@ const TaskCard = ({
 
   const handleStatusChange = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const nextStatus = task.status === 'done' ? 'todo' : 'done';
+    const nextStatus = isTaskCompleted(task) ? 'TODO' : 'DONE';
     actions?.onTaskStatusChange?.(task.id, nextStatus);
   };
 
@@ -59,7 +68,7 @@ const TaskCard = ({
         >
           <CheckCircle
             className={`w-5 h-5 ${
-              task.status === 'done' 
+              isTaskCompleted(task)
                 ? 'text-green-500 fill-current' 
                 : 'text-gray-400 hover:text-gray-600'
             }`}
@@ -69,9 +78,9 @@ const TaskCard = ({
         <div className="flex-1 min-w-0">
           <h3 
             className={`font-medium mb-1 ${
-              task.status === 'done' ? 'line-through text-gray-500' : ''
+              isTaskCompleted(task) ? 'line-through text-gray-500' : ''
             }`}
-            style={{ color: task.status === 'done' ? theme.text.secondary : theme.text.primary }}
+            style={{ color: isTaskCompleted(task) ? theme.text.secondary : theme.text.primary }}
           >
             {task.name}
           </h3>
@@ -141,12 +150,18 @@ const TaskCard = ({
             </span>
           </div>
           
-          <button
-            onClick={handleStatusChange}
-            className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${statusConfig.color} hover:opacity-80`}
-          >
-            {statusConfig.label}
-          </button>
+          <div className="flex items-center gap-2">
+            <TaskCommentIndicator
+              taskId={task.id}
+              initialCount={task.commentCount || 0}
+            />
+            <button
+              onClick={handleStatusChange}
+              className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${statusConfig.color} hover:opacity-80`}
+            >
+              {statusConfig.label}
+            </button>
+          </div>
         </div>
 
         {/* Tags */}

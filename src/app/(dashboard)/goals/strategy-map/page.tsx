@@ -559,7 +559,7 @@ function StrategyMapContent() {
           style={{ backgroundColor: "#1e1e1e" }}
         >
           <Background
-            variant={BackgroundVariant.Cross}
+            variant={BackgroundVariant.Dots}
             gap={20}
             size={1}
             color="#333333"

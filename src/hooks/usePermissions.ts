@@ -1,7 +1,7 @@
 // Permission Management Hook
 import { useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { 
+import { useSession } from 'next-auth/react';
+import {
   UserRole, 
   ROLE_CONFIGS, 
   ACTIONS, 
@@ -16,7 +16,8 @@ interface UsePermissionsProps {
 }
 
 export const usePermissions = ({ contextType, contextId }: UsePermissionsProps = {} as UsePermissionsProps) => {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user as UserWithRole | undefined;
 
   // Get effective role (global or context-specific)
   const effectiveRole = useMemo((): UserRole => {

@@ -33,6 +33,10 @@ export interface BaseCardProps {
   };
   className?: string;
   onMenuClick?: () => void;
+  variant?: 'default' | 'compact' | 'minimal';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'auto';
+  padding?: string; // Custom Tailwind padding classes
+  fullHeight?: boolean; // Control full height behavior
 }
 
 // Professional BaseCard Component - Senior Product Code
@@ -49,8 +53,101 @@ const BaseCard = ({
   showMoreButton,
   className = "",
   onMenuClick,
+  variant = 'default',
+  size = 'md',
+  padding,
+  fullHeight = false,
 }: BaseCardProps) => {
   const { theme } = useTheme();
+
+  // Get size-based spacing
+  const getSizeClasses = () => {
+    if (padding) {
+      // Use custom padding if provided
+      return {
+        header: padding,
+        content: padding,
+        title: 'text-base',
+        border: 'rounded-lg'
+      };
+    }
+
+    switch (size) {
+      case 'xs':
+        return {
+          header: 'p-1 pb-0.5',
+          content: 'px-1 pb-1',
+          title: 'text-xs',
+          border: 'rounded'
+        };
+      case 'sm':
+        return {
+          header: 'p-2 pb-1',
+          content: 'px-2 pb-2',
+          title: 'text-sm',
+          border: 'rounded-md'
+        };
+      case 'md':
+        return {
+          header: 'p-4 pb-2',
+          content: 'px-4 pb-4',
+          title: 'text-base',
+          border: 'rounded-lg'
+        };
+      case 'lg':
+        return {
+          header: 'p-6 pb-3',
+          content: 'px-6 pb-6',
+          title: 'text-lg',
+          border: 'rounded-xl'
+        };
+      case 'xl':
+        return {
+          header: 'p-8 pb-4',
+          content: 'px-8 pb-8',
+          title: 'text-xl',
+          border: 'rounded-2xl'
+        };
+      case 'auto':
+        return {
+          header: 'p-0',
+          content: 'p-0',
+          title: 'text-base',
+          border: 'rounded-lg'
+        };
+      default:
+        return {
+          header: 'p-4 pb-2',
+          content: 'px-4 pb-4',
+          title: 'text-base',
+          border: 'rounded-lg'
+        };
+    }
+  };
+
+  // Get variant-based overrides (if variant is used instead of size)
+  const getVariantClasses = () => {
+    switch (variant) {
+      case 'compact':
+        return {
+          header: 'p-3 pb-1',
+          content: 'px-3 pb-3',
+          title: 'text-sm',
+          border: 'rounded-lg'
+        };
+      case 'minimal':
+        return {
+          header: 'p-2 pb-1',
+          content: 'px-2 pb-2',
+          title: 'text-xs',
+          border: 'rounded-md'
+        };
+      default:
+        return getSizeClasses(); // Use size classes as default
+    }
+  };
+
+  const cardClasses = variant !== 'default' ? getVariantClasses() : getSizeClasses();
 
   // Tab Button Sub-Component
   const TabButton = ({ 
@@ -86,14 +183,14 @@ const BaseCard = ({
 
   return (
     <div 
-      className={`rounded-2xl border h-full flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${className}`}
+      className={`${cardClasses.border} border ${fullHeight ? 'h-full min-h-[400px]' : ''} flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${className}`}
       style={{
         backgroundColor: theme.background.primary,
         borderColor: theme.border.default,
       }}
     >
       {/* Professional Header */}
-      <div className="flex items-center justify-between p-6 pb-4">
+      <div className={`flex items-center justify-between ${cardClasses.header}`}>
         <div className="flex items-center gap-3">
           {/* Avatar with Dashed Border */}
           {avatar && (
@@ -120,7 +217,7 @@ const BaseCard = ({
           {/* Title Section */}
           <div className="flex items-center gap-2">
             <h3 
-              className="text-lg font-semibold"
+              className={`${cardClasses.title} font-semibold`}
               style={{ color: theme.text.primary }}
             >
               {title}
@@ -174,7 +271,7 @@ const BaseCard = ({
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col px-6 py-4 min-h-0">
+      <div className={`flex-1 flex flex-col ${cardClasses.content} min-h-0`}>
         {/* Create/Add Action Button */}
         {createAction && (
           <button 

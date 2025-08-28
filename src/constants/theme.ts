@@ -105,14 +105,16 @@ export const LIGHT_THEME = {
     secondary: '#f8fafc',
     tertiary: '#f1f5f9',
     muted: '#e2e8f0',
+    weak: '#fff',
     weakHover: '#f1f5f9',
   },
   
   // Text Colors
   text: {
-    primary: '#0f172a',
+    primary: '#1e1f21',
     secondary: '#475569',
     muted: '#64748b',
+    weak: '#6d6e6f',
     inverse: '#ffffff',
   },
   
@@ -163,10 +165,28 @@ export const LIGHT_THEME = {
       text: '#ffffff',
     },
     secondary: {
-      background: 'transparent',
-      hover: '#f1f5f9',
+      background: '#fff',
+      hover: '#f9f8f8',
+      active: '#f5f3f3',
       text: THEME_COLORS.secondary[700],
       border: THEME_COLORS.secondary[300],
+    },
+    tertiary: {
+      background: 'rgba(55, 23, 23, .03)',
+      hover: 'rgba(55, 23, 23, .05)',
+      text: THEME_COLORS.secondary[700],
+    },
+    subtle: {
+      background: 'transparent',
+      hover: '#f9f8f8',
+      text: THEME_COLORS.secondary[700],
+    },
+    success: {
+      background: '#f0fdf4', // Light green background
+      hover: '#dcfce7', // Lighter green on hover
+      text: '#15803d', // Dark green text
+      border: '#86efac', // Medium green border
+      icon: '#16a34a', // Green icon color
     },
   },
 } as const;
@@ -243,6 +263,17 @@ export const DARK_THEME = {
       text: THEME_COLORS.secondary[200],
       border: THEME_COLORS.secondary[600],
     },
+    success: {
+      background: '#1d3733', // --color-success-background
+      hover: '#4b8a73', // --color-button-success-border-pressedHover
+      text: '#66a88b', // --color-success-text
+      textHover: '#93c0aa', // --color-success-text-hover
+      textStrong: '#ffffff', // --color-success-text-strong
+      border: '#32695d', // --color-button-success-border-pressed
+      borderHover: '#4b8a73', // --color-button-success-border-pressedHover
+      icon: '#5da283', // --color-success-icon
+      iconHover: '#74af93', // --color-success-icon-hover
+    },
   },
 } as const;
 
@@ -253,12 +284,14 @@ export type ThemeConfig = {
     secondary: string;
     tertiary: string;
     muted: string;
+    weak?: string;
     weakHover: string;
   };
   text: {
     primary: string;
     secondary: string;
     muted: string;
+    weak?: string;
     inverse: string;
   };
   border: {
@@ -303,8 +336,30 @@ export type ThemeConfig = {
     secondary: {
       background: string;
       hover: string;
+      active?: string;
       text: string;
       border: string;
+    };
+    tertiary?: {
+      background: string;
+      hover: string;
+      text: string;
+    };
+    subtle?: {
+      background: string;
+      hover: string;
+      text: string;
+    };
+    success: {
+      background: string;
+      hover: string;
+      text: string;
+      textHover?: string;
+      textStrong?: string;
+      border: string;
+      borderHover?: string;
+      icon: string;
+      iconHover?: string;
     };
   };
   colors?: {
@@ -331,6 +386,9 @@ export const CSS_VARIABLES = {
     '--color-primary-hover': THEME_COLORS.primary[600],
     '--color-background-primary': LIGHT_THEME.background.primary,
     '--color-background-secondary': LIGHT_THEME.background.secondary,
+    '--color-background-weak': '#fff',
+    '--color-text': '#1e1f21',
+    '--color-text-weak': '#6d6e6f',
     '--color-text-primary': LIGHT_THEME.text.primary,
     '--color-text-secondary': LIGHT_THEME.text.secondary,
     '--color-border-default': LIGHT_THEME.border.default,
@@ -338,6 +396,15 @@ export const CSS_VARIABLES = {
     '--color-sidebar-text': LIGHT_THEME.sidebar.text,
     '--color-header-bg': LIGHT_THEME.header.background,
     '--color-dropdown-bg': LIGHT_THEME.dropdown.background,
+    '--color-button-border-tertiary-hover-experimental': 'transparent',
+    '--color-button-background-primary-disabled': '#fff',
+    '--color-button-background-secondary': '#fff',
+    '--color-button-background-secondary-hover': '#f9f8f8',
+    '--color-button-background-secondary-active': '#f5f3f3',
+    '--color-button-background-tertiary-experimental': 'rgba(55, 23, 23, .03)',
+    '--color-button-background-tertiary-hover-experimental': 'rgba(55, 23, 23, .05)',
+    '--color-button-background-subtle': 'transparent',
+    '--color-button-background-subtle-pressed': '#dbe0fd',
     '--color-success-text': '#66a88b',
     '--color-button-success-border-pressed': '#32695d',
   },

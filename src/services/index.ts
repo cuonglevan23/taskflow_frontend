@@ -3,17 +3,14 @@
  * Central export file for all task-related services
  */
 
-// Project Task Services
-export { projectTaskService } from './projects';
+// Task Activity Services
+export { TaskActivityService, getActivityConfig, groupActivitiesByDate } from './taskActivityService';
 export type {
-  CreateProjectTaskRequest,
-  UpdateProjectTaskRequest,
-  ProjectTaskFilters,
-  ProjectTaskResponseDto,
-  ProjectTaskPage,
-  ProjectTaskStats,
-  ProjectTaskAssignee,
-} from './projects';
+  TaskActivityResponseDto,
+  UserProfileDto,
+  TaskActivityType,
+  PaginatedActivitiesResponse
+} from './taskActivityService';
 
 // Team Task Services
 export { teamTaskService } from './teams';

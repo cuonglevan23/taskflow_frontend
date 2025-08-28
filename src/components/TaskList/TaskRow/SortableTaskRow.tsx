@@ -42,6 +42,19 @@ export const SortableTaskRow = ({
     zIndex: isDragging ? 1000 : 'auto',
   };
 
+  // Convert object format to string format for TaskRow
+  const handleTaskAssign = (taskId: string, assigneeIdOrEmail: string) => {
+    if (onTaskAssign) {
+      // Convert string to object format expected by parent
+      const assigneeData = {
+        id: assigneeIdOrEmail,
+        name: assigneeIdOrEmail,
+        email: assigneeIdOrEmail
+      };
+      onTaskAssign(taskId, assigneeData);
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="select-none">
       <TaskRow 
@@ -51,7 +64,7 @@ export const SortableTaskRow = ({
         onTaskEdit={onTaskEdit}
         onTaskDelete={onTaskDelete}
         onTaskStatusChange={onTaskStatusChange}
-        onTaskAssign={onTaskAssign}
+        onTaskAssign={handleTaskAssign}
         isDragging={isDragging}
         dragHandleProps={{ ...attributes, ...listeners }}
       />

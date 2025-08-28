@@ -7,6 +7,7 @@ import {
   COMMUNICATION_ICONS,
   DATA_ICONS,
   NAVIGATION_ICONS,
+  SIDEBAR_ICONS,
 } from "@/constants/icons";
 import { Star } from "lucide-react";
 
@@ -82,6 +83,24 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
     showTabsPlus: false,
   },
 
+  '/newsfeed': {
+    title: 'NewsFeed',
+    avatarConfig: {
+      type: 'icon',
+      icon: SIDEBAR_ICONS.newsfeed,
+      bgColor: 'orange-500',
+    },
+    navItems: [
+      {
+        label: 'Feed',
+        href: '/newsfeed',
+        icon: SIDEBAR_ICONS.newsfeed,
+      },
+    ],
+    actions: [],
+    showTabsPlus: false,
+  },
+
   '/my-tasks': {
     title: 'My tasks',
     avatarConfig: {
@@ -108,6 +127,11 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
         label: 'Dashboard',
         href: '/my-tasks/dashboard',
         icon: LAYOUT_ICONS.timeline,
+      },
+      {
+        label: 'Notes',
+        href: '/my-tasks/notes',
+        icon: LAYOUT_ICONS.notes,
       },
     ],
     actions: [],

@@ -1,6 +1,8 @@
 /**
- * Sidebar Constants
- * Centralize magic strings and configuration
+ * Sidebar Constants// Common CSS classes with theme-based hover styles
+export const SIDEBAR_CLASSES = {
+  CONTAINER: "fixed top-12 left-0 h-[calc(100vh-3rem)] z-40 transform transition-all duration-300 ease-in-out flex flex-col",
+  BACKDROP: "fixed inset-0 bg-black bg-opacity-50 z-30",Centralize magic strings and configuration
  */
 
 import { DARK_THEME } from "@/constants/theme";
@@ -24,8 +26,8 @@ export const SIDEBAR_DIMENSIONS = {
 
 // Common CSS classes with theme-based hover styles
 export const SIDEBAR_CLASSES = {
-  CONTAINER: "fixed top-12 left-0 h-[calc(100vh-3rem)] z-50 transform transition-all duration-300 ease-in-out flex flex-col",
-  BACKDROP: "fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden",
+  CONTAINER: "fixed top-12 left-0 h-[calc(100vh-3rem)] z-[60] transform transition-all duration-300 ease-in-out flex flex-col",
+  BACKDROP: "fixed inset-0 bg-opacity-50 z-[55]",
   SECTION_HEADER: `flex items-center justify-between w-full text-xs font-semibold uppercase tracking-wider mb-2 px-2 py-1 transition-colors`,
   NAV_ITEM_BASE: "flex items-center rounded text-sm font-medium transition-colors group",
   NAV_ITEM_ACTIVE: "bg-orange-600 text-white",

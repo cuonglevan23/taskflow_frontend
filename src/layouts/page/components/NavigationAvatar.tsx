@@ -45,12 +45,18 @@ const NavigationAvatar = memo(({ config, size = 'md' }: NavigationAvatarProps) =
 
   // Handle user avatar type - use real backend user data
   if (config.type === 'user') {
+
+
     return (
       <UserAvatar
         user={user}
+        name={user?.name}
+        email={user?.email}
+        avatar={user?.avatar}
         size={size}
         showTooltip={true}
         fallbackColor={`bg-${getBgColor(config.bgColor)}`}
+        className="ring-2 ring-gray-600"
       />
     );
   }

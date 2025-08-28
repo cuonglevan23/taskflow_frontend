@@ -5,11 +5,25 @@
 
 /* Base styles and theme variables */
 :root {
-  /* Default to dark to avoid white flash before hydration */
-  --color-background-primary: #1e1f21;
-  --color-text-primary: #e2e8f0;
-  --color-text-secondary: #94a3b8;
-  --color-border-default: #424244;
+  /* Light theme variables - default */
+  --color-background-primary: #ffffff;
+  --color-background-weak: #fff;
+  --color-text: #1e1f21;
+  --color-text-weak: #6d6e6f;
+  --color-text-primary: #1e1f21;
+  --color-text-secondary: #475569;
+  --color-border-default: #e2e8f0;
+  --color-button-border-tertiary-hover-experimental: transparent;
+  --color-button-background-primary-disabled: #fff;
+  --color-button-background-secondary: #fff;
+  --color-button-background-secondary-hover: #f9f8f8;
+  --color-button-background-secondary-active: #f5f3f3;
+  --color-button-background-tertiary-experimental: rgba(55, 23, 23, .03);
+  --color-button-background-tertiary-hover-experimental: rgba(55, 23, 23, .05);
+  --color-button-background-subtle: transparent;
+  --color-button-background-subtle-pressed: #dbe0fd;
+  
+  /* Dark theme overrides */
   --color-navigation-icon: #a2a0a2;
   --color-navigation-text: #f5f4f3;
   
@@ -18,22 +32,94 @@
   --color-navigation-search-background-strong: #565557;
   --color-navigation-search-background-active: #1e1f21;
   
+  /* Board overflow fixes */
+  --board-column-width: 20rem; /* 320px */
+  --board-max-height: calc(100vh - 8rem); /* Account for header and padding */
+  
   /* Card and elevation variables */
-  --color-elevation-small: 0 0 0 1px #424244, 0 1px 4px 0 rgba(0, 0, 0, .24);
-  --color-card-background: #2a2b2d;
+  --color-elevation-small: 0 0 0 1px #e2e8f0, 0 1px 4px 0 rgba(0, 0, 0, .1);
+  --color-card-background: #ffffff;
 
-  /* shadcn/ui compatibility variables (used by bg-background, text-foreground, etc.) */ /* hsl for #0f172a */ --radius: 0.625rem; --background: oklch(1 0 0); --foreground: oklch(0.145 0 0); --card: oklch(1 0 0); --card-foreground: oklch(0.145 0 0); --popover: oklch(1 0 0); --popover-foreground: oklch(0.145 0 0); --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0); --secondary: oklch(0.97 0 0); --secondary-foreground: oklch(0.205 0 0); --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0); --accent: oklch(0.97 0 0); --accent-foreground: oklch(0.205 0 0); --destructive: oklch(0.577 0.245 27.325); --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0); --chart-1: oklch(0.646 0.222 41.116); --chart-2: oklch(0.6 0.118 184.704); --chart-3: oklch(0.398 0.07 227.392); --chart-4: oklch(0.828 0.189 84.429); --chart-5: oklch(0.769 0.188 70.08); --sidebar: oklch(0.985 0 0); --sidebar-foreground: oklch(0.145 0 0); --sidebar-primary: oklch(0.205 0 0); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.97 0 0); --sidebar-accent-foreground: oklch(0.205 0 0); --sidebar-border: oklch(0.922 0 0); --sidebar-ring: oklch(0.708 0 0);
+  /* shadcn/ui compatibility variables (used by bg-background, text-foreground, etc.) */ 
+  /* hsl for #0f172a */ 
+  --radius: 0.625rem; 
+  --background: oklch(1 0 0); 
+  --foreground: oklch(0.145 0 0); 
+  --card: oklch(1 0 0); 
+  --card-foreground: oklch(0.145 0 0); 
+  --popover: oklch(1 0 0); 
+  --popover-foreground: oklch(0.145 0 0); 
+  --primary: oklch(0.205 0 0); 
+  --primary-foreground: oklch(0.985 0 0); 
+  --secondary: oklch(0.97 0 0); 
+  --secondary-foreground: oklch(0.205 0 0); 
+  --muted: oklch(0.97 0 0); 
+  --muted-foreground: oklch(0.556 0 0); 
+  --accent: oklch(0.97 0 0); 
+  --accent-foreground: oklch(0.205 0 0); 
+  --destructive: oklch(0.577 0.245 27.325); 
+  --border: oklch(0.922 0 0); 
+  --input: oklch(0.922 0 0); 
+  --ring: oklch(0.708 0 0); 
+  --chart-1: oklch(0.646 0.222 41.116); 
+  --chart-2: oklch(0.6 0.118 184.704); 
+  --chart-3: oklch(0.398 0.07 227.392); 
+  --chart-4: oklch(0.828 0.189 84.429); 
+  --chart-5: oklch(0.769 0.188 70.08); 
+  --sidebar: oklch(0.985 0 0); 
+  --sidebar-foreground: oklch(0.145 0 0); 
+  --sidebar-primary: oklch(0.205 0 0); 
+  --sidebar-primary-foreground: oklch(0.985 0 0); 
+  --sidebar-accent: oklch(0.97 0 0); 
+  --sidebar-accent-foreground: oklch(0.205 0 0); 
+  --sidebar-border: oklch(0.922 0 0); 
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 /* Light theme override */
 :root[class~="light"] {
   --color-background-primary: #ffffff;
-  --color-text-primary: #213547;
-  --color-text-secondary: #64748b;
+  --color-background-weak: #fff;
+  --color-text: #1e1f21;
+  --color-text-weak: #6d6e6f;
+  --color-text-primary: #1e1f21;
+  --color-text-secondary: #475569;
+  --color-border-default: #e2e8f0;
+  --color-button-border-tertiary-hover-experimental: transparent;
+  --color-button-background-primary-disabled: #fff;
+  --color-button-background-secondary: #fff;
+  --color-button-background-secondary-hover: #f9f8f8;
+  --color-button-background-secondary-active: #f5f3f3;
+  --color-button-background-tertiary-experimental: rgba(55, 23, 23, .03);
+  --color-button-background-tertiary-hover-experimental: rgba(55, 23, 23, .05);
+  --color-button-background-subtle: transparent;
+  --color-button-background-subtle-pressed: #dbe0fd;
+  --color-card-background: #ffffff;
+  --color-elevation-small: 0 0 0 1px #e2e8f0, 0 1px 4px 0 rgba(0, 0, 0, .1);
 
   /* shadcn/ui compatibility */
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
+}
+
+/* Dark theme override */
+:root[class~="dark"] {
+  --color-background-primary: #1e1f21;
+  --color-background-weak: #2a2b2d;
+  --color-text: #e2e8f0;
+  --color-text-weak: #94a3b8;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-border-default: #424244;
+  --color-button-background-secondary: #2a2b2d;
+  --color-button-background-secondary-hover: #334155;
+  --color-button-background-secondary-active: #475569;
+  --color-card-background: #2a2b2d;
+  --color-elevation-small: 0 0 0 1px #424244, 0 1px 4px 0 rgba(0, 0, 0, .24);
+
+  /* shadcn/ui compatibility */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
 }
 
 .custom-date::-webkit-calendar-picker-indicator {
@@ -295,7 +381,114 @@ main {
 
 /* Custom utility classes for strategy map */
 @layer utilities {
+  /* Board specific utilities */
+  .board-column {
+    width: var(--board-column-width);
+    max-height: var(--board-max-height);
+  }
+  
+  .board-task-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  .text-truncate-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .multiline-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
   .strategy-button-hover:hover {
     background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Custom responsive utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom breakpoint for extra small screens */
+  @media (min-width: 375px) {
+    .xs\:inline {
+      display: inline;
+    }
+    
+    .xs\:block {
+      display: block;
+    }
+    
+    .xs\:flex {
+      display: flex;
+    }
+  }
+
+  /* Profile specific responsive utilities */
+  .profile-avatar-responsive {
+    @apply w-32 h-32;
+  }
+  
+  @media (min-width: 640px) {
+    .profile-avatar-responsive {
+      @apply w-40 h-40;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .profile-avatar-responsive {
+      @apply w-48 h-48;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .profile-avatar-responsive {
+      @apply w-52 h-52;
+    }
+  }
+
+  /* Enhanced hover effects */
+  .profile-nav-tab {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .profile-nav-tab:hover {
+    transform: translateY(-1px);
+  }
+  
+  .profile-nav-tab.active {
+    transform: translateY(-2px);
+  }
+
+  /* Responsive sidebar utilities */
+  @media (min-width: 1024px) {
+    .sidebar-responsive-offset {
+      transition: margin-left 300ms ease-in-out;
+    }
+    
+    .sidebar-responsive-offset.sidebar-open {
+      margin-left: 16rem; /* w-64 */
+    }
+    
+    .sidebar-responsive-offset.sidebar-collapsed {
+      margin-left: 4rem; /* w-16 */
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .sidebar-responsive-offset {
+      margin-left: 0 !important;
+    }
   }
 }

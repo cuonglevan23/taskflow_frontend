@@ -33,8 +33,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments/task/${taskId}${queryString}`;
 
-    console.log('📤 Proxying request to:', url);
-
     const backendResponse = await fetch(url, {
       method: 'GET',
       headers: {

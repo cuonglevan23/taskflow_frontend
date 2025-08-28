@@ -28,14 +28,14 @@ const TaskDetailFooter = ({
   const numericTaskId = taskId ? parseInt(taskId, 10) : null;
   
   // Use the comments hook for actions
-  const { createComment, isCreating } = useCommentActions(numericTaskId);
+  const { addComment, isSubmitting } = useCommentActions(numericTaskId);
   
   // Handle comment submission
   const handleCreateComment = async () => {
     if (!comment.trim()) return;
     
     try {
-      await createComment(comment.trim());
+      await addComment(comment.trim());
       setComment('');
       setShowCommentEditor(false);
     } catch (error: unknown) {
@@ -131,9 +131,9 @@ const TaskDetailFooter = ({
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-500 text-white text-sm h-8 px-4 font-medium transition-colors shadow-sm"
                       onClick={handleCreateComment}
-                      disabled={isCreating || !comment.trim()}
+                      disabled={isSubmitting || !comment.trim()}
                     >
-                      {isCreating ? 'Posting...' : 'Comment'}
+                      {isSubmitting ? 'Posting...' : 'Comment'}
                     </Button>
                   </div>
                 </div>
@@ -198,15 +198,10 @@ const TaskDetailFooter = ({
               <Button variant="ghost" size="sm" className="w-8 h-8 rounded-full border-2 border-dashed border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300 -ml-1">
                 <Plus className="w-3 h-3" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300 text-sm font-medium ml-1">
-                +
-              </Button>
+
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="flex items-center gap-2 text-gray-400 hover:text-gray-200 transition-colors">
-            <Globe className="w-4 h-4" />
-            <span className="text-sm">Leave task</span>
-          </Button>
+
         </div>
       </div>
     </div>

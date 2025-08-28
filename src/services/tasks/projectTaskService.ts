@@ -1,5 +1,54 @@
 // Project Task Service - API integration for project tasks
 import { api } from '@/lib/api';
+import type { AxiosError } from 'axios';
+
+// Proper TypeScript interfaces instead of any
+interface Subtask {
+  id: number;
+  title: string;
+  completed: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ProjectTaskResponse {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  projectId: number;
+  assigneeId?: number;
+  assigneeName?: string;
+  assigneeEmail?: string;
+  additionalAssignees: Array<{
+    id: number;
+    name: string;
+    email: string;
+  }>;
+  subtasks: Subtask[];
+  subtaskCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateProjectTaskData {
+  title: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: number;
+  dueDate?: string;
+}
+
+interface UpdateProjectTaskData {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: number;
+  dueDate?: string;
+}
 
 // TypeScript interfaces based on API documentation
 export interface CreateProjectTaskRequest {
@@ -251,6 +300,75 @@ export const projectTaskService = {
       return response.data;
     } catch (error) {
       console.error('❌ Failed to fetch subtasks:', taskId, error);
+      throw error;
+    }
+  },
+
+  // Get tasks for a specific project
+  getProjectTasks: async (projectId: string | number): Promise<ProjectTaskResponse[]> => {
+    try {
+      const response = await api.get<ProjectTaskResponse[]>(`/api/projects/${projectId}/tasks`);
+      return response.data || [];
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+      console.error(`❌ Project Tasks API failed with status ${status}:`, axiosError.message);
+
+      if (status === 404) {
+        console.warn('🚧 Project not found or no tasks available');
+        return [];
+      } else if (status === 500) {
+        console.warn('💥 Backend server error on project tasks');
+      }
+
+      // Return empty array as fallback instead of throwing
+      return [];
+    }
+  },
+
+  // Create new task in project
+  createProjectTask: async (projectId: string | number, taskData: CreateProjectTaskData): Promise<ProjectTaskResponse> => {
+    try {
+      const response = await api.post<ProjectTaskResponse>(`/api/projects/${projectId}/tasks`, taskData);
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to create project task:', axiosError.message);
+      throw error;
+    }
+  },
+
+  // Update project task
+  updateProjectTask: async (projectId: string | number, taskId: string | number, taskData: UpdateProjectTaskData): Promise<ProjectTaskResponse> => {
+    try {
+      const response = await api.put<ProjectTaskResponse>(`/api/projects/${projectId}/tasks/${taskId}`, taskData);
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to update project task:', axiosError.message);
+      throw error;
+    }
+  },
+
+  // Delete project task
+  deleteProjectTask: async (projectId: string | number, taskId: string | number): Promise<void> => {
+    try {
+      await api.delete(`/api/projects/${projectId}/tasks/${taskId}`);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to delete project task:', axiosError.message);
+      throw error;
+    }
+  },
+
+  // Get single project task
+  getProjectTask: async (projectId: string | number, taskId: string | number): Promise<ProjectTaskResponse> => {
+    try {
+      const response = await api.get<ProjectTaskResponse>(`/api/projects/${projectId}/tasks/${taskId}`);
+      return response.data;
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to get project task:', axiosError.message);
       throw error;
     }
   }

@@ -35,7 +35,8 @@ import {
   Phone,
   Video,
   Send,
-  
+  Rss, // Added for NewsFeed
+
   // Status Icons
   Check,
   AlertCircle,
@@ -51,6 +52,7 @@ import {
   Download,
   Upload,
   Paperclip,
+  StickyNote,
   
   // Arrow & Navigation Icons
   ArrowRight,
@@ -194,6 +196,7 @@ export const LAYOUT_ICONS = {
   calendar: Calendar,
   timeline: BarChart,
   board: Kanban,
+  notes: StickyNote,
 } as const;
 
 // Theme Icons
@@ -244,6 +247,7 @@ export const SIDEBAR_ICONS = {
   home: CustomHomeIcon,
   myTasks: CustomTaskIcon,
   inbox: CustomInboxIcon,
+  newsfeed: Rss, // Added NewsFeed icon
   reporting: CustomReportingIcon,
   goals: CustomGoalIcon,
   projects: Folder,
@@ -326,4 +330,4 @@ export const DEFAULT_ICON_CONFIG = {
   size: 'md' as IconSize,
   strokeWidth: 2,
   className: '',
-} as const; 
+} as const;

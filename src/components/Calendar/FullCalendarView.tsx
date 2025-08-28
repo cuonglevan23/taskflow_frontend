@@ -7,7 +7,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import type { Task } from "@/types";
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
 interface CalendarEvent {
   id: string;
@@ -61,11 +61,7 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
       let startDate: string;
       let endDate: string | undefined;
       
-      console.log('📅 Processing task for calendar:', {
-        id: task.id,
-        startDate: task.startDate,
-        deadline: task.deadline
-      });      // Handle different date formats for start date
+      // Handle different date formats for start date
       if (task.startDate) {
         if (Array.isArray(task.startDate) && task.startDate.length >= 3) {
           const [year, month, day] = task.startDate.map(Number);
@@ -120,25 +116,22 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
         // Parse deadline (end date)
         const taskEndDate = new Date(task.deadline);
         
-        console.log('🔍 Project Calendar - Task dates:', {
-          taskId: task.id,
-          title: task.title,
-          startDate: taskStartDate.toISOString().split('T')[0],
-          deadline: taskEndDate.toISOString().split('T')[0],
-          isMultiDay: taskEndDate.getTime() !== taskStartDate.getTime()
-        });
+        // Check if multi-day task
+        const isMultiDay = taskEndDate.getTime() !== taskStartDate.getTime();
         
-        // Always set endDate for tasks with deadline (even if same as start date)
-        // This ensures the event is resizable in FullCalendar
-        // For FullCalendar, we need EXCLUSIVE end date (next day after actual end)
-        const nextDay = new Date(taskEndDate);
-        nextDay.setDate(nextDay.getDate() + 1);
-        const year = nextDay.getFullYear();
-        const month = String(nextDay.getMonth() + 1).padStart(2, '0');
-        const day = String(nextDay.getDate()).padStart(2, '0');
-        endDate = `${year}-${month}-${day}`;
+        if (isMultiDay) {
+          // For multi-day tasks, FullCalendar needs EXCLUSIVE end date (next day after actual end)
+          const nextDay = new Date(taskEndDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          const year = nextDay.getFullYear();
+          const month = String(nextDay.getMonth() + 1).padStart(2, '0');
+          const day = String(nextDay.getDate()).padStart(2, '0');
+          endDate = `${year}-${month}-${day}`;
+        } else {
+          // For single-day tasks, end date same as start date
+          endDate = startDate;
+        }
             
-        console.log('📅 Calendar event dates will be:', { startDate, endDate });
       } else if (task.dueDate && task.startDate && task.dueDate !== 'No deadline') {
         // Handle dueDate vs startDate for multi-day display
         let taskStartDate: Date;
@@ -189,28 +182,13 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
       const isCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
       const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
 
-      // Check if this task is a multiday task
+      // Check if this task is a multiday task - SIMPLE
       let hasMultipleDays = false;
       if (task.startDate && task.deadline) {
-        const startDateStr = typeof task.startDate === 'string' 
-          ? task.startDate 
-          : new Date(task.startDate).toISOString().split('T')[0];
-          
-        const deadlineStr = typeof task.deadline === 'string' 
-          ? task.deadline 
-          : new Date(task.deadline).toISOString().split('T')[0];
-          
+        const startDateStr = task.startDate.toISOString().split('T')[0];
+        const deadlineStr = task.deadline;
         hasMultipleDays = startDateStr !== deadlineStr;
       }
-        
-      console.log('🎯 Task multiday status:', {
-        id: task.id,
-        title: task.title,
-        startDate: task.startDate,
-        deadline: task.deadline,
-        hasMultipleDays,
-        endDate
-      });
 
 
 
@@ -370,7 +348,6 @@ export const FullCalendarView = ({
       adjustedEndDate.setDate(adjustedEndDate.getDate() - 1);
       endDate = adjustedEndDate;
       
-      console.log('📅 FullCalendarView: Adjusted end date:', endDate.toISOString().split('T')[0]);
     } else {
       endDate = startDate;
     }
@@ -384,13 +361,6 @@ export const FullCalendarView = ({
     
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
-    
-    console.log('🔄 FullCalendarView: Resizing task with formatted dates:', { 
-      taskId, 
-      formattedStartDate, 
-      formattedEndDate,
-      daysSpan: Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    });
     
     onEventResize(taskId, formattedStartDate, formattedEndDate);
   }, [onEventResize]);
@@ -427,14 +397,28 @@ export const FullCalendarView = ({
   // Custom event content renderer to show avatars
   const renderEventContent = useCallback((eventInfo: { event: { title: string; extendedProps?: { originalTask?: unknown } } }) => {
     const task = eventInfo.event.extendedProps?.originalTask as {
-      assignees?: { id: string; name: string }[];
+      assignees?: { id: string; name: string; avatar?: string; email?: string }[];
       assignedEmails?: string[];
     } | undefined;
     
-    if (!task) return null;
+    // Debug log for calendar task data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Calendar task data:', {
+        title: eventInfo.event.title,
+        hasTask: !!task,
+        assigneesCount: task?.assignees?.length || 0,
+        assignedEmailsCount: task?.assignedEmails?.length || 0
+      });
+    }
+    
+    if (!task) {
+      return null;
+    }
 
     const assignedEmails = task.assignedEmails || [];
     const assignees = task.assignees || [];
+    
+    // Since assignees type doesn't have email field, we'll show both but limit to avoid overcrowding
     const totalAssignees = assignees.length + assignedEmails.length;
 
     return (
@@ -447,30 +431,43 @@ export const FullCalendarView = ({
           <div className="flex items-center -space-x-1 flex-shrink-0">
             {/* Show first 2 assignees */}
             {assignees.slice(0, 2).map((assignee, index: number) => (
-              <Avatar
+              <UserAvatar
                 key={assignee.id || index}
                 name={assignee.name}
+                avatar={assignee.avatar}
+                email={assignee.email}
                 size="sm"
                 className="w-4 h-4 border border-white"
               />
             ))}
             
-            {/* Show first 2 email assignees */}
-            {assignedEmails.slice(0, Math.max(0, 2 - assignees.length)).map((email: string) => (
-              <Avatar
-                key={email}
-                name={email}
-                size="sm"
-                className="w-4 h-4 border border-white"
-              />
-            ))}
+            {/* Show assigned emails - filter out emails that already have user objects */}
+            {assignedEmails
+              .filter((email: string) => 
+                !assignees.some(assignee => assignee.email === email)
+              )
+              .slice(0, 2)
+              .map((email: string) => (
+                <UserAvatar
+                  key={email}
+                  name={email}
+                  size="sm"
+                  className="w-4 h-4 border border-white"
+                />
+              ))}
             
-            {/* Show count if more than 2 total */}
-            {totalAssignees > 2 && (
-              <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-white">
-                +{totalAssignees - 2}
-              </div>
-            )}
+            {/* Show count if more than 4 total (excluding duplicates) */}
+            {(() => {
+              const uniqueEmailsCount = assignedEmails.filter((email: string) => 
+                !assignees.some(assignee => assignee.email === email)
+              ).length;
+              const totalUniqueAssignees = assignees.length + uniqueEmailsCount;
+              return totalUniqueAssignees > 4 && (
+                <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                  +{totalUniqueAssignees - 4}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

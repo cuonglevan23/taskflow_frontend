@@ -26,8 +26,12 @@ export default function DashboardCard({
 
   return (
     <div
-      className="rounded-lg shadow p-4 min-h-[400px]"
-      style={{ backgroundColor: theme.background.secondary }}
+      className="rounded-lg shadow p-4 h-full flex flex-col"
+      style={{ 
+        backgroundColor: theme.background.secondary,
+        height: '100%',
+        maxHeight: '400px'
+      }}
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
@@ -144,7 +148,7 @@ export default function DashboardCard({
 
       {/* Content area*/}
       <div
-        className="mt-4 text-sm italic"
+        className="mt-4 text-sm italic flex-1 overflow-y-auto"
         style={{ color: theme.text.secondary }}
       >
         {children}

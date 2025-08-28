@@ -2,11 +2,18 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { Button } from "@/components/ui/Button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { API_BASE_URL } from "@/lib/constants"
 import { FcGoogle } from "react-icons/fc"
 import { Loader2 } from "lucide-react"
+import { LIGHT_THEME } from '@/constants/theme'
+
+// TaskFlow Logo Component
+const TaskFlowLogo = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="9.5" cy="12.5" r="6.5" fill="#3b82f6"/>
+    <circle cx="22.5" cy="12.5" r="6.5" fill="#3b82f6"/>
+    <circle cx="16" cy="22.5" r="6.5" fill="#3b82f6"/>
+  </svg>
+)
 
 export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
@@ -15,94 +22,102 @@ export function LoginForm() {
     try {
       setIsGoogleLoading(true)
       
-      // Use backend OAuth flow with NextAuth integration
-      const apiUrl = API_BASE_URL
-      console.log('Redirecting to backend OAuth:', `${apiUrl}/api/auth/google/url`)
-      
-      // Get Google OAuth URL from backend
-      const response = await fetch(`${apiUrl}/api/auth/google/url`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'cors',
-        cache: 'no-cache',
+      // Simple NextAuth Google sign-in - no complex logic needed!
+      await signIn("google", {
+        callbackUrl: "/home",
+        redirect: true
       })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to get Google OAuth URL: ${response.status}`)
-      }
-      
-      const responseData = await response.json()
-      const { authUrl } = responseData
-      
-      if (!authUrl) {
-        throw new Error('No authUrl received from backend')
-      }
-      
-      // Redirect to Google OAuth via backend
-      window.location.href = authUrl
     } catch (error) {
-      console.error("Google OAuth initialization failed:", error)
-      
-      // Fallback: Direct redirect to backend OAuth endpoint
-      const fallbackUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/google`
-      console.log('Fallback redirect to:', fallbackUrl)
-      window.location.href = fallbackUrl
+      console.error("Google sign-in failed:", error)
     } finally {
       setIsGoogleLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Welcome Back
-        </CardTitle>
-        <CardDescription className="text-center">
-          Sign in to your account to continue
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleLogin}
-          disabled={isGoogleLoading}
-        >
-          {isGoogleLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <FcGoogle className="mr-2 h-4 w-4" />
-          )}
-          Continue with Google
-        </Button>
-        
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Secure Authentication
-            </span>
-          </div>
-        </div>
+    <div className="w-full max-w-sm mx-auto space-y-6">
+      {/* TaskFlow Logo */}
+      <div className="flex justify-center py-4">
+        <TaskFlowLogo />
+      </div>
 
-        <div className="text-center text-sm text-muted-foreground">
-          <p>
-            By signing in, you agree to our{" "}
-            <a href="/terms" className="underline underline-offset-4 hover:text-primary">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
-              Privacy Policy
-            </a>
-          </p>
+      {/* Welcome Text */}
+      <div className="text-center">
+        <h1 
+          className="text-2xl font-normal"
+          style={{ color: LIGHT_THEME.text.primary }}
+        >
+          Welcome to TaskFlow
+        </h1>
+        <p 
+          className="text-sm mt-2"
+          style={{ color: LIGHT_THEME.text.weak }}
+        >
+          To get started, please sign in
+        </p>
+      </div>
+
+      {/* Google Sign In Button */}
+      <button
+        className="w-full h-12 font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200 border flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{
+          backgroundColor: LIGHT_THEME.button.secondary.background,
+          borderColor: LIGHT_THEME.button.secondary.border,
+          color: LIGHT_THEME.text.primary
+        }}
+        onMouseEnter={(e) => {
+          if (!isGoogleLoading) {
+            e.currentTarget.style.backgroundColor = LIGHT_THEME.button.secondary.hover;
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isGoogleLoading) {
+            e.currentTarget.style.backgroundColor = LIGHT_THEME.button.secondary.background;
+          }
+        }}
+        onClick={handleGoogleLogin}
+        disabled={isGoogleLoading}
+      >
+        {isGoogleLoading ? (
+          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+        ) : (
+          <FcGoogle className="mr-3 h-5 w-5" />
+        )}
+        Continue with Google
+      </button>
+
+      {/* Footer Links */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-xs px-4"
+             style={{ color: LIGHT_THEME.text.weak }}>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">TaskFlow.com</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Support</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Integrations</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Forum</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Developers & API</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Resources</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Guide</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Templates</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Pricing</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Terms</a>
+          <span>•</span>
+          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Privacy</a>
         </div>
-      </CardContent>
-    </Card>
+        <div className="mt-2 text-xs px-4" style={{ color: LIGHT_THEME.text.weak }}>
+          This site is protected by reCAPTCHA and the Google{' '}
+          <a href="#" className="hover:text-gray-600">Privacy Policy</a> and{' '}
+          <a href="#" className="hover:text-gray-600">Terms of Service</a> apply.
+        </div>
+      </div>
+    </div>
   )
 }

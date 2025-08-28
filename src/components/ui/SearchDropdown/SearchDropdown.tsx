@@ -10,7 +10,7 @@ import {
   Target,
   Clock,
 } from "lucide-react";
-import Avatar from "@/components/ui/Avatar/Avatar";
+import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import Button from "@/components/ui/Button/Button";
 import { DARK_THEME } from "@/constants/theme";
 
@@ -92,7 +92,7 @@ const SearchResultItem = ({
       }}
     >
       {item.avatar ? (
-        <Avatar name={item.avatar} size="sm" className="w-6 h-6" />
+        <UserAvatar name={item.avatar} size="sm" className="w-6 h-6" />
       ) : (
         <div className="w-6 h-6 flex items-center justify-center" style={{ color: DARK_THEME.search.placeholder }}>
           <IconComponent size={16} />

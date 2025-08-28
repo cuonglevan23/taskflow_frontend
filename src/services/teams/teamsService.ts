@@ -1,6 +1,7 @@
 // Teams Service - Centralized team operations
 // Uses fetch for Next.js API routes instead of external backend
 import { api } from '@/lib/api';
+import type { Session } from 'next-auth';
 import type {
   Team,
   TeamResponseDto,
@@ -14,6 +15,30 @@ import type {
   TeamMember,
   TeamQueryParams
 } from '@/types/teams';
+
+// Backend member response type
+interface BackendMemberResponse {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  department?: string;
+  jobTitle?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  role?: string;
+  joinedAt?: string;
+  user?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    department?: string;
+    jobTitle?: string;
+    avatar?: string;
+    avatarUrl?: string;
+  };
+}
 
 // Transform backend response to frontend type
 const transformTeamResponse = (backendTeam: TeamResponseDto): Team => {
@@ -109,7 +134,7 @@ export const teamsService = {
   },
 
   // Create team (simple - just name and description)
-  createTeam: async (formData: CreateTeamFormData, userSession?: any): Promise<Team> => {
+  createTeam: async (formData: CreateTeamFormData, userSession?: Session): Promise<Team> => {
     try {
       // Prepare request data according to TEAM_CREATION_UPDATE.md
       // Don't send leader_id - let backend use current user from JWT automatically
@@ -233,7 +258,7 @@ export const teamsService = {
   getTeamMembers: async (teamId: number): Promise<TeamMember[]> => {
     try {
       console.log(`Fetching members for team ${teamId}...`);
-      const response = await api.get(`/api/teams/${teamId}/members`);
+      const response = await api.get<BackendMemberResponse[]>(`/api/teams/${teamId}/members`);
       console.log('API Response:', response);
       
       if (!response.data || !Array.isArray(response.data)) {
@@ -242,7 +267,7 @@ export const teamsService = {
       }
       
       // Transform the API response to match the TeamMember type
-      return response.data.map((member: any) => {
+      return response.data.map((member: BackendMemberResponse) => {
         // Debug log to check full backend structure first
         console.log('🔍 Full backend member data:', member);
         
@@ -260,25 +285,22 @@ export const teamsService = {
         // Combine firstName and lastName if available
         const name = userInfo.firstName && userInfo.lastName 
           ? `${userInfo.firstName} ${userInfo.lastName}`.trim()
-          : user.name || member.name || user.fullName || member.fullName || `User ${member.userId || member.id}`;
-          
+          : userInfo.firstName || userInfo.lastName || userInfo.email;
+
         return {
-          id: member.id,
-          userId: member.userId || user.id || member.id,
+          id: user.id || member.id,
           name: name,
-          email: userInfo.email || `user${member.userId || member.id}@example.com`,
-          role: (member.role || 'MEMBER').toUpperCase(),
-          status: (member.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'PENDING' | 'INACTIVE',
-          joinedAt: member.joinedAt || member.createdAt || new Date().toISOString(),
-          department: userInfo.department || 'Not specified',
-          aboutMe: user.aboutMe || member.aboutMe || '',
-          jobTitle: userInfo.jobTitle || '',
-          avatar: userInfo.avatar || ''
-        };
+          email: userInfo.email,
+          role: member.role || 'MEMBER',
+          joinedAt: member.joinedAt ? new Date(member.joinedAt) : new Date(),
+          avatar: userInfo.avatar,
+          department: userInfo.department,
+          jobTitle: userInfo.jobTitle,
+        } as TeamMember;
       });
     } catch (error) {
       console.error('❌ Failed to fetch team members:', error);
-      return [];
+      return []; // Return empty array instead of throwing to prevent UI crashes
     }
   },
 

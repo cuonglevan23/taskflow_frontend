@@ -4,7 +4,7 @@ import React from "react";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { KanbanBoard } from "@/components/features/KanbanBoard";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
-import { TaskListItem } from "@/components/TaskList/types";
+import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
 
 interface MyTaskBoardPageProps {
   searchValue?: string;
@@ -108,11 +108,24 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
 
   const handleTaskDelete = (taskId: string) => {
     actions.onTaskDelete(taskId);
+    closeTaskPanel();
+  };
+
+  const handleTaskStatusChange = (taskId: string, status: string) => {
+    const task = taskListItems.find(t => t.id === taskId);
+    if (task) {
+      const isCompleted = status === 'completed' || status === 'done' || status === 'DONE';
+      actions.onTaskEdit({ 
+        ...task, 
+        status: status as TaskStatus,
+        completed: isCompleted
+      });
+    }
   };
 
   return (
     <>
-      <div className="h-full overflow-hidden">
+      <div className="h-full flex flex-col min-h-0">
         <KanbanBoard
           searchValue={searchValue}
           tasks={taskListItems}
@@ -157,6 +170,7 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
         onClose={closeTaskPanel}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
+        onStatusChange={handleTaskStatusChange}
       />
     </>
   );

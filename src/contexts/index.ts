@@ -4,6 +4,7 @@ export { ProjectsProvider, useProjectsContext, PROJECT_COLORS } from './Projects
 export { TasksProvider, useTasksContext } from './TasksContext';
 export { NotificationProvider, useNotifications, useInboxNotifications, useHeaderNotifications, useBookmarkedNotifications, useArchivedNotifications } from './NotificationContext';
 
+
 // Type Exports for Global Data Models
 export type { 
   Project, 

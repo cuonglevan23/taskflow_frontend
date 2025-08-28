@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GripVertical, Calendar } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TaskRowProps } from './types';
@@ -17,8 +17,8 @@ const isSameDay = (date1: Date, date2: Date | null) => {
 import { TaskStatusButton } from './components/TaskStatusButton';
 import { TaskNameEdit } from './components/TaskNameEdit';
 import { TaskAssignees } from './components/TaskAssignees';
-import { TaskProjects } from './components/TaskProjects';
 import { TaskContextMenu } from './components/TaskContextMenu';
+import { TaskCommentIndicator } from './components/TaskCommentIndicator';
 
 import ButtonIcon from '@/components/ui/Button/ButtonIcon';
 
@@ -67,43 +67,28 @@ export const TaskRow = ({
     }
   };
 
-  const handleDateUpdate = (date: Date) => {
-    if (onTaskEdit) {
-      onTaskEdit({
-        ...task,
-        dueDate: date.toISOString().split('T')[0],
-        startDate: date.toISOString().split('T')[0]
-      });
-    }
-  };
-
-  const handleAddAssignee = (user: any) => {
-    onTaskAssign?.(task.id, user);
+  const handleAddAssignee = (user: { id: string; name: string; email?: string }) => {
+    console.log('🔍 TaskRow handleAddAssignee called with:', user);
+    // Pass user ID directly to onTaskAssign
+    const taskIdString = String(task.id);
+    const userIdString = String(user.id);
+    console.log('🔍 Calling onTaskAssign for user with:', { taskId: taskIdString, userId: userIdString });
+    onTaskAssign?.(taskIdString, userIdString);
   };
 
   const handleInviteUser = (email: string) => {
-    // Create a temporary user object for assignment
-    onTaskAssign?.(task.id, {
-      id: `temp-${Date.now()}`,
-      name: email,
-      email: email
-    });
-  };
-
-  const handleAssignProject = (project: any) => {
-    if (onTaskEdit) {
-      onTaskEdit({ ...task, project: project.name });
+    // Call onTaskAssign directly with email - backend will handle email lookup
+    if (onTaskAssign && email && email.trim()) {
+      const taskIdString = String(task.id);
+      const emailString = String(email).trim();
+      
+      // Explicit function call with proper arguments
+      try {
+        onTaskAssign(taskIdString, emailString);
+      } catch (error) {
+        console.error('Error calling onTaskAssign:', error);
+      }
     }
-  };
-
-  const handleCreateProject = (projectName: string) => {
-    if (onTaskEdit) {
-      onTaskEdit({ ...task, project: projectName });
-    }
-  };
-
-  const handleMoveToSection = (sectionId: string) => {
-    onMoveTask?.(task.id, sectionId);
   };
 
   // Task name editing handlers
@@ -122,23 +107,54 @@ export const TaskRow = ({
     setIsDatePickerOpen(!isDatePickerOpen);
   };
 
-  const handleDateChange = (dates) => {
-    const [start, end] = dates;
-    setStartDate(start);
-    setEndDate(end);
-    
-    if (start && onTaskEdit) {
-      const newStartDate = start.toISOString().split('T')[0];
-      const newEndDate = end ? end.toISOString().split('T')[0] : newStartDate;
+  const handleDateChange = (dates: [Date | null, Date | null] | Date | null) => {
+    if (Array.isArray(dates)) {
+      const [start, end] = dates;
+      setStartDate(start || new Date());
+      setEndDate(end);
       
-      onTaskEdit({
-        ...task,
-        startDate: newStartDate,
-        deadline: newEndDate
-      });
-    }
-    
-    if (end) {
+      // ✅ FIX: Chỉ gửi dữ liệu khi đã chọn xong cả range
+      if (start && end && onTaskEdit) {
+        const newStartDate = start.toISOString().split('T')[0];
+        const newEndDate = end.toISOString().split('T')[0];
+        
+        console.log('📅 DatePicker: Updating task date range', {
+          taskId: task.id,
+          startDate: newStartDate,
+          deadline: newEndDate
+        });
+        
+        onTaskEdit({
+          ...task,
+          startDate: newStartDate,
+          deadline: newEndDate
+        });
+      }
+      
+      // Đóng picker khi đã chọn xong range (có cả start và end)
+      if (start && end) {
+        setIsDatePickerOpen(false);
+      }
+    } else if (dates) {
+      // Single date selection - set cả startDate và deadline giống nhau
+      setStartDate(dates);
+      setEndDate(dates);
+      
+      if (onTaskEdit) {
+        const newDate = dates.toISOString().split('T')[0];
+        
+        console.log('📅 DatePicker: Updating task single date', {
+          taskId: task.id,
+          date: newDate
+        });
+        
+        onTaskEdit({
+          ...task,
+          startDate: newDate,
+          deadline: newDate
+        });
+      }
+      
       setIsDatePickerOpen(false);
     }
   };
@@ -147,20 +163,13 @@ export const TaskRow = ({
 
   // Format date for display
   const getFormattedDateDisplay = () => {
-    // Use endDate as the actual deadline for range display
     const dateData = {
       startDate: task.startDate,
-      deadline: task.endDate || task.deadline || task.dueDate, // Use endDate first for ranges
-      dueDate: task.dueDate,
-      endDate: task.endDate || task.deadline || task.dueDate
+      deadline: task.deadline,
+      dueDate: task.dueDate
     };
     
-
-    
-    const formattedDate = formatTaskDate(dateData);
-
-    
-    return formattedDate;
+    return formatTaskDate(dateData);
   };
 
   // Check if task is overdue
@@ -210,7 +219,7 @@ export const TaskRow = ({
     });
   };
 
-  const handleSelectUser = (user: any) => {
+  const handleSelectUser = (user: { id: string; name: string; email?: string }) => {
     handleAddAssignee(user);
     handleCancelAssignee();
   };
@@ -224,40 +233,6 @@ export const TaskRow = ({
     updateEditState({
       assigneeInputValue: value,
       showUserSuggestions: value.length > 0
-    });
-  };
-
-  // Project handlers
-  const handleStartAddProject = () => {
-    updateEditState({
-      showProjectInput: true,
-      projectInputValue: '',
-      showProjectSuggestions: true
-    });
-  };
-
-  const handleCancelProject = () => {
-    updateEditState({
-      showProjectInput: false,
-      projectInputValue: '',
-      showProjectSuggestions: false
-    });
-  };
-
-  const handleSelectProject = (project: any) => {
-    handleAssignProject(project);
-    handleCancelProject();
-  };
-
-  const handleCreateProjectAction = () => {
-    handleCreateProject(editState.projectInputValue);
-    handleCancelProject();
-  };
-
-  const handleUpdateProjectInput = (value: string) => {
-    updateEditState({
-      projectInputValue: value,
-      showProjectSuggestions: value.length > 0
     });
   };
 
@@ -418,25 +393,12 @@ export const TaskRow = ({
           onUpdateAssigneeInput={handleUpdateAssigneeInput}
         />
 
-        {/* Projects */}
-        <TaskProjects
-          task={task}
-          editState={editState}
-          onStartAddProject={handleStartAddProject}
-          onCancelProject={handleCancelProject}
-          onSelectProject={handleSelectProject}
-          onCreateProject={handleCreateProjectAction}
-          onUpdateProjectInput={handleUpdateProjectInput}
-        />
-
-        {/* Task Visibility */}
-        <div className="w-[140px] px-4">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 8h1m-1-4h1m4 4h1m-1-4h1M9 16h1" />
-            </svg>
-            <span className="truncate text-xs">My workspace</span>
-          </div>
+        {/* Comments Indicator */}
+        <div className="w-[60px] px-2 flex justify-center">
+          <TaskCommentIndicator
+            taskId={task.id}
+            initialCount={task.commentCount || 0}
+          />
         </div>
       </div>
 

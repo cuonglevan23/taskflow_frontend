@@ -1,7 +1,8 @@
 "use client";
 
-import PublicHeader from "./components/PublicHeader";
-import PublicFooter from "./components/PublicFooter";
+import React from "react";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -10,9 +11,11 @@ interface PublicLayoutProps {
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      <PublicHeader />
-      <main className="flex-1">{children}</main>
-      <PublicFooter />
+      <Header />
+      <main className="flex-1">
+        {children}
+      </main>
+      <Footer />
     </div>
   );
 }

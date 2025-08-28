@@ -5,12 +5,12 @@ import { useTheme } from "@/layouts/hooks/useTheme";
 import { useUser } from "@/contexts/UserContext";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
-import Avatar from "@/components/ui/Avatar/Avatar";
 import { FaPlus } from "react-icons/fa";
 import { BsCircle, BsCheckCircle } from "react-icons/bs";
 import { useTasksContext, type Task } from "@/contexts";
+import { CreateTaskDTO } from "@/types/task";
 import { useMyTasksSummary } from "@/hooks/tasks";
-import { useCreateTask, useUpdateTask, useDeleteTask, useUpdateTaskStatus } from "@/hooks/tasks/useTasksActions";
+import { useCreateTask, useUpdateTask } from "@/hooks/tasks/useTasksActions";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
@@ -18,29 +18,17 @@ const MyTasksCard = () => {
   const { user } = useUser();
 
   // Get UI state from context
-  const { globalFilters, globalSort, optimisticTaskStates, setOptimisticTaskState, clearOptimisticTaskState } = useTasksContext();
+  const { optimisticTaskStates, setOptimisticTaskState, clearOptimisticTaskState } = useTasksContext();
   
-  // Simple local task grouping function (without backend dependency)
-  const getTaskCountsByGroup = (tasks: Task[]) => {
-    const groups = { todo: 0, in_progress: 0, completed: 0, other: 0, total: tasks.length };
-    tasks.forEach(task => {
-      if (task.completed || task.status === 'DONE' || task.status === 'completed') {
-        groups.completed++;
-      } else if (task.status === 'IN_PROGRESS' || task.status === 'in-progress' || 
-                 task.status === 'TESTING' || task.status === 'REVIEW') {
-        groups.in_progress++;
-      } else if (task.status === 'TODO' || task.status === 'pending') {
-        groups.todo++;
-      } else {
-        groups.other++;
-      }
-    });
-    return groups;
-  };
+  // SWR mutation hooks - move before early returns
+  const { createTask } = useCreateTask();
+  const { updateTask } = useUpdateTask();
+  
+  // Local state for UI management
+  const [activeTab, setActiveTab] = React.useState<string>("upcoming");
+  const [showAllTasks, setShowAllTasks] = React.useState(false);
   
   // Use correct API for user's personal tasks - with error handling
-  // Use cached global data - no API calls
-  // ✅ FIX: Use same SWR data source as sidebar for consistency
   const { tasks, isLoading, error } = useMyTasksSummary({
     page: 0,
     size: 1000,
@@ -48,46 +36,7 @@ const MyTasksCard = () => {
     sortDir: 'desc'
   });
   
-  // Don't render if there's a 401 error to prevent infinite loops
-  if (error && (error.status === 401 || error.message?.includes('401'))) {
-    return null;
-  }
-  
-  // Remove stats API call due to 403 error - calculate from tasks instead
-  // const { stats: myTasksStats } = useMyTasksStats();
-  
-  // Calculate stats directly from tasks data to avoid 403 API errors
-  const globalTaskStats = tasks && Array.isArray(tasks) ? {
-    total: tasks.length,
-    byStatus: getTaskCountsByGroup(tasks),
-    overdue: tasks.filter(t => {
-      // Calculate overdue from dueDateISO since isOverdue might not be available
-      return t.dueDateISO && t.dueDateISO < new Date() && !t.completed && t.status !== 'completed';
-    }).length,
-    byPriority: {
-      HIGH: tasks.filter(t => t.priority === 'HIGH').length,
-      MEDIUM: tasks.filter(t => t.priority === 'MEDIUM').length,
-      LOW: tasks.filter(t => t.priority === 'LOW').length
-    }
-  } : {
-    total: 0,
-    byStatus: { TODO: 0, IN_PROGRESS: 0, COMPLETED: 0, OTHER: 0 },
-    overdue: 0,
-    byPriority: { HIGH: 0, MEDIUM: 0, LOW: 0 }
-  };
-  
-  // SWR mutation hooks - consistent with my-tasks/list
-  const { createTask, isCreating } = useCreateTask();
-  const { updateTask, isUpdating } = useUpdateTask();
-  const { deleteTask, isDeleting } = useDeleteTask();
-  const { updateTaskStatus, isUpdating: isStatusUpdating } = useUpdateTaskStatus();
-
-  // Local state for UI management
-  const [activeTab, setActiveTab] = React.useState<string>("upcoming");
-  const [showAllTasks, setShowAllTasks] = React.useState(false);
-  // taskStates replaced with shared optimistic state from context
-
-  // Computed values
+  // Computed values - memoize to avoid re-rendering
   const displayedTasks = React.useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return [];
 
@@ -166,6 +115,49 @@ const MyTasksCard = () => {
 
     return filteredCount > 4;
   }, [tasks, activeTab, optimisticTaskStates]);
+  
+  // Simple local task grouping function (without backend dependency)
+  const getTaskCountsByGroup = (tasks: Task[]) => {
+    const groups = { todo: 0, in_progress: 0, completed: 0, other: 0, total: tasks.length };
+    tasks.forEach(task => {
+      if (task.completed || task.status === 'DONE' || task.status === 'completed') {
+        groups.completed++;
+      } else if (task.status === 'IN_PROGRESS' || task.status === 'in-progress' || 
+                 task.status === 'TESTING' || task.status === 'REVIEW') {
+        groups.in_progress++;
+      } else if (task.status === 'TODO' || task.status === 'pending') {
+        groups.todo++;
+      } else {
+        groups.other++;
+      }
+    });
+    return groups;
+  };
+  
+  // Calculate stats directly from tasks data to avoid 403 API errors
+  const globalTaskStats = tasks && Array.isArray(tasks) ? {
+    total: tasks.length,
+    byStatus: getTaskCountsByGroup(tasks),
+    overdue: tasks.filter(t => {
+      // Calculate overdue from dueDateISO since isOverdue might not be available
+      return t.dueDateISO && t.dueDateISO < new Date() && !t.completed && t.status !== 'completed';
+    }).length,
+    byPriority: {
+      HIGH: tasks.filter(t => t.priority === 'HIGH').length,
+      MEDIUM: tasks.filter(t => t.priority === 'MEDIUM').length,
+      LOW: tasks.filter(t => t.priority === 'LOW').length
+    }
+  } : {
+    total: 0,
+    byStatus: { todo: 0, in_progress: 0, completed: 0, other: 0 },
+    overdue: 0,
+    byPriority: { HIGH: 0, MEDIUM: 0, LOW: 0 }
+  };
+  
+  // Don't render if there's a 401 error to prevent infinite loops
+  if (error && (error.status === 401 || error.message?.includes('401'))) {
+    return null;
+  }
 
   // Helper functions
   const toggleShowAll = () => setShowAllTasks(!showAllTasks);
@@ -188,7 +180,7 @@ const MyTasksCard = () => {
         const backendStatus = newCompleted ? 'completed' : 'todo';
         
         await updateTask({
-          id: typeof task.id === 'string' ? parseInt(task.id) : task.id,
+          id: task.id.toString(),
           data: {
             status: backendStatus
           }
@@ -204,7 +196,7 @@ const MyTasksCard = () => {
     }
   };
 
-  const handleAddTask = async (taskData: any) => {
+  const handleAddTask = async (taskData: CreateTaskDTO) => {
     try {
       await createTask(taskData);
     } catch (error) {
@@ -289,34 +281,48 @@ const MyTasksCard = () => {
 
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Avatar display for assignees */}
-            {((task as any).assignees?.length > 0 || (task as any).assignedEmails?.length > 0) && (
+            {(task.assignees?.length > 0 || task.assignedEmails?.length > 0) && (
               <div className="flex items-center -space-x-1">
                 {/* Show assignees */}
-                {((task as any).assignees || []).slice(0, 2).map((assignee: any, index: number) => (
-                  <Avatar
+                {task.assignees?.slice(0, 2).map((assignee: {id: string; name: string; email?: string; avatar?: string}, index: number) => (
+                  <UserAvatar
                     key={assignee.id || index}
                     name={assignee.name}
+                    avatar={assignee.avatar}
+                    email={assignee.email}
                     size="sm"
                     className="w-5 h-5 border border-white"
                   />
                 ))}
                 
-                {/* Show assigned emails */}
-                {((task as any).assignedEmails || []).slice(0, Math.max(0, 2 - ((task as any).assignees?.length || 0))).map((email: string) => (
-                  <Avatar
-                    key={email}
-                    name={email}
-                    size="sm"
-                    className="w-5 h-5 border border-white"
-                  />
-                ))}
+                {/* Show assigned emails - filter out emails that already have user objects */}
+                {(task.assignedEmails || [])
+                  .filter((email: string) => 
+                    !task.assignees?.some((assignee: {id: string; name: string; email?: string; avatar?: string}) => assignee.email === email)
+                  )
+                  .slice(0, 2)
+                  .map((email: string) => (
+                    <UserAvatar
+                      key={email}
+                      name={email}
+                      size="sm"
+                      className="w-5 h-5 border border-white"
+                    />
+                  ))}
                 
-                {/* Show count if more than 2 total */}
-                {(((task as any).assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) > 2 && (
-                  <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
-                    +{(((task as any).assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) - 2}
-                  </div>
-                )}
+                {/* Show count if more than 4 total (excluding duplicates) */}
+                {(() => {
+                  const uniqueEmailsCount = (task.assignedEmails || [])
+                    .filter((email: string) => 
+                      !task.assignees?.some((assignee: {id: string; name: string; email?: string; avatar?: string}) => assignee.email === email)
+                    ).length;
+                  const totalCount = (task.assignees?.length || 0) + uniqueEmailsCount;
+                  return totalCount > 4 && (
+                    <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                      +{totalCount - 4}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -390,13 +396,14 @@ const MyTasksCard = () => {
 
   // Business Logic using Hook
   const handleCreateTask = () => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const userId = typeof user?.id === 'string' ? parseInt(user.id) : user?.id || 1;
     handleAddTask({
       title: "New task",
-      dueDate: "Today",
-      completed: false,
+      startDate: today,
       priority: 'MEDIUM',
       status: 'TODO',
-      hasTag: false
+      creatorId: userId
     });
   };
 
@@ -451,11 +458,12 @@ const MyTasksCard = () => {
       createAction={createAction}
       showMoreButton={showMoreButton}
       onMenuClick={handleMenuClick}
+      fullHeight={true}
     >
-      <div className="space-y-0">
+      <div className={`space-y-0 h-full flex flex-col ${showAllTasks ? 'overflow-hidden' : ''}`}>
         {/* Loading state */}
         {isLoading && (
-          <div className="flex items-center justify-center py-4">
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
             <span className="text-sm" style={{ color: theme.text.secondary }}>
               Loading...
             </span>
@@ -464,23 +472,25 @@ const MyTasksCard = () => {
         
         {/* Error state */}
         {!isLoading && error && (
-          <div className="flex items-center justify-center py-4">
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
             <span className="text-sm text-red-500">
               Error: {error?.message || String(error)}
             </span>
           </div>
         )}
         
-        {/* Tasks display */}
+        {/* Tasks display - Scrollable when expanded */}
         {!isLoading && !error && displayedTasks && displayedTasks.length > 0 && (
-          displayedTasks.map((task) => (
-            <TaskItem key={task.id} task={task} />
-          ))
+          <div className={`flex-1 ${showAllTasks ? 'overflow-y-auto space-y-0' : 'space-y-0'}`}>
+            {displayedTasks.map((task) => (
+              <TaskItem key={task.id} task={task} />
+            ))}
+          </div>
         )}
         
         {/* No tasks found */}
         {!isLoading && !error && (!displayedTasks || displayedTasks.length === 0) && (
-          <div className="flex items-center justify-center py-4">
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
             <span className="text-sm" style={{ color: theme.text.secondary }}>
               No tasks found
             </span>

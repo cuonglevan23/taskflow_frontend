@@ -6,21 +6,11 @@ import { useProject as useSWRProject } from '@/hooks/projects/useProjects';
 // Use the Project type from projects to match the hook return type
 import type { Project } from '@/types/projects';
 
-// Type for API errors
-interface APIError extends Error {
-  status?: number;
-  response?: {
-    status: number;
-    data?: unknown;
-  };
-}
-
 interface ProjectContextValue {
   project: Project | null;
   loading: boolean;
   error: string | null;
   isRedirecting: boolean;
-  updatePageTitle: (title: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
@@ -38,32 +28,17 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
   const numericProjectId = projectId ? parseInt(projectId, 10) : null;
   
   // Use SWR hook for project data with caching and auto-sync
-  const { data: project, error: swrError, isLoading } = useSWRProject(numericProjectId);
+  const { data: project, error: swrError, isLoading, mutate } = useSWRProject(numericProjectId);
   
   // Track if we're redirecting due to permission error
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Function to update page title with retry mechanism
-  const updatePageTitle = (title: string) => {
-    if (typeof document !== 'undefined') {
-      // Update document title immediately
-      document.title = `${title} - TaskManager`;
-      
-      // Function to update header element with retry
-      const updateHeaderElement = (retries = 0) => {
-        const headerElement = document.querySelector('[data-page-title]');
-        if (headerElement) {
-          headerElement.textContent = title;
-        } else if (retries < 5) {
-          // Retry after a short delay if element not found
-          setTimeout(() => updateHeaderElement(retries + 1), 100);
-        }
-      };
-      
-      // Try immediately and then with retries
-      updateHeaderElement();
+  // Force refresh project data when projectId changes to ensure fresh data
+  useEffect(() => {
+    if (numericProjectId && mutate) {
+      mutate();
     }
-  };
+  }, [numericProjectId, mutate]);
 
   // Handle permission errors and redirect
   useEffect(() => {
@@ -73,36 +48,62 @@ export function DynamicProjectProvider({ children }: DynamicProjectProviderProps
     }
   }, [swrError, router]);
 
-  // Update page title when project data changes
+  // Simple and reliable title update - use multiple strategies for maximum compatibility
   useEffect(() => {
-    if (isLoading) {
-      updatePageTitle('Loading Project...');
-    } else if (swrError) {
-      updatePageTitle('Project Error');
-    } else if (!project) {
-      updatePageTitle('Project Not Found');
-    } else {
-      updatePageTitle(project.name);
-    }
-  }, [project, isLoading, swrError]);
+    if (!project?.name) return;
 
-  // Handle ID validation
-  useEffect(() => {
-    if (!projectId) {
-      updatePageTitle('Invalid Project');
-    }
-  }, [projectId]);
+    // Strategy 1: Update document title immediately
+    document.title = `${project.name} - TaskManager`;
+    
+    // Strategy 2: Update header element with aggressive timing
+    const updateHeaderTitle = () => {
+      const headerElement = document.querySelector('[data-page-title]');
+      if (headerElement) {
+        headerElement.textContent = project.name;
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate attempt
+    updateHeaderTitle();
+    
+    // Multiple retry attempts with different timing
+    const timeouts = [0, 50, 100, 200, 500, 1000];
+    timeouts.forEach(delay => {
+      setTimeout(() => {
+        if (!updateHeaderTitle()) {
+          // If still not found, try with requestAnimationFrame
+          requestAnimationFrame(() => updateHeaderTitle());
+        }
+      }, delay);
+    });
+
+    // Strategy 3: Use MutationObserver to catch when header element is added
+    const observer = new MutationObserver(() => {
+      if (updateHeaderTitle()) {
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // Cleanup observer after 3 seconds
+    setTimeout(() => observer.disconnect(), 3000);
+
+  }, [project?.name]);
 
   const value: ProjectContextValue = {
     project: project || null,
     loading: isLoading || isRedirecting,
     error: swrError?.message || (swrError ? 'Failed to load project' : (!projectId ? 'No project ID provided' : null)),
     isRedirecting,
-    updatePageTitle,
   };
 
   // Only render children if project is valid and not redirecting
-  const shouldRenderChildren = !isRedirecting && !swrError && project;
   return (
     <ProjectContext.Provider value={value}>
       {/* Show loading while redirecting or error, never render children if error/redirecting */}

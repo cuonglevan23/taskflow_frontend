@@ -74,10 +74,7 @@ export const globalSWRConfig: SWRConfiguration = {
     console.error('SWR Error:', error);
     // Có thể thêm error tracking ở đây
   },
-  onSuccess: (data, key) => {
-    // Log successful requests (dev only)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ SWR Success [${key}]:`, data);
-    }
+  onSuccess: () => {
+    // Success handler - can add analytics here if needed
   },
 };

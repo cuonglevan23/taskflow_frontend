@@ -7,11 +7,7 @@ export interface TaskRowProps {
   onTaskEdit?: (task: TaskListItem) => void;
   onTaskDelete?: (taskId: string) => void;
   onTaskStatusChange?: (taskId: string, status: string) => void;
-  onTaskAssign?: (taskId: string, assigneeData: {
-    id: string;
-    name: string;
-    email: string;
-  }) => void;
+  onTaskAssign?: (taskId: string, assigneeIdOrEmail: string) => void;
   isDragging?: boolean;
   dragHandleProps?: any;
 }

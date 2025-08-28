@@ -2,11 +2,31 @@ import { useState, useCallback } from 'react';
 import useSWR, { mutate } from 'swr';
 import { CommentService } from '@/services/commentService';
 import type { CommentListResponse, TaskComment } from '@/types/comment';
-import { useNotifications } from '@/contexts/NotificationContext';
 
-// Hook for fetching task comments
+// Simple SWR-based comment count hook - replaces complex cache manager
+export function useTaskCommentCount(taskId: number | null | string) {
+  const numericTaskId = taskId !== null && typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
+  
+  const { data, error, isLoading } = useSWR<{ commentCount: number }>(
+    numericTaskId ? `/api/task-comments/task/${numericTaskId}/count` : null,
+    numericTaskId ? () => CommentService.getCommentCount(numericTaskId) : null,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // 30 seconds cache
+      errorRetryCount: 1,
+      errorRetryInterval: 2000,
+    }
+  );
+
+  return {
+    count: data?.commentCount || 0,
+    isLoading,
+    error,
+  };
+}
+
+// SWR-based comments list hook
 export function useTaskComments(taskId: number | null | string, page = 0, size = 10) {
-  // Ensure taskId is a number
   const numericTaskId = taskId !== null && typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
   
   const { data, error, isLoading, mutate: revalidate } = useSWR<CommentListResponse>(
@@ -14,17 +34,9 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
     numericTaskId ? () => CommentService.getTaskComments(numericTaskId, page, size) : null,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 5000,
-      errorRetryCount: 1, // Reduce retry count for better UX
-      errorRetryInterval: 2000, // Shorter retry interval
-      shouldRetryOnError: (err) => {
-        // Don't retry on 404, 403, 500 errors
-        const status = err?.response?.status;
-        return !(status === 404 || status === 403 || status === 500);
-      },
-      onError: (error) => {
-        // Silent error handling - logs removed per user request
-      }
+      dedupingInterval: 30000,
+      errorRetryCount: 1,
+      errorRetryInterval: 2000,
     }
   );
 
@@ -37,314 +49,120 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
   };
 }
 
-// Hook to get comment count
-export function useCommentCount(taskId: string | number | null) {
-  // Ensure taskId is a number
-  const numericTaskId = taskId !== null && typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
-  
-  const { data, error, isLoading } = useSWR(
-    numericTaskId ? `/api/task-comments/task/${numericTaskId}/count` : null,
-    numericTaskId ? () => CommentService.getCommentCount(numericTaskId) : null,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 5000,
-      errorRetryCount: 1, // Reduce retry count
-      errorRetryInterval: 2000, // Shorter retry interval
-      shouldRetryOnError: (err) => {
-        // Don't retry on 404, 403, 500 errors
-        const status = err?.response?.status;
-        return !(status === 404 || status === 403 || status === 500);
-      },
-      onError: (error) => {
-        // Silent error handling - logs removed per user request
-      }
-    }
-  );
+// Simple SWR mutate functions - no complex cache manager!
+export const commentMutations = {
+  // Update comment count using SWR mutate
+  updateCommentCount: (taskId: number, delta: number) => {
+    const countKey = `/api/task-comments/task/${taskId}/count`;
+    mutate(countKey, (current: { commentCount: number } = { commentCount: 0 }) => ({
+      commentCount: Math.max(0, current.commentCount + delta)
+    }), false);
+  },
 
-  return {
-    count: data?.commentCount || 0,
-    isLoading,
-    error
-  };
-}
-
-// Hook for comment CRUD operations
-export function useCommentActions(taskId: number | string | null) {
-  // Ensure taskId is a number
-  const numericTaskId = taskId !== null && typeof taskId === 'string' ? parseInt(taskId, 10) : taskId;
-  
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { actions: notificationActions } = useNotifications();
-
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    notificationActions.addNotification({
-      title: type === 'success' ? 'Success' : 'Error',
-      message,
-      type: type === 'success' ? 'success' : 'error',
-      priority: 'medium',
-      status: 'unread',
-    });
-  }, [notificationActions]);
-
-  const createComment = useCallback(async (content: string) => {
-    if (!taskId || !content.trim()) return;
+  // Invalidate caches for fresh data
+  invalidateTaskComments: (taskId: number) => {
+    const countKey = `/api/task-comments/task/${taskId}/count`;
+    const commentsKey = `/api/task-comments/task/${taskId}`;
     
-    setIsCreating(true);
-    try {
-      const numericTaskId = typeof taskId === 'string' ? parseInt(taskId) : taskId;
-      if (isNaN(numericTaskId)) {
-        throw new Error('Invalid task ID');
-      }
-      
-      // Create optimistic comment for immediate UI update
-      const optimisticComment: TaskComment = {
-        id: Date.now(), // Temporary ID
-        content: content.trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        taskId: numericTaskId,
-        userId: 0,
-        userEmail: 'current.user@example.com',
-        userName: 'You',
-        userAvatar: null,
-        isEdited: false
+    mutate(countKey, undefined, { revalidate: true });
+    mutate(commentsKey, undefined, { revalidate: true });
+  },
+
+  // Optimistic updates for instant UI feedback
+  addCommentOptimistic: (taskId: number, comment: TaskComment) => {
+    const commentsKey = `/api/task-comments/task/${taskId}`;
+    const countKey = `/api/task-comments/task/${taskId}/count`;
+    
+    // Update comments list
+    mutate(commentsKey, (current: CommentListResponse | undefined) => {
+      if (!current) return current;
+      return {
+        ...current,
+        comments: [comment, ...current.comments],
+        total: current.total + 1
       };
-      
-      // Optimistically update the cache
-      const cacheKey = `/api/task-comments/task/${numericTaskId}`;
-      mutate(cacheKey, (currentData: CommentListResponse | undefined) => {
-        if (!currentData) return { comments: [optimisticComment], total: 1, page: 0, size: 10 };
-        return {
-          ...currentData,
-          comments: [optimisticComment, ...currentData.comments],
-          total: currentData.total + 1
-        };
-      }, false); // Don't revalidate immediately
-      
-      // Fix: Pass the data as an object with the correct interface
-      const newComment = await CommentService.createComment({
-        taskId: numericTaskId,
-        content: content.trim()
+    }, false);
+    
+    // Update count
+    mutate(countKey, (current: { commentCount: number } = { commentCount: 0 }) => ({
+      commentCount: current.commentCount + 1
+    }), false);
+  },
+
+  deleteCommentOptimistic: (taskId: number, commentId: number) => {
+    const commentsKey = `/api/task-comments/task/${taskId}`;
+    const countKey = `/api/task-comments/task/${taskId}/count`;
+    
+    // Update comments list
+    mutate(commentsKey, (current: CommentListResponse | undefined) => {
+      if (!current) return current;
+      return {
+        ...current,
+        comments: current.comments.filter(c => c.id !== commentId),
+        total: Math.max(0, current.total - 1)
+      };
+    }, false);
+    
+    // Update count
+    mutate(countKey, (current: { commentCount: number } = { commentCount: 0 }) => ({
+      commentCount: Math.max(0, current.commentCount - 1)
+    }), false);
+  }
+};
+
+// Hook for comment actions with optimistic updates
+export function useCommentActions(taskId: number | null) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const addComment = useCallback(async (content: string) => {
+    if (!content.trim() || isSubmitting || !taskId) return;
+
+    setIsSubmitting(true);
+    try {
+      const newComment = await CommentService.createComment({ 
+        taskId, 
+        content 
       });
       
-      // Force revalidation to get real data from server
-      await mutate(cacheKey, undefined, { revalidate: true });
-      await mutate(`/api/task-comments/task/${numericTaskId}/count`, undefined, { revalidate: true });
+      // Optimistic update
+      commentMutations.addCommentOptimistic(taskId, newComment);
       
-      showNotification('Comment created successfully', 'success');
       return newComment;
     } catch (error) {
-      // Revert optimistic update on error
-      const cacheKey = `/api/task-comments/task/${numericTaskId}`;
-      await mutate(cacheKey, undefined, { revalidate: true });
-      
-      // Show specific error messages
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create comment';
-      showNotification(errorMessage, 'error');
+      console.error('Failed to add comment:', error);
+      if (taskId) {
+        commentMutations.invalidateTaskComments(taskId);
+      }
       throw error;
     } finally {
-      setIsCreating(false);
+      setIsSubmitting(false);
     }
-  }, [taskId, showNotification]);
+  }, [taskId, isSubmitting]);
 
-  const updateComment = useCallback(async (commentId: number, content: string) => {
-    if (!numericTaskId) return;
+  const deleteComment = useCallback(async (commentId: number | string) => {
+    if (!taskId) return;
     
-    setIsUpdating(true);
     try {
-      const updatedComment = await CommentService.updateComment({ id: commentId, content });
+      const numericCommentId = typeof commentId === 'string' ? parseInt(commentId, 10) : commentId;
       
-      // Optimistically update the cache
-      mutate(
-        [`/api/task-comments/task/${numericTaskId}`, 0, 10],
-        (data: CommentListResponse | undefined) => {
-          if (!data) return data;
-          return {
-            ...data,
-            comments: data.comments.map((comment: TaskComment) => 
-              comment.id === commentId ? updatedComment : comment
-            ),
-          };
-        },
-        false
-      );
+      // Optimistic update
+      commentMutations.deleteCommentOptimistic(taskId, numericCommentId);
       
-      showNotification('Comment updated successfully', 'success');
-      return updatedComment;
+      await CommentService.deleteComment(numericCommentId);
+      
     } catch (error) {
-      showNotification('Failed to update comment', 'error');
+      console.error('Failed to delete comment:', error);
+      commentMutations.invalidateTaskComments(taskId);
       throw error;
-    } finally {
-      setIsUpdating(false);
     }
-  }, [numericTaskId, showNotification]);
-
-  const deleteComment = useCallback(async (commentId: number) => {
-    if (!numericTaskId) return;
-    
-    setIsDeleting(true);
-    try {
-      await CommentService.deleteComment(commentId);
-      
-      // Optimistically update the cache
-      mutate(
-        [`/api/task-comments/task/${numericTaskId}`, 0, 10],
-        (data: CommentListResponse | undefined) => {
-          if (!data) return data;
-          return {
-            ...data,
-            comments: data.comments.filter((comment: TaskComment) => comment.id !== commentId),
-            total: data.total - 1,
-          };
-        },
-        false
-      );
-      
-      // Update comment count cache
-      mutate(
-        `/api/task-comments/task/${numericTaskId}/count`,
-        (count: number | undefined) => {
-          return Math.max(0, (count || 0) - 1);
-        },
-        false
-      );
-      
-      showNotification('Comment deleted successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to delete comment', 'error');
-      throw error;
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [numericTaskId, showNotification]);
+  }, [taskId]);
 
   return {
-    createComment,
-    updateComment,
+    addComment,
     deleteComment,
-    isCreating,
-    isUpdating,
-    isDeleting,
+    isSubmitting
   };
 }
 
-// Hook for task description management
-export function useTaskDescription(taskId: string | null) {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { actions: notificationActions } = useNotifications();
-
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    notificationActions.addNotification({
-      title: type === 'success' ? 'Success' : 'Error',
-      message,
-      type: type === 'success' ? 'success' : 'error',
-      priority: 'medium',
-      status: 'unread',
-    });
-  }, [notificationActions]);
-
-  const updateDescription = useCallback(async (description: string) => {
-    if (!taskId) return;
-    
-    setIsUpdating(true);
-    try {
-      await CommentService.updateTaskDescription({ taskId, description });
-      
-      // Revalidate related cache
-      mutate(`/api/tasks/${taskId}`, undefined, true);
-      
-      showNotification('Description updated successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to update description', 'error');
-      throw error;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [taskId, showNotification]);
-
-  return {
-    updateDescription,
-    isUpdating,
-  };
-}
-
-// Hook for task comment field management
-export function useTaskCommentField(taskId: string | null) {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { actions: notificationActions } = useNotifications();
-
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    notificationActions.addNotification({
-      title: type === 'success' ? 'Success' : 'Error',
-      message,
-      type: type === 'success' ? 'success' : 'error',
-      priority: 'medium',
-      status: 'unread',
-    });
-  }, [notificationActions]);
-
-  // Hook to get both description and comment fields
-  const { data, error, isLoading } = useSWR(
-    taskId ? `/api/tasks/${taskId}/comment-description` : null,
-    taskId ? () => CommentService.getTaskCommentAndDescription(taskId) : null,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 5000,
-    }
-  );
-
-  const updateTaskComment = useCallback(async (comment: string) => {
-    if (!taskId) return;
-    
-    setIsUpdating(true);
-    try {
-      await CommentService.updateTaskComment({ taskId, comment });
-      
-      // Revalidate related cache
-      mutate(`/api/tasks/${taskId}`, undefined, true);
-      mutate(`/api/tasks/${taskId}/comment-description`, undefined, true);
-      
-      showNotification('Task note updated successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to update task note', 'error');
-      throw error;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [taskId, showNotification]);
-
-  return {
-    comment: data?.comment || '',
-    description: data?.description || '',
-    updateTaskComment,
-    isLoading,
-    isUpdating,
-    error,
-  };
-}
-
-// Hook for complete task data management (combines description and comment)
-export function useTaskDetails(taskId: string | null) {
-  const { updateDescription, isUpdating: isUpdatingDescription } = useTaskDescription(taskId);
-  const { 
-    comment, 
-    description, 
-    updateTaskComment, 
-    isUpdating: isUpdatingComment,
-    isLoading,
-    error 
-  } = useTaskCommentField(taskId);
-
-  return {
-    comment,
-    description,
-    updateDescription,
-    updateTaskComment,
-    isUpdatingDescription,
-    isUpdatingComment,
-    isLoading,
-    error
-  };
-}
+// Legacy alias for backward compatibility  
+export const useCommentCount = useTaskCommentCount;

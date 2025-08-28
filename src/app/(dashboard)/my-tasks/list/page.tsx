@@ -5,6 +5,7 @@ import { BucketTaskList } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
+import { FakeFileStorage, createFakeAttachment } from "@/utils/fakeFileStorage";
 
 interface TaskBucket {
   id: string;
@@ -24,7 +25,8 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   const [searchInput, setSearchInput] = useState(searchValue);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  
+  const [attachmentsUpdateTrigger, setAttachmentsUpdateTrigger] = useState(0); // Force re-render when attachments change
+
   // Use shared hook - same as board/calendar pages
   const {
     taskListItems,
@@ -118,6 +120,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   // Notification helper
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     // Could be replaced with actual toast notification system
+    console.log(`${type === 'success' ? '✅' : '❌'} ${message}`);
   }, []);
 
   // Panel handlers
@@ -145,7 +148,21 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     }
   }, [taskListItems, actions, showNotification, handleClosePanel]);
 
-  // Wrapper functions to match BucketTaskList interface expectations
+  // Dedicated description save handler that doesn't close panel
+  const handleDescriptionSave = useCallback(async (taskId: string, description: string) => {
+    try {
+      const task = taskListItems.find(t => t.id === taskId);
+      if (task) {
+        await actions.onTaskEdit({ ...task, description });
+        showNotification('Description updated successfully');
+        // DON'T close panel for description saves
+      }
+    } catch (error) {
+      showNotification('Failed to update description', 'error');
+      console.error('Description save error:', error);
+    }
+  }, [taskListItems, actions, showNotification]);
+
   const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
     try {
       await actions.onTaskStatusChange(taskId, status as TaskStatus);
@@ -153,6 +170,16 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     } catch (error) {
       showNotification('Failed to update task status', 'error');
       console.error('Task status change error:', error);
+    }
+  }, [actions, showNotification]);
+
+  const handleTaskPriorityChange = useCallback(async (taskId: string, priority: string) => {
+    try {
+      await actions.onTaskPriorityChange(taskId, priority);
+      showNotification('Task priority updated successfully');
+    } catch (error) {
+      showNotification('Failed to update task priority', 'error');
+      console.error('Task priority change error:', error);
     }
   }, [actions, showNotification]);
 
@@ -166,10 +193,64 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     }
   }, [actions, showNotification]);
 
-  // Get selected task
+  const toggleFavorite = () => {
+    alert('Add to favorites functionality will be implemented');
+  };
+
+  // Get selected task with fake attachments
   const selectedTask = useMemo(() => {
-    return taskListItems.find(task => task.id === selectedTaskId) || null;
-  }, [taskListItems, selectedTaskId]);
+    const task = taskListItems.find(task => task.id === selectedTaskId) || null;
+    if (task && selectedTaskId) {
+      // Get fake attachments from storage and merge with task
+      const fakeAttachments = FakeFileStorage.getAttachments(selectedTaskId);
+      return {
+        ...task,
+        attachments: [...(task.attachments || []), ...fakeAttachments]
+      };
+    }
+    return task;
+  }, [taskListItems, selectedTaskId, attachmentsUpdateTrigger]);
+
+  const handleFileUpload = useCallback(async (files: FileList, source: string) => {
+    try {
+      console.log(`📎 Uploading ${files.length} files from ${source}:`, Array.from(files).map(f => f.name));
+
+      if (!selectedTaskId) {
+        showNotification('No task selected', 'error');
+        console.error('❌ No task selected for file upload');
+        return;
+      }
+
+      // Create fake attachments from uploaded files
+      const newAttachments = Array.from(files).map((file, index) =>
+        createFakeAttachment(file, index)
+      );
+
+      console.log('📁 Created attachments:', newAttachments);
+
+      // Store in fake storage
+      FakeFileStorage.addAttachments(selectedTaskId, newAttachments);
+
+      // Trigger re-render to show new attachments
+      setAttachmentsUpdateTrigger(prev => prev + 1);
+
+      console.log('✅ Files stored in fake storage and UI updated');
+
+      showNotification(`Successfully uploaded ${files.length} file(s) from ${source}`);
+    } catch (error) {
+      showNotification('Failed to upload files', 'error');
+      console.error('File upload error:', error);
+    }
+  }, [selectedTaskId, showNotification]);
+
+  // Handle attachment removal
+  const handleRemoveAttachment = useCallback((attachmentId: string) => {
+    if (selectedTaskId) {
+      FakeFileStorage.removeAttachment(selectedTaskId, attachmentId);
+      setAttachmentsUpdateTrigger(prev => prev + 1);
+      showNotification('Attachment removed successfully');
+    }
+  }, [selectedTaskId, showNotification]);
 
   // Loading and error states
   if (isLoading) {
@@ -202,6 +283,11 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
           isOpen={isPanelOpen}
           onClose={handleClosePanel}
           onSave={handleTaskSave}
+          onSaveDescription={handleDescriptionSave}
+          onStatusChange={handleTaskStatusChange}
+          onPriorityChange={handleTaskPriorityChange}
+          onFileUpload={handleFileUpload}
+          onRemoveAttachment={handleRemoveAttachment}
         />
       )}
     </div>

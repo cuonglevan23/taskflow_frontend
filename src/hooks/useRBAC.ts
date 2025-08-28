@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useSession } from 'next-auth/react';
 import { createRBACHelper, hasPermission, hasAnyPermission, hasAllPermissions, canAccessRoute } from '@/utils/rbac';
 import { UserRole, Permission } from '@/constants/auth';
 import type { UserWithRole } from '@/types/roles';
@@ -53,8 +53,10 @@ export interface UseRBACReturn {
  * Main RBAC hook - sử dụng trong components để kiểm tra quyền
  */
 export function useRBAC(): UseRBACReturn {
-  const { user, isAuthenticated } = useAuth();
-  
+  const { data: session } = useSession();
+  const user = session?.user as UserWithRole | undefined;
+  const isAuthenticated = !!user;
+
   // Tạo RBAC helper với memoization để tránh re-create không cần thiết
   const rbac = useMemo(() => createRBACHelper(user), [user]);
   

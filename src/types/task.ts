@@ -48,6 +48,7 @@ export interface MyTasksFullItem {
   description?: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'TESTING' | 'BLOCKED' | 'REVIEW';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  startDate?: string;  // ✅ ADD: Missing startDate field
   deadline?: string;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +64,21 @@ export interface MyTasksFullItem {
   // New fields for full user profile information
   creatorProfile?: UserProfileDto;
   assigneeProfiles?: UserProfileDto[];
+
+  // File attachments support
+  attachments?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+    size: number;
+    uploadedAt: string;
+    uploadedBy?: {
+      id: string;
+      name: string;
+      avatar?: string;
+    };
+  }>;
 }
 
 export interface PaginatedResponse<T> {
@@ -119,6 +135,7 @@ export interface Task {
     id: string;
     name: string;
     email?: string;
+    avatar?: string;
   }>;
   
   // New fields for full user profile information

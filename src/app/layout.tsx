@@ -33,12 +33,14 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {/* Disable StrictMode in production to reduce duplicate renders */}
+        {/* Clean and simple - NextAuth handles OAuth automatically */}
         <NextAuthProvider>
           <SWRProvider>
             <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
               <AppProvider>
-                <DetailPanelProvider>{children}</DetailPanelProvider>
+                <DetailPanelProvider>
+                  {children}
+                </DetailPanelProvider>
               </AppProvider>
             </ThemeProvider>
           </SWRProvider>

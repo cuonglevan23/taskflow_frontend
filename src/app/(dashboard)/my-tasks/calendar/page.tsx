@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTasksContext } from "@/contexts/TasksContext";
 import { FullCalendarView } from "@/components/Calendar";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import type { Task } from "@/types";
-import type { TaskListItem } from "@/components/TaskList/types";
+import type { TaskListItem, TaskStatus } from "@/components/TaskList/types";
 
 // Clean TypeScript interfaces
 interface CalendarPageProps {
@@ -54,6 +54,18 @@ const MyTaskCalendarPage = ({
     sortDir: 'desc',
     searchValue
   });
+
+  // Convert tasks to calendar format with full assignees data
+  const calendarTasks = useMemo(() => {
+    return filteredTasks?.map(task => {
+      const taskListItem = convertTaskToTaskListItem(task);
+      // Merge task data with converted assignees data for calendar
+      return {
+        ...task,
+        assignees: taskListItem.assignees // This has avatar URLs
+      };
+    }) || [];
+  }, [filteredTasks, convertTaskToTaskListItem]);
 
   // Calendar-specific event handlers using shared actions
 
@@ -169,6 +181,23 @@ const MyTaskCalendarPage = ({
     }
   };
 
+  const handleTaskStatusChange = async (taskId: string, status: string) => {
+    try {
+      const task = tasks.find(t => t.id.toString() === taskId);
+      if (task) {
+        const taskListItem = convertTaskToTaskListItem(task);
+        const isCompleted = status === 'completed' || status === 'done' || status === 'DONE';
+        await actions.onTaskEdit({ 
+          ...taskListItem, 
+          status: status as TaskStatus,
+          completed: isCompleted
+        });
+      }
+    } catch (error) {
+      console.error('❌ Calendar: Failed to update task status:', error);
+    }
+  };
+
   const handleClosePanel = () => {
     setSelectedTaskId(null);
     setCalendarState(prev => ({ ...prev, isPanelOpen: false, selectedTask: null }));
@@ -221,7 +250,7 @@ const MyTaskCalendarPage = ({
         >
           
           <FullCalendarView
-            tasks={filteredTasks || []}
+            tasks={calendarTasks}
             onEventClick={handleEventClick}
             onDateClick={handleDateClick}
             onEventDrop={handleEventDrop}
@@ -261,6 +290,7 @@ const MyTaskCalendarPage = ({
         onClose={handleClosePanel}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
+        onStatusChange={handleTaskStatusChange}
       />
     </>
   );

@@ -3,14 +3,14 @@
 import { User } from "@/types/auth";
 import Dropdown, {
   DropdownItem,
-  DropdownSeparator,
+
 } from "@/components/ui/Dropdown/Dropdown";
 import SearchPanel from "./SearchPanel";
 import UserMenu from "./UserMenu";
 import { CreateButton } from "@/components/features/create";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { DARK_THEME } from "@/constants/theme";
-import { ServerStatus } from "@/components/ui/ServerStatus";
+
 
 
 
@@ -102,23 +102,7 @@ export default function PrivateHeader({
 
       {/* Right Section */}
       <div className="flex items-center space-x-3">
-        {/* Server Status */}
-        <div className="hidden md:flex">
-          <ServerStatus showText={false} className="mr-2" />
-        </div>
-
-        {/*/!* Current Role Indicator *!/*/}
-        {/*<div className="hidden md:flex items-center space-x-2">*/}
-        {/*  <span className="text-xs text-gray-400">Role:</span>*/}
-        {/*  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">*/}
-        {/*    {user.role?.toUpperCase() || "UNKNOWN"}*/}
-        {/*  </span>*/}
-        {/*</div>*/}
-
-        {/* Help */}
-        <button className="p-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-          <HelpIcon />
-        </button>
+      
 
         {/* Notifications */}
         <div className="relative">
