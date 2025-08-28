@@ -40,10 +40,10 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
     },
     ref
   ) => {
-    // Extract user data with fallbacks
+    // Extract user data with fallbacks - handle both AuthUser.image and UserProfile.avatar
     const name = user?.name || propName || "";
     const email = user?.email || propEmail || "";
-    const avatar = user?.image || propAvatar;
+    const avatar = propAvatar || (user as any)?.avatar || user?.image;
 
     const sizeClasses = {
       xs: "h-6 w-6 text-xs",

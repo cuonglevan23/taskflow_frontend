@@ -1,12 +1,13 @@
 // API Utilities - Error handling, retry logic, and fallbacks
 import { api } from './api';
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Retry configuration
 interface RetryConfig {
   maxAttempts: number;
   delay: number;
   backoffMultiplier: number;
-  retryCondition?: (error: any) => boolean;
+  retryCondition?: (error: AxiosError) => boolean;
 }
 
 // Default retry configuration
@@ -14,237 +15,165 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 3,
   delay: 1000, // 1 second
   backoffMultiplier: 2,
-  retryCondition: (error: any) => {
+  retryCondition: (error: AxiosError) => {
     // Retry on network errors or 5xx server errors
     return !error.response || (error.response.status >= 500);
   }
 };
 
-// Sleep utility for retry delays
-const sleep = (ms: number): Promise<void> => 
+// Sleep utility
+const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
 
-// Retry wrapper for API calls
+// Retry with exponential backoff
 export async function withRetry<T>(
-  apiCall: () => Promise<T>,
+  operation: () => Promise<T>,
   config: Partial<RetryConfig> = {}
 ): Promise<T> {
-  const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
-  let lastError: any;
+  const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
+  let lastError: AxiosError | Error;
 
-  for (let attempt = 1; attempt <= retryConfig.maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= finalConfig.maxAttempts; attempt++) {
     try {
-
-      const result = await apiCall();
-      
-      if (attempt > 1) {
-        console.log(`✅ API call succeeded on attempt ${attempt}`);
-      }
-      
-      return result;
+      return await operation();
     } catch (error) {
-      lastError = error;
-      
-      // Check if we should retry
-      const shouldRetry = attempt < retryConfig.maxAttempts && 
-                         retryConfig.retryCondition!(error);
-      
-      if (shouldRetry) {
-        const delay = retryConfig.delay * Math.pow(retryConfig.backoffMultiplier, attempt - 1);
-        console.warn(`❌ API call failed (attempt ${attempt}/${retryConfig.maxAttempts}), retrying in ${delay}ms...`);
+      lastError = error as AxiosError | Error;
 
-        
-        await sleep(delay);
-      } else {
-        console.error(`❌ API call failed permanently after ${attempt} attempts`);
+      // Don't retry if it's the last attempt
+      if (attempt === finalConfig.maxAttempts) {
         break;
       }
-    }
-  }
 
-  throw lastError;
-}
-
-// Circuit breaker pattern
-class CircuitBreaker {
-  private failures = 0;
-  private lastFailureTime = 0;
-  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
-
-  constructor(
-    private threshold: number = 5,
-    private timeout: number = 60000 // 1 minute
-  ) {}
-
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
-    if (this.state === 'OPEN') {
-      if (Date.now() - this.lastFailureTime > this.timeout) {
-        this.state = 'HALF_OPEN';
-        console.log('🔄 Circuit breaker: HALF_OPEN - testing connection');
-      } else {
-        throw new Error('Circuit breaker is OPEN - service unavailable');
+      // Check if we should retry based on the error
+      if (finalConfig.retryCondition && !finalConfig.retryCondition(lastError as AxiosError)) {
+        break;
       }
-    }
 
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (error) {
-      this.onFailure();
-      throw error;
+      // Calculate delay with exponential backoff
+      const delay = finalConfig.delay * Math.pow(finalConfig.backoffMultiplier, attempt - 1);
+      await sleep(delay);
     }
   }
 
-  private onSuccess() {
-    this.failures = 0;
-    this.state = 'CLOSED';
-    console.log('✅ Circuit breaker: CLOSED - service healthy');
+  throw lastError!;
+}
+
+// Safe API response handler
+export function handleApiResponse<T>(response: AxiosResponse<T>): T {
+  if (response.status >= 200 && response.status < 300) {
+    return response.data;
+  } else {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+}
+
+// Error message extractor
+export function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
   }
 
-  private onFailure() {
-    this.failures++;
-    this.lastFailureTime = Date.now();
+  const axiosError = error as AxiosError;
+  if (axiosError.response?.data) {
+    const errorData = axiosError.response.data as { message?: string; error?: string };
+    return errorData.message || errorData.error || 'An unexpected error occurred';
+  }
 
-    if (this.failures >= this.threshold) {
-      this.state = 'OPEN';
-      console.error(`🚨 Circuit breaker: OPEN - service unavailable (${this.failures} failures)`);
+  if (axiosError.message) {
+    return axiosError.message;
+  }
+
+  return 'An unexpected error occurred';
+}
+
+// Backend error response type
+interface BackendErrorResponse {
+  message?: string;
+  error?: string;
+  messages?: string[];
+  status?: number;
+}
+
+// Enhanced error handler for backend responses
+export function handleBackendError(error: AxiosError): never {
+  const response = error.response;
+
+  if (response) {
+    const errorData = response.data as BackendErrorResponse;
+    const status = response.status;
+    const statusText = response.statusText;
+
+    // Extract error message
+    let message = 'Unknown error';
+    if (errorData.messages && errorData.messages.length > 0) {
+      message = errorData.messages.join(', ');
+    } else if (errorData.message) {
+      message = errorData.message;
+    } else if (errorData.error) {
+      message = errorData.error;
     }
-  }
 
-  getState() {
-    return {
-      state: this.state,
-      failures: this.failures,
-      threshold: this.threshold
+    console.error(`❌ Backend error: ${status} ${JSON.stringify(errorData)}`);
+
+    // Create detailed error object
+    const detailedError = new Error(message) as Error & {
+      status: number;
+      statusText: string;
+      url: string;
+      errorText: string;
+      headers: Record<string, string>;
     };
+
+    detailedError.status = status;
+    detailedError.statusText = statusText;
+    detailedError.url = response.config?.url || 'unknown';
+    detailedError.errorText = JSON.stringify(errorData);
+    detailedError.headers = response.headers as Record<string, string>;
+
+    throw detailedError;
+  } else if (error.request) {
+    console.error('❌ Network error - no response received:', error.message);
+    throw new Error('Network error: Unable to connect to server');
+  } else {
+    console.error('❌ Request setup error:', error.message);
+    throw new Error(`Request error: ${error.message}`);
   }
 }
 
-// Global circuit breaker instance
-const globalCircuitBreaker = new CircuitBreaker();
-
-// Enhanced API wrapper with retry and circuit breaker
-export const resilientApi = {
-  get: async <T>(url: string, config?: any): Promise<T> => {
-    const response = await globalCircuitBreaker.execute(() => 
-      withRetry(() => api.get<T>(url, config))
-    );
-    return response.data;
+// Safe API client with proper typing
+export const safeApi = {
+  get: async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    return withRetry(async () => {
+      const response = await api.get<T>(url, config);
+      return handleApiResponse(response);
+    });
   },
 
-  post: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    const response = await globalCircuitBreaker.execute(() => 
-      withRetry(() => api.post<T>(url, data, config))
-    );
-    return response.data;
+  post: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    return withRetry(async () => {
+      const response = await api.post<T>(url, data, config);
+      return handleApiResponse(response);
+    });
   },
 
-  put: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    const response = await globalCircuitBreaker.execute(() => 
-      withRetry(() => api.put<T>(url, data, config))
-    );
-    return response.data;
+  put: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    return withRetry(async () => {
+      const response = await api.put<T>(url, data, config);
+      return handleApiResponse(response);
+    });
   },
 
-  patch: async <T>(url: string, data?: any, config?: any): Promise<T> => {
-    const response = await globalCircuitBreaker.execute(() => 
-      withRetry(() => api.patch<T>(url, data, config))
-    );
-    return response.data;
+  patch: async <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => {
+    return withRetry(async () => {
+      const response = await api.patch<T>(url, data, config);
+      return handleApiResponse(response);
+    });
   },
 
-  delete: async <T>(url: string, config?: any): Promise<T> => {
-    const response = await globalCircuitBreaker.execute(() => 
-      withRetry(() => api.delete<T>(url, config))
-    );
-    return response.data;
-  }
-};
-
-// Fallback data for when API is unavailable
-export const getFallbackData = {
-  tasks: () => ({
-    data: [],
-    total: 0,
-    page: 1,
-    limit: 20
-  }),
-
-  taskStats: () => ({
-    total: 0,
-    todo: 0,
-    inProgress: 0,
-    done: 0,
-    testing: 0,
-    blocked: 0,
-    review: 0,
-    high: 0,
-    medium: 0,
-    low: 0,
-    overdue: 0
-  }),
-
-  user: () => ({
-    id: 'offline',
-    email: 'offline@example.com',
-    name: 'Offline User',
-    role: 'MEMBER'
-  })
-};
-
-// Safe API call with fallback
-export async function safeApiCall<T>(
-  apiCall: () => Promise<T>,
-  fallback: () => T,
-  options: {
-    enableRetry?: boolean;
-    enableCircuitBreaker?: boolean;
-    logErrors?: boolean;
-  } = {}
-): Promise<T> {
-  const { 
-    enableRetry = true, 
-    enableCircuitBreaker = true,
-    logErrors = true 
-  } = options;
-
-  try {
-    if (enableCircuitBreaker && enableRetry) {
-      return await globalCircuitBreaker.execute(() => 
-        withRetry(apiCall)
-      );
-    } else if (enableRetry) {
-      return await withRetry(apiCall);
-    } else if (enableCircuitBreaker) {
-      return await globalCircuitBreaker.execute(apiCall);
-    } else {
-      return await apiCall();
-    }
-  } catch (error) {
-    if (logErrors) {
-      console.warn('🔄 API call failed, using fallback data', error);
-    }
-    return fallback();
-  }
-}
-
-// API health monitoring
-export const apiHealth = {
-  check: async (): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/health');
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  getCircuitBreakerState: () => globalCircuitBreaker.getState(),
-
-  reset: () => {
-    globalCircuitBreaker['failures'] = 0;
-    globalCircuitBreaker['state'] = 'CLOSED';
-    console.log('🔄 Circuit breaker reset');
+  delete: async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    return withRetry(async () => {
+      const response = await api.delete<T>(url, config);
+      return handleApiResponse(response);
+    });
   }
 };

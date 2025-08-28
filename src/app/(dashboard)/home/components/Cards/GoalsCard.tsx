@@ -159,15 +159,24 @@ const GoalsCard = () => {
       onTabChange={setActiveTab}
       createAction={createAction}
       onMenuClick={handleMenuClick}
+      fullHeight={true}
     >
-      <div className="space-y-2">
+      <div className="space-y-2 h-full flex flex-col">
         {/* Custom Header */}
         <GoalsHeader />
 
-        {/* Goals List */}
-        {goals.map((goal) => (
-          <GoalItem key={goal.id} goal={goal} />
-        ))}
+        {/* Goals List - Scrollable */}
+        <div className="flex-1 overflow-y-auto space-y-2 min-h-[200px]">
+          {goals && goals.length > 0 ? goals.map((goal) => (
+            <GoalItem key={goal.id} goal={goal} />
+          )) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-sm" style={{ color: theme.text.secondary }}>
+                No goals found
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </BaseCard>
   );

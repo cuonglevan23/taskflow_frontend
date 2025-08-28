@@ -5,7 +5,7 @@ import { Users, X } from 'lucide-react';
 import Input from '../Input/Input';
 import { UserAvatar } from '../UserAvatar';
 import { useTheme } from '@/layouts/hooks/useTheme';
-import { useAuth } from '@/hooks/use-auth';
+import { useSession } from 'next-auth/react';
 
 export interface Collaborator {
   id: string;
@@ -55,7 +55,7 @@ const CollaboratorSelector = ({
   ]
 }: CollaboratorSelectorProps) => {
   const { theme } = useTheme();
-  const { user: currentUser } = useAuth();
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<Collaborator[]>([]);
@@ -69,21 +69,21 @@ const CollaboratorSelector = ({
     let allUsers = [...availableUsers];
     
     // Add current user as first option if available and not in availableUsers
-    if (currentUser && currentUser.name && currentUser.email) {
+    if (session?.user?.name && session?.user?.email) {
       const currentUserData = {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        avatar: currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase()
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        avatar: session.user.name.split(' ').map(n => n[0]).join('').toUpperCase()
       };
       
       // Check if current user is not already in availableUsers
-      const isCurrentUserInList = allUsers.some(user => user.id === currentUser.id);
+      const isCurrentUserInList = allUsers.some(user => user.id === session.user.id);
       if (!isCurrentUserInList) {
         allUsers = [currentUserData, ...allUsers];
       } else {
         // Move current user to first position
-        allUsers = allUsers.filter(user => user.id !== currentUser.id);
+        allUsers = allUsers.filter(user => user.id !== session.user.id);
         allUsers = [currentUserData, ...allUsers];
       }
     }
@@ -98,7 +98,7 @@ const CollaboratorSelector = ({
     }
     
     setFilteredUsers(filtered);
-  }, [searchQuery, selectedCollaborators.length, currentUser]);
+  }, [searchQuery, selectedCollaborators.length, session]);
 
   // Memoized click outside handler to prevent re-renders - following Dropdown pattern
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -288,7 +288,7 @@ const CollaboratorSelector = ({
                       size="sm"
                       className="transition-transform duration-200 group-hover:scale-110"
                     />
-                    {user.id === currentUser?.id && (
+                    {user.id === session?.user?.id && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                         <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -304,7 +304,7 @@ const CollaboratorSelector = ({
                       >
                         {user.name}
                       </span>
-                      {user.id === currentUser?.id && (
+                      {user.id === session?.user?.id && (
                         <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
                           You
                         </span>

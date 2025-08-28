@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { TaskListItem, TaskStatus, TaskListActions } from "@/components/TaskList/types";
 import { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
 import EmptySearchState from "@/components/ui/EmptySearchState";
 import DragAndDropContext from "./DragAndDropContext";
@@ -336,7 +336,7 @@ const KanbanBoard = ({
 
   return (
     <div 
-      className={`h-full ${className}`}
+      className={`h-full flex flex-col min-h-0 ${className}`}
       style={{ backgroundColor: theme.background.primary }}
     >
       {/* Board Content - Professional Drag and Drop */}
@@ -346,11 +346,11 @@ const KanbanBoard = ({
           onReset={handleClearSearch}
         />
       ) : (
-        <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6">
+        <div className="flex gap-6 h-full overflow-x-auto overflow-y-hidden p-6 min-h-0">
           {columns.map((column) => (
             <div
               key={column.id}
-              className="flex-shrink-0 w-80"
+              className="flex-shrink-0 board-column flex flex-col min-h-0"
               style={{
                 backgroundColor: theme.background.secondary,
                 borderRadius: '12px',
@@ -358,18 +358,18 @@ const KanbanBoard = ({
               }}
             >
               {/* Column Header */}
-              <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
+              <div className="p-4 border-b flex-shrink-0" style={{ borderColor: theme.border.default }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: column.color }}
                     />
-                    <h3 className="font-medium" style={{ color: theme.text.primary }}>
+                    <h3 className="font-medium truncate" style={{ color: theme.text.primary }}>
                       {column.title}
                     </h3>
                     <span
-                      className="text-sm px-2 py-1 rounded-full"
+                      className="text-sm px-2 py-1 rounded-full flex-shrink-0"
                       style={{
                         backgroundColor: theme.background.tertiary,
                         color: theme.text.secondary,
@@ -383,10 +383,9 @@ const KanbanBoard = ({
 
               {/* Column Content */}
               <div
-                className="p-4 space-y-3"
+                className="p-4 space-y-3 flex-1 overflow-y-auto"
                 style={{
-                  maxHeight: 'calc(100vh - 280px)',
-                  overflowY: 'auto',
+                  minHeight: 0, // Allow flexbox shrinking
                 }}
               >
                 {/* Tasks */}
@@ -417,26 +416,28 @@ const KanbanBoard = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-medium mb-1 ${
+                          className={`text-sm font-medium mb-1 board-task-content multiline-truncate ${
                             task.completed ? 'line-through' : ''
                           }`}
                           style={{ color: theme.text.primary }}
+                          title={task.name}
                         >
                           {task.name}
                         </p>
                         {task.description && (
                           <p
-                            className="text-xs mb-2 line-clamp-2"
+                            className="text-xs mb-2 board-task-content multiline-truncate"
                             style={{ color: theme.text.secondary }}
+                            title={task.description}
                           >
                             {task.description}
                           </p>
                         )}
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2 text-xs flex-wrap">
+                          <div className="flex items-center gap-1 flex-wrap min-w-0">
                             {task.priority && (
                               <span
-                                className={`px-2 py-1 rounded-full ${
+                                className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${
                                   task.priority === 'HIGH'
                                     ? 'bg-red-100 text-red-800'
                                     : task.priority === 'MEDIUM'
@@ -448,7 +449,11 @@ const KanbanBoard = ({
                               </span>
                             )}
                             {task.deadline && (
-                              <span style={{ color: theme.text.secondary }}>
+                              <span 
+                                className="text-xs text-truncate-ellipsis max-w-24"
+                                style={{ color: theme.text.secondary }}
+                                title={`Due: ${task.deadline}`}
+                              >
                                 Due: {task.deadline}
                               </span>
                             )}
@@ -459,30 +464,44 @@ const KanbanBoard = ({
                             <div className="flex items-center -space-x-1">
                               {/* Show assignees */}
                               {task.assignees?.slice(0, 2).map((assignee: any) => (
-                                <Avatar
+                                <UserAvatar
                                   key={assignee.id}
                                   name={assignee.name}
+                                  avatar={assignee.avatar}
+                                  email={assignee.email}
                                   size="sm"
                                   className="w-5 h-5 border border-white"
                                 />
                               ))}
                               
-                              {/* Show assigned emails */}
-                              {((task as any).assignedEmails || []).slice(0, Math.max(0, 2 - (task.assignees?.length || 0))).map((email: string) => (
-                                <Avatar
-                                  key={email}
-                                  name={email}
-                                  size="sm"
-                                  className="w-5 h-5 border border-white"
-                                />
-                              ))}
+                              {/* Show assigned emails - filter out emails that already have user objects */}
+                              {((task as any).assignedEmails || [])
+                                .filter((email: string) => 
+                                  !task.assignees?.some((assignee: any) => assignee.email === email)
+                                )
+                                .slice(0, 2)
+                                .map((email: string) => (
+                                  <UserAvatar
+                                    key={email}
+                                    name={email}
+                                    size="sm"
+                                    className="w-5 h-5 border border-white"
+                                  />
+                                ))}
                               
-                              {/* Show count if more than 2 total */}
-                              {((task.assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) > 2 && (
-                                <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
-                                  +{((task.assignees?.length || 0) + ((task as any).assignedEmails?.length || 0)) - 2}
-                                </div>
-                              )}
+                              {/* Show count if more than 4 total (excluding duplicates) */}
+                              {(() => {
+                                const uniqueEmailsCount = ((task as any).assignedEmails || [])
+                                  .filter((email: string) => 
+                                    !task.assignees?.some((assignee: any) => assignee.email === email)
+                                  ).length;
+                                const totalCount = (task.assignees?.length || 0) + uniqueEmailsCount;
+                                return totalCount > 4 && (
+                                  <div className="w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                                    +{totalCount - 4}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>

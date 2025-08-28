@@ -14,7 +14,8 @@ const protectedRoutes = [
   '/reporting',
   '/admin',
   '/manager',
-  '/role-demo'
+  '/role-demo',
+  '/profile'
 ];
 
 // Routes that should redirect to dashboard if authenticated

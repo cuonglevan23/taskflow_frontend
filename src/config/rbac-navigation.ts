@@ -76,6 +76,13 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         badge: { count: 0, color: 'default' },
       },
       {
+        id: 'newsfeed',
+        label: 'NewsFeed',
+        href: '/newsfeed',
+        icon: React.createElement(SIDEBAR_ICONS.newsfeed, { width: 20, height: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
+      },
+      {
         id: 'inbox',
         label: 'Inbox',
         href: '/inbox',

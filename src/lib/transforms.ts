@@ -55,18 +55,29 @@ export const formatDateString = (date: Date | string | any[]): string => {
 };
 
 // Normalize status from backend to frontend format
-export const normalizeStatus = (backendStatus: string): 'completed' | 'in-progress' | 'pending' => {
+export const normalizeStatus = (backendStatus: string): string => {
+  // Return the status as-is to maintain full compatibility
+  // Frontend expects: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'TESTING' | 'BLOCKED' | 'CANCELLED'
   switch (backendStatus?.toUpperCase()) {
     case 'DONE':
     case 'COMPLETED':
-      return 'completed';
+      return 'DONE';
     case 'IN_PROGRESS':
     case 'PROGRESS':
-      return 'in-progress';
+      return 'IN_PROGRESS';
     case 'TODO':
     case 'PENDING':
+      return 'TODO';
+    case 'REVIEW':
+      return 'REVIEW';
+    case 'TESTING':
+      return 'TESTING';
+    case 'BLOCKED':
+      return 'BLOCKED';
+    case 'CANCELLED':
+      return 'CANCELLED';
     default:
-      return 'pending';
+      return 'TODO';
   }
 };
 

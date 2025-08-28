@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
 import { useUser } from "@/contexts/UserContext";
@@ -17,8 +17,19 @@ export function usePrivateLayout() {
   const router = useRouter();
   const { user, isLoading: userDataLoading, logout: authLogout } = useUser(); // Single useUser call
 
-  // Layout state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Layout state với localStorage persistence
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) return false; // Mobile mặc định đóng
+      
+      // Desktop: check localStorage hoặc mặc định mở
+      const saved = localStorage.getItem('sidebar-open');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true; // SSR fallback
+  });
+  
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +37,31 @@ export function usePrivateLayout() {
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Persist sidebar state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-open', JSON.stringify(isSidebarOpen));
+    }
+  }, [isSidebarOpen]);
+
+  // Chỉ đóng sidebar trên mobile khi navigate
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        // Kiểm tra current state thay vì depend vào state
+        const currentSidebarState = JSON.parse(localStorage.getItem('sidebar-open') || 'false');
+        if (currentSidebarState) {
+          // Delay một chút để tránh đóng ngay lập tức
+          const timer = setTimeout(() => {
+            setIsSidebarOpen(false);
+          }, 100);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [pathname]);
 
   // User data is already combined in UserContext - no need to merge here
 
@@ -258,11 +294,24 @@ export function usePrivateLayout() {
   };
 
   const actions: LayoutActions = {
-    setSidebarOpen: setIsSidebarOpen,
+    setSidebarOpen: (open: boolean) => {
+      setIsSidebarOpen(open);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar-open', JSON.stringify(open));
+      }
+    },
     setSidebarCollapsed: setIsSidebarCollapsed,
     setUserMenuOpen: setIsUserMenuOpen,
-    toggleSidebar: () => setIsSidebarOpen((prev) => !prev),
-    toggleSidebarCollapse: () => setIsSidebarCollapsed((prev) => !prev),
+    toggleSidebar: () => {
+      setIsSidebarOpen((prev: boolean) => {
+        const newState = !prev;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sidebar-open', JSON.stringify(newState));
+        }
+        return newState;
+      });
+    },
+    toggleSidebarCollapse: () => setIsSidebarCollapsed((prev: boolean) => !prev),
     toggleUserMenu: () => setIsUserMenuOpen((prev) => !prev),
     setSearchQuery,
     performSearch,

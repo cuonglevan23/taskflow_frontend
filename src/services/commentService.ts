@@ -160,11 +160,9 @@ export class CommentService {
         };
       }
       
-      console.log(`Fetching paginated comments for task: ${numericTaskId} (Page: ${page}, Size: ${size})`);
       const response = await api.get(API_ENDPOINTS.TASK_COMMENTS_PAGINATED(numericTaskId), {
         params: { page, size }
       });
-      console.log('Paginated comments response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch paginated comments:');
@@ -204,10 +202,7 @@ export class CommentService {
         return { commentCount: 0 };
       }
       
-      console.log(`Fetching comment count for task: ${numericTaskId}`);
-      
       const response = await api.get(API_ENDPOINTS.TASK_COMMENTS_COUNT(numericTaskId));
-      console.log('Comment count response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch comment count:');
@@ -281,13 +276,10 @@ export class CommentService {
   // Update an existing comment
   static async updateComment(data: UpdateCommentRequest): Promise<TaskComment> {
     try {
-      console.log('Updating comment:', data);
-      
       const response = await api.put(API_ENDPOINTS.TASK_COMMENT_BY_ID(data.id), {
         content: data.content
       });
       
-      console.log('Update comment response:', response.data);
       return response.data as TaskComment;
     } catch (error) {
       console.error('Failed to update comment:');
@@ -313,9 +305,7 @@ export class CommentService {
   // Delete a comment
   static async deleteComment(commentId: number): Promise<void> {
     try {
-      console.log('Deleting comment:', commentId);
       await api.delete(API_ENDPOINTS.TASK_COMMENT_BY_ID(commentId));
-      console.log('Comment deleted successfully');
     } catch (error) {
       console.error('Failed to delete comment:');
       logAxiosError(error);
@@ -326,11 +316,9 @@ export class CommentService {
   // Update task description
   static async updateTaskDescription(data: UpdateTaskDescriptionRequest): Promise<void> {
     try {
-      console.log('Updating task description:', data);
       await api.put(`/api/tasks/${data.taskId}`, {
         description: data.description
       });
-      console.log('Task description updated successfully');
     } catch (error) {
       console.error('Failed to update task description:');
       logAxiosError(error);
@@ -356,13 +344,11 @@ export class CommentService {
   // Get task comment and description
   static async getTaskCommentAndDescription(taskId: string): Promise<{description: string, comment: string}> {
     try {
-      console.log('Fetching task comment and description for task:', taskId);
       const response = await api.get(`/api/tasks/${taskId}`);
-      console.log('Task comment and description response:', response.data);
       
       return {
-        description: response.data.description || '',
-        comment: response.data.comment || ''
+        description: (response.data as any).description || '',
+        comment: (response.data as any).comment || ''
       };
     } catch (error) {
       console.error('Failed to fetch task comment and description:');

@@ -60,6 +60,7 @@ const ProjectsCard = () => {
     const IconComponent = GrProjects; // Use default icon for API projects
 
     const handleProjectClick = () => {
+      // Simple and effective: just navigate, let SWR and the project provider handle the rest
       router.push(`/projects/${project.id}`);
     };
 
@@ -224,8 +225,8 @@ const ProjectsCard = () => {
   // Loading state
   if (loading) {
     return (
-      <BaseCard title="Projects">
-        <div className="flex items-center justify-center h-32">
+      <BaseCard title="Projects" fullHeight={true}>
+        <div className="flex-1 flex items-center justify-center min-h-[300px]">
           <div className="text-sm" style={{ color: theme.text.secondary }}>
             Loading projects...
           </div>
@@ -237,8 +238,8 @@ const ProjectsCard = () => {
   // Error state
   if (error) {
     return (
-      <BaseCard title="Projects">
-        <div className="flex items-center justify-center h-32">
+      <BaseCard title="Projects" fullHeight={true}>
+        <div className="flex-1 flex items-center justify-center min-h-[300px]">
           <div className="text-sm text-red-500">
             Failed to load projects
           </div>
@@ -252,28 +253,31 @@ const ProjectsCard = () => {
       title="Projects"
       showMoreButton={showMoreButton}
       onMenuClick={handleMenuClick}
+      fullHeight={true}
     >
-      <div className="space-y-3">
+      <div className="space-y-3 h-full flex flex-col">
         {/* Custom Header */}
         <ProjectsHeader />
 
-        {/* Projects Grid Layout - Dynamic Grid Based on Show More State */}
-        <div className={`grid grid-cols-2 gap-3 ${showAllProjects ? 'auto-rows-fr' : ''}`}>
-          {/* Create Project Button */}
-          <CreateProjectButton />
+        {/* Projects Grid Layout - Scrollable when expanded */}
+        <div className={`flex-1 ${showAllProjects ? 'overflow-y-auto' : ''}`}>
+          <div className={`grid grid-cols-2 gap-3 ${showAllProjects ? 'auto-rows-fr' : ''}`}>
+            {/* Create Project Button */}
+            <CreateProjectButton />
 
-          {/* Featured Project */}
-          {featuredProject && <FeaturedProject project={featuredProject} />}
+            {/* Featured Project */}
+            {featuredProject && <FeaturedProject project={featuredProject} />}
 
-          {/* Regular Projects - From Real API */}
-          {displayedProjects.map((project) => (
-            <ProjectItem key={project.id} project={project} />
-          ))}
+            {/* Regular Projects - From Real API */}
+            {displayedProjects.map((project) => (
+              <ProjectItem key={project.id} project={project} />
+            ))}
+          </div>
         </div>
 
         {/* No projects state */}
         {projects.length === 0 && (
-          <div className="text-center py-8">
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
             <div className="text-sm" style={{ color: theme.text.secondary }}>
               No projects found
             </div>

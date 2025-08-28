@@ -237,20 +237,25 @@ const TasksAssignedCard = () => {
       onTabChange={setActiveTab}
       createAction={createAction}
       onMenuClick={handleMenuClick}
+      fullHeight={true}
     >
-      <div className="space-y-0">
-        {filteredTasks && filteredTasks.length > 0 ? filteredTasks.map((task) => (
-          <AssignedTaskItem key={task.id} task={task} />
-        )) : (
-          <div className="text-gray-500 text-sm py-4">No assigned tasks found</div>
-        )}
-        {isLoading && (
-          <div className="flex items-center justify-center py-4">
-            <span className="text-sm" style={{ color: theme.text.secondary }}>
-              Loading...
-            </span>
-          </div>
-        )}
+      <div className="space-y-0 h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto">
+          {isLoading && (
+            <div className="flex-1 flex items-center justify-center min-h-[200px]">
+              <span className="text-sm" style={{ color: theme.text.secondary }}>
+                Loading...
+              </span>
+            </div>
+          )}
+          {!isLoading && filteredTasks && filteredTasks.length > 0 ? filteredTasks.map((task) => (
+            <AssignedTaskItem key={task.id} task={task} />
+          )) : !isLoading && (
+            <div className="flex-1 flex items-center justify-center min-h-[200px]">
+              <div className="text-gray-500 text-sm">No assigned tasks found</div>
+            </div>
+          )}
+        </div>
       </div>
     </BaseCard>
   );

@@ -75,7 +75,6 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
       headerInfo.avatar = <NavigationAvatar config={config.avatarConfig} />;
     }
 
-
     return {
       title: config.title,
       navItems,

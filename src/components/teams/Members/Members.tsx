@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { BaseCard, Avatar } from "@/components/ui";
+import { BaseCard } from "@/components/ui";
+import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { ACTION_ICONS } from "@/constants/icons";
 
 export interface TeamMember {
@@ -44,19 +45,19 @@ const Members = ({
     <BaseCard
       title="Members"
       showMoreButton={{
-        label: `View all ${totalCount}`,
+        show: true,
         onClick: handleViewAll
       }}
     >
       <div className="flex items-center gap-3 flex-wrap">
         {/* Member Avatars */}
         {members.map((member) => (
-          <Avatar
+          <UserAvatar
             key={`${member.id}-${member.name}`}
             name={member.name}
-            src={member.avatarUrl}
+            avatar={member.avatarUrl || member.avatar}
+            email={member.email}
             size="md"
-            style={{ backgroundColor: member.color }}
             className="cursor-pointer hover:scale-105 transition-transform"
             onClick={() => onMemberClick?.(member)}
           />

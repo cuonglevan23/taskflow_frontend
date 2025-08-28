@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from 'react';
+import { useSession as useNextAuthSession } from 'next-auth/react';
 import { sessionService, sessionUtils } from '@/services/sessionService';
 
 // Session context interface
@@ -10,6 +11,7 @@ interface SessionContextValue {
   isLoading: boolean;
   error: unknown;
   mutate: () => Promise<unknown>;
+  update: () => Promise<unknown>;
 }
 
 // Create context
@@ -18,18 +20,20 @@ const SessionContext = createContext<SessionContextValue | undefined>(undefined)
 // Provider component - SINGLE SOURCE OF TRUTH cho session
 export function SessionProvider({ children }: { children: ReactNode }) {
   const { data: session, error, isLoading, mutate } = sessionService.useSession();
+  const { data: nextAuthSession, status: nextAuthStatus, update } = useNextAuthSession();
 
-  const status: 'loading' | 'authenticated' | 'unauthenticated' = 
-    isLoading ? 'loading' : 
-    error ? 'unauthenticated' : 
-    sessionUtils.isAuthenticated(session) ? 'authenticated' : 'unauthenticated';
+  // Simple status determination
+  const status: 'loading' | 'authenticated' | 'unauthenticated' =
+    isLoading || nextAuthStatus === 'loading' ? 'loading' :
+    nextAuthSession ? 'authenticated' : 'unauthenticated';
 
   const value = {
-    data: session,
+    data: nextAuthSession || session, // Prefer NextAuth session
     status,
-    isLoading,
+    isLoading: isLoading || nextAuthStatus === 'loading',
     error,
-    mutate, // For manual refresh if needed
+    mutate,
+    update,
   };
 
   return (

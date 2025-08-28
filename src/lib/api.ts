@@ -83,7 +83,6 @@ class ApiClient {
         if (token && config.headers) {
           // Add Bearer token to Authorization header
           config.headers['Authorization'] = `Bearer ${token}`;
-          console.log('✅ Adding Authorization header:', token.substring(0, 20) + '...');
           
           // Add user context headers for backend compatibility
           const payload = CookieAuth.getTokenPayload();

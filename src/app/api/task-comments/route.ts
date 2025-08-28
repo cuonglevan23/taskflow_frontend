@@ -34,8 +34,6 @@ export async function GET(request: NextRequest) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments?${params.toString()}`;
 
-    console.log('📤 Proxying request to:', url);
-
     // Forward request to backend with user's JWT token
     const backendResponse = await fetch(url, {
       method: 'GET',
@@ -90,9 +88,6 @@ export async function POST(request: NextRequest) {
     // Get backend base URL
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments`;
-
-    console.log('📤 Proxying POST request to:', url);
-    console.log('📦 Request body:', body);
 
     // Forward request to backend with user's JWT token
     const backendResponse = await fetch(url, {

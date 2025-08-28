@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { TaskListItem, TaskStatus, TaskPriority } from '@/components/TaskList/types';
+import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
 import TaskDetailHeader from './TaskDetailHeader';
 import TaskDetailContent from './TaskDetailContent';
@@ -13,8 +13,12 @@ interface TaskDetailPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (taskId: string, updates: Partial<TaskListItem>) => void;
+  onSaveDescription?: (taskId: string, description: string) => void; // Separate callback for description
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, status: string) => void;
+  onPriorityChange?: (taskId: string, priority: string) => void;
+  onFileUpload?: (files: FileList, source: string) => void;
+  onRemoveAttachment?: (attachmentId: string) => void;
 }
 
 const TaskDetailPanel = ({
@@ -22,8 +26,12 @@ const TaskDetailPanel = ({
   isOpen,
   onClose,
   onSave,
-  onDelete,
-  onStatusChange
+  onSaveDescription,
+  onDelete, // Keep for future use
+  onStatusChange,
+  onPriorityChange,
+  onFileUpload,
+  onRemoveAttachment
 }: TaskDetailPanelProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +57,17 @@ const TaskDetailPanel = ({
     }
   };
 
+  const handleSaveDescription = (newDescription: string) => {
+    // Update local state immediately
+    setDescription(newDescription);
+    
+    // Use dedicated description save callback if available
+    if (onSaveDescription && task) {
+      onSaveDescription(task.id, newDescription);
+    }
+    // Don't call general onSave to prevent closing the panel
+  };
+
   const handleMarkComplete = () => {
     console.log('🔄 TaskDetailPanel handleMarkComplete:', {
       task: task ? { id: task.id, status: task.status } : null,
@@ -56,9 +75,12 @@ const TaskDetailPanel = ({
     });
     
     if (task && onStatusChange) {
-      // Handle both "completed"/"done" and "todo" status values
-      const isCurrentlyCompleted = task.status === 'done' || task.status === 'completed' || task.completed;
-      const newStatus: TaskStatus = isCurrentlyCompleted ? 'todo' : 'completed';
+      // Helper function to check if task is completed
+      const isCurrentlyCompleted = task.completed || 
+                                   task.status === 'DONE' || 
+                                   (task.status as string) === 'completed' ||
+                                   (task.status as string) === 'done';
+      const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
       console.log('📤 Calling onStatusChange:', { 
         taskId: task.id, 
         currentStatus: task.status, 
@@ -68,6 +90,13 @@ const TaskDetailPanel = ({
       onStatusChange(task.id, newStatus);
     } else {
       console.warn('❌ Cannot mark complete:', { hasTask: !!task, hasOnStatusChange: !!onStatusChange });
+    }
+  };
+
+  const handleFileUpload = (files: FileList, source: string) => {
+    if (onFileUpload && task) {
+      console.log(`📎 Uploading ${files.length} files from ${source} for task ${task.id}`);
+      onFileUpload(files, source);
     }
   };
 
@@ -87,6 +116,7 @@ const TaskDetailPanel = ({
         task={task}
         onClose={onClose}
         onMarkComplete={handleMarkComplete}
+        onFileUpload={handleFileUpload}
       />
       
       <TaskDetailContent
@@ -96,6 +126,10 @@ const TaskDetailPanel = ({
         description={description}
         setDescription={setDescription}
         onSave={handleSave}
+        onSaveDescription={handleSaveDescription}
+        onTaskStatusChange={onStatusChange}
+        onTaskPriorityChange={onPriorityChange}
+        onRemoveAttachment={onRemoveAttachment}
       />
 
       <TaskDetailFooter

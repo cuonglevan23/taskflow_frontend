@@ -417,22 +417,30 @@ export default function HomeDashboard() {
             </button>
           </div>
 
-          {/* Main Dashboard Grid - Using Refactored BaseCard Components */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-7xl mx-auto">
+          {/* Main Dashboard Grid - Using Refactored BaseCard Components with Equal Heights */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-7xl mx-auto grid-rows-2">
             {/* Top Row */}
-            <div className="h-[400px]">
-              <RefactoredMyTasksCard />
+            <div className="h-full min-h-[400px] max-h-[400px] flex">
+              <div className="w-full h-full">
+                <RefactoredMyTasksCard />
+              </div>
             </div>
-            <div className="h-[400px]">
-              <RefactoredProjectsCard />
+            <div className="h-full min-h-[400px] max-h-[400px] flex">
+              <div className="w-full h-full">
+                <RefactoredProjectsCard />
+              </div>
             </div>
             
             {/* Bottom Row */}
-            <div className="h-[400px]">
-              <RefactoredTasksAssignedCard />
+            <div className="h-full min-h-[400px] max-h-[400px] flex">
+              <div className="w-full h-full">
+                <RefactoredTasksAssignedCard />
+              </div>
             </div>
-            <div className="h-[400px]">
-              <RefactoredGoalsCard />
+            <div className="h-full min-h-[400px] max-h-[400px] flex">
+              <div className="w-full h-full">
+                <RefactoredGoalsCard />
+              </div>
             </div>
           </div>
         </div>

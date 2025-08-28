@@ -55,72 +55,77 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Shared Header for all MyTask tabs */}
-      <div 
-        className="sticky top-0 z-30 shadow-sm border-b" 
-        style={{ 
-          backgroundColor: DARK_THEME.background.primary,
-          borderColor: DARK_THEME.border.default,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-          width: '100%'
-        }}
-      >
-        {/* Calendar-specific header */}
-        {pathname === '/my-tasks/calendar' ? (
-          <div className="flex items-center justify-between py-4 px-6">
-            {/* Left side - Empty */}
-            <div />
-            
-            {/* Right side - Calendar Controls */}
-            <div className="flex items-center gap-2">
-              <span 
-                className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap" 
-                style={{ color: DARK_THEME.text.secondary }}
-              >
-                No date ({tasks?.filter(t => !t.dueDateISO).length || 0})
-              </span>
-              
+      {/* Shared Header for all MyTask tabs - Hide for notes page */}
+      {pathname !== '/my-tasks/notes' && (
+        <div
+          className="sticky top-0 z-30 shadow-sm border-b"
+          style={{
+            backgroundColor: DARK_THEME.background.primary,
+            borderColor: DARK_THEME.border.default,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            width: '100%'
+          }}
+        >
+          {/* Calendar-specific header */}
+          {pathname === '/my-tasks/calendar' ? (
+            <div className="flex items-center justify-between py-4 px-6">
+              {/* Left side - Empty */}
+              <div />
 
-              
-              <TaskListHeader
-                searchValue={searchValue}
-                onSearchChange={handleSearchChange}
-                onCreateTask={handleCreateTask}
-                onFilterClick={() => {/* Handle filter modal */}}
-                onSortClick={() => {/* Handle sort modal */}}
-                onGroupClick={() => {/* Handle group modal */}}
-                onOptionsClick={() => {/* Handle options modal */}}
-                showSearch={true}
-                showFilters={true}
-                showSort={false}
-                showGroup={false}
-                showOptions={true}
-                className="mb-0 !py-0 !px-0"
-                hideLeftSide={true}
-              />
+              {/* Right side - Calendar Controls */}
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap"
+                  style={{ color: DARK_THEME.text.secondary }}
+                >
+                  No date ({tasks?.filter(t => !t.dueDateISO).length || 0})
+                </span>
+
+
+
+                <TaskListHeader
+                  searchValue={searchValue}
+                  onSearchChange={handleSearchChange}
+                  onCreateTask={handleCreateTask}
+                  onFilterClick={() => {/* Handle filter modal */}}
+                  onSortClick={() => {/* Handle sort modal */}}
+                  onGroupClick={() => {/* Handle group modal */}}
+                  onOptionsClick={() => {/* Handle options modal */}}
+                  showSearch={true}
+                  showFilters={true}
+                  showSort={false}
+                  showGroup={false}
+                  showOptions={true}
+                  className="mb-0 !py-0 !px-0"
+                  hideLeftSide={true}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <TaskListHeader
-            searchValue={searchValue}
-            onSearchChange={handleSearchChange}
-            onCreateTask={handleCreateTask}
-            onFilterClick={() => {/* Handle filter modal */}}
-            onSortClick={() => {/* Handle sort modal */}}
-            onGroupClick={() => {/* Handle group modal */}}
-            onOptionsClick={() => {/* Handle options modal */}}
-            showSearch={true}
-            showFilters={true}
-            showSort={pathname !== '/my-tasks/calendar'}
-            showGroup={pathname === '/my-tasks/list'}
-            showOptions={true}
-            className="mb-0"
-          />
-        )}
-      </div>
+          ) : (
+            <TaskListHeader
+              searchValue={searchValue}
+              onSearchChange={handleSearchChange}
+              onCreateTask={handleCreateTask}
+              onFilterClick={() => {/* Handle filter modal */}}
+              onSortClick={() => {/* Handle sort modal */}}
+              onGroupClick={() => {/* Handle group modal */}}
+              onOptionsClick={() => {/* Handle options modal */}}
+              showSearch={true}
+              showFilters={true}
+              showSort={pathname !== '/my-tasks/calendar'}
+              showGroup={pathname === '/my-tasks/list'}
+              showOptions={true}
+              className="mb-0"
+            />
+          )}
+        </div>
+      )}
 
-      {/* Tab Content */}
-      <div className="h-[calc(100vh-228px)] overflow-y-auto w-full" style={{ width: "100%", minWidth: "100%" }}>
+      {/* Tab Content - Adjust height for notes page */}
+      <div
+        className={pathname === '/my-tasks/notes' ? "h-screen overflow-y-auto w-full" : "h-[calc(100vh-228px)] overflow-y-auto w-full"}
+        style={{ width: "100%", minWidth: "100%" }}
+      >
         {childrenWithProps}
       </div>
     </>
@@ -136,4 +141,3 @@ export default function MyTaskLayout({ children }: MyTaskLayoutProps) {
     </PageLayout>
   );
 };
-

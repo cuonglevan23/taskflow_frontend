@@ -5,7 +5,7 @@ import { X, Info } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Dropdown, { DropdownItem } from "@/components/ui/Dropdown/Dropdown";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "next-auth/react";
 import { Z_INDEX } from "@/styles/z-index";
 
 /* ===================== Types ===================== */
@@ -49,8 +49,9 @@ export default function InviteModal({
   requireSameDomain = true, // Default to true for backward compatibility
 }: Props) {
   const { theme } = useTheme();
-  const { user } = useAuth();
-  
+  const { data: session } = useSession();
+  const user = session?.user;
+
   const [emails, setEmails] = useState("");
   const [emailError, setEmailError] = useState("");
   const [selectedProjects, setSelectedProjects] = useState<Project[]>([]);

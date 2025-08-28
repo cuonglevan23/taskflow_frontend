@@ -47,6 +47,7 @@ export const TaskAssignees = ({
 
     const handleEmailKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
+    
     if (e.key === 'Enter') {
       if (emailInput.trim() && emailInput.includes('@')) {
         onInviteUser(emailInput.trim());
@@ -74,13 +75,6 @@ export const TaskAssignees = ({
           <div className="flex items-center -space-x-1">
             {/* Existing assignees avatars */}
             {task.assignees && task.assignees.slice(0, 2).map((assignee, index) => {
-              // Debug: Log avatar URL to console
-              console.log('🔍 TaskAssignees Debug with UserAvatar:', {
-                name: assignee.name,
-                email: assignee.email,
-                originalAvatar: assignee.avatar,
-              });
-              
               return (
                 <UserAvatar
                   key={assignee.id || index}
@@ -93,24 +87,36 @@ export const TaskAssignees = ({
               );
             })}
             
-            {/* Email assignees avatars */}
-            {assignedEmails.slice(0, 2).map((email: string) => (
-              <div key={email} title={email}>
-                <UserAvatar
-                  name={email}
-                  size="sm"
-                  className="w-8 h-8 border border-blue-500"
-                />
-              </div>
-            ))}
+            {/* Email assignees avatars - filter out emails that already have user objects */}
+            {assignedEmails
+              .filter((email: string) => {
+                // Only show email if it doesn't match any existing assignee's email
+                return !task.assignees?.some(assignee => assignee.email === email);
+              })
+              .slice(0, 2)
+              .map((email: string) => (
+                <div key={email} title={email}>
+                  <UserAvatar
+                    name={email}
+                    size="sm"
+                    className="w-8 h-8 border border-blue-500"
+                  />
+                </div>
+              ))}
             
             {/* Show count if too many */}
-            {((task.assignees?.length || 0) + assignedEmails.length) > 4 && (
+            {((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+              !task.assignees?.some(assignee => assignee.email === email)
+            ).length) > 4 && (
               <div 
                 className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-gray-600"
-                title={`+${((task.assignees?.length || 0) + assignedEmails.length) - 4} more`}
+                title={`+${((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+                  !task.assignees?.some(assignee => assignee.email === email)
+                ).length) - 4} more`}
               >
-                +{((task.assignees?.length || 0) + assignedEmails.length) - 4}
+                +{((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+                  !task.assignees?.some(assignee => assignee.email === email)
+                ).length) - 4}
               </div>
             )}
           </div>
@@ -135,24 +141,36 @@ export const TaskAssignees = ({
                 );
               })}
               
-              {/* Email assignees avatars */}
-              {assignedEmails.slice(0, 2).map((email: string) => (
-                <div key={email} title={email}>
-                  <UserAvatar
-                    name={email}
-                    size="sm"
-                    className="w-5 h-5 border border-blue-500"
-                  />
-                </div>
-              ))}
+              {/* Email assignees avatars - filter out emails that already have user objects */}
+              {assignedEmails
+                .filter((email: string) => {
+                  // Only show email if it doesn't match any existing assignee's email
+                  return !task.assignees?.some(assignee => assignee.email === email);
+                })
+                .slice(0, 2)
+                .map((email: string) => (
+                  <div key={email} title={email}>
+                    <UserAvatar
+                      name={email}
+                      size="sm"
+                      className="w-5 h-5 border border-blue-500"
+                    />
+                  </div>
+                ))}
               
               {/* Show count if too many */}
-              {((task.assignees?.length || 0) + assignedEmails.length) > 4 && (
+              {((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+                !task.assignees?.some(assignee => assignee.email === email)
+              ).length) > 4 && (
                 <div 
                   className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-gray-600"
-                  title={`+${((task.assignees?.length || 0) + assignedEmails.length) - 4} more`}
+                  title={`+${((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+                    !task.assignees?.some(assignee => assignee.email === email)
+                  ).length) - 4} more`}
                 >
-                  +{((task.assignees?.length || 0) + assignedEmails.length) - 4}
+                  +{((task.assignees?.length || 0) + assignedEmails.filter((email: string) => 
+                    !task.assignees?.some(assignee => assignee.email === email)
+                  ).length) - 4}
                 </div>
               )}
             </div>

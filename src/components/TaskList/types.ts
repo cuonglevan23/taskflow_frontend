@@ -46,6 +46,8 @@ export interface TaskListItem {
   createdAt: string;
   updatedAt: string;
   completed?: boolean; // Whether task is completed
+  commentCount?: number; // Number of comments for this task
+  attachments?: TaskAttachment[]; // List of file attachments
 }
 
 export interface TaskAssignee {
@@ -55,8 +57,22 @@ export interface TaskAssignee {
   email?: string;
 }
 
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string; // MIME type
+  size: number; // file size in bytes
+  uploadedAt: string; // ISO date string
+  uploadedBy?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+}
+
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'CANCELLED';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'TESTING' | 'BLOCKED' | 'CANCELLED';
 export type TaskActionTime = 'recently-assigned' | 'do-today' | 'do-next-week' | 'do-later';
 export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate' | 'actionTime';
 

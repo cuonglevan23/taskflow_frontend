@@ -49,8 +49,6 @@ export const TaskContextMenu: React.FC<TaskContextMenuProps> = ({
 
   if (!isOpen) return null;
 
-  console.log('TaskContextMenu rendering at position:', position);
-
   // Check if task is already completed
   const isCompleted = task.completed || (task.status as string) === 'completed' || task.status === 'DONE';
 

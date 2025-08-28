@@ -3,7 +3,7 @@
 import React from "react";
 import { Task } from "@/types/task";
 import { Plus } from "lucide-react";
-import Avatar from '@/components/ui/Avatar/Avatar';
+import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
 interface Assignee {
   id: string;
@@ -56,7 +56,7 @@ const TaskCard = ({ task }: { task: Task }) => {
         <div className="flex items-center -space-x-1">
           {/* Show assignees */}
           {assignees.slice(0, 2).map((assignee: Assignee, index: number) => (
-            <Avatar
+            <UserAvatar
               key={assignee.id || index}
               name={assignee.name}
               size="sm"
@@ -66,7 +66,7 @@ const TaskCard = ({ task }: { task: Task }) => {
           
           {/* Show assigned emails */}
           {assignedEmails.slice(0, Math.max(0, 2 - assignees.length)).map((email: string) => (
-            <Avatar
+            <UserAvatar
               key={email}
               name={email}
               size="sm"

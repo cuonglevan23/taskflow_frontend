@@ -21,17 +21,48 @@ export const sessionService = {
   },
 
   /**
-   * Manually refresh session
+   * Manually refresh session - enhanced for OAuth callback
    */
   refreshSession: async () => {
-    return mutate(SESSION_CACHE_KEY);
+    console.log('🔄 Force refreshing session cache...');
+    // Force revalidate với fresh fetch
+    const result = await mutate(SESSION_CACHE_KEY, undefined, {
+      revalidate: true,
+      populateCache: true,
+      optimisticData: undefined
+    });
+    console.log('✅ Session cache refreshed');
+    return result;
   },
 
   /**
    * Clear session cache
    */
   clearSession: () => {
+    console.log('🗑️ Clearing session cache...');
     mutate(SESSION_CACHE_KEY, null, false);
+  },
+
+  /**
+   * Force refresh after OAuth - aggressive cache invalidation
+   */
+  forceRefreshAfterOAuth: async () => {
+    console.log('🔄 Force refresh after OAuth...');
+
+    // Clear cache first
+    mutate(SESSION_CACHE_KEY, undefined, { revalidate: false });
+
+    // Then force fresh fetch
+    const result = await mutate(SESSION_CACHE_KEY,
+      defaultFetcher(SESSION_CACHE_KEY),
+      {
+        revalidate: true,
+        populateCache: true
+      }
+    );
+
+    console.log('✅ OAuth session refresh completed');
+    return result;
   },
 
   /**

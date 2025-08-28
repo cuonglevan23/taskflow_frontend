@@ -10,29 +10,62 @@ import {
   transformPaginatedResponse 
 } from '@/lib/transforms';
 import { CookieAuth } from '@/utils/cookieAuth';
-import type { 
-  BackendTask, 
-  Task, 
-  CreateTaskDTO, 
-  UpdateTaskDTO, 
-  TasksResponse,
-  MyTasksFullItem,
-  MyTasksSummaryItem,
-  PaginatedResponse,
-  MyTasksStats
-} from '@/types/task';
+import type { AxiosError } from 'axios';
+
+// Proper TypeScript interfaces instead of any
+interface TaskFilter {
+  status?: string;
+  priority?: string;
+  assigneeId?: number;
+  projectId?: number;
+  createdAfter?: string;
+  createdBefore?: string;
+  dueBefore?: string;
+  dueAfter?: string;
+}
+
+interface TaskSort {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+interface TaskQueryParams {
+  filter?: TaskFilter;
+  sort?: TaskSort;
+  page?: number;
+  limit?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+interface TaskStatsFilter {
+  projectId?: number;
+  teamId?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface TaskStats {
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  overdueTasks: number;
+  tasksByStatus: Record<string, number>;
+  tasksByPriority: Record<string, number>;
+}
 
 // Transform backend task to frontend format
 export const transformBackendTask = (backendTask: BackendTask): Task => {
-  // Use startDate as primary field (REQUIRED)
+  // ✅ FIX: Handle both startDate and deadline properly for multi-day tasks
   let dueDateString = 'No date';
   let dueDateISO = new Date();
   
-  // Priority: startDate > deadline > fallback
-  const dateSource = backendTask.startDate || backendTask.deadline;
-  if (dateSource) {
-    dueDateISO = safeParseDate(dateSource);
-    dueDateString = formatDateString(dateSource);
+  // Use startDate as primary display date, but keep both
+  const displayDate = backendTask.startDate || backendTask.deadline;
+  if (displayDate) {
+    dueDateISO = safeParseDate(displayDate);
+    dueDateString = formatDateString(displayDate);
   }
 
   return {
@@ -49,9 +82,9 @@ export const transformBackendTask = (backendTask: BackendTask): Task => {
     tags: [],
     createdAt: safeParseDate(backendTask.createdAt),
     updatedAt: safeParseDate(backendTask.updatedAt),
-    // Multi-day task support
-    startDate: dueDateISO,
-    deadline: backendTask.deadline,
+    // ✅ FIX: Preserve both dates for multi-day tasks
+    startDate: backendTask.startDate ? safeParseDate(backendTask.startDate) : dueDateISO,
+    deadline: backendTask.deadline || backendTask.startDate,
     // Email assignment support
     assignedEmails: backendTask.assignedToEmails || [],
   };
@@ -78,9 +111,9 @@ export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
     tags: [],
     createdAt: new Date(),
     updatedAt: new Date(),
-    // Multi-day task support
+    // ✅ SIMPLE: startDate as Date, deadline as string
     startDate: taskStartDate,
-    deadline: item.deadline, // Keep backend deadline string
+    deadline: item.deadline || item.startDate,
     // Additional fields from summary
     creatorName: item.creatorName,
     participationType: item.participationType,
@@ -94,6 +127,14 @@ export const transformMyTasksSummary = (item: MyTasksSummaryItem): Task => {
 // Transform My Tasks Full Item to Task format  
 export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
   const taskDueDateISO = item.deadline ? safeParseDate(item.deadline) : new Date();
+
+  // Transform assigneeProfiles to assignees array with avatar URLs
+  const assignees = (item.assigneeProfiles || []).map(profile => ({
+    id: profile.userId?.toString() || '',
+    name: profile.displayName || `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || profile.email || 'Unknown',
+    email: profile.email,
+    avatar: profile.avatarUrl || undefined
+  }));
 
   return {
     id: item.id,
@@ -110,10 +151,12 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
     createdAt: safeParseDate(item.createdAt),
     updatedAt: safeParseDate(item.updatedAt),
     // Multi-day task support
-    startDate: taskDueDateISO,
+    startDate: item.startDate ? safeParseDate(item.startDate) : taskDueDateISO,
     deadline: item.deadline,
     // Email assignment support
     assignedEmails: item.assignedToEmails || [],
+    // Assignees with avatar URLs from profiles
+    assignees: assignees,
     // Profile information
     creatorProfile: item.creatorProfile,
     assigneeProfiles: item.assigneeProfiles || [],
@@ -183,13 +226,9 @@ export const tasksService = {
         assignedToIds: data.assignedToIds || [],
       };
       
-      console.log('📤 Sending POST to /api/tasks/my-tasks with:', backendData);
-      
       const response = await api.post<BackendTask>('/api/tasks/my-tasks', backendData);
-      console.log('✅ POST response received:', response.data);
       
       const transformedTask = transformBackendTask(response.data);
-      console.log('🔄 Task transformed:', transformedTask);
       return transformedTask;
     } catch (error: unknown) {
       console.error('❌ Failed to create task:', error);
@@ -219,13 +258,13 @@ export const tasksService = {
       if (data.removeAssigneeEmails !== undefined) backendData.removeAssigneeEmails = data.removeAssigneeEmails;
       if (data.assignedToEmails !== undefined) backendData.assignedToEmails = data.assignedToEmails;
       
-      // Handle date fields for different scenarios
+      // ✅ FIX: Handle date fields properly for multi-day tasks
       if (data.startDate !== undefined && data.deadline !== undefined) {
         backendData.startDate = data.startDate;
         backendData.deadline = data.deadline;
       } else if (data.deadline !== undefined) {
         backendData.deadline = data.deadline;
-        backendData.startDate = data.deadline;
+        // Don't overwrite startDate if only deadline is provided
       } else if (data.startDate !== undefined) {
         backendData.startDate = data.startDate;
       } else if (data.dueDate !== undefined) {
@@ -234,9 +273,10 @@ export const tasksService = {
       }
 
       const response = await api.put<BackendTask>(`/api/tasks/my-tasks/${id}`, backendData);
+      
       return transformBackendTask(response.data);
     } catch (error) {
-      console.error('❌ Failed to update task:', error);
+      console.error('❌ Failed to update task:', { error, id, data });
       throw error;
     }
   },
@@ -244,9 +284,7 @@ export const tasksService = {
   // Delete task (My Tasks)
   deleteTask: async (id: string): Promise<void> => {
     try {
-      console.log('🗑️ Attempting to delete task with ID:', id);
-      const response = await api.delete(`/api/tasks/my-tasks/${id}`);
-      console.log('✅ Task deleted successfully:', response.status);
+      await api.delete(`/api/tasks/my-tasks/${id}`);
     } catch (error: unknown) {
       const axiosError = error as { 
         message?: string; 
@@ -295,12 +333,7 @@ export const tasksService = {
   },
 
   // Get Tasks (General) with filters and pagination
-  getTasks: async (params?: {
-    filter?: any;
-    sort?: any;
-    page?: number;
-    limit?: number;
-  }): Promise<{
+  getTasks: async (params?: TaskQueryParams): Promise<{
     data: Task[];
     total: number;
     page: number;
@@ -314,48 +347,77 @@ export const tasksService = {
         limit = 20
       } = params || {};
 
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('size', limit.toString());
 
-      
-      const response = await api.get<PaginatedResponse<BackendTask>>('/api/tasks/my-tasks', {
-        params: { 
-          page, 
-          size: limit, 
-          sortBy: sort?.field || 'updatedAt', 
-          sortDir: sort?.direction || 'desc',
-          ...filter 
-        }
-      });
+      // Add filter parameters
+      if (filter) {
+        Object.entries(filter).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
 
-      const { content, totalElements, totalPages, number, size: pageSize } = response.data;
-      const tasks = content.map(transformBackendTask);
+      // Add sort parameters
+      if (sort) {
+        queryParams.append('sortBy', sort.field);
+        queryParams.append('sortDir', sort.direction);
+      }
 
+      const response = await api.get(`/api/tasks?${queryParams}`);
+      const data = response.data;
 
+      // Handle paginated response
+      if (data.content && Array.isArray(data.content)) {
+        return {
+          data: data.content,
+          total: data.totalElements || 0,
+          page: data.number || 0,
+          limit: data.size || limit,
+        };
+      }
 
+      // Handle simple array response
+      if (Array.isArray(data)) {
+        return {
+          data: data,
+          total: data.length,
+          page: 0,
+          limit: data.length,
+        };
+      }
+
+      // Fallback for unexpected response format
       return {
-        data: tasks,
-        total: totalElements,
-        page: number + 1,
-        limit: pageSize,
+        data: [],
+        total: 0,
+        page: 0,
+        limit: 0,
       };
-    } catch (error) {
-      console.error('❌ Failed to fetch tasks:', error);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to fetch tasks:', axiosError.message);
       throw error;
     }
   },
 
-  // Get Tasks by Project
-  getTasksByProject: async (projectId: string, params?: any): Promise<Task[]> => {
+  // Get tasks by project
+  getTasksByProject: async (projectId: string, params?: TaskQueryParams): Promise<Task[]> => {
     try {
+      const { page = 0, limit = 20, sortBy = 'createdAt', sortDir = 'desc' } = params || {};
 
-      const response = await api.get<BackendTask[]>(`/api/projects/${projectId}/tasks`, {
-        params
+      const response = await api.get(`/api/projects/${projectId}/tasks`, {
+        params: { page, size: limit, sortBy, sortDir }
       });
-      const tasks = response.data.map(transformBackendTask);
 
-      return tasks;
-    } catch (error) {
-      console.error('❌ Failed to fetch project tasks:', error);
-      throw error;
+      return response.data.content || response.data || [];
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to fetch project tasks:', axiosError.message);
+      return [];
     }
   },
 
@@ -372,36 +434,68 @@ export const tasksService = {
     currentPage: number;
     pageSize: number;
   }> => {
+    const {
+      page = 0,
+      size = 1000,
+      sortBy = 'startDate',
+      sortDir = 'desc'
+    } = params || {};
+
     try {
-      const {
-        page = 0,
-        size = 10,
-        sortBy = 'updatedAt',
-        sortDir = 'desc'
-      } = params || {};
-
-
-      
-      const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
+      const response = await api.get('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
       });
 
+      const data = response.data;
 
-      const { content, totalElements, totalPages, number, size: pageSize } = response.data;
-      const tasks = content.map(transformMyTasksFull);
+      // Handle paginated response
+      if (data.content && Array.isArray(data.content)) {
+        return {
+          tasks: data.content,
+          totalElements: data.totalElements || 0,
+          totalPages: data.totalPages || 0,
+          currentPage: data.number || page,
+          pageSize: data.size || size,
+        };
+      }
 
+      // Handle simple array response
+      if (Array.isArray(data)) {
+        return {
+          tasks: data,
+          totalElements: data.length,
+          totalPages: 1,
+          currentPage: 0,
+          pageSize: data.length,
+        };
+      }
 
+      // Fallback
+      return {
+        tasks: [],
+        totalElements: 0,
+        totalPages: 0,
+        currentPage: page,
+        pageSize: size,
+      };
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+      console.error(`❌ My Tasks API failed with status ${status}:`, axiosError.message);
+
+      if (status === 404) {
+        console.warn('🚧 Backend endpoint /api/tasks not found');
+      } else if (status === 500) {
+        console.warn('💥 Backend server error on /api/tasks');
+      }
 
       return {
-        tasks,
-        totalElements,
-        totalPages,
-        currentPage: number,
-        pageSize,
+        tasks: [],
+        totalElements: 0,
+        totalPages: 0,
+        currentPage: page,
+        pageSize: size,
       };
-    } catch (error) {
-      console.error('❌ Failed to fetch my tasks:', error);
-      throw error;
     }
   },
 
@@ -504,23 +598,25 @@ export const tasksService = {
   },
 
   // Get Task Statistics (general)
-  getTaskStats: async (filter?: any): Promise<any> => {
+  getTaskStats: async (filter?: TaskStatsFilter): Promise<TaskStats> => {
     try {
-
-      const response = await api.get('/api/tasks/my-tasks/stats', {
+      const response = await api.get<TaskStats>('/api/tasks/my-tasks/stats', {
         params: filter
       });
 
       return response.data;
-    } catch (error) {
-      console.error('❌ Failed to fetch task stats:', error);
-      // Return default stats on error
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      console.error('❌ Failed to fetch task stats:', axiosError.message);
+
+      // Return fallback stats
       return {
-        total: 0,
-        completed: 0,
-        inProgress: 0,
-        todo: 0,
-        overdue: 0
+        totalTasks: 0,
+        completedTasks: 0,
+        pendingTasks: 0,
+        overdueTasks: 0,
+        tasksByStatus: {},
+        tasksByPriority: {},
       };
     }
   },

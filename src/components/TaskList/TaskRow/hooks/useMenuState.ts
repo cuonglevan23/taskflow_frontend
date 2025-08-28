@@ -17,7 +17,6 @@ export const useMenuState = () => {
   };
 
   const showContextMenu = (x: number, y: number) => {
-    console.log('Showing context menu at:', x, y);
     setMenuState({
       showMoveMenu: false,
       showContextMenu: true,
@@ -36,7 +35,6 @@ export const useMenuState = () => {
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Right click detected at:', e.clientX, e.clientY);
     showContextMenu(e.clientX, e.clientY);
   };
 

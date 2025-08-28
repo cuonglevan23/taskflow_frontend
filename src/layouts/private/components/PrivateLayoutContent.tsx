@@ -57,18 +57,19 @@ export default function PrivateLayoutContent({
 
         {/* Main Content */}
         <div
-          className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out"
-          style={{
-            marginLeft: isSidebarOpen
+          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+            isSidebarOpen
               ? isSidebarCollapsed
-                ? "4rem"
-                : "16rem"
-              : "0",
-          }}
+                ? "lg:ml-16"
+                : "lg:ml-64"
+              : ""
+          }`}
+          style={{ backgroundColor: DARK_THEME.background.primary }}
         >
           <main
             className="flex-1 overflow-auto relative"
             style={{
+              backgroundColor: DARK_THEME.background.primary,
               overscrollBehavior: "none",
               overscrollBehaviorX: "none",
               overscrollBehaviorY: "none",

@@ -19,8 +19,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments/${commentId}`;
 
-    console.log('📤 Proxying request to:', url);
-
     const backendResponse = await fetch(url, {
       method: 'GET',
       headers: {
@@ -65,9 +63,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments/${commentId}`;
 
-    console.log('📤 Proxying PUT request to:', url);
-    console.log('📦 Request body:', body);
-
     const backendResponse = await fetch(url, {
       method: 'PUT',
       headers: {
@@ -109,8 +104,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const url = `${backendUrl}/api/task-comments/${commentId}`;
-
-    console.log('📤 Proxying DELETE request to:', url);
 
     const backendResponse = await fetch(url, {
       method: 'DELETE',
