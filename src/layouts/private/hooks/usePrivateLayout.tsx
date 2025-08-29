@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/types/auth";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/components/auth/AuthProvider"; // Thay thế useUser
 import {
   LayoutContextValue,
   LayoutActions,
@@ -15,7 +15,7 @@ import {
 export function usePrivateLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading: userDataLoading, logout: authLogout } = useUser(); // Single useUser call
+  const { user, isLoading: userDataLoading, logout: authLogout } = useAuth(); // Sử dụng useAuth thay vì useUser
 
   // Layout state với localStorage persistence
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {

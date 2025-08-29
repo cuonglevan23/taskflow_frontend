@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { ApiClient } from '@/lib/auth-backend';
 import { useCreateTeam } from '@/hooks/teams/useTeams';
 import type { CreateTeamFormData } from '@/types/teams';
 import type { 
@@ -16,7 +17,7 @@ export function useCreateTeamModal({
   onClose, 
   onSuccess 
 }: UseCreateTeamModalProps): UseCreateTeamModalReturn {
-  const { data: session } = useSession();
+  const { user: session } = useAuth();
   const { createTeam, isMutating: isCreating } = useCreateTeam();
   
   // Form state
@@ -165,7 +166,7 @@ export function useCreateTeamModal({
       return;
     }
 
-    if (!session?.user) {
+    if (!session) {
       setErrors(prev => ({ ...prev, generalError: 'Please log in to create a team' }));
       return;
     }

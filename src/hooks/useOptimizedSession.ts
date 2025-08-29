@@ -12,30 +12,42 @@
  * - Tự động sync giữa các components
  */
 
-import { useSession as useUnifiedSession } from '@/contexts/SessionContext';
+// DEPRECATED: useOptimizedSession - Replaced by AuthProvider
+// This hook is no longer used - we've switched to backend-only JWT authentication
+// See /src/components/auth/AuthProvider.tsx for the new authentication system
 
-// Export một interface tương thích với NextAuth useSession
-export interface UseSessionReturn {
-  data: {
-    user?: unknown;
-    [key: string]: unknown;
-  } | null;
+/*
+ * MIGRATION NOTES:
+ * - useSession từ NextAuth đã được loại bỏ
+ * - Authentication giờ được handle bởi AuthProvider
+ * - Sử dụng useAuth() thay vì useSession()
+ *
+ * Migration guide:
+ * OLD: const { data: session, status } = useSession();
+ * NEW: const { user, isLoading, isAuthenticated } = useAuth();
+ */
+
+import { useAuth } from '@/components/auth/AuthProvider';
+
+// Deprecated interface - kept for backward compatibility
+export interface OptimizedSessionReturn {
+  data: any | null;
   status: 'loading' | 'authenticated' | 'unauthenticated';
+  isLoading: boolean;
 }
 
-/**
- * Hook tối ưu hóa cho session - SINGLE SOURCE OF TRUTH
- * Thay thế tất cả useSession() calls trong app
- */
-export function useOptimizedSession(): UseSessionReturn {
-  const { data, status } = useUnifiedSession();
-  
+// Deprecated hook - kept for backward compatibility
+export function useOptimizedSession(): OptimizedSessionReturn {
+  console.warn('⚠️ useOptimizedSession is deprecated. Use useAuth from AuthProvider instead.');
+
+  const { user, isLoading, isAuthenticated } = useAuth();
+
   return {
-    data,
-    status,
+    data: user ? { user } : null,
+    status: isLoading ? 'loading' : (isAuthenticated ? 'authenticated' : 'unauthenticated'),
+    isLoading,
   };
 }
 
-// Legacy compatibility exports
+// Deprecated export - kept for backward compatibility
 export const useSession = useOptimizedSession;
-export default useOptimizedSession;

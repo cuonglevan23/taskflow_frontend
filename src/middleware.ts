@@ -1,10 +1,10 @@
-import { auth } from "@/auth"
-import { NextResponse } from "next/server"
-import { UserRole } from "@/constants/auth"
+// Middleware - Backend JWT Authentication Only
+import { NextRequest, NextResponse } from "next/server"
 
 // Routes that require authentication
 const protectedRoutes = [
   '/home',
+  '/dashboard',
   '/my-tasks',
   '/tasks',
   '/projects',
@@ -21,94 +21,61 @@ const protectedRoutes = [
 // Routes that should redirect to dashboard if authenticated
 const authRoutes = ['/login', '/register'];
 
-// Admin-only routes
-const adminRoutes = ['/admin'];
+// Public routes (no auth required)
+const publicRoutes = ['/', '/auth/success', '/auth/error'];
 
-// Owner-only routes
-const ownerRoutes = ['/admin/system'];
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-// Manager-level routes (PM and above)
-const managerRoutes = ['/manager'];
-
-export default auth((req) => {
-  const { nextUrl } = req
-  const isLoggedIn = !!req.auth
-  const userRole = req.auth?.user?.role
-
-  // Check if route is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
-    nextUrl.pathname.startsWith(route)
-  );
-
-  // Check if route is auth route
-  const isAuthRoute = authRoutes.some(route => 
-    nextUrl.pathname.startsWith(route)
-  );
-
-  // Check if route requires admin access
-  const isAdminRoute = adminRoutes.some(route => 
-    nextUrl.pathname.startsWith(route)
-  );
-
-  // Check if route requires owner access
-  const isOwnerRoute = ownerRoutes.some(route => 
-    nextUrl.pathname.startsWith(route)
-  );
-
-  // Check if route requires manager access (PM and above)
-  const isManagerRoute = managerRoutes.some(route => 
-    nextUrl.pathname.startsWith(route)
-  );
-
-  // Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !isLoggedIn) {
-    const loginUrl = new URL('/login', nextUrl)
-    loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
-    return NextResponse.redirect(loginUrl)
+  // Skip middleware for static files, API routes, and _next
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/favicon')
+  ) {
+    return NextResponse.next();
   }
 
-  // Redirect authenticated users from auth routes
-  if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL('/home', nextUrl))
+  // Check if route is public
+  const isPublicRoute = publicRoutes.includes(pathname);
+  if (isPublicRoute) {
+    return NextResponse.next();
   }
 
-  // Check admin access
-  if (isAdminRoute && isLoggedIn) {
-    if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN && userRole !== UserRole.OWNER) {
-      return NextResponse.redirect(new URL('/home', nextUrl))
-    }
+  // Check if route requires authentication
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
+  // Check if route is auth route (login/register)
+  const isAuthRoute = authRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
+  // Get authentication status from HTTP-only cookie
+  // Note: We can't read HTTP-only cookies in middleware
+  // So we'll let the AuthProvider handle authentication checks
+  const hasAccessToken = request.cookies.has('accessToken');
+
+  // If trying to access protected route without token, redirect to login
+  if (isProtectedRoute && !hasAccessToken) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Check owner access
-  if (isOwnerRoute && isLoggedIn) {
-    if (userRole !== UserRole.OWNER && userRole !== UserRole.SUPER_ADMIN) {
-      return NextResponse.redirect(new URL('/home', nextUrl))
-    }
+  // If trying to access auth route with token, redirect to home
+  if (isAuthRoute && hasAccessToken) {
+    const homeUrl = new URL('/home', request.url); // Thay đổi từ '/dashboard' thành '/home'
+    return NextResponse.redirect(homeUrl);
   }
 
-  // Check manager access (PM and above only)
-  if (isManagerRoute && isLoggedIn) {
-    if (userRole !== UserRole.PM && 
-        userRole !== UserRole.OWNER && 
-        userRole !== UserRole.ADMIN && 
-        userRole !== UserRole.SUPER_ADMIN) {
-      return NextResponse.redirect(new URL('/home', nextUrl))
-    }
-  }
-
-  return NextResponse.next()
-})
+  return NextResponse.next();
+}
 
 export const config = {
+  // Match all routes except static files and API routes
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
   ],
 }

@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { useUpdateProject, useProject } from '@/hooks/projects';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export function ProjectDescription() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
   const { theme } = useTheme();
-  const { user } = useUser();
-  
+  const { user } = useAuth();
+
   // ✅ Use SWR hooks following established architecture
   const { data: project, isLoading, error } = useProject(projectId);
   const { trigger: updateProject, isMutating } = useUpdateProject();

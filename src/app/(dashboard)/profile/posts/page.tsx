@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import BaseCard from "@/components/ui/BaseCard/BaseCard";
 import Button from "@/components/ui/Button/Button";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
-import { useUser } from "@/contexts/UserContext";
-import { 
+import { useAuth } from '@/components/auth/AuthProvider';
+import {
   Heart,
   MessageCircle,
   Share,
@@ -44,7 +44,7 @@ const mockPosts = [
 ];
 
 export default function PostsPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [postContent, setPostContent] = useState("");
 
   const userData = {

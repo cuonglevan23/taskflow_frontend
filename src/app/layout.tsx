@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/layouts/hooks/useTheme";
 import "./globals.css";
 import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { AppProvider } from "@/contexts/AppProvider";
-import { NextAuthProvider } from "@/providers";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SWRProvider } from "@/providers/SWRProvider";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
@@ -33,8 +33,8 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {/* Clean and simple - NextAuth handles OAuth automatically */}
-        <NextAuthProvider>
+        {/* Sử dụng AuthProvider mới thay vì NextAuth - backend JWT only */}
+        <AuthProvider>
           <SWRProvider>
             <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
               <AppProvider>
@@ -44,7 +44,7 @@ export default function RootLayout({
               </AppProvider>
             </ThemeProvider>
           </SWRProvider>
-        </NextAuthProvider>
+        </AuthProvider>
       </body>
     </html>
   );
