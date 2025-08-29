@@ -1,9 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from './SessionContext'; // Sử dụng session chung
-import { User } from '@/types/auth';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useAuth } from '@/components/auth/AuthProvider'; // Sử dụng AuthProvider mới thay vì SessionContext
+
 import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
 import { teamsService } from '@/services/teams/teamsService';
@@ -37,8 +36,8 @@ interface GlobalDataProviderProps {
 }
 
 export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
-  const { data: session, status, isLoading } = useSession(); // Sử dụng session chung
-  const [globalData, setGlobalData] = useState<GlobalData>({
+  const { user, isAuthenticated, isLoading } = useAuth(); // Sử dụng AuthProvider mới
+  const [globalData, setGlobalData] = React.useState<GlobalData>({
     user: null,
     teams: [],
     projects: [],
@@ -51,7 +50,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
   // Prefetch all critical data once on login
   const prefetchAllData = async () => {
-    if (!session?.user) return;
+    if (!user) return;
 
     setGlobalData(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -70,7 +69,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
       ]);
 
       const newGlobalData = {
-        user: session.user,
+        user: user,
         teams: teamsResponse || [],
         projects: projectsResponse?.projects || [],
         taskStats: taskStatsResponse,
@@ -202,27 +201,11 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   // Prefetch data when session is available
-  useEffect(() => {
-    if (session?.user && !globalData.isLoaded && !globalData.isLoading) {
+  React.useEffect(() => {
+    if (user && !globalData.isLoaded && !globalData.isLoading) {
       prefetchAllData();
     }
-  }, [session?.user, globalData.isLoaded, globalData.isLoading]);
-
-  // Reset data when user logs out
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      setGlobalData({
-        user: null,
-        teams: [],
-        projects: [],
-        taskStats: null,
-        tasksSummary: [],
-        isLoaded: false,
-        isLoading: false,
-        error: null,
-      });
-    }
-  }, [status]);
+  }, [user, globalData.isLoaded, globalData.isLoading]);
 
   const contextValue: GlobalDataContextType = {
     ...globalData,

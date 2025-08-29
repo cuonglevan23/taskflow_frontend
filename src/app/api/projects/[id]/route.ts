@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+
 
 type RouteParams = {
   params: Promise<{ id: string }>

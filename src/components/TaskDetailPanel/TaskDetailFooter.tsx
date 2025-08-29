@@ -5,7 +5,7 @@ import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
 import { useCommentActions } from '@/hooks/useComments';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface TaskDetailFooterProps {
   task: TaskListItem | null;
@@ -21,8 +21,8 @@ const TaskDetailFooter = ({
   const [showCommentEditor, setShowCommentEditor] = useState(false);
   
   // Get current user
-  const { user } = useUser();
-  
+  const { user } = useAuth();
+
   // Get task ID
   const taskId = task?.id ? String(task.id) : null;
   const numericTaskId = taskId ? parseInt(taskId, 10) : null;

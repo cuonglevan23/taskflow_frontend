@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { FcGoogle } from "react-icons/fc"
 import { Loader2 } from "lucide-react"
 import { LIGHT_THEME } from '@/constants/theme'
+import { useAuth } from '@/components/auth/AuthProvider'
 
 // TaskFlow Logo Component
 const TaskFlowLogo = () => (
@@ -17,18 +17,19 @@ const TaskFlowLogo = () => (
 
 export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { login } = useAuth()
 
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true)
-      
-      // Simple NextAuth Google sign-in - no complex logic needed!
-      await signIn("google", {
-        callbackUrl: "/home",
-        redirect: true
-      })
+      setError(null)
+
+      // Sử dụng AuthService mới thay vì NextAuth
+      await login()
     } catch (error) {
       console.error("Google sign-in failed:", error)
+      setError("Đăng nhập thất bại. Vui lòng thử lại.")
     } finally {
       setIsGoogleLoading(false)
     }
@@ -56,6 +57,13 @@ export function LoginForm() {
           To get started, please sign in
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-3 rounded-md bg-red-50 border border-red-200">
+          <p className="text-sm text-red-600 text-center">{error}</p>
+        </div>
+      )}
 
       {/* Google Sign In Button */}
       <button
@@ -99,23 +107,6 @@ export function LoginForm() {
           <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Forum</a>
           <span>•</span>
           <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Developers & API</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Resources</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Guide</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Templates</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Pricing</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Terms</a>
-          <span>•</span>
-          <a href="#" style={{ color: LIGHT_THEME.text.secondary }} className="hover:underline">Privacy</a>
-        </div>
-        <div className="mt-2 text-xs px-4" style={{ color: LIGHT_THEME.text.weak }}>
-          This site is protected by reCAPTCHA and the Google{' '}
-          <a href="#" className="hover:text-gray-600">Privacy Policy</a> and{' '}
-          <a href="#" className="hover:text-gray-600">Terms of Service</a> apply.
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { UserRole, Permission } from "@/constants/auth";
 import { getSidebarNavigation } from "@/config/routes";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutContext,
   LayoutActions,
@@ -56,7 +56,7 @@ const DEFAULT_CONFIG: LayoutConfig = {
 export function usePrivateLayout(
   customConfig?: Partial<LayoutConfig>
 ): UsePrivateLayoutReturn {
-  const { user: authUser } = useUser();
+  const { user: authUser } = useAuth(); // Sử dụng useAuth thay vì useUser
   const pathname = usePathname();
 
   // Merge custom config with defaults

@@ -1,5 +1,6 @@
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { ApiClient } from '@/lib/auth-backend';
 import { transformFormToCreateDTO } from '@/services/projects';
 import { useCreateProject } from '@/hooks/projects/useProjects';
 import { ProjectFormData, PrivacyOption, FormState, FormErrors } from '../types';
@@ -14,8 +15,8 @@ interface UseCreateProjectModalProps {
 export function useCreateProjectModal({ onClose, onCreateProject, teamId }: UseCreateProjectModalProps) {
     // Optimistic mutation for creating project with instant UI updates
     const { trigger: createProject, isMutating: isCreating } = useCreateProject();
-    const { data: session } = useSession();
-    
+    const { user: session } = useAuth();
+
     // Step management
     const [currentStep, setCurrentStep] = React.useState(1);
 
@@ -120,7 +121,7 @@ export function useCreateProjectModal({ onClose, onCreateProject, teamId }: UseC
             return;
         }
 
-        if (!session?.user) {
+        if (!session) {
             setDateError('Please log in to create a project');
             return;
         }

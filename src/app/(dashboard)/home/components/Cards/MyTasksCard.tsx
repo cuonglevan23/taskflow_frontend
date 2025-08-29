@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { FaPlus } from "react-icons/fa";
@@ -15,7 +15,7 @@ import { useCreateTask, useUpdateTask } from "@/hooks/tasks/useTasksActions";
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user } = useAuth(); // Sử dụng useAuth thay vì useUser
 
   // Get UI state from context
   const { optimisticTaskStates, setOptimisticTaskState, clearOptimisticTaskState } = useTasksContext();
@@ -502,3 +502,4 @@ const MyTasksCard = () => {
 };
 
 export default MyTasksCard;
+

@@ -4,19 +4,14 @@
  */
 
 import { useMemo } from 'react';
-import { useSession } from 'next-auth/react';
-import { createRBACHelper, hasPermission, hasAnyPermission, hasAllPermissions, canAccessRoute } from '@/utils/rbac';
-import { UserRole, Permission } from '@/constants/auth';
-import type { UserWithRole } from '@/types/roles';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { UserRole, ROLE_PERMISSIONS, type Permission } from '@/constants/auth';
 
 export interface UseRBACReturn {
   // User info
   user: UserWithRole | null;
   role: UserRole | null;
   isAuthenticated: boolean;
-  
-  // RBAC Helper instance
-  rbac: ReturnType<typeof createRBACHelper>;
   
   // Role checks
   isSuperAdmin: boolean;
@@ -53,13 +48,10 @@ export interface UseRBACReturn {
  * Main RBAC hook - sử dụng trong components để kiểm tra quyền
  */
 export function useRBAC(): UseRBACReturn {
-  const { data: session } = useSession();
-  const user = session?.user as UserWithRole | undefined;
+  const { user, isLoading } = useAuth();
+
   const isAuthenticated = !!user;
 
-  // Tạo RBAC helper với memoization để tránh re-create không cần thiết
-  const rbac = useMemo(() => createRBACHelper(user), [user]);
-  
   // Extract role với error handling
   const role = useMemo(() => {
     if (!user?.role) return null;
@@ -72,38 +64,60 @@ export function useRBAC(): UseRBACReturn {
     return null;
   }, [user?.role]);
   
+  // Tạo RBAC helper với memoization để tránh re-create không cần thiết
+  const permissions = useMemo(() => {
+    if (!role) return [];
+    return ROLE_PERMISSIONS[role] || [];
+  }, [role]);
+
+  const hasRole = useMemo(() =>
+    (role: UserRole) => role === role,
+    [role]
+  );
+
+  const hasPermission = useMemo(() =>
+    (permission: Permission) => permissions.includes(permission),
+    [permissions]
+  );
+
+  const canAccess = useMemo(() =>
+    (allowedRoles: UserRole[], requiredPermissions: Permission[] = []) =>
+      allowedRoles.includes(role as UserRole) && requiredPermissions.every(permission => permissions.includes(permission)),
+    [role, permissions]
+  );
+
   // Memoize all permission checks
   const permissionChecks = useMemo(() => ({
-    canManageWorkspace: rbac.canManageWorkspace,
-    canManageUsers: rbac.canManageUsers,
-    canCreateProjects: rbac.canCreateProjects,
-    canManageTeams: rbac.canManageTeams,
-    canViewReports: rbac.canViewReports,
-    canManageBilling: rbac.canManageBilling,
-    canInviteUsers: rbac.can(Permission.INVITE_USERS),
-    canDeleteProjects: rbac.can(Permission.DELETE_PROJECT),
-    canManageSystem: rbac.can(Permission.MANAGE_SYSTEM),
-  }), [rbac]);
-  
+    canManageWorkspace: hasPermission('workspace:manage'),
+    canManageUsers: hasPermission('users:manage'),
+    canCreateProjects: hasPermission('projects:create'),
+    canManageTeams: hasPermission('teams:manage'),
+    canViewReports: hasPermission('reports:view'),
+    canManageBilling: hasPermission('billing:manage'),
+    canInviteUsers: hasPermission('users:invite'),
+    canDeleteProjects: hasPermission('projects:delete'),
+    canManageSystem: hasPermission('system:manage'),
+  }), [hasPermission]);
+
   // Memoize role checks
   const roleChecks = useMemo(() => ({
-    isSuperAdmin: rbac.isSuperAdmin,
-    isAdmin: rbac.isAdmin,
-    isOwner: rbac.isOwner,
-    isProjectManager: rbac.isProjectManager,
-    isLeader: rbac.isLeader,
-    isMember: rbac.isMember,
-    isGuest: rbac.isGuest,
-  }), [rbac]);
-  
+    isSuperAdmin: hasRole(UserRole.SUPER_ADMIN),
+    isAdmin: hasRole(UserRole.ADMIN),
+    isOwner: hasRole(UserRole.OWNER),
+    isProjectManager: hasRole(UserRole.PROJECT_MANAGER),
+    isLeader: hasRole(UserRole.LEADER),
+    isMember: hasRole(UserRole.MEMBER),
+    isGuest: hasRole(UserRole.GUEST),
+  }), [hasRole]);
+
   // Memoize utility functions
   const utilityMethods = useMemo(() => ({
-    can: (permission: Permission) => hasPermission(user, permission),
-    canAny: (permissions: Permission[]) => hasAnyPermission(user, permissions),
-    canAll: (permissions: Permission[]) => hasAllPermissions(user, permissions),
-    canAccess: (allowedRoles: UserRole[], requiredPermissions: Permission[] = []) => 
-      canAccessRoute(user, allowedRoles, requiredPermissions),
-    hasMinRole: (minimumRole: UserRole) => rbac.hasMinRole(minimumRole),
+    can: (permission: Permission) => hasPermission(permission),
+    canAny: (permissions: Permission[]) => permissions.some(permission => hasPermission(permission)),
+    canAll: (permissions: Permission[]) => permissions.every(permission => hasPermission(permission)),
+    canAccess: (allowedRoles: UserRole[], requiredPermissions: Permission[] = []) =>
+      canAccess(allowedRoles, requiredPermissions),
+    hasMinRole: (minimumRole: UserRole) => hasRole(minimumRole),
     debug: () => {
       console.group('🔐 RBAC Debug Info');
       console.log('User:', user);
@@ -113,16 +127,13 @@ export function useRBAC(): UseRBACReturn {
       console.log('Permission Checks:', permissionChecks);
       console.groupEnd();
     },
-  }), [user, role, isAuthenticated, roleChecks, permissionChecks, rbac]);
-  
+  }), [user, role, isAuthenticated, roleChecks, permissionChecks]);
+
   return {
     // User info
     user,
     role,
     isAuthenticated,
-    
-    // RBAC Helper
-    rbac,
     
     // Role checks
     ...roleChecks,

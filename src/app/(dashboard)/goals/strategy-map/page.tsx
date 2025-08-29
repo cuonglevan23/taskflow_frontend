@@ -23,8 +23,6 @@ import {
   Lightbulb,
   Save,
   RotateCcw,
-  Sun,
-  Moon,
   Plus,
   Minus,
   Maximize2,
@@ -207,7 +205,7 @@ function StrategyMapContent() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   
-  // State for real team progress data
+  // State for real team progress data - use correct TeamProgress type
   const [teamsProgress, setTeamsProgress] = useState<TeamProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -273,7 +271,6 @@ function StrategyMapContent() {
     const totalWidth = (totalNodes - 1) * spacing;
     const startX = 400 - totalWidth / 2; // Center around x=400
     const position = { x: startX + nodeIndex * spacing, y: 300 };
-    
     
     return {
       id: `team-${team.teamId}`,

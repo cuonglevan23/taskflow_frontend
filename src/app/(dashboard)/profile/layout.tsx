@@ -6,7 +6,7 @@ import PageLayout from "@/layouts/page/PageLayout";
 import Button from "@/components/ui/Button/Button";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { DARK_THEME } from "@/constants/theme";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
 import { useRouter, usePathname } from "next/navigation";
 import { 
   Camera,
@@ -38,7 +38,7 @@ interface ProfileLayoutProps {
 }
 
 const ProfileLayout = ({ children }: ProfileLayoutProps) => {
-  const { user, isLoading } = useUser();
+  const { user, isLoading } = useAuth(); // Sử dụng useAuth thay vì useUser
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('friends');

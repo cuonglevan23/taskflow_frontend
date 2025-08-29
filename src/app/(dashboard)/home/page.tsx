@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { PrivateLayout } from "@/layouts";
 import { useTheme } from "@/layouts/hooks/useTheme";
-import { useUser } from "@/contexts/UserContext";
-import { 
+import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
+import {
   FaPlus, 
   FaCheckCircle, 
   FaUsers, 
@@ -383,7 +383,7 @@ const AchievementsWidget = () => {
 
 export default function HomeDashboard() {
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user } = useAuth(); // Sử dụng useAuth thay vì useUser
 
   return (
     <PrivateLayout>

@@ -1,5 +1,5 @@
-// Centralized API Client - Professional HTTP wrapper with interceptors
-import axios, { 
+// Centralized API Client - Backend JWT Authentication Only
+import axios, {
   AxiosInstance, 
   AxiosRequestConfig, 
   AxiosResponse, 
@@ -7,7 +7,6 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosProgressEvent
 } from 'axios';
-import { CookieAuth } from '@/utils/cookieAuth';
 import { SafeLogger } from '@/utils/safeLogger';
 
 // API Configuration
@@ -31,17 +30,17 @@ interface CircuitBreakerState {
 }
 
 const DEFAULT_CONFIG: ApiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || '', // Empty string means same origin (Next.js app)
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: false, // JWT-only authentication
+  withCredentials: true, // Important: include HTTP-only cookies
   maxRetries: 2,
   retryDelay: 1000,
-  circuitBreakerThreshold: 5, // Open circuit after 5 consecutive failures
-  circuitBreakerTimeout: 30000, // 30 seconds timeout
+  circuitBreakerThreshold: 5,
+  circuitBreakerTimeout: 30000,
 };
 
 // Error normalization interface
@@ -52,7 +51,7 @@ interface NormalizedError {
   details?: Record<string, unknown>;
   isConnectionError?: boolean;
   isServerError?: boolean;
-  userMessage?: string; // User-friendly message
+  userMessage?: string;
 }
 
 // Create main API instance
@@ -74,34 +73,11 @@ class ApiClient {
   }
 
   private setupInterceptors(): void {
-    // Request Interceptor - Authentication & Logging
+    // Request Interceptor - Simple, no manual token management
     this.instance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-        // Get token only from cookies
-        const token = CookieAuth.getAccessToken();
-        
-        if (token && config.headers) {
-          // Add Bearer token to Authorization header
-          config.headers['Authorization'] = `Bearer ${token}`;
-          
-          // Add user context headers for backend compatibility
-          const payload = CookieAuth.getTokenPayload();
-          if (payload) {
-            config.headers['X-User-ID'] = payload.userId?.toString();
-            config.headers['X-User-Email'] = payload.email;
-            
-            if (payload.roles) {
-              config.headers['X-User-Roles'] = JSON.stringify(payload.roles);
-              config.headers['X-User-Role'] = payload.roles[0]; // Primary role
-              config.headers['X-User-Authorities'] = JSON.stringify(
-                payload.roles.map((role: string) => `ROLE_${role}`)
-              );
-            }
-          }
-        } else {
-          console.warn('⚠️ No access token found - request will be unauthorized');
-        }
-        
+      async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
+        // HTTP-only cookies sẽ tự động được gửi kèm với withCredentials: true
+        SafeLogger.debug('🔄 API Request:', config.method?.toUpperCase(), config.url);
         return config;
       },
       (error) => {
@@ -110,7 +86,7 @@ class ApiClient {
       }
     );
 
-    // Response Interceptor - Error Handling & Circuit Breaker
+    // Response Interceptor - Handle authentication errors
     this.instance.interceptors.response.use(
       (response: AxiosResponse): AxiosResponse => {
         // Reset circuit breaker on successful response
@@ -118,20 +94,45 @@ class ApiClient {
         return response;
       },
       async (error: AxiosError) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         const normalizedError = this.normalizeError(error);
         
-        // Update circuit breaker on network errors and connection issues
+        // Handle authentication errors
+        if (normalizedError.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          SafeLogger.warn('🔄 Token expired, attempting refresh...');
+
+          try {
+            // Gọi refresh endpoint - backend sẽ handle cookie refresh
+            const refreshResponse = await fetch(`${this.config.baseURL}/api/auth/refresh`, {
+              method: 'POST',
+              credentials: 'include', // Include HTTP-only cookies
+            });
+
+            if (refreshResponse.ok) {
+              SafeLogger.info('✅ Token refreshed successfully');
+              // Retry original request
+              return this.instance(originalRequest);
+            } else {
+              SafeLogger.warn('❌ Token refresh failed, redirecting to login');
+              window.location.href = '/login';
+              return Promise.reject(normalizedError);
+            }
+          } catch (refreshError) {
+            SafeLogger.error('❌ Token refresh error:', refreshError);
+            window.location.href = '/login';
+            return Promise.reject(normalizedError);
+          }
+        }
+
+        // Update circuit breaker on network errors
         if (!normalizedError.status || normalizedError.status >= 500 || normalizedError.isConnectionError) {
           this.recordFailure();
         }
         
-        // Handle specific error cases
-        if (normalizedError.status === 401) {
-          await this.handleUnauthorized();
-        } else if (normalizedError.status === 403) {
+        // Handle other error cases
+        if (normalizedError.status === 403) {
           SafeLogger.error('🚨 403 Forbidden - Check user permissions');
-          // Don't try to handle 403 automatically - let component handle it
-          // await this.handleForbidden();
         } else if (normalizedError.status && normalizedError.status >= 500) {
           SafeLogger.error('🚨 Server Error - Backend issue');
         } else if (!normalizedError.status) {
@@ -196,24 +197,6 @@ class ApiClient {
       isServerError,
       userMessage,
     };
-  }
-
-  private async handleUnauthorized(): Promise<void> {
-    SafeLogger.warn('🚨 401 Unauthorized - API call failed, letting NextAuth handle session');
-    
-    // Don't automatically clear auth or redirect - let NextAuth/UserContext handle it
-    // This prevents infinite redirect loops from API calls that fail due to auth issues
-    
-    try {
-      // Only log the issue, don't take any action that could cause loops
-      SafeLogger.warn('Auth token may be expired or invalid');
-      
-      // Let the middleware and NextAuth handle the redirect properly
-      // Don't force immediate redirects here
-    } catch (authError) {
-      // Silent fail - don't cause more errors
-      SafeLogger.error('Failed to handle unauthorized error:', authError);
-    }
   }
 
   // Circuit Breaker Methods
@@ -304,23 +287,6 @@ class ApiClient {
     });
   }
 
-  // File download
-  async download(url: string, filename?: string): Promise<void> {
-    const response = await this.instance.get(url, {
-      responseType: 'blob',
-    });
-    
-    const blob = new Blob([response.data]);
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename || 'download';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-  }
-
   // Health check
   async healthCheck(): Promise<boolean> {
     try {
@@ -335,11 +301,9 @@ class ApiClient {
   // Authentication test
   async testAuthentication(): Promise<boolean> {
     try {
-      
       const testEndpoints = [
-        '/api/user/me',
+        '/api/auth/check',
         '/api/users/me',
-        '/api/auth/verify',
         '/api/tasks',
       ];
       
@@ -359,21 +323,6 @@ class ApiClient {
       return false;
     }
   }
-
-  // Configuration methods
-  updateBaseURL(newBaseURL: string): void {
-    this.config.baseURL = newBaseURL;
-    this.instance.defaults.baseURL = newBaseURL;
-  }
-
-  getConfig(): ApiConfig {
-    return { ...this.config };
-  }
-
-  // Get raw axios instance for advanced usage
-  getInstance(): AxiosInstance {
-    return this.instance;
-  }
 }
 
 // Create default instance
@@ -390,12 +339,10 @@ export const api = {
   patch: apiClient.patch.bind(apiClient),
   delete: apiClient.delete.bind(apiClient),
   upload: apiClient.upload.bind(apiClient),
-  download: apiClient.download.bind(apiClient),
   healthCheck: apiClient.healthCheck.bind(apiClient),
   testAuthentication: apiClient.testAuthentication.bind(apiClient),
-  updateBaseURL: apiClient.updateBaseURL.bind(apiClient),
-  getConfig: apiClient.getConfig.bind(apiClient),
 };
 
 // Default export
 export default api;
+

@@ -12,9 +12,9 @@ import axios, {
 import { CookieAuth } from '@/utils/cookieAuth';
 import { SafeLogger } from '@/utils/safeLogger';
 
-// API Configuration
+// API Configuration - Sử dụng Next.js route handlers thay vì gọi trực tiếp backend
 const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+  baseURL: '', // Sử dụng relative URLs để gọi qua Next.js route handlers
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

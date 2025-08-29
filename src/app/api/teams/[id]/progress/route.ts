@@ -1,168 +1,169 @@
-// API Route for team progress following v1f guidelines
-// GET /api/teams/[id]/progress - Returns team progress data
-
 import { NextRequest, NextResponse } from 'next/server';
-import { TeamProgressResponseDto } from '@/types/progress';
 
-type RouteParams = {
-  params: Promise<{ id: string }>
+// Authentication helper function for the new backend-only auth system
+async function validateAuthentication(request: NextRequest) {
+  try {
+    // Get backend base URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+
+    // Forward the cookies from the request to validate authentication
+    const cookieHeader = request.headers.get('cookie');
+
+    const response = await fetch(`${backendUrl}/api/user-profiles/me`, {
+      method: 'GET',
+      headers: {
+        'Cookie': cookieHeader || '',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return { authenticated: false, user: null };
+    }
+
+    const userData = await response.json();
+    return { authenticated: true, user: userData };
+  } catch (error) {
+    console.error('Authentication validation failed:', error);
+    return { authenticated: false, user: null };
+  }
 }
 
-// Mock data matching the API documentation example
-const mockTeamProgress: TeamProgressResponseDto = {
-  id: 1,
-  teamId: 123,
-  teamName: "Backend Team",
-  totalTasks: 45,
-  completedTasks: 32,
-  completionPercentage: 71.11,
-  lastUpdated: "2024-08-25T01:54:09.209",
-  createdAt: "2024-08-20T10:00:00",
-  updatedAt: "2024-08-25T01:54:09.209",
-  
-  teamOwner: {
-    userId: 456,
-    email: "john.doe@company.com",
-    firstName: "John",
-    lastName: "Doe",
-    username: "john.doe",
-    jobTitle: "Team Lead",
-    department: "Engineering",
-    aboutMe: "Experienced team leader with 5 years in backend development",
-    status: "Active",
-    avatarUrl: "https://example.com/avatars/john.jpg",
-    isUpgraded: true,
-    displayName: "John Doe",
-    initials: "JD"
-  },
-  teamMembers: [
-    {
-      userId: 456,
-      email: "john.doe@company.com",
-      firstName: "John",
-      lastName: "Doe",
-      username: "john.doe",
-      displayName: "John Doe",
-      initials: "JD",
-      avatarUrl: "https://example.com/avatars/john.jpg",
-      jobTitle: "Team Lead",
-      department: "Engineering",
-      status: "Active",
-      isUpgraded: true
-    },
-    {
-      userId: 789,
-      email: "jane.smith@company.com",
-      firstName: "Jane",
-      lastName: "Smith",
-      username: "jane.smith",
-      displayName: "Jane Smith",
-      initials: "JS",
-      avatarUrl: "https://example.com/avatars/jane.jpg",
-      jobTitle: "Senior Developer",
-      department: "Engineering",
-      status: "Active",
-      isUpgraded: false
-    }
-  ],
-  lastUpdatedBy: {
-    userId: 789,
-    email: "jane.smith@company.com",
-    firstName: "Jane",
-    lastName: "Smith",
-    username: "jane.smith",
-    displayName: "Jane Smith",
-    initials: "JS",
-    avatarUrl: "https://example.com/avatars/jane.jpg",
-    jobTitle: "Senior Developer",
-    department: "Engineering",
-    status: "Active",
-    isUpgraded: false
-  }
-};
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+// GET /api/teams/[id]/progress - Lấy progress của team cụ thể
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id: teamId } = await params;
-    
-    // In development, return mock data
-    if (process.env.NODE_ENV === 'development') {
-      // Customize mock data based on teamId
-      const customMockData = {
-        ...mockTeamProgress,
-        teamId: parseInt(teamId),
-        teamName: teamId === '123' ? 'Backend Team' : `Team ${teamId}`,
-      };
-      
-      return NextResponse.json(customMockData);
+    // Validate authentication using the new system
+    const { authenticated, user } = await validateAuthentication(request);
+
+    if (!authenticated || !user) {
+      console.error('❌ [Team Progress] Authentication failed');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    // In production, this would call the actual backend
-    // const session = await auth();
-    // if (!session?.user?.accessToken) {
-    //   return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    // }
+    const teamId = params.id;
 
-    // const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-    // const response = await fetch(`${backendUrl}/api/teams/${teamId}/progress`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${session.user.accessToken}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    // });
+    // Get backend base URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/teams/${teamId}/progress`;
 
-    // if (!response.ok) {
-    //   throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    // }
+    console.log('📤 [Team Progress] Proxying to backend:', url);
 
-    // return NextResponse.json(await response.json());
+    // Forward request to backend with cookies for authentication
+    const cookieHeader = request.headers.get('cookie');
 
-    // For now, return mock data even in production
-    const customMockData = {
-      ...mockTeamProgress,
-      teamId: parseInt(teamId),
-      teamName: teamId === '123' ? 'Backend Team' : `Team ${teamId}`,
-    };
-    
-    return NextResponse.json(customMockData);
-    
-  } catch (error) {
-    console.error('Team progress API error:', error);
+    const backendResponse = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Cookie': cookieHeader || '',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
+
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch team progress from backend',
+          details: errorText,
+          status: backendResponse.status
+        },
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+    console.log('✅ [Team Progress] Successfully fetched team progress for teamId:', teamId);
+
+    return NextResponse.json(data);
+
+  } catch (error: unknown) {
+    console.error('❌ API Error in GET /api/teams/[id]/progress:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     return NextResponse.json(
-      { error: 'Failed to fetch team progress' }, 
+      {
+        error: 'Internal server error',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }
 }
 
-// POST endpoint for refreshing team progress
-export async function POST(request: NextRequest, { params }: RouteParams) {
+// POST /api/teams/[id]/progress - Refresh team progress manually
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id: teamId } = await params;
-    
-    // In development, return updated mock data
-    if (process.env.NODE_ENV === 'development') {
-      const refreshedMockData = {
-        ...mockTeamProgress,
-        teamId: parseInt(teamId),
-        teamName: teamId === '123' ? 'Backend Team' : `Team ${teamId}`,
-        lastUpdated: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        // Simulate slight progress update
-        completedTasks: mockTeamProgress.completedTasks + 1,
-        completionPercentage: Math.round(((mockTeamProgress.completedTasks + 1) / mockTeamProgress.totalTasks) * 100 * 100) / 100
-      };
-      
-      return NextResponse.json(refreshedMockData);
+    // Validate authentication using the new system
+    const { authenticated, user } = await validateAuthentication(request);
+
+    if (!authenticated || !user) {
+      console.error('❌ [Team Progress Refresh] Authentication failed');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    // Production implementation would go here
-    return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
-    
-  } catch (error) {
-    console.error('Team progress refresh API error:', error);
+    const teamId = params.id;
+
+    // Get backend base URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+    const url = `${backendUrl}/api/teams/${teamId}/progress`;
+
+    console.log('📤 [Team Progress Refresh] Proxying to backend:', url);
+
+    // Forward request to backend with cookies for authentication
+    const cookieHeader = request.headers.get('cookie');
+
+    const backendResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Cookie': cookieHeader || '',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!backendResponse.ok) {
+      const errorText = await backendResponse.text();
+      console.error('❌ Backend error:', backendResponse.status, errorText);
+
+      return NextResponse.json(
+        {
+          error: 'Failed to refresh team progress from backend',
+          details: errorText,
+          status: backendResponse.status
+        },
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+    console.log('✅ [Team Progress Refresh] Successfully refreshed team progress for teamId:', teamId);
+
+    return NextResponse.json(data);
+
+  } catch (error: unknown) {
+    console.error('❌ API Error in POST /api/teams/[id]/progress:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     return NextResponse.json(
-      { error: 'Failed to refresh team progress' }, 
+      {
+        error: 'Internal server error',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }
