@@ -3,23 +3,30 @@ import { Share, Paperclip, ExternalLink, CheckCircle, Upload, ChevronDown, Folde
 import { Button } from '@/components/ui/Button';
 import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
+import { useSWRFileUpload } from '@/hooks/useSWRFileUpload'; // Use new SWR hook
 
 interface TaskDetailHeaderProps {
   task: TaskListItem | null;
   onClose: () => void;
   onMarkComplete?: () => void;
-  onFileUpload?: (files: FileList, source: string) => void;
+  onFileUploadComplete?: (result: any) => void;
 }
 
 const TaskDetailHeader = ({
   task,
   onClose,
   onMarkComplete,
-  onFileUpload
+  onFileUploadComplete
 }: TaskDetailHeaderProps) => {
   const [showUploadDropdown, setShowUploadDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 🔥 NEW: Use SWR hook for consistent cache management
+  const {
+    uploadSingleFile,
+    uploadFiles,
+  } = useSWRFileUpload(task?.id ? parseInt(task.id) : 0);
 
   // Helper function to check if task is completed
   const isTaskCompleted = (task: TaskListItem): boolean => {
@@ -29,11 +36,43 @@ const TaskDetailHeader = ({
            (task.status as string) === 'completed';
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0 && onFileUpload) {
-      onFileUpload(files, activeTab);
+    if (files && files.length > 0 && task?.id) {
+      try {
+        const taskId = parseInt(task.id);
+
+        if (files.length === 1) {
+          // 🔥 Upload using SWR hook - auto mutates cache
+          const result = await uploadSingleFile(files[0], taskId, {
+            method: 'presigned',
+            onProgress: (progress) => {
+              console.log('🔄 Upload progress:', progress);
+            },
+            onComplete: (result) => {
+              console.log('✅ Upload completed:', result);
+              onFileUploadComplete?.(result);
+            },
+            onError: (error) => {
+              console.error('❌ Upload failed:', error);
+            }
+          });
+          console.log('🎉 Single file upload result:', result);
+        } else {
+          // 🔥 Upload multiple using SWR hook - auto mutates cache
+          const results = await uploadFiles(Array.from(files), taskId, {
+            method: 'presigned'
+          });
+          console.log('🎉 Multiple upload completed:', results);
+          onFileUploadComplete?.(results);
+        }
+      } catch (error) {
+        console.error('💥 Upload error:', error);
+      }
     }
+
+    // Reset input and close dropdown
+    event.target.value = '';
     setShowUploadDropdown(false);
   };
 
@@ -210,52 +249,65 @@ const TaskDetailHeader = ({
                       <input
                         ref={fileInputRef}
                         type="file"
-                        multiple
                         className="hidden"
                         onChange={handleFileSelect}
+                        multiple
                       />
                     </div>
                   )}
 
-                  {activeTab !== 'upload' && (
-                    <div className="text-center py-8">
-                      <div className="mb-4">
-                        <Cloud
-                          className="w-12 h-12 mx-auto mb-3"
-                          style={{ color: DARK_THEME.text.muted }}
-                        />
-                        <h3
-                          className="text-lg font-medium mb-2"
-                          style={{ color: DARK_THEME.text.primary }}
-                        >
-                          {uploadTabs.find(tab => tab.id === activeTab)?.label} Integration
-                        </h3>
-                        <p
-                          className="text-sm"
-                          style={{ color: DARK_THEME.text.muted }}
-                        >
-                          Connect to {uploadTabs.find(tab => tab.id === activeTab)?.label} to access your files
-                        </p>
-                      </div>
-
+                  {activeTab === 'google-drive' && (
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500 mb-4">
+                        Connect your Google Drive to import files.
+                      </p>
                       <Button
-                        className="px-6 py-2 rounded-lg transition-all duration-200"
+                        variant="outline"
+                        className="px-6 py-3 rounded-lg border transition-all duration-200"
                         style={{
-                          backgroundColor: DARK_THEME.button.primary.background,
-                          color: DARK_THEME.button.primary.text
+                          borderColor: DARK_THEME.button.google.border,
+                          color: DARK_THEME.button.google.text,
+                          backgroundColor: DARK_THEME.button.google.background
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.primary.hover;
+                          e.currentTarget.style.borderColor = DARK_THEME.button.google.borderHover;
+                          e.currentTarget.style.backgroundColor = DARK_THEME.button.google.backgroundHover;
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.primary.background;
-                        }}
-                        onClick={() => {
-                          console.log(`Connect to ${activeTab}`);
-                          // Implement cloud service connection
+                          e.currentTarget.style.borderColor = DARK_THEME.button.google.border;
+                          e.currentTarget.style.backgroundColor = DARK_THEME.button.google.background;
                         }}
                       >
-                        Connect to {uploadTabs.find(tab => tab.id === activeTab)?.label}
+                        <img src="/images/google-logo.svg" alt="Google Logo" className="w-4 h-4 mr-2" />
+                        Connect Google Drive
+                      </Button>
+                    </div>
+                  )}
+
+                  {activeTab === 'onedrive' && (
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500 mb-4">
+                        Connect your OneDrive or SharePoint to import files.
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="px-6 py-3 rounded-lg border transition-all duration-200"
+                        style={{
+                          borderColor: DARK_THEME.button.onedrive.border,
+                          color: DARK_THEME.button.onedrive.text,
+                          backgroundColor: DARK_THEME.button.onedrive.background
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = DARK_THEME.button.onedrive.borderHover;
+                          e.currentTarget.style.backgroundColor = DARK_THEME.button.onedrive.backgroundHover;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = DARK_THEME.button.onedrive.border;
+                          e.currentTarget.style.backgroundColor = DARK_THEME.button.onedrive.background;
+                        }}
+                      >
+                        <img src="/images/onedrive-logo.svg" alt="OneDrive Logo" className="w-4 h-4 mr-2" />
+                        Connect OneDrive
                       </Button>
                     </div>
                   )}

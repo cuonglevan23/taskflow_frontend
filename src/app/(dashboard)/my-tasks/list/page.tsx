@@ -5,7 +5,6 @@ import { BucketTaskList } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
-import { useFileUpload } from "@/hooks/useFileUpload";
 
 interface TaskBucket {
   id: string;
@@ -39,14 +38,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     sortDir: 'desc',
     searchValue: searchInput
   });
-
-  // File upload hook for AWS S3 integration
-  const {
-    isUploading,
-    uploadProgress,
-    uploadFiles,
-    getUploadSummary
-  } = useFileUpload();
 
   // Action time buckets logic (same as board page)
   const taskBuckets = useMemo((): TaskBucket[] => {
@@ -230,75 +221,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     alert('Add to favorites functionality will be implemented');
   };
 
-  // 🚀 NEW: AWS S3 File Upload Handler
-  const handleFileUpload = useCallback(async (files: FileList, source: string) => {
-    try {
-      console.log(`📎 [AWS S3] Uploading ${files.length} files from ${source}:`, Array.from(files).map(f => f.name));
-
-      if (!selectedTaskId) {
-        showNotification('No task selected', 'error');
-        console.error('❌ No task selected for file upload');
-        return;
-      }
-
-      const taskIdNumber = parseInt(selectedTaskId);
-      if (isNaN(taskIdNumber)) {
-        showNotification('Invalid task ID', 'error');
-        return;
-      }
-
-      // Upload to AWS S3 via presigned URLs
-      const results = await uploadFiles(files, taskIdNumber, 'documents');
-
-      // Check upload results
-      const summary = getUploadSummary();
-
-      if (summary.success > 0) {
-        showNotification(
-          `Successfully uploaded ${summary.success} file(s)` +
-          (summary.failed > 0 ? ` (${summary.failed} failed)` : '')
-        );
-
-        // Refresh task data to show new attachments
-        // The backend should have already linked files via /api/tasks/my-tasks/{id}/with-files
-        // Trigger a refresh of the task list
-        // actions.refreshTasks?.(); // If available
-
-        console.log('✅ [AWS S3] Upload completed:', results);
-      } else {
-        showNotification('All file uploads failed', 'error');
-        console.error('❌ [AWS S3] All uploads failed:', results);
-      }
-
-    } catch (error) {
-      showNotification('Failed to upload files to S3', 'error');
-      console.error('❌ [AWS S3] File upload error:', error);
-    }
-  }, [selectedTaskId, uploadFiles, getUploadSummary, showNotification]);
-
-  // Handle attachment removal (delete from S3)
-  const handleRemoveAttachment = useCallback(async (attachmentId: string) => {
-    try {
-      if (!selectedTaskId) return;
-
-      console.log('🗑️ [AWS S3] Removing attachment:', attachmentId);
-
-      // If attachmentId is actually the S3 fileKey, delete from S3
-      // This would typically be handled by a dedicated delete function
-      // For now, just show success message
-      showNotification('Attachment removed successfully');
-
-      // In a real implementation, you would:
-      // 1. Call fileUploadService.deleteFile(attachmentId)
-      // 2. Update the task to remove the file reference
-      // 3. Refresh the task data
-
-    } catch (error) {
-      showNotification('Failed to remove attachment', 'error');
-      console.error('❌ [AWS S3] Remove attachment error:', error);
-    }
-  }, [selectedTaskId, showNotification]);
-
   // Get selected task
   const selectedTask = useMemo(() => {
     return taskListItems.find(task => task.id === selectedTaskId) || null;
@@ -328,7 +250,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
         onTaskAssign={handleTaskAssign}
       />
 
-      {/* Task Detail Panel with AWS S3 File Upload */}
+      {/* Task Detail Panel */}
       {isPanelOpen && selectedTask && (
         <TaskDetailPanel
           task={selectedTask}
@@ -338,14 +260,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
           onSaveDescription={handleDescriptionSave}
           onStatusChange={handleTaskStatusChange}
           onPriorityChange={handleTaskPriorityChange}
-          onFileUpload={handleFileUpload}
-          onRemoveAttachment={handleRemoveAttachment}
-          // Pass upload state to show progress in panel
-          uploadState={{
-            isUploading,
-            uploadProgress,
-            summary: getUploadSummary()
-          }}
         />
       )}
     </div>

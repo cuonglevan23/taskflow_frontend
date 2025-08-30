@@ -17,7 +17,7 @@ interface TaskDetailPanelProps {
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, status: string) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
-  onFileUpload?: (files: FileList, source: string) => void;
+  onFileUploadComplete?: (result: any) => void; // Change from onFileUpload to onFileUploadComplete
   onRemoveAttachment?: (attachmentId: string) => void;
 }
 
@@ -30,12 +30,13 @@ const TaskDetailPanel = ({
   onDelete, // Keep for future use
   onStatusChange,
   onPriorityChange,
-  onFileUpload,
+  onFileUploadComplete,
   onRemoveAttachment
 }: TaskDetailPanelProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [comment, setComment] = useState('');
+  const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0); // Add refresh trigger
 
 
   React.useEffect(() => {
@@ -94,9 +95,21 @@ const TaskDetailPanel = ({
   };
 
   const handleFileUpload = (files: FileList, source: string) => {
-    if (onFileUpload && task) {
+    if (onFileUploadComplete && task) {
       console.log(`📎 Uploading ${files.length} files from ${source} for task ${task.id}`);
-      onFileUpload(files, source);
+      onFileUploadComplete(files, source);
+    }
+  };
+
+  const handleFileUploadComplete = (result: any) => {
+    console.log('📎 File upload completed:', result);
+
+    // Trigger refresh for FileDisplayGrid
+    setFileRefreshTrigger(prev => prev + 1);
+
+    // Call parent callback if provided
+    if (onFileUploadComplete) {
+      onFileUploadComplete(result);
     }
   };
 
@@ -116,7 +129,7 @@ const TaskDetailPanel = ({
         task={task}
         onClose={onClose}
         onMarkComplete={handleMarkComplete}
-        onFileUpload={handleFileUpload}
+        onFileUploadComplete={handleFileUploadComplete}
       />
       
       <TaskDetailContent
@@ -130,6 +143,7 @@ const TaskDetailPanel = ({
         onTaskStatusChange={onStatusChange}
         onTaskPriorityChange={onPriorityChange}
         onRemoveAttachment={onRemoveAttachment}
+        fileRefreshTrigger={fileRefreshTrigger}
       />
 
       <TaskDetailFooter

@@ -78,6 +78,17 @@ class ApiClient {
       async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
         // HTTP-only cookies sẽ tự động được gửi kèm với withCredentials: true
         SafeLogger.debug('🔄 API Request:', config.method?.toUpperCase(), config.url);
+
+        // Special handling for FormData - only remove Content-Type, keep other headers
+        if (config.data instanceof FormData) {
+          // Only remove Content-Type header to let browser set it with boundary
+          // Keep all other headers including authentication headers
+          if (config.headers && config.headers['Content-Type']) {
+            delete config.headers['Content-Type'];
+          }
+          SafeLogger.debug('📋 FormData request detected - removed Content-Type, keeping other headers');
+        }
+
         return config;
       },
       (error) => {
@@ -345,4 +356,3 @@ export const api = {
 
 // Default export
 export default api;
-

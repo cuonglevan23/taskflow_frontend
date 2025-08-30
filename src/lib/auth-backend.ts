@@ -3,7 +3,6 @@
 
 export class AuthService {
   private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-  private static _isLoggingOut = false; // Add missing property
 
   /**
    * Khởi tạo đăng nhập với Google
@@ -164,6 +163,7 @@ export class AuthService {
   }
 
   // Private flag to prevent duplicate logout calls
+  private static _isLoggingOut = false;
 }
 
 /**

@@ -7,7 +7,7 @@ import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
 import CommentsList from './CommentsList';
 import TaskAttachments from './TaskAttachments';
-import TaskFiles from '@/components/TaskFiles'; // Import new TaskFiles component
+import { FileDisplayGrid } from '@/components/FileDisplayGrid'; // Change to display-only component
 import { useTaskActivities } from '@/hooks/useTaskActivities';
 import { TaskActivityResponseDto, getActivityConfig, TaskActivityType } from '@/services/taskActivityService';
 import {
@@ -29,6 +29,7 @@ interface TaskDetailContentProps {
   onTaskStatusChange?: (taskId: string, status: string) => void;
   onTaskPriorityChange?: (taskId: string, priority: string) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
+  fileRefreshTrigger?: number; // Add refresh trigger prop
 }
 
 type TabType = 'comments' | 'activity';
@@ -43,7 +44,8 @@ const TaskDetailContent = ({
   onSaveDescription, // Keep for future use but don't use it to prevent closing
   onTaskStatusChange,
   onTaskPriorityChange,
-  onRemoveAttachment
+  onRemoveAttachment,
+  fileRefreshTrigger // Add this prop to the destructuring
 }: TaskDetailContentProps) => {
   // Use the custom hook to get and update task description
   const taskId = task?.id ? String(task.id) : null;
@@ -526,7 +528,10 @@ const TaskDetailContent = ({
         </h3>
 
         {task?.id ? (
-          <TaskFiles taskId={parseInt(task.id)} />
+          <FileDisplayGrid
+            taskId={parseInt(task.id)}
+            refreshTrigger={fileRefreshTrigger}
+          />
         ) : (
           <div className="text-sm text-gray-400 italic border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
             Task not loaded
