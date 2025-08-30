@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useOptimizedSession } from '@/hooks/useOptimizedSession'; // Tối ưu session
+import { useAuth } from '@/components/auth/AuthProvider'; // Use new auth system
 import { DARK_THEME } from "@/constants/theme";
 import { MembersHeader, MembersTable } from "@/components/teams";
 import { useTeam } from "@/hooks/useTeam";
@@ -10,7 +10,7 @@ import { transformTeamMemberForMembersTable, type MembersTableData } from "@/typ
 
 const TeamMembersPage = React.memo(() => {
   const params = useParams();
-  const { data: session } = useOptimizedSession(); // Sử dụng session tối ưu
+  const { user, isLoading: authLoading } = useAuth(); // Use new auth system
   const teamId = useMemo(() => {
     const id = params.id as string;
     return parseInt(id, 10);
@@ -40,10 +40,10 @@ const TeamMembersPage = React.memo(() => {
 
   // Transform members data to match the expected format
   const transformedMembers: MembersTableData[] = useMemo(() => {
-    if (!members || !team || !session?.user) return [];
-    
+    if (!members || !team || !user) return [];
+
     return members.map(transformTeamMemberForMembersTable);
-  }, [members, team, session?.user]);
+  }, [members, team, user]);
 
   // Debug logs
   console.log('Team data:', team);

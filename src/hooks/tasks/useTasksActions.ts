@@ -150,7 +150,9 @@ export const useCreateTask = () => {
 
         return newTask;
       } catch (error) {
-        // Rollback optimistic update - use specific cache key with params
+        console.error('❌ Failed to create task:', error);
+
+        // ✅ FIX: Remove optimistic task on error and force revalidation
         mutate(
           ['tasks', 'my-tasks', 'summary', {
             page: 0,
@@ -160,18 +162,28 @@ export const useCreateTask = () => {
           }],
           (currentData: any) => {
             if (currentData?.tasks) {
+              // Remove failed optimistic task
+              const filteredTasks = currentData.tasks.filter((task: Task) => {
+                const isOptimistic = String(task.id) === String(optimisticTask.id);
+                return !isOptimistic;
+              });
+
               return {
                 ...currentData,
-                tasks: currentData.tasks.filter((task: Task) => task.id !== optimisticTask.id),
+                tasks: filteredTasks,
                 totalElements: currentData.totalElements - 1
               };
             }
             return currentData;
           },
-          false
+          true // Force revalidation on error to get fresh data
         );
+
         throw error;
       }
+    },
+    {
+      revalidate: false, // Don't auto-revalidate on success (we handle manually)
     }
   );
 

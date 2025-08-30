@@ -1,3 +1,23 @@
+// Project status color mappings
+const PROJECT_STATUS_COLORS = {
+  PLANNED: 'blue',
+  IN_PROGRESS: 'orange',
+  COMPLETED: 'green',
+  ON_HOLD: 'yellow',
+  CANCELLED: 'red',
+} as const;
+
+// Project priority color mappings
+const PROJECT_PRIORITY_COLORS = {
+  LOW: 'green',
+  MEDIUM: 'blue',
+  HIGH: 'orange',
+  URGENT: 'red',
+} as const;
+
+// Type definitions for better type safety
+type ProjectStatus = keyof typeof PROJECT_STATUS_COLORS;
+type ProjectPriority = keyof typeof PROJECT_PRIORITY_COLORS;
 // Project Service - Centralized project operations using lib/api.ts
 import { api } from '@/lib/api';
 import { 
@@ -6,28 +26,7 @@ import {
   calculateDaysBetween,
   isDateOverdue 
 } from '@/lib/transforms';
-import { CookieAuth } from '@/utils/cookieAuth';
-import type { 
-  ProjectResponseDto as BackendProject,
-  Project,
-  CreateProjectRequestDto as CreateProjectDTO,
-  UpdateProjectRequestDto as UpdateProjectDTO,
-  CreateProjectFormData as ProjectFormData,
-  ProjectSummary,
-  ProjectStats,
-  ProjectProgress,
-  ProjectTask,
-  ProjectTasksResponse,
-  PaginatedProjectsResponse,
-  ProjectQueryParams,
-  ProjectStatus,
-  ProjectPriority,
-  ProjectsApiResponse
-} from '@/types/projects';
-import { 
-  PROJECT_STATUS_COLORS,
-  PROJECT_PRIORITY_COLORS
-} from '@/types/project';
+
 
 // Transform backend project to frontend format
 export const transformBackendProject = (backendProject: BackendProject): Project => {
@@ -112,9 +111,6 @@ export const transformToProjectSummary = (project: Project): ProjectSummary => (
 
 // Transform form data to create DTO
 export const transformFormToCreateDTO = (formData: ProjectFormData): CreateProjectDTO => {
-  const userInfo = CookieAuth.getUserInfo();
-  const tokenPayload = CookieAuth.getTokenPayload();
-  
   return {
     name: formData.name.trim(),
     description: formData.description?.trim() || '',
@@ -122,9 +118,9 @@ export const transformFormToCreateDTO = (formData: ProjectFormData): CreateProje
     endDate: formData.endDate,
     status: 'PLANNED', // Default status
     priority: 'MEDIUM', // Default priority
-    emailPm: userInfo.email || tokenPayload?.email || '',
-    ownerId: tokenPayload?.userId || parseInt(userInfo.id || '1'),
-    organizationId: formData.isPersonal ? null : (tokenPayload?.organizationId || 1),
+    emailPm: '', // No emailPm in backend JWT auth
+    ownerId: 0, // Will be set by backend
+    organizationId: formData.isPersonal ? null : (1), // Default to org ID 1 for now
     budget: undefined,
     teamIds: formData.isPersonal ? [] : (formData.teamId ? [formData.teamId] : []),
     isPersonal: formData.isPersonal,

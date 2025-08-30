@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import { UserAvatar, type UserAvatarProps } from "../UserAvatar";
-import type { User } from "@/types/auth";
+import type { User } from "@/layouts/types";
 
 export interface UserAvatarGroupProps {
   users: User[];

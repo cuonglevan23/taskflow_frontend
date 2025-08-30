@@ -5,14 +5,23 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { UserRole, ROLE_PERMISSIONS, type Permission } from '@/constants/auth';
+import { UserRole, Permission, ROLE_PERMISSIONS } from '@/constants/auth';
+
+// Define UserWithRole interface locally since it's needed for this hook
+interface UserWithRole {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+}
 
 export interface UseRBACReturn {
   // User info
   user: UserWithRole | null;
   role: UserRole | null;
   isAuthenticated: boolean;
-  
+
   // Role checks
   isSuperAdmin: boolean;
   isAdmin: boolean;
@@ -21,13 +30,13 @@ export interface UseRBACReturn {
   isLeader: boolean;
   isMember: boolean;
   isGuest: boolean;
-  
+
   // Permission methods
   can: (permission: Permission) => boolean;
   canAny: (permissions: Permission[]) => boolean;
   canAll: (permissions: Permission[]) => boolean;
   canAccess: (allowedRoles: UserRole[], requiredPermissions?: Permission[]) => boolean;
-  
+
   // Management capabilities
   canManageWorkspace: boolean;
   canManageUsers: boolean;
@@ -38,7 +47,7 @@ export interface UseRBACReturn {
   canInviteUsers: boolean;
   canDeleteProjects: boolean;
   canManageSystem: boolean;
-  
+
   // Utility methods
   hasMinRole: (minimumRole: UserRole) => boolean;
   debug: () => void;
@@ -55,15 +64,15 @@ export function useRBAC(): UseRBACReturn {
   // Extract role với error handling
   const role = useMemo(() => {
     if (!user?.role) return null;
-    
+
     // Handle both new and legacy role formats
     if (typeof user.role === 'string') {
       return user.role as UserRole;
     }
-    
+
     return null;
   }, [user?.role]);
-  
+
   // Tạo RBAC helper với memoization để tránh re-create không cần thiết
   const permissions = useMemo(() => {
     if (!role) return [];
@@ -71,7 +80,7 @@ export function useRBAC(): UseRBACReturn {
   }, [role]);
 
   const hasRole = useMemo(() =>
-    (role: UserRole) => role === role,
+    (targetRole: UserRole) => role === targetRole,
     [role]
   );
 
@@ -88,15 +97,15 @@ export function useRBAC(): UseRBACReturn {
 
   // Memoize all permission checks
   const permissionChecks = useMemo(() => ({
-    canManageWorkspace: hasPermission('workspace:manage'),
-    canManageUsers: hasPermission('users:manage'),
-    canCreateProjects: hasPermission('projects:create'),
-    canManageTeams: hasPermission('teams:manage'),
-    canViewReports: hasPermission('reports:view'),
-    canManageBilling: hasPermission('billing:manage'),
-    canInviteUsers: hasPermission('users:invite'),
-    canDeleteProjects: hasPermission('projects:delete'),
-    canManageSystem: hasPermission('system:manage'),
+    canManageWorkspace: hasPermission(Permission.MANAGE_WORKSPACE),
+    canManageUsers: hasPermission(Permission.MANAGE_USERS),
+    canCreateProjects: hasPermission(Permission.CREATE_PROJECT),
+    canManageTeams: hasPermission(Permission.MANAGE_TEAM),
+    canViewReports: hasPermission(Permission.VIEW_REPORTS),
+    canManageBilling: hasPermission(Permission.MANAGE_BILLING),
+    canInviteUsers: hasPermission(Permission.INVITE_USERS),
+    canDeleteProjects: hasPermission(Permission.DELETE_PROJECT),
+    canManageSystem: hasPermission(Permission.MANAGE_SYSTEM),
   }), [hasPermission]);
 
   // Memoize role checks
@@ -104,7 +113,7 @@ export function useRBAC(): UseRBACReturn {
     isSuperAdmin: hasRole(UserRole.SUPER_ADMIN),
     isAdmin: hasRole(UserRole.ADMIN),
     isOwner: hasRole(UserRole.OWNER),
-    isProjectManager: hasRole(UserRole.PROJECT_MANAGER),
+    isProjectManager: hasRole(UserRole.PM),
     isLeader: hasRole(UserRole.LEADER),
     isMember: hasRole(UserRole.MEMBER),
     isGuest: hasRole(UserRole.GUEST),
@@ -134,13 +143,13 @@ export function useRBAC(): UseRBACReturn {
     user,
     role,
     isAuthenticated,
-    
+
     // Role checks
     ...roleChecks,
-    
+
     // Permission checks
     ...permissionChecks,
-    
+
     // Utility methods
     ...utilityMethods,
   };
@@ -163,14 +172,14 @@ export function usePermissions(permissions: Permission[]): {
   results: Record<string, boolean>;
 } {
   const { can, canAny, canAll } = useRBAC();
-  
+
   const results = useMemo(() => {
     return permissions.reduce((acc, permission) => {
       acc[permission] = can(permission);
       return acc;
     }, {} as Record<string, boolean>);
   }, [permissions, can]);
-  
+
   return {
     hasAny: canAny(permissions),
     hasAll: canAll(permissions),
@@ -199,7 +208,7 @@ export function useMinimumRole(minimumRole: UserRole): boolean {
  */
 export function useRoleBasedNavigation() {
   const { user, canAccess } = useRBAC();
-  
+
   const filterNavigationByRole = useMemo(() => {
     return <T extends { allowedRoles?: UserRole[]; requiredPermissions?: Permission[] }>(
       items: T[]
@@ -210,7 +219,7 @@ export function useRoleBasedNavigation() {
       });
     };
   }, [canAccess]);
-  
+
   return {
     user,
     filterNavigationByRole,

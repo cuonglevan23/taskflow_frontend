@@ -1,6 +1,14 @@
 import { ReactNode } from 'react';
-import { User } from '@/types/auth';
 import { UserRole, Permission } from '@/constants/auth';
+
+// User interface for layout types
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role?: string;
+}
 
 // Base layout props
 export interface BaseLayoutProps {
@@ -131,4 +139,4 @@ export interface LayoutActions {
   refreshNotifications: () => Promise<void>;
   updateBreadcrumbs: (breadcrumbs: BreadcrumbItem[]) => void;
   signOut: () => void;
-} 
+}

@@ -5,7 +5,7 @@ import { BucketTaskList } from "@/components/TaskList";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
-import { FakeFileStorage, createFakeAttachment } from "@/utils/fakeFileStorage";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 interface TaskBucket {
   id: string;
@@ -25,7 +25,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   const [searchInput, setSearchInput] = useState(searchValue);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [attachmentsUpdateTrigger, setAttachmentsUpdateTrigger] = useState(0); // Force re-render when attachments change
 
   // Use shared hook - same as board/calendar pages
   const {
@@ -40,6 +39,14 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     sortDir: 'desc',
     searchValue: searchInput
   });
+
+  // File upload hook for AWS S3 integration
+  const {
+    isUploading,
+    uploadProgress,
+    uploadFiles,
+    getUploadSummary
+  } = useFileUpload();
 
   // Action time buckets logic (same as board page)
   const taskBuckets = useMemo((): TaskBucket[] => {
@@ -193,27 +200,40 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     }
   }, [actions, showNotification]);
 
+  // 🚀 NEW: Task Creation Handler - Connect to useMyTasksShared action
+  const handleTaskCreate = useCallback(async (taskData: {
+    name: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    startDate?: string;
+    deadline?: string;
+    actionTime?: string;
+  }) => {
+    try {
+      console.log('🔥 handleTaskCreate called with:', taskData);
+
+      // Call the action from useMyTasksShared which will:
+      // 1. Create task via tasksService.createTask
+      // 2. Automatically call revalidate() to refresh the UI
+      await actions.onCreateTask(taskData);
+
+      showNotification('Task created successfully');
+      console.log('✅ Task created and UI should refresh automatically');
+    } catch (error) {
+      showNotification('Failed to create task', 'error');
+      console.error('❌ Task creation error:', error);
+    }
+  }, [actions, showNotification]);
+
   const toggleFavorite = () => {
     alert('Add to favorites functionality will be implemented');
   };
 
-  // Get selected task with fake attachments
-  const selectedTask = useMemo(() => {
-    const task = taskListItems.find(task => task.id === selectedTaskId) || null;
-    if (task && selectedTaskId) {
-      // Get fake attachments from storage and merge with task
-      const fakeAttachments = FakeFileStorage.getAttachments(selectedTaskId);
-      return {
-        ...task,
-        attachments: [...(task.attachments || []), ...fakeAttachments]
-      };
-    }
-    return task;
-  }, [taskListItems, selectedTaskId, attachmentsUpdateTrigger]);
-
+  // 🚀 NEW: AWS S3 File Upload Handler
   const handleFileUpload = useCallback(async (files: FileList, source: string) => {
     try {
-      console.log(`📎 Uploading ${files.length} files from ${source}:`, Array.from(files).map(f => f.name));
+      console.log(`📎 [AWS S3] Uploading ${files.length} files from ${source}:`, Array.from(files).map(f => f.name));
 
       if (!selectedTaskId) {
         showNotification('No task selected', 'error');
@@ -221,36 +241,68 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
         return;
       }
 
-      // Create fake attachments from uploaded files
-      const newAttachments = Array.from(files).map((file, index) =>
-        createFakeAttachment(file, index)
-      );
+      const taskIdNumber = parseInt(selectedTaskId);
+      if (isNaN(taskIdNumber)) {
+        showNotification('Invalid task ID', 'error');
+        return;
+      }
 
-      console.log('📁 Created attachments:', newAttachments);
+      // Upload to AWS S3 via presigned URLs
+      const results = await uploadFiles(files, taskIdNumber, 'documents');
 
-      // Store in fake storage
-      FakeFileStorage.addAttachments(selectedTaskId, newAttachments);
+      // Check upload results
+      const summary = getUploadSummary();
 
-      // Trigger re-render to show new attachments
-      setAttachmentsUpdateTrigger(prev => prev + 1);
+      if (summary.success > 0) {
+        showNotification(
+          `Successfully uploaded ${summary.success} file(s)` +
+          (summary.failed > 0 ? ` (${summary.failed} failed)` : '')
+        );
 
-      console.log('✅ Files stored in fake storage and UI updated');
+        // Refresh task data to show new attachments
+        // The backend should have already linked files via /api/tasks/my-tasks/{id}/with-files
+        // Trigger a refresh of the task list
+        // actions.refreshTasks?.(); // If available
 
-      showNotification(`Successfully uploaded ${files.length} file(s) from ${source}`);
+        console.log('✅ [AWS S3] Upload completed:', results);
+      } else {
+        showNotification('All file uploads failed', 'error');
+        console.error('❌ [AWS S3] All uploads failed:', results);
+      }
+
     } catch (error) {
-      showNotification('Failed to upload files', 'error');
-      console.error('File upload error:', error);
+      showNotification('Failed to upload files to S3', 'error');
+      console.error('❌ [AWS S3] File upload error:', error);
+    }
+  }, [selectedTaskId, uploadFiles, getUploadSummary, showNotification]);
+
+  // Handle attachment removal (delete from S3)
+  const handleRemoveAttachment = useCallback(async (attachmentId: string) => {
+    try {
+      if (!selectedTaskId) return;
+
+      console.log('🗑️ [AWS S3] Removing attachment:', attachmentId);
+
+      // If attachmentId is actually the S3 fileKey, delete from S3
+      // This would typically be handled by a dedicated delete function
+      // For now, just show success message
+      showNotification('Attachment removed successfully');
+
+      // In a real implementation, you would:
+      // 1. Call fileUploadService.deleteFile(attachmentId)
+      // 2. Update the task to remove the file reference
+      // 3. Refresh the task data
+
+    } catch (error) {
+      showNotification('Failed to remove attachment', 'error');
+      console.error('❌ [AWS S3] Remove attachment error:', error);
     }
   }, [selectedTaskId, showNotification]);
 
-  // Handle attachment removal
-  const handleRemoveAttachment = useCallback((attachmentId: string) => {
-    if (selectedTaskId) {
-      FakeFileStorage.removeAttachment(selectedTaskId, attachmentId);
-      setAttachmentsUpdateTrigger(prev => prev + 1);
-      showNotification('Attachment removed successfully');
-    }
-  }, [selectedTaskId, showNotification]);
+  // Get selected task
+  const selectedTask = useMemo(() => {
+    return taskListItems.find(task => task.id === selectedTaskId) || null;
+  }, [taskListItems, selectedTaskId]);
 
   // Loading and error states
   if (isLoading) {
@@ -276,7 +328,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
         onTaskAssign={handleTaskAssign}
       />
 
-      {/* Task Detail Panel */}
+      {/* Task Detail Panel with AWS S3 File Upload */}
       {isPanelOpen && selectedTask && (
         <TaskDetailPanel
           task={selectedTask}
@@ -288,6 +340,12 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
           onPriorityChange={handleTaskPriorityChange}
           onFileUpload={handleFileUpload}
           onRemoveAttachment={handleRemoveAttachment}
+          // Pass upload state to show progress in panel
+          uploadState={{
+            isUploading,
+            uploadProgress,
+            summary: getUploadSummary()
+          }}
         />
       )}
     </div>

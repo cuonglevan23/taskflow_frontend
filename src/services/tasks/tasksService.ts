@@ -9,7 +9,6 @@ import {
   toBackendPriority,
   transformPaginatedResponse 
 } from '@/lib/transforms';
-import { CookieAuth } from '@/utils/cookieAuth';
 import type { AxiosError } from 'axios';
 
 // Proper TypeScript interfaces instead of any
@@ -167,13 +166,12 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
 export const tasksService = {
   // Debug method for authentication checking
   debugAuth: (): void => {
-    CookieAuth.debugAuth();
+    console.log('🔑 Using Backend JWT with HTTP-only cookies - no debug needed');
   },
 
   // Get task by ID
   getTask: async (id: string): Promise<Task> => {
     try {
-
       const response = await api.get<BackendTask>(`/api/tasks/my-tasks/${id}`);
       const backendTask = response.data;
 
@@ -188,19 +186,9 @@ export const tasksService = {
   createTask: async (data: CreateTaskDTO): Promise<Task> => {
     console.log('🔥 tasksService.createTask called with:', data);
     try {
-      // Check authentication first
-      const token = CookieAuth.getAccessToken();
-      if (!token) {
-        console.error('❌ No access token found in cookies');
-        throw new Error('Authentication required: No access token found');
-      }
-      console.log('🔑 Authentication token found');
-      
-      // Get current user ID from cookies for creatorId
-      const userInfo = CookieAuth.getUserInfo();
-      const tokenPayload = CookieAuth.getTokenPayload();
-      console.log('👤 User info retrieved:', { userInfo, tokenPayload });
-      
+      // Backend JWT authentication is handled automatically via HTTP-only cookies
+      console.log('🔑 Using HTTP-only cookie authentication via API client');
+
       // Generate start_date from calendar click
       let startDate: string;
       let deadline = data.deadline || null;
@@ -222,30 +210,48 @@ export const tasksService = {
         startDate: startDate,
         groupId: data.groupId || null,
         projectId: data.projectId || null,
-        creatorId: data.creatorId || tokenPayload?.userId || parseInt(userInfo.id || '1'),
+        creatorId: data.creatorId || 1, // Backend will use authenticated user
         assignedToIds: data.assignedToIds || [],
       };
       
+      console.log('📤 Sending request to backend with data:', backendData);
+
       const response = await api.post<BackendTask>('/api/tasks/my-tasks', backendData);
       
+      console.log('✅ Backend response received:', response.status, response.data);
+
       const transformedTask = transformBackendTask(response.data);
+      console.log('🔄 Task transformed successfully:', transformedTask);
+
       return transformedTask;
     } catch (error: unknown) {
       console.error('❌ Failed to create task:', error);
+
+      // Enhanced error logging
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as AxiosError;
+        console.error('📋 API Error Details:', {
+          status: axiosError.response?.status,
+          statusText: axiosError.response?.statusText,
+          data: axiosError.response?.data,
+          config: {
+            url: axiosError.config?.url,
+            method: axiosError.config?.method,
+            data: axiosError.config?.data
+          }
+        });
+      }
+
       throw error;
     }
   },
 
-    // Update task (My Tasks)
+  // Update task (My Tasks)
   updateTask: async (id: string, data: UpdateTaskDTO): Promise<Task> => {
     try {
-      // Check authentication first
-      const token = CookieAuth.getAccessToken();
-      if (!token) {
-        console.error('❌ No access token found in cookies');
-        throw new Error('Authentication required: No access token found');
-      }
-      
+      // Backend JWT authentication is handled automatically via HTTP-only cookies
+      console.log('🔑 Using HTTP-only cookie authentication via API client for update');
+
       const backendData: Record<string, unknown> = {};
       
       if (data.title !== undefined) backendData.title = data.title;
@@ -258,13 +264,12 @@ export const tasksService = {
       if (data.removeAssigneeEmails !== undefined) backendData.removeAssigneeEmails = data.removeAssigneeEmails;
       if (data.assignedToEmails !== undefined) backendData.assignedToEmails = data.assignedToEmails;
       
-      // ✅ FIX: Handle date fields properly for multi-day tasks
+      // Handle date fields properly for multi-day tasks
       if (data.startDate !== undefined && data.deadline !== undefined) {
         backendData.startDate = data.startDate;
         backendData.deadline = data.deadline;
       } else if (data.deadline !== undefined) {
         backendData.deadline = data.deadline;
-        // Don't overwrite startDate if only deadline is provided
       } else if (data.startDate !== undefined) {
         backendData.startDate = data.startDate;
       } else if (data.dueDate !== undefined) {
@@ -514,15 +519,35 @@ export const tasksService = {
   }> => {
     const {
       page = 0,
-      size = 10,
-      sortBy = 'createdAt',
+      size = 1000, // Increase size to ensure we get all tasks
+      sortBy = 'updatedAt', // Use API default from documentation
       sortDir = 'desc'
     } = params || {};
 
     try {
+      console.log('🔍 [getMyTasksSummary] Fetching tasks with params:', { page, size, sortBy, sortDir });
+
       // Use the main my-tasks endpoint as documented - returns MyTasksFullItem[] with profile info
       const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
+      });
+
+      console.log('✅ [getMyTasksSummary] API Response received:', {
+        status: response.status,
+        totalElements: response.data.totalElements,
+        contentLength: response.data.content?.length || 0,
+        firstFewTasks: response.data.content?.slice(0, 5).map(t => ({
+          id: t.id,
+          title: t.title,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+          startDate: t.startDate
+        })) || [],
+        lastFewTasks: response.data.content?.slice(-3).map(t => ({
+          id: t.id,
+          title: t.title,
+          updatedAt: t.updatedAt
+        })) || []
       });
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
@@ -542,6 +567,23 @@ export const tasksService = {
       // Use transformMyTasksFull to handle profile information
       const tasks = content.map(transformMyTasksFull);
 
+      console.log('🔄 [getMyTasksSummary] Tasks transformed:', {
+        transformedCount: tasks.length,
+        firstFewTransformed: tasks.slice(0, 5).map(t => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          createdAt: t.createdAt.toISOString(),
+          updatedAt: t.updatedAt.toISOString(),
+          startDate: t.startDate
+        })),
+        // Check if task ID 81 exists (latest created)
+        hasTaskId81: tasks.some(t => t.id.toString() === '81'),
+        // Check recent task IDs
+        recentTaskIds: tasks.slice(0, 5).map(t => t.id),
+        allTaskIds: tasks.map(t => t.id).slice(0, 15)
+      });
+
       return {
         tasks,
         totalElements,
@@ -550,13 +592,15 @@ export const tasksService = {
         pageSize,
       };
     } catch (error: any) {
-      const status = error?.status;
-      console.error(`❌ My Tasks API failed with status ${status}:`, (error as { message?: string })?.message);
-      
-      if (status === 404) {
-        console.warn('🚧 Backend endpoint /api/tasks not found');
+      const status = error?.response?.status || error?.status;
+      console.error(`❌ My Tasks API failed with status ${status}:`, error?.message || error);
+
+      if (status === 401) {
+        console.error('🔐 Authentication failed - HTTP-only cookies may not be working');
+      } else if (status === 404) {
+        console.warn('🚧 Backend endpoint /api/tasks/my-tasks not found');
       } else if (status === 500) {
-        console.warn('💥 Backend server error on /api/tasks');
+        console.warn('💥 Backend server error on /api/tasks/my-tasks');
       }
       
       return {
@@ -666,15 +710,9 @@ export const tasksService = {
   // Test authentication
   testAuth: async (): Promise<boolean> => {
     try {
-      // First check if we have token
-      const token = CookieAuth.getAccessToken();
-      if (!token) {
-        console.error('❌ No access token found');
-        return false;
-      }
-      
-      CookieAuth.debugAuth();
-      
+      // Remove manual token checking - use HTTP-only cookie authentication
+      console.log('🔑 Testing HTTP-only cookie authentication');
+
       await api.get('/api/tasks/my-tasks');
       return true;
     } catch (error) {

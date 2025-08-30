@@ -1,6 +1,7 @@
 "use client";
 
-import { User } from "@/types/auth";
+import React from "react";
+import { User } from "@/layouts/types";
 import Dropdown, {
   DropdownItem,
 

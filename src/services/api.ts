@@ -9,18 +9,17 @@ import axios, {
   AxiosError,
   AxiosProgressEvent
 } from 'axios';
-import { CookieAuth } from '@/utils/cookieAuth';
 import { SafeLogger } from '@/utils/safeLogger';
 
-// API Configuration - Sử dụng Next.js route handlers thay vì gọi trực tiếp backend
+// API Configuration - Uses Backend JWT with HTTP-only cookies
 const API_CONFIG = {
-  baseURL: '', // Sử dụng relative URLs để gọi qua Next.js route handlers
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: false, // JWT-only authentication
+  withCredentials: true, // Enable HTTP-only cookies for JWT authentication
 };
 
 // Create main API instance
@@ -29,39 +28,11 @@ const apiClient: AxiosInstance = axios.create(API_CONFIG);
 // Request Interceptor - Authentication & Logging
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
-    // OPTIMIZED: Use cookie auth only to avoid session API calls
-    // Session management is handled by SessionProvider with SWR caching
-    const token = CookieAuth.getAccessToken();
-    
-    if (token && config.headers) {
-      // Add Bearer token to Authorization header
-      config.headers['Authorization'] = `Bearer ${token}`;
-
-      // Add user context headers for backend compatibility
-      const payload = CookieAuth.getTokenPayload() || (() => {
-        try {
-          return JSON.parse(atob(token.split('.')[1]));
-        } catch {
-          return null;
-        }
-      })();
-      
-      if (payload) {
-        config.headers['X-User-ID'] = payload.userId?.toString();
-        config.headers['X-User-Email'] = payload.email;
-        
-        if (payload.roles) {
-          config.headers['X-User-Roles'] = JSON.stringify(payload.roles);
-          config.headers['X-User-Role'] = payload.roles[0]; // Primary role
-          config.headers['X-User-Authorities'] = JSON.stringify(payload.roles.map((role: string) => `ROLE_${role}`));
-        }
-      }
-    }
-    
+    // Backend JWT authentication is handled automatically via HTTP-only cookies
+    // No need for manual token management
     return config;
   },
   (error: AxiosError) => {
-    // Request error encountered
     return Promise.reject(error);
   }
 );
@@ -72,23 +43,24 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    // Simple, safe error handling - no over-engineering
     const method = error?.config?.method?.toUpperCase() || 'REQUEST';
     const url = error?.config?.url || 'unknown';
     const status = error?.response?.status;
     const statusText = error?.response?.statusText || '';
 
-    // Use safe logger to prevent all crashes
+    // Use safe logger to prevent crashes
     if (status) {
       SafeLogger.error('❌ API Error:', method, url, '→', status, statusText || '');
     } else {
       SafeLogger.error('❌ Network Error:', method, url, '→ Cannot reach server');
     }
 
-    // Handle specific error cases
-    // Let error handling be done by the application
+    // Handle authentication errors
+    if (status === 401) {
+      // Redirect to login page for authentication errors
+      window.location.href = '/login';
+    }
 
-    // Return simple rejected promise
     return Promise.reject(error);
   }
 );

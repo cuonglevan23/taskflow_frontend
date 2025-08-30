@@ -1,7 +1,6 @@
 // Teams Service - Centralized team operations
 // Uses fetch for Next.js API routes instead of external backend
 import { api } from '@/lib/api';
-import type { Session } from 'next-auth';
 import type {
   Team,
   TeamResponseDto,
@@ -134,7 +133,7 @@ export const teamsService = {
   },
 
   // Create team (simple - just name and description)
-  createTeam: async (formData: CreateTeamFormData, userSession?: Session): Promise<Team> => {
+  createTeam: async (formData: CreateTeamFormData): Promise<Team> => {
     try {
       // Prepare request data according to TEAM_CREATION_UPDATE.md
       // Don't send leader_id - let backend use current user from JWT automatically

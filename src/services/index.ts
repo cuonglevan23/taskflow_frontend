@@ -12,6 +12,16 @@ export type {
   PaginatedActivitiesResponse
 } from './taskActivityService';
 
+// Simple File Services - New Implementation (No Progress Tracking)
+export { default as simpleFileService } from './simpleFileService';
+export type {
+  TaskAttachment,
+  AttachmentStats,
+  PresignedUploadRequest,
+  PresignedUploadResponse,
+  UploadSuccessRequest
+} from './simpleFileService';
+
 // Team Task Services
 export { teamTaskService } from './teams';
 export type {

@@ -6,7 +6,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Crown, Shield, ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { RBACGuard } from '@/components/guards/RBACGuard';
 import { UserRole, Permission } from '@/constants/auth';
 import type { NavigationSection } from '@/config/rbac-navigation';

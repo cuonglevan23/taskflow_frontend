@@ -3,6 +3,7 @@
 
 export class AuthService {
   private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  private static _isLoggingOut = false; // Add missing property
 
   /**
    * Khởi tạo đăng nhập với Google
@@ -85,20 +86,63 @@ export class AuthService {
    * Backend sẽ clear HTTP-only cookies
    */
   static async logout(): Promise<void> {
+    // Prevent multiple simultaneous logout calls
+    if (this._isLoggingOut) {
+      console.log('🔄 Logout already in progress, skipping...');
+      return;
+    }
+
+    this._isLoggingOut = true;
+
     try {
       console.log('🚪 Logging out...');
 
-      await fetch(`${this.BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include', // Include cookies để backend có thể clear
-      });
+      // Try calling logout API, but don't fail if it returns 401 (token expired)
+      try {
+        const response = await fetch(`${this.BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          credentials: 'include', // Include cookies để backend có thể clear
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      console.log('✅ Logout successful');
-    } catch (error) {
-      console.error('❌ Logout error:', error);
+        if (response.ok) {
+          console.log('✅ Logout API successful');
+        } else if (response.status === 401) {
+          console.log('ℹ️ Token already expired, proceeding with client-side logout');
+        } else {
+          console.warn(`⚠️ Logout API returned ${response.status}, but proceeding with redirect`);
+        }
+      } catch (fetchError) {
+        console.log('ℹ️ Network error during logout API call, proceeding with client-side logout');
+      }
+
+      // Always clear any client-side storage
+      if (typeof window !== 'undefined') {
+        try {
+          // Clear any localStorage items (if you have any)
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('auth');
+
+          // Clear sessionStorage as well
+          sessionStorage.clear();
+
+          console.log('✅ Client-side cleanup completed');
+        } catch (cleanupError) {
+          console.warn('⚠️ Client-side cleanup failed:', cleanupError);
+        }
+      }
+
     } finally {
-      // Luôn redirect về login dù có lỗi
-      window.location.href = '/login';
+      this._isLoggingOut = false;
+
+      // Always redirect to login page
+      console.log('🔄 Redirecting to login page...');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   }
 
@@ -118,6 +162,8 @@ export class AuthService {
       return false;
     }
   }
+
+  // Private flag to prevent duplicate logout calls
 }
 
 /**
@@ -155,7 +201,7 @@ export class ApiClient {
           return;
         }
 
-        // Retry request với token mới
+        // Retry request v���i token mới
         console.log('✅ Token refreshed, retrying request');
         return fetch(fullUrl, {
           ...options,

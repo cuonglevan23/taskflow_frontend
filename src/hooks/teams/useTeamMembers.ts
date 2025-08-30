@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { teamsService } from '@/services/teams/teamsService';
 import { TeamMember } from '@/types/teams';
-import { useOptimizedSession } from '../useOptimizedSession'; // Tối ưu session
+import { useAuth } from '@/components/auth/AuthProvider'; // Use new auth system
 
 export const useTeamMembers = (teamId: number | undefined) => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { data: session } = useOptimizedSession(); // Sử dụng session tối ưu
+  const { user, isAuthenticated } = useAuth(); // Use new auth system
 
   const fetchTeamMembers = async (id: number) => {
-    if (!session?.user?.accessToken) return;
-    
+    if (!isAuthenticated) return;
+
     setIsLoading(true);
     setError(null);
     
@@ -29,7 +29,7 @@ export const useTeamMembers = (teamId: number | undefined) => {
     if (teamId) {
       fetchTeamMembers(teamId);
     }
-  }, [teamId, session?.user?.accessToken]);
+  }, [teamId, isAuthenticated]);
 
   const refetch = () => {
     if (teamId) {

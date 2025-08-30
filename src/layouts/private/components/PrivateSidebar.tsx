@@ -7,7 +7,7 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { User } from "@/types/auth";
+import { User } from "@/layouts/types";
 import { cn } from "@/lib/utils";
 import { DARK_THEME } from "@/constants/theme";
 

@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useRef } from 'react';
-import { useMyTasksSummary, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
+import { useMyTasksSummaryData, useUpdateTask, useUpdateTaskStatus, useCreateTask, useDeleteTask } from './index';
 import { useTasksContext } from '@/contexts/TasksContext';
-import { CookieAuth } from '@/utils/cookieAuth';
+import { useAuth } from '@/components/auth/AuthProvider'; // Use new auth system
 import type { Task, CreateTaskDTO } from '@/types';
 import type { TaskListItem, TaskStatus } from '@/components/TaskList/types';
 
@@ -53,7 +53,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   const {
     page = 0,
     size = 1000,
-    sortBy = 'startDate',
+    sortBy = 'updatedAt', // Use API default from documentation
     sortDir = 'desc',
     searchValue = ''
   } = params;
@@ -61,8 +61,11 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
   // Get UI state from context
   const { setSelectedTaskId } = useTasksContext();
   
+  // Get user info from new auth system
+  const { user } = useAuth();
+
   // SWR data fetching
-  const { tasks, isLoading, error, revalidate } = useMyTasksSummary({
+  const { tasks, isLoading, error, revalidate } = useMyTasksSummaryData({
     page,
     size,
     sortBy,
@@ -251,9 +254,8 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
     onCreateTask: async (taskData: Record<string, unknown>) => {
       try {
         // Get user information for proper task creation
-        const tokenPayload = CookieAuth.getTokenPayload();
-        const userInfo = CookieAuth.getUserInfo();
-        
+        const tokenPayload = user;
+
         // Get current date for task
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
@@ -305,7 +307,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
           dueDateISO: dueDateISO,
           groupId: (taskData.groupId as number) || undefined,
           projectId: (taskData.projectId as number) || undefined,
-          creatorId: (taskData.creatorId as number) || tokenPayload?.userId || parseInt(userInfo.id || '1'),
+          creatorId: (taskData.creatorId as number) || tokenPayload?.userId || parseInt(user.id || '1'),
           assignedToIds: (taskData.assignedToIds as number[]) || [],
         };
         
@@ -465,9 +467,8 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       dateClickInProgress.current = true;
       
       try {
-        const tokenPayload = CookieAuth.getTokenPayload();
-        const userInfo = CookieAuth.getUserInfo();
-      
+        const tokenPayload = user;
+
       const dateParts = dateStr.split('-');
       const selectedDate = new Date(
         parseInt(dateParts[0]), 
@@ -485,7 +486,7 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
         deadline: dateStr,
         dueDate: dateStr,
         dueDateISO: selectedDate,
-        creatorId: tokenPayload?.userId || parseInt(userInfo.id || '1'),
+        creatorId: tokenPayload?.userId || parseInt(user.id || '1'),
         assignedToIds: [],
         projectId: undefined,
         groupId: undefined,

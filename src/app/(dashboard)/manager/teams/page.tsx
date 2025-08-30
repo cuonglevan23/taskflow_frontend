@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useOptimizedSession } from '@/hooks/useOptimizedSession'; // Tối ưu session
+import { useAuth } from '@/components/auth/AuthProvider'; // Use new auth system
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { Users, Plus, MoreHorizontal, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -67,7 +67,7 @@ const mockTeams = [
 ];
 
 const TeamsPage = ({ searchValue = "" }: TeamsPageProps) => {
-  const { data: session, status } = useOptimizedSession(); // Sử dụng session tối ưu
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth(); // Use new auth system
   const { theme } = useTheme();
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   
@@ -75,7 +75,7 @@ const TeamsPage = ({ searchValue = "" }: TeamsPageProps) => {
   const { teams, totalElements, isLoading, error, revalidate } = useTeams();
 
   // Authentication check
-  if (status === 'unauthenticated') {
+  if (!isAuthenticated && !authLoading) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">

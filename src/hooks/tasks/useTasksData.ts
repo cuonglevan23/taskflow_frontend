@@ -157,14 +157,14 @@ export const useMyTasksSummaryData = (params?: {
     taskKeys.myTasksSummary(standardizedParams),
     () => tasksService.getMyTasksSummary(standardizedParams),
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      dedupingInterval: 300000, // 5 minutes
-      errorRetryCount: 1,        // Reduce retries to avoid spam
-      errorRetryInterval: 5000,  // Longer interval between retries
+      revalidateOnFocus: true,           // ✅ FIX: Enable focus revalidation
+      revalidateOnReconnect: true,       // ✅ FIX: Enable reconnect revalidation
+      revalidateIfStale: true,           // ✅ FIX: Enable stale revalidation
+      dedupingInterval: 30000,           // ✅ FIX: Reduce from 5 minutes to 30 seconds
+      errorRetryCount: 1,
+      errorRetryInterval: 5000,
       keepPreviousData: true,
-      refreshInterval: 0,
+      refreshInterval: 60000,            // ✅ FIX: Auto refresh every minute
     }
   );
 

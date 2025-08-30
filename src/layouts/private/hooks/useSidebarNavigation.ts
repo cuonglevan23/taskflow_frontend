@@ -3,9 +3,9 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { useMyProjects } from '@/hooks/projects/useProjects';
 import { useMyTeams } from '@/hooks/teams/useTeams';
 import { useMyTasksSummary } from '@/hooks/tasks';
-import { 
+import {
   getVisibleNavigationSections,
-  type NavigationSection 
+  type NavigationSection
 } from '@/config/rbac-navigation';
 import {
   createRoleChecks,
@@ -25,7 +25,7 @@ export function useSidebarNavigation() {
   const rbac = useRBAC();
   const { data: projectsData } = useMyProjects();
   const { teams } = useMyTeams();
-  
+
   // Extract arrays with null safety - handle SWR response structure
   const projects = useMemo(() => {
     if (!projectsData) return [];
@@ -52,7 +52,7 @@ export function useSidebarNavigation() {
         task.status !== 'DONE';
       return isPending;
     });
-    
+
     return pendingTasks.length;
   }, [tasks]);
 
@@ -85,12 +85,12 @@ export function useSidebarNavigation() {
           })
         };
       }
-      
+
       // Process Projects section (only for MEMBER and LEADER)
       if (section.id === NAV_SECTIONS.PROJECTS && shouldShowProjectsSection(roleChecks)) {
         const filteredProjects = filterProjectsByRole(projects, roleChecks);
         const projectTitle = getProjectTitleByRole(roleChecks);
-        
+
         return {
           ...section,
           title: projectTitle,
@@ -117,7 +117,7 @@ export function useSidebarNavigation() {
           }))
         };
       }
-      
+
       return section;
     });
   }, [baseNavigationSections, roleChecks, pendingTasksCount, projects]);

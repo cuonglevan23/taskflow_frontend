@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useRBAC } from '@/hooks/useRBAC';
-import { UserRole, Permission } from '@/constants/auth';
+
 
 // Base interface for all guard props
 interface BaseGuardProps {
@@ -34,12 +34,12 @@ interface RBACGuardProps extends BaseGuardProps {
   role?: UserRole;
   roles?: UserRole[];
   minimumRole?: UserRole;
-  
-  // Permission checks  
+
+  // Permission checks
   permission?: Permission;
   permissions?: Permission[];
   requireAllPermissions?: boolean;
-  
+
   // Advanced options
   requireAuthentication?: boolean;
   allowUnauthenticated?: boolean;
@@ -64,7 +64,7 @@ export function RBACGuard({
   debug = false
 }: RBACGuardProps) {
   const rbac = useRBAC();
-  
+
   // Debug logging
   if (debug) {
     console.log('🛡️ RBACGuard Debug:', {
@@ -81,7 +81,7 @@ export function RBACGuard({
       }
     });
   }
-  
+
   // Check authentication first
   if (requireAuthentication && !rbac.isAuthenticated) {
     if (allowUnauthenticated) {
@@ -89,45 +89,45 @@ export function RBACGuard({
     }
     return showFallback ? <>{fallback}</> : null;
   }
-  
+
   // If no restrictions specified, allow access
   if (!role && !roles && !minimumRole && !permission && !permissions) {
     return <>{children}</>;
   }
-  
+
   let hasAccess = true;
-  
+
   // Check specific role
   if (role && rbac.role !== role) {
     hasAccess = false;
   }
-  
+
   // Check if user has any of the specified roles
   if (roles && !roles.includes(rbac.role!)) {
     hasAccess = false;
   }
-  
+
   // Check minimum role level
   if (minimumRole && !rbac.hasMinRole(minimumRole)) {
     hasAccess = false;
   }
-  
+
   // Check specific permission
   if (permission && !rbac.can(permission)) {
     hasAccess = false;
   }
-  
+
   // Check multiple permissions
   if (permissions) {
-    const permissionCheck = requireAllPermissions 
-      ? rbac.canAll(permissions) 
+    const permissionCheck = requireAllPermissions
+      ? rbac.canAll(permissions)
       : rbac.canAny(permissions);
-    
+
     if (!permissionCheck) {
       hasAccess = false;
     }
   }
-  
+
   return hasAccess ? <>{children}</> : (showFallback ? <>{fallback}</> : null);
 }
 
@@ -143,15 +143,15 @@ export function PermissionGuard({
   requireAll = false
 }: PermissionGuardProps) {
   const { can, canAll, canAny } = useRBAC();
-  
+
   let hasPermission = true;
-  
+
   if (permission) {
     hasPermission = can(permission);
   } else if (permissions) {
     hasPermission = requireAll ? canAll(permissions) : canAny(permissions);
   }
-  
+
   return hasPermission ? <>{children}</> : (showFallback ? <>{fallback}</> : null);
 }
 
@@ -167,21 +167,21 @@ export function RoleGuard({
   minimumRole
 }: RoleGuardProps) {
   const rbac = useRBAC();
-  
+
   let hasRole = true;
-  
+
   if (role && rbac.role !== role) {
     hasRole = false;
   }
-  
+
   if (roles && !roles.includes(rbac.role!)) {
     hasRole = false;
   }
-  
+
   if (minimumRole && !rbac.hasMinRole(minimumRole)) {
     hasRole = false;
   }
-  
+
   return hasRole ? <>{children}</> : (showFallback ? <>{fallback}</> : null);
 }
 
@@ -190,8 +190,8 @@ export function RoleGuard({
  */
 export function AdminGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   return (
-    <RoleGuard 
-      roles={[UserRole.SUPER_ADMIN, UserRole.ADMIN]} 
+    <RoleGuard
+      roles={[UserRole.SUPER_ADMIN, UserRole.ADMIN]}
       fallback={fallback}
       showFallback={showFallback}
     >
@@ -205,7 +205,7 @@ export function AdminGuard({ children, fallback, showFallback = true }: BaseGuar
  */
 export function OwnerGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   return (
-    <RoleGuard 
+    <RoleGuard
       minimumRole={UserRole.OWNER}
       fallback={fallback}
       showFallback={showFallback}
@@ -220,7 +220,7 @@ export function OwnerGuard({ children, fallback, showFallback = true }: BaseGuar
  */
 export function ManagerGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   return (
-    <RoleGuard 
+    <RoleGuard
       minimumRole={UserRole.PM}
       fallback={fallback}
       showFallback={showFallback}
@@ -235,7 +235,7 @@ export function ManagerGuard({ children, fallback, showFallback = true }: BaseGu
  */
 export function LeaderGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   return (
-    <RoleGuard 
+    <RoleGuard
       minimumRole={UserRole.LEADER}
       fallback={fallback}
       showFallback={showFallback}
@@ -250,7 +250,7 @@ export function LeaderGuard({ children, fallback, showFallback = true }: BaseGua
  */
 export function MemberGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   return (
-    <RoleGuard 
+    <RoleGuard
       minimumRole={UserRole.MEMBER}
       fallback={fallback}
       showFallback={showFallback}
@@ -265,7 +265,7 @@ export function MemberGuard({ children, fallback, showFallback = true }: BaseGua
  */
 export function AuthenticatedGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   const { isAuthenticated } = useRBAC();
-  
+
   return isAuthenticated ? <>{children}</> : (showFallback ? <>{fallback}</> : null);
 }
 
@@ -274,7 +274,7 @@ export function AuthenticatedGuard({ children, fallback, showFallback = true }: 
  */
 export function GuestGuard({ children, fallback, showFallback = true }: BaseGuardProps) {
   const { isAuthenticated } = useRBAC();
-  
+
   return !isAuthenticated ? <>{children}</> : (showFallback ? <>{fallback}</> : null);
 }
 
@@ -303,7 +303,7 @@ export function ConditionalRoleRenderer({
   fallback
 }: ConditionalRoleRendererProps) {
   const rbac = useRBAC();
-  
+
   if (rbac.isSuperAdmin && superAdmin) return <>{superAdmin}</>;
   if (rbac.isAdmin && admin) return <>{admin}</>;
   if (rbac.isOwner && owner) return <>{owner}</>;
@@ -311,7 +311,7 @@ export function ConditionalRoleRenderer({
   if (rbac.isLeader && leader) return <>{leader}</>;
   if (rbac.isMember && member) return <>{member}</>;
   if (rbac.isGuest && guest) return <>{guest}</>;
-  
+
   return fallback ? <>{fallback}</> : null;
 }
 

@@ -49,15 +49,15 @@ interface ReactFlowWorkflowProps {
   initialLayout?: 'auto' | 'manual';
 }
 
-function ReactFlowWorkflowComponent({
+const ReactFlowWorkflow = ({
   tasks,
   sections,
   onTaskUpdate,
   onTaskClick,
-  onDependencyChange,
-  className = '',
-  height = '600px',
-  showMiniMap = true,
+  onTaskCreate,
+  onSectionUpdate,
+  height = 600,
+  showMinimap = true,
   showControls = true,
   showBackground = true,
   initialLayout = 'auto'
@@ -138,7 +138,7 @@ function ReactFlowWorkflowComponent({
         )}
 
         {/* Mini Map */}
-        {showMiniMap && (
+        {showMinimap && (
           <MiniMap
             style={{
               backgroundColor: theme.background.secondary,

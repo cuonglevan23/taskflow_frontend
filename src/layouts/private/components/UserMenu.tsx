@@ -13,6 +13,7 @@ import {
   Monitor
 } from "lucide-react";
 import { SettingsModal } from "@/components/features/Settings/SettingsModal";
+import { AuthService } from "@/lib/auth-backend";
 
 // User interface
 export interface User {
@@ -71,6 +72,34 @@ const UserMenu = ({
 }: UserMenuProps) => {
   const router = useRouter();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Handle logout functionality with new AuthService
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent multiple logout attempts
+
+    setIsLoggingOut(true);
+
+    try {
+      console.log('🚪 Starting logout process...');
+
+      // Only call the onLogout callback (AuthProvider's logout method)
+      // This will handle calling AuthService.logout() internally
+      if (onLogout) {
+        await onLogout();
+      } else {
+        // Fallback: if no onLogout provided, call AuthService directly
+        await AuthService.logout();
+      }
+
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+      // Fallback redirect if something goes wrong
+      window.location.href = '/login';
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Don't render if user is null
   if (!user) {
@@ -218,7 +247,7 @@ const UserMenu = ({
           {/* Logout Section - Always last */}
           <DropdownSeparator />
           <div className="py-1">
-            <DropdownItem onClick={onLogout} icon={<LogOut className="w-4 h-4" />}>
+            <DropdownItem onClick={handleLogout} icon={<LogOut className="w-4 h-4" />}>
               <span className="text-red-400 text-sm font-medium">
                 Log out
               </span>

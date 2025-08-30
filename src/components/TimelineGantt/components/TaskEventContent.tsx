@@ -19,7 +19,7 @@ export default function TaskEventContent({
   isConnecting,
   connectingFromTaskId,
   onConnectionClick
-}) => {
+}: TaskEventContentProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = useCallback(() => {

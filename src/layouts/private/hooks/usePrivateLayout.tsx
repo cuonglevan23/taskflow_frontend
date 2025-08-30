@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { UserRole } from "@/types/auth";
+import { UserRole } from "@/constants/auth";
 import { useAuth } from "@/components/auth/AuthProvider"; // Thay thế useUser
 import {
   LayoutContextValue,

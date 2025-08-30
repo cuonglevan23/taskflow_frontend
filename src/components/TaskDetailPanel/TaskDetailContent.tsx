@@ -7,6 +7,7 @@ import { TaskListItem } from '@/components/TaskList/types';
 import { DARK_THEME } from '@/constants/theme';
 import CommentsList from './CommentsList';
 import TaskAttachments from './TaskAttachments';
+import TaskFiles from '@/components/TaskFiles'; // Import new TaskFiles component
 import { useTaskActivities } from '@/hooks/useTaskActivities';
 import { TaskActivityResponseDto, getActivityConfig, TaskActivityType } from '@/services/taskActivityService';
 import {
@@ -517,34 +518,36 @@ const TaskDetailContent = ({
         )}
       </div>
 
-      {/* Task Attachments */}
+      {/* Task Files Section - New Simple Implementation */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
           <Paperclip className="w-4 h-4" />
-          Attachments ({task?.attachments?.length || 0})
+          Files
         </h3>
 
-        {/* Debug info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-gray-500 bg-gray-800 p-2 rounded">
-            Debug: Task has {task?.attachments?.length || 0} attachments
-            {task?.attachments && task.attachments.length > 0 && (
-              <div>Files: {task.attachments.map(a => a.name).join(', ')}</div>
-            )}
+        {task?.id ? (
+          <TaskFiles taskId={parseInt(task.id)} />
+        ) : (
+          <div className="text-sm text-gray-400 italic border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
+            Task not loaded
           </div>
         )}
+      </div>
 
-        {task?.attachments && task.attachments.length > 0 ? (
+      {/* Legacy Task Attachments - Keep for backward compatibility */}
+      {task?.attachments && task.attachments.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <Paperclip className="w-4 h-4" />
+            Legacy Attachments ({task.attachments.length})
+          </h3>
+
           <TaskAttachments
             attachments={task.attachments}
             onRemoveAttachment={onRemoveAttachment}
           />
-        ) : (
-          <div className="text-sm text-gray-400 italic border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
-            No files uploaded yet. Use the upload button in the header to add files.
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Comments & Activity Section */}
       <div 
