@@ -39,6 +39,9 @@ yarn-error.log*
 ./docs/**
 # Ignore toàn bộ docs
 docs/*
+# Ignore toàn bộ docs
+docs/
+
 
 # typescript
 *.tsbuildinfo
