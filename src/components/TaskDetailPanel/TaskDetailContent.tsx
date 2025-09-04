@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Calendar, Plus, CheckCircle, Paperclip, AlertTriangle, Edit, Type, FileText, MessageSquare, UserPlus, UserMinus, CheckCircle2, RotateCcw, ListPlus, ListMinus, CheckSquare, Users, FolderOpen, Circle } from 'lucide-react';
+import { Calendar, Plus, CheckCircle, Paperclip, AlertTriangle, Edit, Type, FileText, MessageSquare, UserPlus, UserMinus, CheckCircle2, RotateCcw, ListPlus, ListMinus, CheckSquare, Users, FolderOpen, Circle, Video } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
@@ -10,6 +10,8 @@ import TaskAttachments from './TaskAttachments';
 import { FileDisplayGrid } from '@/components/FileDisplayGrid'; // Change to display-only component
 import { useTaskActivities } from '@/hooks/useTaskActivities';
 import { TaskActivityResponseDto, getActivityConfig, TaskActivityType } from '@/services/taskActivityService';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import GoogleMeetIcon from '@/components/icons/GoogleMeetIcon';
 import {
   Select,
   SelectContent,
@@ -30,6 +32,7 @@ interface TaskDetailContentProps {
   onTaskPriorityChange?: (taskId: string, priority: string) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
   fileRefreshTrigger?: number; // Add refresh trigger prop
+  onTaskRefresh?: () => void; // Add callback để refresh task data
 }
 
 type TabType = 'comments' | 'activity';
@@ -45,7 +48,8 @@ const TaskDetailContent = ({
   onTaskStatusChange,
   onTaskPriorityChange,
   onRemoveAttachment,
-  fileRefreshTrigger // Add this prop to the destructuring
+  fileRefreshTrigger, // Add this prop to the destructuring
+  onTaskRefresh // Thêm prop này vào destructuring
 }: TaskDetailContentProps) => {
   // Use the custom hook to get and update task description
   const taskId = task?.id ? String(task.id) : null;
@@ -55,6 +59,15 @@ const TaskDetailContent = ({
   const [isEditingPriority, setIsEditingPriority] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Google Calendar Integration Hook
+  const {
+    isLoading: calendarLoading,
+    error: calendarError,
+    createQuickMeeting,
+    createDefaultEvent,
+    clearError: clearCalendarError
+  } = useGoogleCalendar();
 
   // Fetch task activities using the custom hook
   const {
@@ -192,6 +205,89 @@ const TaskDetailContent = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isEditingDescription, handleDescriptionSave, description]);
+
+  // Google Calendar handlers - Updated cho backend mới
+  const handleCreateQuickMeeting = async () => {
+    if (!taskId) {
+      alert('Task ID không hợp lệ');
+      return;
+    }
+
+    try {
+      const result = await createQuickMeeting(taskId, {
+        title: `Quick Meeting: ${title}`,
+        description: `Cuộc họp nhanh về task: ${title}`,
+        startTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 phút từ bây giờ
+        durationMinutes: 30
+      });
+
+      if (result) {
+        alert(`✅ Cuộc họp đã được tạo!\nGoogle Meet: ${result.meetLink}`);
+        // Tự động mở Google Meet
+        window.open(result.meetLink, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating quick meeting:', error);
+    }
+  };
+
+  const handleAddToCalendar = async () => {
+    if (!taskId) {
+      alert('Task ID không hợp lệ');
+      return;
+    }
+
+    try {
+      // Backend tự động lấy Google OAuth2 token từ user đã đăng nhập
+      // Không cần kiểm tra hoặc yêu cầu accessToken nữa!
+      const result = await createDefaultEvent(taskId, title);
+
+      if (result) {
+        alert(`✅ Sự kiện Calendar đã được tạo!\nEvent ID: ${result.eventId}`);
+        if (result.meetLink) {
+          const openMeet = confirm('Có muốn mở Google Meet không?');
+          if (openMeet) {
+            window.open(result.meetLink, '_blank');
+          }
+        }
+
+        // Gọi callback để refresh task data sau khi tạo sự kiện
+        if (onTaskRefresh) {
+          onTaskRefresh();
+        }
+      }
+    } catch (error) {
+      console.error('Error adding to calendar:', error);
+
+      // Xử lý các lỗi có thể xảy ra
+      if (error instanceof Error) {
+        if (error.message.includes('No Google authorization')) {
+          // User chưa authorize Google Calendar
+          const shouldAuth = confirm(
+            'Bạn chưa kết nối với Google Calendar.\n' +
+            'Bạn có muốn kết nối để tiếp tục không?'
+          );
+
+          if (shouldAuth) {
+            // Redirect đến Google OAuth2
+            const googleAuthUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/oauth2/authorization/google`;
+            window.open(googleAuthUrl, '_blank');
+          }
+        } else if (error.message.includes('expired')) {
+          // Token đã hết hạn
+          const shouldReauth = confirm(
+            'Quyền truy cập Google Calendar đã hết hạn.\n' +
+            'Bạn có muốn kết nối lại không?'
+          );
+
+          if (shouldReauth) {
+            const googleAuthUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/oauth2/authorization/google`;
+            window.open(googleAuthUrl, '_blank');
+          }
+        }
+      }
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 task-detail-content">
@@ -520,12 +616,133 @@ const TaskDetailContent = ({
         )}
       </div>
 
-      {/* Task Files Section - New Simple Implementation */}
+      {/* Google Calendar Integration Section */}
+      {task && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Google Calendar Integration
+          </h3>
+
+
+          <div className="border rounded-lg p-4" style={{ borderColor: DARK_THEME.border.default }}>
+            {task.isSyncedToCalendar ? (
+              // Task đã sync với Google Calendar
+              <div className="space-y-3">
+                {/* Sync Status Badge */}
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded-full flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Synced to Calendar
+                  </span>
+                  {task.calendarSyncedAt && (
+                    <span className="text-xs text-gray-400">
+                      Last synced: {new Date(task.calendarSyncedAt).toLocaleString('vi-VN')}
+                    </span>
+                  )}
+                </div>
+
+                {/* Calendar Actions */}
+                <div className="flex flex-wrap gap-2">
+                  {task.googleCalendarEventUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(task.googleCalendarEventUrl, '_blank')}
+                      className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10 flex items-center gap-1.5"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span className="text-xs">View in Google Calendar</span>
+                    </Button>
+                  )}
+
+                  {task.googleMeetLink && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(task.googleMeetLink, '_blank')}
+                      className="text-green-400 border-green-400/30 hover:bg-green-400/10 flex items-center gap-1.5"
+                    >
+                      <GoogleMeetIcon className="text-green-400" size={14} />
+                      <span className="text-xs">Join Google Meet</span>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Event Details */}
+                {task.googleCalendarEventId && (
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <div>Event ID: <span className="font-mono">{task.googleCalendarEventId}</span></div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Task chưa sync với Google Calendar
+              <div className="space-y-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-gray-400">
+                  <Circle className="w-4 h-4" />
+                  <span className="text-sm">Not synced to Google Calendar</span>
+                </div>
+
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddToCalendar}
+                    disabled={calendarLoading || !taskId}
+                    className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10 flex items-center gap-1.5"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span className="text-xs">Add to Calendar</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateQuickMeeting}
+                    disabled={calendarLoading || !taskId}
+                    className="text-green-400 border-green-400/30 hover:bg-green-400/10 flex items-center gap-1.5"
+                  >
+                    <GoogleMeetIcon className="text-green-400" size={14} />
+                    <span className="text-xs">Quick Meeting</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Calendar Error Display */}
+            {calendarError && (
+              <div className="mt-3 p-2 bg-red-900/20 border border-red-700/30 rounded text-red-400 text-xs flex items-center justify-between">
+                <span>❌ {calendarError}</span>
+                <button
+                  onClick={clearCalendarError}
+                  className="text-red-300 hover:text-red-200 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Loading State for Calendar */}
+            {calendarLoading && (
+              <div className="mt-3 p-2 bg-blue-900/20 border border-blue-700/30 rounded text-blue-400 text-xs">
+                ⏳ Đang xử lý Google Calendar...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Task Files Section - Updated */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-          <Paperclip className="w-4 h-4" />
-          Files
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <Paperclip className="w-4 h-4" />
+            Files
+          </h3>
+
+          {/* Move Google Calendar Actions to separate section above */}
+        </div>
 
         {task?.id ? (
           <FileDisplayGrid

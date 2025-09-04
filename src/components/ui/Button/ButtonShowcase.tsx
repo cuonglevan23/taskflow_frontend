@@ -24,7 +24,6 @@ const HeartIcon = () => (
 
 export default function ButtonShowcase() {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  const [selectedButtons, setSelectedButtons] = useState<Record<string, boolean>>({});
 
   const toggleLoading = (key: string) => {
     setLoadingStates(prev => ({ ...prev, [key]: !prev[key] }));
@@ -33,182 +32,119 @@ export default function ButtonShowcase() {
     }, 2000);
   };
 
-  const toggleSelected = (key: string) => {
-    setSelectedButtons(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
   return (
     <div className="p-8 space-y-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          Button Showcase - Nhiều Trạng Thái & Kiểu
+          Button Showcase - Available Variants
         </h1>
 
-        {/* Primary Variants */}
+        {/* All Available Variants */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Primary Variants
+            All Available Variants
           </h2>
           <div className="flex flex-wrap gap-4">
+            <Button variant="default">Default</Button>
             <Button variant="primary">Primary</Button>
-            <Button variant="primary-gradient">Primary Gradient</Button>
-            <Button variant="primary" loading={loadingStates.primary1} onClick={() => toggleLoading('primary1')}>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="danger">Danger</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="button_text">Button Text</Button>
+          </div>
+        </section>
+
+        {/* Available Sizes */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Available Sizes
+          </h2>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button variant="primary" size="sm">Small</Button>
+            <Button variant="primary" size="md">Medium (Default)</Button>
+            <Button variant="primary" size="lg">Large</Button>
+          </div>
+        </section>
+
+        {/* Loading States */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Loading States
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <Button
+              variant="primary"
+              loading={loadingStates.primary}
+              onClick={() => toggleLoading('primary')}
+            >
               Click to Load
             </Button>
+            <Button
+              variant="secondary"
+              loading={loadingStates.secondary}
+              onClick={() => toggleLoading('secondary')}
+            >
+              Secondary Loading
+            </Button>
+            <Button
+              variant="danger"
+              loading={loadingStates.danger}
+              onClick={() => toggleLoading('danger')}
+            >
+              Danger Loading
+            </Button>
+          </div>
+        </section>
+
+        {/* Disabled States */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Disabled States
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <Button variant="primary" disabled>Primary Disabled</Button>
+            <Button variant="secondary" disabled>Secondary Disabled</Button>
+            <Button variant="outline" disabled>Outline Disabled</Button>
+            <Button variant="ghost" disabled>Ghost Disabled</Button>
+          </div>
+        </section>
+
+        {/* With Icons */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Buttons with Icons
+          </h2>
+          <div className="flex flex-wrap gap-4">
             <Button variant="primary" leftIcon={<DownloadIcon />}>
               Download
             </Button>
-            <Button variant="primary" rightIcon={<ShareIcon />}>
+            <Button variant="secondary" rightIcon={<ShareIcon />}>
               Share
             </Button>
-          </div>
-        </section>
-
-        {/* Color Variants */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Color Variants
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="success">Success</Button>
-            <Button variant="success-gradient">Success Gradient</Button>
-            <Button variant="danger">Danger</Button>
-            <Button variant="danger-gradient">Danger Gradient</Button>
-            <Button variant="warning">Warning</Button>
-            <Button variant="warning-gradient">Warning Gradient</Button>
-            <Button variant="info">Info</Button>
-            <Button variant="info-gradient">Info Gradient</Button>
-          </div>
-        </section>
-
-        {/* Outline Variants */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Outline Variants
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="outline">Outline</Button>
-            <Button variant="outline-primary">Outline Primary</Button>
-            <Button variant="outline-success">Outline Success</Button>
-            <Button variant="outline-danger">Outline Danger</Button>
-            <Button variant="outline-warning">Outline Warning</Button>
-          </div>
-        </section>
-
-        {/* Soft Variants */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Soft Variants
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="soft-primary">Soft Primary</Button>
-            <Button variant="soft-success">Soft Success</Button>
-            <Button variant="soft-danger">Soft Danger</Button>
-            <Button variant="soft-warning">Soft Warning</Button>
-          </div>
-        </section>
-
-        {/* Ghost & Link Variants */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Ghost & Link Variants
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="ghost">Ghost</Button>
-            <Button variant="ghost-colored">Ghost Colored</Button>
-            <Button variant="link">Link Button</Button>
-          </div>
-        </section>
-
-        {/* Sizes */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Sizes
-          </h2>
-          <div className="flex flex-wrap items-center gap-4">
-            <Button variant="primary" size="xs">Extra Small</Button>
-            <Button variant="primary" size="sm">Small</Button>
-            <Button variant="primary" size="md">Medium</Button>
-            <Button variant="primary" size="lg">Large</Button>
-            <Button variant="primary" size="xl">Extra Large</Button>
-            <Button variant="primary" size="2xl">2X Large</Button>
-          </div>
-        </section>
-
-        {/* Shapes */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Shapes
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="primary" shape="default">Default</Button>
-            <Button variant="primary" shape="rounded">Rounded</Button>
-            <Button variant="primary" shape="square">Square</Button>
-            <Button variant="primary" shape="pill">Pill</Button>
-          </div>
-        </section>
-
-        {/* States */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Button States
-          </h2>
-          <div className="flex flex-wrap gap-4">
             <Button 
-              variant="primary" 
-              state={selectedButtons.state1 ? "selected" : "default"}
-              onClick={() => toggleSelected('state1')}
-            >
-              {selectedButtons.state1 ? "Selected" : "Click to Select"}
-            </Button>
-            <Button variant="primary" state="active">Active State</Button>
-            <Button variant="primary" disabled>Disabled</Button>
-            <Button 
-              variant="primary" 
-              loading={loadingStates.state2}
-              onClick={() => toggleLoading('state2')}
-            >
-              Loading State
-            </Button>
-          </div>
-        </section>
-
-        {/* Icon Combinations */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Icon Combinations
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="primary" leftIcon={<HeartIcon />}>
-              Left Icon
-            </Button>
-            <Button variant="success" rightIcon={<ShareIcon />}>
-              Right Icon
-            </Button>
-            <Button 
-              variant="warning" 
-              leftIcon={<DownloadIcon />} 
+              variant="outline"
+              leftIcon={<HeartIcon />}
               rightIcon={<ShareIcon />}
             >
               Both Icons
             </Button>
-            <Button variant="outline-primary" leftIcon={<HeartIcon />} />
-            <Button variant="soft-danger" rightIcon={<ShareIcon />} />
+            <Button variant="danger" leftIcon={<HeartIcon />}>
+              Like
+            </Button>
           </div>
         </section>
 
-        {/* Full Width */}
+        {/* Icon Only Buttons */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            Full Width
+            Icon Only Buttons
           </h2>
-          <div className="space-y-3">
-            <Button variant="primary" fullWidth>
-              Full Width Primary
-            </Button>
-            <Button variant="outline-success" fullWidth leftIcon={<DownloadIcon />}>
-              Full Width with Icon
-            </Button>
+          <div className="flex flex-wrap gap-4">
+            <Button variant="primary" leftIcon={<HeartIcon />} />
+            <Button variant="secondary" leftIcon={<ShareIcon />} />
+            <Button variant="outline" leftIcon={<DownloadIcon />} />
+            <Button variant="ghost" leftIcon={<HeartIcon />} />
           </div>
         </section>
 
@@ -218,48 +154,95 @@ export default function ButtonShowcase() {
             Interactive Examples
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            {/* File Actions */}
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <h3 className="font-medium mb-3">File Actions</h3>
+              <h3 className="font-medium mb-3 text-gray-900 dark:text-white">File Actions</h3>
               <div className="space-y-2">
-                <Button variant="soft-primary" size="sm" leftIcon={<DownloadIcon />} fullWidth>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<DownloadIcon />}
+                  className="w-full"
+                >
                   Download
                 </Button>
-                <Button variant="soft-success" size="sm" leftIcon={<ShareIcon />} fullWidth>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<ShareIcon />}
+                  className="w-full"
+                >
                   Share
                 </Button>
-                <Button variant="soft-danger" size="sm" fullWidth>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-full"
+                >
                   Delete
                 </Button>
               </div>
             </div>
 
+            {/* Form Actions */}
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <h3 className="font-medium mb-3">Form Actions</h3>
+              <h3 className="font-medium mb-3 text-gray-900 dark:text-white">Form Actions</h3>
               <div className="space-y-2">
-                <Button variant="primary" fullWidth>
+                <Button variant="primary" className="w-full">
                   Save Changes
                 </Button>
-                <Button variant="outline" fullWidth>
+                <Button variant="outline" className="w-full">
                   Cancel
+                </Button>
+                <Button variant="ghost" className="w-full">
+                  Reset
                 </Button>
               </div>
             </div>
 
+            {/* Social Actions */}
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <h3 className="font-medium mb-3">Social Actions</h3>
+              <h3 className="font-medium mb-3 text-gray-900 dark:text-white">Social Actions</h3>
               <div className="flex gap-2">
-                <Button 
-                  variant={selectedButtons.like ? "soft-danger" : "ghost"} 
-                  leftIcon={<HeartIcon />}
-                  onClick={() => toggleSelected('like')}
-                >
-                  {selectedButtons.like ? "Liked" : "Like"}
+                <Button variant="ghost" leftIcon={<HeartIcon />}>
+                  Like
                 </Button>
                 <Button variant="ghost" leftIcon={<ShareIcon />}>
                   Share
                 </Button>
+                <Button variant="button_text">
+                  Comment
+                </Button>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Custom Styling Examples */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Custom Styling Examples
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <Button
+              variant="primary"
+              className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+            >
+              Custom Green
+            </Button>
+            <Button
+              variant="outline"
+              className="border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950"
+            >
+              Custom Purple
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950"
+            >
+              Custom Orange
+            </Button>
           </div>
         </section>
       </div>

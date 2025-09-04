@@ -2,16 +2,57 @@
 
 import { SWRConfig } from 'swr';
 import { ReactNode } from 'react';
-import { globalSWRConfig } from '@/lib/optimizedSWRConfig'; // Sử dụng config tối ưu
 
 interface SWRProviderProps {
   children: ReactNode;
 }
 
-// OPTIMIZED SWR Provider - giảm duplicate requests
+// Global fetcher function for SWR
+const fetcher = async (url: string) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export function SWRProvider({ children }: SWRProviderProps) {
   return (
-    <SWRConfig value={globalSWRConfig}>
+    <SWRConfig
+      value={{
+        fetcher,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: true,
+        refreshInterval: 0,
+        dedupingInterval: 2000,
+        errorRetryCount: 3,
+        errorRetryInterval: 5000,
+        // Enable background revalidation for better UX
+        revalidateIfStale: true,
+        // Keep data fresh but don't spam the server
+        focusThrottleInterval: 5000,
+        // Better error handling
+        onError: (error, key) => {
+          console.error('SWR Error:', error, 'Key:', key);
+          // Could add toast notification here
+        },
+        // Log successful cache updates for debugging
+        onSuccess: (data, key) => {
+          console.log('🔄 SWR Cache Updated:', key);
+        }
+      }}
+    >
       {children}
     </SWRConfig>
   );

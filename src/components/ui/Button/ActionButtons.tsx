@@ -33,8 +33,8 @@ export interface ShareButtonProps {
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  variant?: "primary" | "secondary" | "outline" | "outline-primary";
+  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "outline";
   count?: number;
 }
 
@@ -63,8 +63,8 @@ export interface DeleteButtonProps {
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  variant?: "danger" | "outline-danger" | "ghost" | "secondary";
+  size?: "sm" | "md" | "lg";
+  variant?: "danger" | "ghost" | "secondary";
   count?: number;
   confirmText?: string;
 }
@@ -74,7 +74,7 @@ export const DeleteButton = ({
   loading = false, 
   disabled = false,
   size = "sm",
-  variant = "outline-danger",
+  variant = "danger",
   count,
   confirmText
 }: DeleteButtonProps) => {
@@ -106,8 +106,8 @@ export interface ClearButtonProps {
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  variant?: "ghost" | "outline" | "secondary" | "outline-primary";
+  size?: "sm" | "md" | "lg";
+  variant?: "ghost" | "outline" | "secondary";
 }
 
 export const ClearButton = ({ 
@@ -133,8 +133,8 @@ export interface DownloadButtonProps {
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  variant?: "secondary" | "outline" | "ghost" | "outline-primary";
+  size?: "sm" | "md" | "lg";
+  variant?: "secondary" | "outline" | "ghost";
 }
 
 export const DownloadButton = ({ 

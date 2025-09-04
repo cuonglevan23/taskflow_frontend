@@ -48,6 +48,13 @@ export interface TaskListItem {
   completed?: boolean; // Whether task is completed
   commentCount?: number; // Number of comments for this task
   attachments?: TaskAttachment[]; // List of file attachments
+
+  // ✅ NEW: Google Calendar Integration Fields
+  googleCalendarEventId?: string; // Google Calendar Event ID để tracking
+  googleCalendarEventUrl?: string; // Direct link để user click vào Calendar
+  googleMeetLink?: string; // Google Meet link nếu event có meeting
+  isSyncedToCalendar?: boolean; // Trạng thái đã sync với calendar
+  calendarSyncedAt?: string; // Thời gian sync lần cuối
 }
 
 export interface TaskAssignee {

@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -8,7 +8,7 @@ export interface UserAvatarProps {
   user?: AuthUser | null;
   name?: string;
   email?: string;
-  avatar?: string;
+  avatar?: string | null;
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   variant?: "circle" | "rounded" | "square";
   className?: string;
@@ -44,6 +44,12 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
     const name = user?.name || propName || "";
     const email = user?.email || propEmail || "";
     const avatar = propAvatar || (user as any)?.avatar || user?.image;
+
+    // State to track if avatar image failed to load
+    const [imageError, setImageError] = useState(false);
+
+    // Validate avatar URL
+    const isValidAvatarUrl = avatar && typeof avatar === 'string' && avatar.trim() !== '' && !imageError;
 
     const sizeClasses = {
       xs: "h-6 w-6 text-xs",
@@ -101,12 +107,16 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
       return colors[Math.abs(hash) % colors.length];
     };
 
+    const handleImageError = () => {
+      setImageError(true);
+    };
+
     const avatarElement = (
       <div
         ref={ref}
         className={cn(
           "relative inline-flex items-center justify-center overflow-hidden",
-          avatar ? "bg-gray-100" : getAvatarColor(name),
+          isValidAvatarUrl ? "bg-gray-100" : getAvatarColor(name),
           sizeClasses[size],
           variantClasses[variant],
           onClick && "cursor-pointer hover:opacity-80 transition-opacity",
@@ -117,30 +127,14 @@ const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
         title={showTooltip ? `${name} (${email})` : undefined}
         {...props}
       >
-        {avatar ? (
+        {isValidAvatarUrl ? (
           <img
             src={avatar}
             alt={name || "User avatar"}
             className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
-            onError={(e) => {
-              // Fallback to initials if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              const parent = target.parentElement;
-              if (parent) {
-                parent.innerHTML = `<span class="font-medium text-white">${getInitials(name)}</span>`;
-                parent.className = parent.className.replace("bg-gray-100", getAvatarColor(name));
-              }
-            }}
-            onLoad={(e) => {
-              // Ensure image is visible when loaded successfully
-              const target = e.target as HTMLImageElement;
-              if (target) {
-                target.style.display = "block";
-              }
-            }}
+            onError={handleImageError}
           />
         ) : (
           <span className="font-medium text-white">{getInitials(name)}</span>

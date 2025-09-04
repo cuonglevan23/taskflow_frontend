@@ -10,7 +10,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -76,14 +76,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <div className={cn(
+            "h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent",
+            children && "mr-2"
+          )} />
         )}
         {!loading && leftIcon && (
-          <span className="mr-2">{leftIcon}</span>
+          <span className={children ? "mr-2" : ""}>{leftIcon}</span>
         )}
         {children}
         {!loading && rightIcon && (
-          <span className="ml-2">{rightIcon}</span>
+          <span className={children ? "ml-2" : ""}>{rightIcon}</span>
         )}
       </button>
     );

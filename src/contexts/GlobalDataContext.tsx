@@ -1,12 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '@/components/auth/AuthProvider'; // Sử dụng AuthProvider mới thay vì SessionContext
-
+import { useAuth } from '@/components/auth/AuthProvider';
 import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
 import { teamsService } from '@/services/teams/teamsService';
 import { tasksService } from '@/services/tasks/tasksService';
+import postsService from '@/services/postsService';
 
 interface GlobalData {
   user: any;
@@ -14,6 +14,7 @@ interface GlobalData {
   projects: any[];
   taskStats: any;
   tasksSummary: any[];
+  posts: any[];
   isLoaded: boolean;
   isLoading: boolean;
   error: string | null;
@@ -24,9 +25,12 @@ interface GlobalDataContextType extends GlobalData {
   addTeam: (newTeam: any) => void;
   addProject: (newProject: any) => void;
   addTask: (newTask: any) => void;
+  addPost: (newPost: any) => void;
   updateTeam: (teamId: number, updatedTeam: any) => void;
   updateProject: (projectId: number, updatedProject: any) => void;
   updateTask: (taskId: number, updatedTask: any) => void;
+  updatePost: (postId: number, updatedPost: any) => void;
+  invalidatePostsCache: () => void;
 }
 
 const GlobalDataContext = createContext<GlobalDataContextType | null>(null);
@@ -36,13 +40,14 @@ interface GlobalDataProviderProps {
 }
 
 export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
-  const { user, isAuthenticated, isLoading } = useAuth(); // Sử dụng AuthProvider mới
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [globalData, setGlobalData] = React.useState<GlobalData>({
     user: null,
     teams: [],
     projects: [],
     taskStats: null,
     tasksSummary: [],
+    posts: [],
     isLoaded: false,
     isLoading: false,
     error: null,
@@ -56,7 +61,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
     try {
       // Fetch all critical data in parallel
-      const [teamsResponse, projectsResponse, taskStatsResponse, tasksSummaryResponse] = await Promise.all([
+      const [teamsResponse, projectsResponse, taskStatsResponse, tasksSummaryResponse, postsResponse] = await Promise.all([
         teamsService.getMyTeams(),
         projectsService.getMyProjects(),
         tasksService.getMyTasksStats(),
@@ -65,7 +70,8 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
           size: 1000,
           sortBy: 'startDate',
           sortDir: 'desc'
-        })
+        }),
+        postsService.getNewsfeed(0, 20) // Load recent posts
       ]);
 
       const newGlobalData = {
@@ -74,6 +80,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
         projects: projectsResponse?.projects || [],
         taskStats: taskStatsResponse,
         tasksSummary: tasksSummaryResponse?.tasks || [],
+        posts: postsResponse?.data || [],
         isLoaded: true,
         isLoading: false,
         error: null,
@@ -92,6 +99,8 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
           sortBy: 'startDate',
           sortDir: 'desc'
         }], tasksSummaryResponse),
+        mutate(['posts', 'feed', 0], postsResponse),
+        mutate(['posts', 'user', user.id, 0], await postsService.getUserPosts(user.id, 0, 20))
       ]);
 
     } catch (error) {
@@ -126,24 +135,22 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   const addTask = (newTask: any) => {
     setGlobalData(prev => ({
       ...prev,
-      tasksSummary: [newTask, ...prev.tasksSummary] // Add to beginning for consistency
+      tasksSummary: [newTask, ...prev.tasksSummary]
+    }));
+  };
+
+  const addPost = (newPost: any) => {
+    setGlobalData(prev => ({
+      ...prev,
+      posts: [newPost, ...prev.posts]
     }));
     
     // Also update SWR cache immediately
-    mutate(['tasks', 'my-tasks', 'summary', {
-      page: 0,
-      size: 1000,
-      sortBy: 'startDate',
-      sortDir: 'desc'
-    }], (currentData: any) => {
-      if (currentData?.tasks) {
-        return {
-          ...currentData,
-          tasks: [newTask, ...currentData.tasks]
-        };
-      }
-      return { tasks: [newTask] };
-    }, false);
+    mutate(
+      key => Array.isArray(key) && key[0] === 'posts',
+      undefined,
+      { revalidate: true }
+    );
   };
 
   const updateTeam = (teamId: number, updatedTeam: any) => {
@@ -165,85 +172,85 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   const updateTask = (taskId: number, updatedTask: any) => {
-
-    
-    setGlobalData(prev => {
-      const updatedTasksSummary = prev.tasksSummary.map(task =>
+    setGlobalData(prev => ({
+      ...prev,
+      tasksSummary: prev.tasksSummary.map(task =>
         task.id === taskId ? { ...task, ...updatedTask } : task
-      );
-      
-      console.log('📊 GlobalData: Before update tasks count:', prev.tasksSummary.length);
-      console.log('📊 GlobalData: After update tasks count:', updatedTasksSummary.length);
-      
-      return {
-        ...prev,
-        tasksSummary: updatedTasksSummary
-      };
-    });
-    
-    // Also update SWR cache immediately
-    mutate(['tasks', 'my-tasks', 'summary', {
-      page: 0,
-      size: 1000,
-      sortBy: 'startDate',
-      sortDir: 'desc'
-    }], (currentData: any) => {
-      if (currentData?.tasks) {
-        return {
-          ...currentData,
-          tasks: currentData.tasks.map((task: any) => 
-            task.id === taskId ? { ...task, ...updatedTask } : task
-          )
-        };
-      }
-      return currentData;
-    }, false);
+      )
+    }));
   };
 
-  // Prefetch data when session is available
+  const updatePost = (postId: number, updatedPost: any) => {
+    setGlobalData(prev => ({
+      ...prev,
+      posts: prev.posts.map(post =>
+        post.id === postId ? { ...post, ...updatedPost } : post
+      )
+    }));
+  };
+
+  const invalidatePostsCache = () => {
+    console.log('🔄 Invalidating all posts cache from GlobalDataContext...');
+
+    // Force revalidate all posts-related SWR caches
+    mutate(
+      key => Array.isArray(key) && key[0] === 'posts',
+      undefined,
+      { revalidate: true }
+    );
+  };
+
+  // Effect to sync user changes and prefetch data
   React.useEffect(() => {
-    if (user && !globalData.isLoaded && !globalData.isLoading) {
+    if (isAuthenticated && user && !globalData.isLoaded) {
       prefetchAllData();
     }
-  }, [user, globalData.isLoaded, globalData.isLoading]);
+  }, [isAuthenticated, user, globalData.isLoaded]);
 
-  const contextValue: GlobalDataContextType = {
+  const value: GlobalDataContextType = {
     ...globalData,
     refetchAll,
     addTeam,
     addProject,
     addTask,
+    addPost,
     updateTeam,
     updateProject,
     updateTask,
+    updatePost,
+    invalidatePostsCache,
   };
 
-  // Provide SWR fallback data to prevent initial API calls using correct array keys
-  const swrFallback = globalData.isLoaded ? {
-    [`${JSON.stringify(['teams', 'my-teams'])}`]: globalData.teams,
-    [`${JSON.stringify(['projects', 'my-projects'])}`]: { projects: globalData.projects },
-    [`${JSON.stringify(['tasks', 'my-tasks', 'stats'])}`]: globalData.taskStats,
-    [`${JSON.stringify(['tasks', 'my-tasks', 'summary', {
-      page: 0,
-      size: 1000,
-      sortBy: 'startDate',
-      sortDir: 'desc'
-    }])}`]: { tasks: globalData.tasksSummary },
-  } : {};
-
   return (
-    <GlobalDataContext.Provider value={contextValue}>
-      <SWRConfig value={{ fallback: swrFallback }}>
+    <GlobalDataContext.Provider value={value}>
+      <SWRConfig
+        value={{
+          revalidateOnFocus: false,
+          revalidateOnReconnect: true,
+          refreshInterval: 0,
+          dedupingInterval: 2000,
+          errorRetryCount: 3,
+          errorRetryInterval: 5000,
+          revalidateIfStale: true,
+          focusThrottleInterval: 5000,
+          onError: (error, key) => {
+            console.error('SWR Error:', error, 'Key:', key);
+          },
+          onSuccess: (data, key) => {
+            console.log('🔄 SWR Cache Updated:', key);
+          }
+        }}
+      >
         {children}
       </SWRConfig>
     </GlobalDataContext.Provider>
   );
 }
 
-export const useGlobalData = (): GlobalDataContextType => {
+export function useGlobalData() {
   const context = useContext(GlobalDataContext);
   if (!context) {
     throw new Error('useGlobalData must be used within a GlobalDataProvider');
   }
   return context;
-};
+}

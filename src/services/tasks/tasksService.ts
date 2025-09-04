@@ -6,9 +6,20 @@ import {
   normalizeStatus, 
   normalizePriority,
   toBackendStatus,
-  toBackendPriority,
-  transformPaginatedResponse 
+  toBackendPriority
 } from '@/lib/transforms';
+import {
+  BackendTask,
+  Task,
+  MyTasksSummaryItem,
+  MyTasksFullItem,
+  CreateTaskDTO,
+  UpdateTaskDTO,
+  PaginatedResponse,
+  MyTasksStats
+} from '@/types/task';
+import { AuthService } from '@/lib/auth-backend';
+import { UserProfileDto } from '@/types/progress';
 import type { AxiosError } from 'axios';
 
 // Proper TypeScript interfaces instead of any
@@ -159,6 +170,12 @@ export const transformMyTasksFull = (item: MyTasksFullItem): Task => {
     // Profile information
     creatorProfile: item.creatorProfile,
     assigneeProfiles: item.assigneeProfiles || [],
+    // ✅ NEW: Google Calendar Integration Fields
+    googleCalendarEventId: item.googleCalendarEventId,
+    googleCalendarEventUrl: item.googleCalendarEventUrl,
+    googleMeetLink: item.googleMeetLink,
+    isSyncedToCalendar: item.isSyncedToCalendar,
+    calendarSyncedAt: item.calendarSyncedAt,
   };
 };
 
@@ -632,11 +649,11 @@ export const tasksService = {
         console.warn('💥 Backend server error on /api/tasks/my-tasks/stats');
       }
       
-      const userInfo = CookieAuth.getUserInfo();
+      // Provide fallback user info without requiring auth service
       return {
         totalParticipatingTasks: 0,
-        userEmail: userInfo.email || 'unknown@example.com',
-        userId: parseInt(userInfo.id || '1')
+        userEmail: 'unknown@example.com',
+        userId: 1
       };
     }
   },

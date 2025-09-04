@@ -21,6 +21,13 @@ export interface BackendTask {
   assignedToIds?: number[];
   assignedToEmails?: string[];
   checklists?: unknown[];
+
+  // ✅ NEW: Google Calendar Integration Fields
+  googleCalendarEventId?: string; // Google Calendar Event ID để tracking
+  googleCalendarEventUrl?: string; // Direct link để user click vào Calendar
+  googleMeetLink?: string; // Google Meet link nếu event có meeting
+  isSyncedToCalendar?: boolean; // Trạng thái đã sync với calendar
+  calendarSyncedAt?: string; // Thời gian sync lần cuối (ISO datetime)
 }
 
 // New My Tasks Response interfaces
@@ -64,6 +71,13 @@ export interface MyTasksFullItem {
   // New fields for full user profile information
   creatorProfile?: UserProfileDto;
   assigneeProfiles?: UserProfileDto[];
+
+  // ✅ NEW: Google Calendar Integration Fields
+  googleCalendarEventId?: string; // Google Calendar Event ID để tracking
+  googleCalendarEventUrl?: string; // Direct link để user click vào Calendar
+  googleMeetLink?: string; // Google Meet link nếu event có meeting
+  isSyncedToCalendar?: boolean; // Trạng thái đã sync với calendar
+  calendarSyncedAt?: string; // Thời gian sync lần cuối (ISO datetime)
 
   // File attachments support
   attachments?: Array<{
@@ -141,6 +155,13 @@ export interface Task {
   // New fields for full user profile information
   creatorProfile?: UserProfileDto;
   assigneeProfiles?: UserProfileDto[];
+
+  // ✅ NEW: Google Calendar Integration Fields
+  googleCalendarEventId?: string; // Google Calendar Event ID để tracking
+  googleCalendarEventUrl?: string; // Direct link để user click vào Calendar
+  googleMeetLink?: string; // Google Meet link nếu event có meeting
+  isSyncedToCalendar?: boolean; // Trạng thái đã sync với calendar
+  calendarSyncedAt?: string; // Thời gian sync lần cuối (ISO datetime)
 }
 
 // Data Transfer Objects (DTOs)

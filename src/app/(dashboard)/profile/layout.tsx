@@ -6,30 +6,50 @@ import PageLayout from "@/layouts/page/PageLayout";
 import Button from "@/components/ui/Button/Button";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { DARK_THEME } from "@/constants/theme";
-import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useRouter, usePathname } from "next/navigation";
 import { 
   Camera,
-  Users,
-  FileText,
-  Briefcase,
-  Edit3
+  Edit3,
+  Check
 } from "lucide-react";
 
-// Mock data - replace with real data from API
-const profileData = {
-  name: "Admin",
-  displayName: "cuonglv.21ad@vku.udn.vn",
-  bio: "Tranquility of mind",
-  location: "somewhere",
-  joinDate: "Joined January 2024",
-  avatar: null,
-  coverPhoto: null,
-  followingCount: 27,
-  followerCount: 43,
-  roles: ["coder", "hr"],
-  verified: true
-};
+// Profile data interface based on API documentation
+interface ProfileData {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  avatarUrl: string | null;
+  coverImageUrl: string | null;
+  department?: string;
+  jobTitle?: string;
+  aboutMe?: string;
+  joinedAt: string;
+  isPremium: boolean;
+  premiumExpiry?: string;
+  premiumBadgeUrl?: string;
+  friendshipStatus?: any;
+  isOwnProfile: boolean;
+  tabCounts: {
+    postsCount: number;
+    friendsCount: number;
+    tasksCount: number;
+    publicTasksCount: number;
+    sharedTasksCount: number;
+  };
+  stats: {
+    totalPosts: number;
+    totalFriends: number;
+    totalTasks: number;
+    completedTasks: number;
+    pendingTasks: number;
+    mutualFriendsCount: number;
+    taskCompletionRate: number;
+    isOwnProfile: boolean;
+  };
+}
 
 type TabType = 'friends' | 'posts' | 'portfolio';
 
@@ -38,38 +58,166 @@ interface ProfileLayoutProps {
 }
 
 const ProfileLayout = ({ children }: ProfileLayoutProps) => {
-  const { user, isLoading } = useAuth(); // Sử dụng useAuth thay vì useUser
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Memoized user data with fallbacks
-  const userData = useMemo(() => ({
-    name: user?.name || profileData.name,
-    displayName: user?.email || profileData.displayName,
-    avatar: user?.avatar || profileData.avatar,
-    bio: profileData.bio,
-    location: profileData.location,
-    joinDate: profileData.joinDate,
-    followingCount: profileData.followingCount,
-    followerCount: profileData.followerCount,
-    roles: profileData.roles,
-    verified: profileData.verified
-  }), [user]);
+  // Load profile data from API
+  const loadProfileData = async () => {
+    setLoading(true);
+    try {
+      // Try the documented API endpoint first
+      let response = await fetch('/api/user-profiles/me/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      // If the main endpoint fails, try alternative endpoints
+      if (!response.ok) {
+        console.warn(`Primary endpoint failed with status: ${response.status}, trying alternative...`);
+
+        // Try the basic profile endpoint as fallback
+        response = await fetch('/api/user-profiles/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          }
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiData = await response.json();
+      console.log('API Response:', apiData); // Debug log
+
+      // Transform API response to match our interface
+      // Handle both avtUrl (from basic profile) and avatarUrl (from full profile)
+      const profileData: ProfileData = {
+        id: apiData.id ?? 0,
+        email: apiData.email ?? user?.email ?? "",
+        firstName: apiData.firstName ?? user?.name?.split(' ')[0] ?? "User",
+        lastName: apiData.lastName ?? user?.name?.split(' ').slice(1).join(' ') ?? "",
+        username: apiData.username ?? "user",
+        avatarUrl: apiData.avatarUrl ?? apiData.avtUrl ?? user?.avatar ?? null,
+        coverImageUrl: apiData.coverImageUrl ?? null,
+        department: apiData.department ?? "Unknown Department",
+        jobTitle: apiData.jobTitle ?? "Team Member",
+        aboutMe: apiData.aboutMe ?? "No bio available",
+        joinedAt: apiData.joinedAt ?? new Date().toISOString(),
+        isPremium: apiData.premium ?? apiData.isPremium ?? false, // Map 'premium' field from backend
+        premiumExpiry: apiData.premiumExpiry ?? undefined,
+        premiumBadgeUrl: apiData.premiumBadgeUrl ?? null,
+        friendshipStatus: apiData.friendshipStatus ?? null,
+        isOwnProfile: apiData.ownProfile ?? apiData.isOwnProfile ?? true, // Map 'ownProfile' field from backend
+        tabCounts: apiData.tabCounts ?? {
+          postsCount: 0,
+          friendsCount: 0,
+          tasksCount: 0,
+          publicTasksCount: 0,
+          sharedTasksCount: 0
+        },
+        stats: apiData.stats ?? {
+          totalPosts: apiData.tabCounts?.postsCount ?? 0,
+          totalFriends: apiData.tabCounts?.friendsCount ?? 0,
+          totalTasks: apiData.tabCounts?.tasksCount ?? 0,
+          completedTasks: 0,
+          pendingTasks: 0,
+          mutualFriendsCount: 0,
+          taskCompletionRate: 0,
+          isOwnProfile: true
+        }
+      };
+
+      setProfileData(profileData);
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+
+      // Create fallback profile data from user auth context
+      const fallbackProfileData: ProfileData = {
+        id: 0,
+        email: user?.email || "user@example.com",
+        firstName: user?.name?.split(' ')[0] || "User",
+        lastName: user?.name?.split(' ').slice(1).join(' ') || "",
+        username: "user",
+        avatarUrl: user?.avatar || null,
+        coverImageUrl: null,
+        department: "Engineering",
+        jobTitle: "Team Member",
+        aboutMe: "Welcome to TaskFlow!",
+        joinedAt: new Date().toISOString(),
+        isPremium: false,
+        premiumExpiry: undefined,
+        premiumBadgeUrl: "/images/premium-badge.png",
+        friendshipStatus: null,
+        isOwnProfile: true,
+        tabCounts: {
+          postsCount: 0,
+          friendsCount: 0,
+          tasksCount: 0,
+          publicTasksCount: 0,
+          sharedTasksCount: 0
+        },
+        stats: {
+          totalPosts: 0,
+          totalFriends: 0,
+          totalTasks: 0,
+          completedTasks: 0,
+          pendingTasks: 0,
+          mutualFriendsCount: 0,
+          taskCompletionRate: 0,
+          isOwnProfile: true
+        }
+      };
+
+      setProfileData(fallbackProfileData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadProfileData();
+    }
+  }, [user]);
 
   // Generate avatar background for Facebook-like effect
   const avatarBackgroundUrl = useMemo(() => {
-    if (userData.avatar) {
-      return userData.avatar;
+    if (profileData?.avatarUrl) {
+      return profileData.avatarUrl;
     }
-    // Fallback to a default avatar or generate one based on name
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=400&background=6366f1&color=ffffff&format=png`;
-  }, [userData.avatar, userData.name]);
+    const fullName = profileData ? `${profileData.firstName} ${profileData.lastName}` : "User";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=400&background=6366f1&color=ffffff&format=png`;
+  }, [profileData?.avatarUrl, profileData?.firstName, profileData?.lastName]);
 
   const tabs = [
-    { id: 'friends' as TabType, label: 'Friends',  count: userData.followerCount, href: '/profile/friends' },
-    { id: 'posts' as TabType, label: 'Posts', count: 12, href: '/profile/posts' },
-    { id: 'portfolio' as TabType, label: 'Portfolio', count: 8, href: '/profile/portfolio' },
+    {
+      id: 'posts' as TabType,
+      label: 'Posts',
+      count: profileData?.tabCounts.postsCount || 0,
+      href: '/profile/posts'
+    },
+    {
+      id: 'friends' as TabType,
+      label: 'Friends',
+      count: profileData?.tabCounts.friendsCount || 0,
+      href: '/profile/friends'
+    },
+    {
+      id: 'portfolio' as TabType,
+      label: 'Portfolio',
+      count: profileData?.tabCounts.tasksCount || 0,
+      href: '/profile/portfolio'
+    },
   ];
 
   // Set active tab based on current path
@@ -81,10 +229,14 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
     } else if (pathname.includes('/portfolio')) {
       setActiveTab('portfolio');
     } else {
-      // Default tab when on main profile page
-      setActiveTab('friends');
+      // Default to posts tab when on base profile page
+      setActiveTab('posts');
+      // Redirect to posts tab if on base profile page
+      if (pathname === '/profile' || pathname === '/profile/') {
+        router.push('/profile/posts');
+      }
     }
-  }, [pathname]);
+  }, [pathname, router]);
 
   // Handle tab change
   const handleTabChange = (tabId: TabType) => {
@@ -95,7 +247,7 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || loading || !profileData) {
     return (
       <PageLayout>
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -161,10 +313,10 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
             </div>
 
             {/* Cover Photo Layer */}
-            {profileData.coverPhoto ? (
+            {profileData.coverImageUrl ? (
               <div className="absolute inset-0 z-10">
                 <Image
-                  src={profileData.coverPhoto}
+                  src={profileData.coverImageUrl}
                   alt="Cover photo"
                   fill
                   className="object-cover"
@@ -204,8 +356,8 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-600/20 blur-xl scale-110 animate-pulse"></div>
 
                     <UserAvatar
-                      name={userData.name}
-                      avatar={userData.avatar}
+                      name={`${profileData.firstName} ${profileData.lastName}`}
+                      avatar={profileData.avatarUrl || undefined}
                       size="2xl"
                       variant="circle"
                       className="profile-avatar-responsive shadow-2xl border-4 ring-4 ring-white/20 transition-all duration-300 hover:scale-105 hover:ring-white/30 relative z-10"
@@ -213,49 +365,35 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
                       fallbackColor="#f8a5c2"
                     />
                   </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-8 h-8 sm:w-10 sm:h-10 rounded-full p-0 border-2 backdrop-blur-sm hover:scale-110 transition-all duration-200 hover:shadow-lg z-20"
-                    style={{
-                      backgroundColor: DARK_THEME.background.secondary,
-                      borderColor: DARK_THEME.border.default,
-                    }}
-                    onClick={() => console.log("Change avatar")}
-                  >
-                    <Camera className="w-3 h-3 sm:w-5 sm:h-5" style={{ color: DARK_THEME.text.primary }} />
-                  </Button>
                 </div>
 
                 {/* User Info */}
                 <div className="flex-1 text-center sm:text-left sm:mb-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-8">
                     <h1 
                       className="text-2xl sm:text-3xl lg:text-4xl font-bold"
                       style={{ color: DARK_THEME.text.primary }}
                     >
-                      {userData.name}
+                      {profileData.firstName} {profileData.lastName}
                     </h1>
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
-                      {userData.verified && (
-                        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse"></div>
-                      )}
-                      <span className="text-xs sm:text-sm text-gray-400">(I&apos;m god)</span>
-                    </div>
+
+                    {/* Premium Badge next to name */}
+                    {profileData.isPremium && (
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full shadow-md border border-white" style={{ backgroundColor: '#1DA1F2' }}>
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 mb-3">
-                    <span className="text-xs sm:text-sm" style={{ color: DARK_THEME.text.secondary }}>
-                      <strong className="font-semibold">{userData.followingCount}</strong>
-                      <span className="ml-1">following</span>
-                    </span>
-                    <span className="text-xs sm:text-sm" style={{ color: DARK_THEME.text.secondary }}>
-                      <strong className="font-semibold">{userData.followerCount}</strong>
-                      <span className="ml-1">follower{userData.followerCount !== 1 ? 's' : ''}</span>
-                    </span>
-                  </div>
+                  {/* Email */}
+                  {profileData.email && (
+                    <p
+                      className="text-sm sm:text-base mb-2"
+                      style={{ color: DARK_THEME.text.secondary }}
+                    >
+                      {profileData.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -298,10 +436,9 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
                       color: isActive ? '#60a5fa' : DARK_THEME.text.secondary 
                     }}
                   >
-                   
                     <span className="hidden xs:inline">{tab.label}</span>
-                    {tab.count && (
-                      <span 
+                    {tab.count !== undefined && (
+                      <span
                         className={`
                           px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium
                           transition-all duration-200

@@ -49,3 +49,15 @@ export type {
 export { default as tasksService } from './tasks/tasksService';
 export { default as projectsService } from './projects/projectsService';
 export { default as teamsService } from './teams/teamsService';
+
+// Services exports
+export { default as GoogleCalendarService } from './googleCalendarService';
+export * from './googleCalendarService';
+
+// Re-export other services
+export { default as TaskService } from './taskService';
+export { default as CommentService } from './commentService';
+export { default as ProgressService } from './progressService';
+export { default as TaskActivityService } from './taskActivityService';
+export { default as TeamMemberService } from './teamMemberService';
+export { default as SimpleFileService } from './simpleFileService';

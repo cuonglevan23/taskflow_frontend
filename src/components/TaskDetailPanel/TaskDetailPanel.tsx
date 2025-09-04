@@ -19,6 +19,7 @@ interface TaskDetailPanelProps {
   onPriorityChange?: (taskId: string, priority: string) => void;
   onFileUploadComplete?: (result: any) => void; // Change from onFileUpload to onFileUploadComplete
   onRemoveAttachment?: (attachmentId: string) => void;
+  onTaskRefresh?: () => void; // Add callback để refresh task data sau khi tạo calendar event
 }
 
 const TaskDetailPanel = ({
@@ -31,7 +32,8 @@ const TaskDetailPanel = ({
   onStatusChange,
   onPriorityChange,
   onFileUploadComplete,
-  onRemoveAttachment
+  onRemoveAttachment,
+  onTaskRefresh // Destructure onTaskRefresh
 }: TaskDetailPanelProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -144,6 +146,7 @@ const TaskDetailPanel = ({
         onTaskPriorityChange={onPriorityChange}
         onRemoveAttachment={onRemoveAttachment}
         fileRefreshTrigger={fileRefreshTrigger}
+        onTaskRefresh={onTaskRefresh} // Truyền callback refresh task data xuống TaskDetailContent
       />
 
       <TaskDetailFooter

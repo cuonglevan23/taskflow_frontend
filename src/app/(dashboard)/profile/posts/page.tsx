@@ -1,59 +1,124 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BaseCard from "@/components/ui/BaseCard/BaseCard";
 import Button from "@/components/ui/Button/Button";
-import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
 import { useAuth } from '@/components/auth/AuthProvider';
+import { CreatePostCard, PostCard } from "@/components/posts";
+import { useUserPosts } from "@/hooks/usePosts";
 import {
-  Heart,
-  MessageCircle,
-  Share,
-  Video,
   ImageIcon,
-  Smile,
-  MapPin,
+  Calendar,
+  Briefcase,
   Edit3,
-  CheckCircle
+  Loader2
 } from "lucide-react";
 
-// Mock posts data
-const mockPosts = [
-  {
-    id: 1,
-    author: "Admin",
-    content: "I hate dependency",
-    timestamp: "2 days ago",
-    likes: 7,
-    comments: 1,
-    liked: true,
-    verified: true,
-    image: null
-  },
-  {
-    id: 2,
-    author: "Admin",
-    content: "Just finished a great project! Really excited about the results 🚀",
-    timestamp: "1 week ago",
-    likes: 12,
-    comments: 3,
-    liked: false,
-    verified: true,
-    image: null
-  }
-];
+// Profile data interface
+interface ProfileData {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  avatarUrl: string | null;
+  department?: string;
+  jobTitle?: string;
+  aboutMe?: string;
+  joinedAt: string;
+  isPremium: boolean;
+}
 
 export default function PostsPage() {
   const { user } = useAuth();
-  const [postContent, setPostContent] = useState("");
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const userData = {
-    name: user?.name || "Admin",
-    email: user?.email || "cuonglv.21ad@vku.udn.vn",
-    avatar: user?.avatar,
-    bio: "Tranquility of mind",
-    location: "somewhere"
+  // Load profile data from API
+  const loadProfileData = async () => {
+    setLoading(true);
+    try {
+      let response = await fetch('/api/user-profiles/me/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        // Try alternative endpoint
+        response = await fetch('/api/user-profiles/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          }
+        });
+      }
+
+      if (response.ok) {
+        const apiData = await response.json();
+        const mappedProfile: ProfileData = {
+          id: apiData.id || 0,
+          email: apiData.email || user?.email || "",
+          firstName: apiData.firstName || user?.name?.split(' ')[0] || "User",
+          lastName: apiData.lastName || user?.name?.split(' ').slice(1).join(' ') || "",
+          username: apiData.username || "user",
+          avatarUrl: apiData.avatarUrl || apiData.avtUrl || user?.avatar || null,
+          department: apiData.department,
+          jobTitle: apiData.jobTitle,
+          aboutMe: apiData.aboutMe,
+          joinedAt: apiData.joinedAt || new Date().toISOString(),
+          isPremium: apiData.premium || apiData.isPremium || false
+        };
+        setProfileData(mappedProfile);
+      }
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Use custom hook for posts with automatic cache management
+  const userId = profileData?.id || 0;
+
+  const {
+    posts,
+    error: postsError,
+    isLoading: postsLoading,
+    isLoadingMore,
+    setSize,
+    isReachingEnd,
+    isEmpty
+  } = useUserPosts(userId);
+
+  useEffect(() => {
+    if (user) {
+      loadProfileData();
+    }
+  }, [user]);
+
+  const formatJoinDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long'
+      });
+    } catch {
+      return 'Recently joined';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-3 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-3">
@@ -66,36 +131,60 @@ export default function PostsPage() {
             onMenuClick={() => console.log("Intro menu")}
             variant="compact"
           >
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Bio */}
-              <div className="text-center">
-                <p className="text-gray-300 text-base mb-3">{userData.bio}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2"
-                >
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit bio
-                </Button>
-              </div>
+              {profileData?.aboutMe && profileData.aboutMe !== "No bio available" ? (
+                <div className="text-center">
+                  <p className="text-gray-300 text-base mb-3">{profileData.aboutMe}</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-gray-500 text-sm mb-3">No bio yet</p>
+                </div>
+              )}
 
-              {/* Location */}
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <MapPin className="w-4 h-4" />
-                <span>From {userData.location}</span>
-              </div>
+              {/* Job & Department - Only show if available and meaningful */}
+              {profileData?.jobTitle && profileData.jobTitle !== "Team Member" && (
+                <div className="flex items-center gap-2 text-gray-300">
+                  <Briefcase className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">
+                    {profileData.jobTitle}
+                    {profileData.department && profileData.department !== "Unknown Department"
+                      ? ` at ${profileData.department}`
+                      : ''
+                    }
+                  </span>
+                </div>
+              )}
+
+              {/* Join Date */}
+              {profileData?.joinedAt && (
+                <div className="flex items-center gap-2 text-gray-300">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm">Joined {formatJoinDate(profileData.joinedAt)}</span>
+                </div>
+              )}
+
+              {/* Edit Profile Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2"
+                onClick={() => console.log("Edit profile")}
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
             </div>
           </BaseCard>
 
           {/* Photos Card */}
           <BaseCard
-            title="Photo"
+            title="Photos"
             onMenuClick={() => console.log("Photos menu")}
             variant="compact"
           >
             <div className="grid grid-cols-3 gap-1.5">
-              {/* Demo photos - 6 items in 3x2 grid */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="aspect-square bg-slate-600 rounded-md overflow-hidden">
                   <div className="w-full h-full flex items-center justify-center">
@@ -104,129 +193,80 @@ export default function PostsPage() {
                 </div>
               ))}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-2 text-gray-300 hover:bg-gray-700"
+            >
+              See All Photos
+            </Button>
           </BaseCard>
         </div>
 
-        {/* Right Column - Posts */}
+        {/* Main Content Column */}
         <div className="flex-1 space-y-3">
-          {/* Post Composer */}
-          <BaseCard
-            title=""
-            onMenuClick={() => console.log("Composer menu")}
-            variant="compact"
-          >
-            <div className="space-y-3">
-              {/* Post Input */}
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 bg-slate-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                  KE
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={postContent}
-                    onChange={(e) => setPostContent(e.target.value)}
-                    placeholder="What's on your mind, Admin?"
-                    className="w-full p-2.5 bg-slate-600 rounded-full text-white placeholder-gray-400 border-0 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-              </div>
+          {/* Create Post Card - No longer needs callbacks */}
+          <CreatePostCard
+            userName={profileData ? `${profileData.firstName} ${profileData.lastName}` : user?.name || "User"}
+            userAvatar={profileData?.avatarUrl || user?.avatar}
+            placeholder="What's on your mind?"
+          />
 
-              {/* Post Actions */}
-              <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-                <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1.5 text-red-500 hover:bg-gray-700 px-2 py-1.5 rounded-md transition-colors">
-                    <Video className="w-4 h-4" />
-                    <span className="text-xs font-medium">Video</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 text-green-500 hover:bg-gray-700 px-2 py-1.5 rounded-md transition-colors">
-                    <ImageIcon className="w-4 h-4" />
-                    <span className="text-xs font-medium">Photo</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 text-yellow-500 hover:bg-gray-700 px-2 py-1.5 rounded-md transition-colors">
-                    <Smile className="w-4 h-4" />
-                    <span className="text-xs font-medium">Feeling</span>
-                  </button>
-                </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!postContent.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-1.5 text-sm"
-                >
-                  Post
-                </Button>
-              </div>
+          {/* Posts Loading */}
+          {postsLoading && posts.length === 0 && (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
             </div>
-          </BaseCard>
+          )}
 
-          {/* Posts Feed */}
-          {mockPosts.map((post) => (
-            <BaseCard
-              key={post.id}
-              title=""
-              onMenuClick={() => console.log(`Post ${post.id} menu`)}
-              variant="compact"
-            >
-              <div className="space-y-3">
-                {/* Post Header */}
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    name={userData.name}
-                    size="sm"
-                    fallbackColor="bg-gradient-to-br from-blue-500 to-purple-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-white text-sm">{post.author}</h3>
-                      {post.verified && (
-                        <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400">{post.timestamp}</p>
-                  </div>
-                </div>
-
-                {/* Post Content */}
-                <div>
-                  <p className="text-white text-sm leading-relaxed">{post.content}</p>
-                </div>
-
-                {/* Post Stats */}
-                <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-700">
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5 text-red-500" />
-                    <span>You and {post.likes - 1} others</span>
-                  </div>
-                  <div>
-                    <span>{post.comments} comment{post.comments !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-
-                {/* Post Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-                  <button 
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors text-xs font-medium ${
-                      post.liked 
-                        ? 'text-red-500 bg-red-500/10' 
-                        : 'text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${post.liked ? 'fill-current' : ''}`} />
-                    <span>Like</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 text-gray-400 hover:bg-gray-700 px-3 py-1.5 rounded-md transition-colors text-xs font-medium">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Comment</span>
-                  </button>
-                  <button className="flex items-center gap-1.5 text-gray-400 hover:bg-gray-700 px-3 py-1.5 rounded-md transition-colors text-xs font-medium">
-                    <Share className="w-4 h-4" />
-                    <span>Share</span>
-                  </button>
-                </div>
+          {/* Error State */}
+          {postsError && (
+            <BaseCard variant="compact">
+              <div className="text-center py-8">
+                <p className="text-red-400 mb-4">Error loading posts</p>
+                <p className="text-gray-500 text-sm">Please try refreshing the page</p>
               </div>
             </BaseCard>
+          )}
+
+          {/* Posts - No callbacks needed, all handled by hooks */}
+          {posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+            />
           ))}
+
+          {/* Load More Button */}
+          {!isReachingEnd && posts.length > 0 && (
+            <div className="flex justify-center py-4">
+              <Button
+                variant="ghost"
+                onClick={() => setSize(size => size + 1)}
+                disabled={isLoadingMore}
+                className="text-gray-400 hover:text-white"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Posts'
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* No Posts Message */}
+          {isEmpty && !postsLoading && (
+            <BaseCard variant="compact">
+              <div className="text-center py-8">
+                <p className="text-gray-400 mb-4">No posts yet</p>
+                <p className="text-gray-500 text-sm">Share your first post to get started!</p>
+              </div>
+            </BaseCard>
+          )}
         </div>
       </div>
     </div>

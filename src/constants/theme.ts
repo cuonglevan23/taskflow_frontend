@@ -125,6 +125,14 @@ export const LIGHT_THEME = {
     focus: THEME_COLORS.primary[500],
   },
   
+  // Status Colors
+  status: {
+    success: THEME_COLORS.success[500],
+    warning: THEME_COLORS.warning[500],
+    error: THEME_COLORS.error[500],
+    info: THEME_COLORS.info[500],
+  },
+
   // Component Colors
   sidebar: {
     background: '#1e293b',
@@ -181,6 +189,25 @@ export const LIGHT_THEME = {
       hover: '#f9f8f8',
       text: THEME_COLORS.secondary[700],
     },
+    // Formatting toolbar button states
+    formatting: {
+      background: 'transparent',
+      text: '#94a3b8', // color-text-muted
+      textHover: '#5688e5', // color-selected-text-hover
+      textSelected: '#fff', // color-selected-text-strong
+      icon: '#94a3b8', // color-icon-muted
+      iconSelected: '#fff', // color-selected-icon-strong
+      iconForeground: '#fff', // color-selected-icon-foreground
+      border: 'transparent',
+      borderSelected: '#4573d2', // color-selected-border
+      borderHover: '#4573d2', // color-selected-border-hover
+      borderActive: '#4573d2', // color-selected-border-active
+      backgroundSelected: '#4573d2', // color-selected-background-strong
+      backgroundSelectedRgb: '69, 115, 210', // color-selected-background-strong-rgb
+      backgroundSelectedHover: '#426dc6', // color-selected-background-strong-hover
+      backgroundSelectedActive: '#3f66ba', // color-selected-background-strong-active
+      backgroundHover: 'rgba(86, 136, 229, 0.1)', // Using hover color with opacity
+    },
     success: {
       background: '#f0fdf4', // Light green background
       hover: '#dcfce7', // Lighter green on hover
@@ -216,7 +243,15 @@ export const DARK_THEME = {
     muted: '#475569',
     focus: THEME_COLORS.primary[400],
   },
-  
+
+  // Status Colors
+  status: {
+    success: THEME_COLORS.success[500],
+    warning: THEME_COLORS.warning[500],
+    error: THEME_COLORS.error[500],
+    info: THEME_COLORS.info[500],
+  },
+
   // Component Colors
   sidebar: {
     background: '#2e2e30', // Updated sidebar background
@@ -263,6 +298,25 @@ export const DARK_THEME = {
       text: THEME_COLORS.secondary[200],
       border: THEME_COLORS.secondary[600],
     },
+    // Formatting toolbar button states
+    formatting: {
+      background: 'transparent',
+      text: '#94a3b8', // color-text-muted
+      textHover: '#5688e5', // color-selected-text-hover
+      textSelected: '#fff', // color-selected-text-strong
+      icon: '#94a3b8', // color-icon-muted
+      iconSelected: '#fff', // color-selected-icon-strong
+      iconForeground: '#fff', // color-selected-icon-foreground
+      border: 'transparent',
+      borderSelected: '#4573d2', // color-selected-border
+      borderHover: '#4573d2', // color-selected-border-hover
+      borderActive: '#4573d2', // color-selected-border-active
+      backgroundSelected: '#4573d2', // color-selected-background-strong
+      backgroundSelectedRgb: '69, 115, 210', // color-selected-background-strong-rgb
+      backgroundSelectedHover: '#426dc6', // color-selected-background-strong-hover
+      backgroundSelectedActive: '#3f66ba', // color-selected-background-strong-active
+      backgroundHover: 'rgba(86, 136, 229, 0.1)', // Using hover color with opacity
+    },
     success: {
       background: '#1d3733', // --color-success-background
       hover: '#4b8a73', // --color-button-success-border-pressedHover
@@ -299,6 +353,12 @@ export type ThemeConfig = {
     muted: string;
     focus: string;
   };
+  status: {
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+  };
   sidebar: {
     background: string;
     text: string;
@@ -306,6 +366,7 @@ export type ThemeConfig = {
     border: string;
     hover: string;
     active: string;
+    navigationIcon?: string;
   };
   header: {
     background: string;
@@ -454,4 +515,4 @@ export const COMPONENT_THEMES = {
       hoverShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.5)',
     },
   },
-} as const; 
+} as const;

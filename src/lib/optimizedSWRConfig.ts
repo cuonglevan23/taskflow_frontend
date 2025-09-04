@@ -10,14 +10,58 @@
 
 import { SWRConfiguration } from 'swr';
 
-// Fetcher mặc định với error handling
+// Fetcher mặc định với error handling cải tiến
 export const defaultFetcher = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+  // Validate URL trước khi fetch
+  if (!url || typeof url !== 'string') {
+    throw new Error('Invalid URL provided to fetcher');
+  }
+
+  // Check if URL is properly formatted
+  try {
+    new URL(url, window.location.origin);
+  } catch (e) {
+    throw new Error(`Invalid URL format: ${url}`);
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      // Tạo error message chi tiết hơn
+      const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      const error = new Error(errorMessage);
+
+      // Log chi tiết lỗi để debug
+      console.error('SWR Fetch Error:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        timestamp: new Date().toISOString()
+      });
+
+      // Attach thêm thông tin cho error handling
+      (error as any).status = response.status;
+      (error as any).url = url;
+
+      throw error;
+    }
+
+    return response.json();
+  } catch (error) {
+    // Log network errors hoặc JSON parsing errors
+    console.error('SWR Network/Parse Error:', {
+      url,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
-  return response.json();
 };
 
 // SWR config tối ưu hóa cho session

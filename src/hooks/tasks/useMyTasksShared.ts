@@ -138,6 +138,12 @@ export const useMyTasksShared = (params: UseMyTasksSharedParams = {}): MyTasksSh
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
       attachments: task.attachments || [], // ✅ FIX: Include attachments in conversion
+      // ✅ NEW: Google Calendar Integration Fields
+      googleCalendarEventId: task.googleCalendarEventId,
+      googleCalendarEventUrl: task.googleCalendarEventUrl,
+      googleMeetLink: task.googleMeetLink,
+      isSyncedToCalendar: task.isSyncedToCalendar,
+      calendarSyncedAt: task.calendarSyncedAt,
     };
 
     return taskListItem;
