@@ -35,7 +35,8 @@ yarn-error.log*
 
 # vercel
 .vercel
-# docs
+# block docs
+./docs
 .docs
 # typescript
 *.tsbuildinfo
