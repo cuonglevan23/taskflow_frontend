@@ -37,7 +37,9 @@ yarn-error.log*
 .vercel
 # block docs
 ./docs/**
-.docs
+# Ignore toàn bộ docs
+docs/*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
