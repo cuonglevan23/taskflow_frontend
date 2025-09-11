@@ -9,8 +9,9 @@
  */
 
 import { SWRConfiguration } from 'swr';
+import { AuthService } from './auth-backend';
 
-// Fetcher mặc định với error handling cải tiến
+// Fetcher mặc định với HTTP-only cookies và error handling cải tiến
 export const defaultFetcher = async (url: string) => {
   // Validate URL trước khi fetch
   if (!url || typeof url !== 'string') {
@@ -25,11 +26,9 @@ export const defaultFetcher = async (url: string) => {
   }
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json',
-      },
+    // Use AuthService for authenticated requests with automatic token refresh
+    const response = await AuthService.makeAuthenticatedRequest(url, {
+      method: 'GET',
     });
 
     if (!response.ok) {
@@ -54,10 +53,9 @@ export const defaultFetcher = async (url: string) => {
 
     return response.json();
   } catch (error) {
-    // Log network errors hoặc JSON parsing errors
-    console.error('SWR Network/Parse Error:', {
+    console.error('SWR Network Error:', {
       url,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     });
     throw error;

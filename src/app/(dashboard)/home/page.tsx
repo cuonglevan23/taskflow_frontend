@@ -18,14 +18,6 @@ import {
 import { 
   HiSparkles 
 } from "react-icons/hi";
-import { 
-  IoCheckbox,
-  IoCheckboxOutline 
-} from "react-icons/io5";
-import { 
-  BsCircle,
-  BsCheckCircle 
-} from "react-icons/bs";
 
 // Import Refactored Cards using BaseCard
 import RefactoredMyTasksCard from "./components/Cards/MyTasksCard";

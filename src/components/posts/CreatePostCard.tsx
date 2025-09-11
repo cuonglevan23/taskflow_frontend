@@ -4,8 +4,8 @@ import React, { useState, useRef } from "react";
 import BaseCard from "@/components/ui/BaseCard/BaseCard";
 import Button from "@/components/ui/Button/Button";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
-import { ImageIcon, Smile, X, AlertCircle, Loader2, Zap } from "lucide-react";
-import { useCreatePost } from "@/hooks/usePosts";
+import { ImageIcon, X, AlertCircle, Loader2, Zap } from "lucide-react";
+import { useGlobalData } from "@/contexts/GlobalDataContext";
 import {
   optimizeImageForUpload,
   validateImageFile,
@@ -38,7 +38,7 @@ export default function CreatePostCard({
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { createPost } = useCreatePost();
+  const { addPost } = useGlobalData();
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -59,7 +59,7 @@ export default function CreatePostCard({
         isCompressed: !!compressionStats
       });
 
-      const result = await createPost({
+      const result = await addPost({
         content: postContent.trim(),
         image: selectedImage || undefined,
       });
@@ -166,15 +166,29 @@ export default function CreatePostCard({
             Post content
           </label>
           <textarea
-            id="post-content"
-            placeholder={placeholder}
-            value={postContent}
-            onChange={(e) => setPostContent(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="w-full bg-gray-700 border-0 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-            rows={3}
-            aria-describedby="post-content-hint"
-            disabled={isLoading || isCompressing}
+              id="post-content"
+              placeholder={placeholder}
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              onKeyDown={handleKeyPress}
+              className="
+    w-full
+    bg-gray-800/80       /* Nền mờ nhẹ, tạo chiều sâu */
+    rounded-2xl          /* Bo góc tròn giống Messenger/Facebook */
+    px-4 py-3
+    text-sm text-gray-100
+    placeholder-gray-400
+    border border-gray-600/60  /* Viền mảnh, subtle */
+    focus:border-blue-500
+    focus:ring-2 focus:ring-blue-500/50
+    focus:outline-none
+    resize-none
+    shadow-sm             /* Đổ bóng nhẹ */
+    transition-all duration-200
+  "
+              rows={3}
+              aria-describedby="post-content-hint"
+              disabled={isLoading || isCompressing}
           />
           <div id="post-content-hint" className="sr-only">
             Press Ctrl+Enter to post quickly
@@ -184,18 +198,18 @@ export default function CreatePostCard({
 
       {/* Error Message */}
       {uploadError && (
-        <div className="mt-3 p-3 bg-red-900/30 border border-red-500/30 rounded-lg flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-          <span className="text-red-300 text-sm">{uploadError}</span>
-        </div>
+          <div className="mt-3 p-3 bg-red-900/30 border border-red-500/30 rounded-lg flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0"/>
+            <span className="text-red-300 text-sm">{uploadError}</span>
+          </div>
       )}
 
       {/* Image Compression Progress */}
       {isCompressing && (
-        <div className="mt-3 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg flex items-center gap-2">
-          <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
-          <span className="text-blue-300 text-sm">Optimizing image...</span>
-        </div>
+          <div className="mt-3 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0"/>
+            <span className="text-blue-300 text-sm">Optimizing image...</span>
+          </div>
       )}
 
       {/* Image Preview */}
@@ -243,66 +257,60 @@ export default function CreatePostCard({
         <div className="flex gap-4 items-center">
           <div className="relative">
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handleImageSelect}
-              className="sr-only"
-              id="image-upload"
-              disabled={isLoading || isCompressing}
-              aria-describedby="image-upload-hint"
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageSelect}
+                className="sr-only"
+                id="image-upload"
+                disabled={isLoading || isCompressing}
+                aria-describedby="image-upload-hint"
             />
             <div id="image-upload-hint" className="sr-only">
               Upload an image (JPG, PNG, GIF, WebP - will be optimized automatically)
             </div>
             <label
-              htmlFor="image-upload"
-              className={`inline-flex items-center px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 rounded ${
-                isLoading || isCompressing
-                  ? 'text-gray-500 cursor-not-allowed' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
+                htmlFor="image-upload"
+                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer
+    ${
+                    isLoading || isCompressing
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600/20 text-green-400 hover:bg-green-600/30 hover:text-green-300'
+                }
+  `}
             >
               {isCompressing ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin"/>
+                    Processing...
+                  </>
               ) : (
-                <>
-                  <ImageIcon className="w-5 h-5 mr-2" />
-                  Photo
-                </>
+                  <>
+                    <ImageIcon className="w-5 h-5 mr-2"/>
+                    Photo
+                  </>
               )}
             </label>
+
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-            onClick={() => console.log("Feeling clicked")}
-            disabled={isLoading || isCompressing}
-          >
-            <Smile className="w-5 h-5 mr-2" />
-            Feeling
-          </Button>
+
         </div>
 
         <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={isLoading || isCompressing || (!postContent.trim() && !selectedImage)}
-          className="min-w-[80px]"
+            variant="primary"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={isLoading || isCompressing || (!postContent.trim() && !selectedImage)}
+            className="min-w-[80px]"
         >
           {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              Posting...
-            </>
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2"/>
+                Posting...
+              </>
           ) : (
-            'Post'
+              'Post'
           )}
         </Button>
       </div>

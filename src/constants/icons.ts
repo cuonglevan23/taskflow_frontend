@@ -4,6 +4,7 @@ import { CustomTaskIcon } from '@/components/icons/CustomTaskIcon';
 import { CustomInboxIcon } from '@/components/icons/CustomInboxIcon';
 import { CustomReportingIcon } from '@/components/icons/CustomReportingIcon';
 import { CustomGoalIcon } from '@/components/icons/CustomGoalIcon';
+import { MessageIcon } from '@/components/icons/CustomMessages'; // Thêm MessageIcon mới
 import {
   // Navigation Icons
   Folder,
@@ -247,6 +248,7 @@ export const SIDEBAR_ICONS = {
   home: CustomHomeIcon,
   myTasks: CustomTaskIcon,
   inbox: CustomInboxIcon,
+  messages: MessageIcon, // Thêm MessageIcon mới với SVG chat-outline
   newsfeed: Rss, // Added NewsFeed icon
   reporting: CustomReportingIcon,
   goals: CustomGoalIcon,

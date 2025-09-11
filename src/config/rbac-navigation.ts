@@ -76,6 +76,13 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         badge: { count: 0, color: 'default' },
       },
       {
+        id: 'messages',
+        label: 'Messages',
+        href: '/messages',
+        icon: React.createElement(SIDEBAR_ICONS.messages, { width: 20, height: 20, className: "text-gray-300" }),
+        allowedRoles: [UserRole.ADMIN, UserRole.MEMBER],
+      },
+      {
         id: 'newsfeed',
         label: 'NewsFeed',
         href: '/newsfeed',
@@ -186,6 +193,7 @@ export const RBAC_NAVIGATION_SECTIONS: NavigationSection[] = [
         allowedRoles: [UserRole.MEMBER],
       },
     ],
+
     collapsible: true,
     defaultExpanded: true,
   },

@@ -1,33 +1,40 @@
 // Simple Backend-only Authentication Service
-// Sử dụng HTTP-only cookies thay vì localStorage để bảo mật
+// Optimized with flow: Authorization Bearer + Auto Refresh + Retry
+import BaseApiClient from './baseApiClient';
 
 export class AuthService {
   private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  private static _isLoggingOut = false;
 
   /**
-   * Khởi tạo đăng nhập với Google
-   * Redirect user đến backend OAuth endpoint
+   * Initialize Google login
+   * Redirect user to backend OAuth endpoint
    */
   static async loginWithGoogle(): Promise<void> {
     try {
       console.log('🔑 Initiating Google OAuth login...');
 
-      // Gọi backend để lấy Google auth URL
-      const response = await fetch(`${this.BASE_URL}/api/auth/google/url`, {
-        method: 'GET',
-        credentials: 'include', // Include cookies for CSRF protection
-      });
+      // Use full URL with explicit BASE_URL to avoid relative URL issues
+      const fullUrl = `${this.BASE_URL}/api/auth/google/url`;
+      console.log(`Calling Google auth URL endpoint: ${fullUrl}`);
 
-      if (!response.ok) {
-        throw new Error('Failed to get Google auth URL');
+      // Call backend to get Google auth URL - using try/catch with full error logging
+      try {
+        const data = await BaseApiClient.get(fullUrl);
+        console.log('Response received:', data);
+
+        if (!data?.authUrl) {
+          throw new Error('Invalid authentication URL received from server');
+        }
+
+        console.log('✅ Got Google auth URL, redirecting to:', data.authUrl);
+
+        // Redirect user to Google OAuth consent screen - using direct window.location for reliable redirect
+        window.location.href = data.authUrl;
+      } catch (fetchError) {
+        console.error('Failed to fetch auth URL:', fetchError);
+        throw fetchError;
       }
-
-      const data = await response.json();
-      console.log('✅ Got Google auth URL, redirecting...');
-
-      // Redirect user đến Google OAuth
-      window.location.href = data.authUrl;
-
     } catch (error) {
       console.error('❌ Google login failed:', error);
       throw error;
@@ -35,17 +42,12 @@ export class AuthService {
   }
 
   /**
-   * Kiểm tra trạng thái authentication
-   * Backend sẽ đọc HTTP-only cookie để verify
+   * Check authentication status
    */
   static async checkAuth(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.BASE_URL}/api/user-profiles/me`, {
-        method: 'GET',
-        credentials: 'include', // Quan trọng: include cookies
-      });
-
-      return response.ok;
+      await BaseApiClient.get('/api/user-profiles/me');
+      return true;
     } catch (error) {
       console.error('❌ Auth check failed:', error);
       return false;
@@ -53,27 +55,19 @@ export class AuthService {
   }
 
   /**
-   * Lấy thông tin user hiện tại từ backend
+   * Get current user information from backend
    */
   static async getCurrentUser(): Promise<any | null> {
     try {
-      const response = await fetch(`${this.BASE_URL}/api/user-profiles/me`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const data = await BaseApiClient.get('/api/user-profiles/me');
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          id: data.id || data.userId,
-          email: data.email,
-          name: data.name || data.displayName,
-          role: data.role || 'MEMBER',
-          avatar: data.avatar || data.avatarUrl
-        };
-      }
-
-      return null;
+      return {
+        id: data.id || data.userId,
+        email: data.email,
+        name: data.name || data.displayName,
+        role: data.role || 'MEMBER',
+        avatar: data.avatar || data.avatarUrl
+      };
     } catch (error) {
       console.error('❌ Get user info failed:', error);
       return null;
@@ -81,8 +75,7 @@ export class AuthService {
   }
 
   /**
-   * Đăng xuất
-   * Backend sẽ clear HTTP-only cookies
+   * Logout - Clear cookies and client data
    */
   static async logout(): Promise<void> {
     // Prevent multiple simultaneous logout calls
@@ -96,220 +89,95 @@ export class AuthService {
     try {
       console.log('🚪 Logging out...');
 
-      // Try calling logout API, but don't fail if it returns 401 (token expired)
+      // Try calling logout API to clear HTTP-only cookies
       try {
-        const response = await fetch(`${this.BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          credentials: 'include', // Include cookies để backend có thể clear
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          console.log('✅ Logout API successful');
-        } else if (response.status === 401) {
-          console.log('ℹ️ Token already expired, proceeding with client-side logout');
-        } else {
-          console.warn(`⚠️ Logout API returned ${response.status}, but proceeding with redirect`);
-        }
-      } catch (fetchError) {
-        console.log('ℹ️ Network error during logout API call, proceeding with client-side logout');
+        await BaseApiClient.post('/api/auth/logout');
+        console.log('✅ Logout API successful');
+      } catch (error) {
+        console.warn('⚠️ Logout API failed, but proceeding', error);
       }
 
-      // Always clear any client-side storage
+      // Clear other app data
       if (typeof window !== 'undefined') {
         try {
-          // Clear any localStorage items (if you have any)
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          localStorage.removeItem('auth');
-
-          // Clear sessionStorage as well
+          const keysToRemove = ['user-temp-data', 'draft-posts', 'ui-state', 'access_token'];
+          keysToRemove.forEach(key => localStorage.removeItem(key));
           sessionStorage.clear();
-
           console.log('✅ Client-side cleanup completed');
         } catch (cleanupError) {
           console.warn('⚠️ Client-side cleanup failed:', cleanupError);
         }
       }
-
     } finally {
       this._isLoggingOut = false;
 
       // Always redirect to login page
       console.log('🔄 Redirecting to login page...');
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        // Use replace to prevent adding to browser history
+        window.location.replace('/login');
       }
     }
   }
-
-  /**
-   * Refresh token (tự động được xử lý bởi browser với HTTP-only cookies)
-   */
-  static async refreshToken(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      return response.ok;
-    } catch (error) {
-      console.error('❌ Token refresh failed:', error);
-      return false;
-    }
-  }
-
-  // Private flag to prevent duplicate logout calls
-  private static _isLoggingOut = false;
 }
 
 /**
- * API Client với automatic cookie-based authentication
- * Không cần manual token management
+ * API Client with automatic cookie-based authentication
+ * Directly using BaseApiClient methods
  */
 export class ApiClient {
-  private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-  /**
-   * Base request method với automatic authentication
-   */
-  private static async request(url: string, options: RequestInit = {}): Promise<Response | undefined> {
-    const fullUrl = url.startsWith('http') ? url : `${this.BASE_URL}${url}`;
-
-    try {
-      const response = await fetch(fullUrl, {
-        ...options,
-        credentials: 'include', // Tự động include HTTP-only cookies
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      });
-
-      // Handle authentication errors
-      if (response.status === 401) {
-        console.log('🔄 Token expired, attempting refresh...');
-
-        // Thử refresh token
-        const refreshed = await AuthService.refreshToken();
-        if (!refreshed) {
-          console.log('❌ Refresh failed, redirecting to login');
-          window.location.href = '/login';
-          return;
-        }
-
-        // Retry request v���i token mới
-        console.log('✅ Token refreshed, retrying request');
-        return fetch(fullUrl, {
-          ...options,
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-        });
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return response;
-    } catch (error) {
-      console.error('❌ API request failed:', error);
-      throw error;
-    }
-  }
-
   // Tasks API
   static async getTasks() {
-    const response = await this.request('/api/tasks');
-    return response?.json();
+    return BaseApiClient.get('/api/tasks');
   }
 
   static async createTask(task: any) {
-    const response = await this.request('/api/tasks', {
-      method: 'POST',
-      body: JSON.stringify(task),
-    });
-    return response?.json();
+    return BaseApiClient.post('/api/tasks', task);
   }
 
   static async updateTask(taskId: string, task: any) {
-    const response = await this.request(`/api/tasks/${taskId}`, {
-      method: 'PUT',
-      body: JSON.stringify(task),
-    });
-    return response?.json();
+    return BaseApiClient.put(`/api/tasks/${taskId}`, task);
   }
 
   static async deleteTask(taskId: string) {
-    const response = await this.request(`/api/tasks/${taskId}`, {
-      method: 'DELETE',
-    });
-    return response?.ok;
+    return BaseApiClient.delete(`/api/tasks/${taskId}`);
   }
 
   // Projects API
   static async getProjects() {
-    const response = await this.request('/api/projects');
-    return response?.json();
+    return BaseApiClient.get('/api/projects');
   }
 
   static async createProject(project: any) {
-    const response = await this.request('/api/projects', {
-      method: 'POST',
-      body: JSON.stringify(project),
-    });
-    return response?.json();
+    return BaseApiClient.post('/api/projects', project);
   }
 
   static async updateProject(projectId: string, project: any) {
-    const response = await this.request(`/api/projects/${projectId}`, {
-      method: 'PUT',
-      body: JSON.stringify(project),
-    });
-    return response?.json();
+    return BaseApiClient.put(`/api/projects/${projectId}`, project);
   }
 
   static async deleteProject(projectId: string) {
-    const response = await this.request(`/api/projects/${projectId}`, {
-      method: 'DELETE',
-    });
-    return response?.ok;
+    return BaseApiClient.delete(`/api/projects/${projectId}`);
   }
 
   // User API
   static async getUserProfile() {
-    const response = await this.request('/api/users/me');
-    return response?.json();
+    return BaseApiClient.get('/api/users/me');
   }
 
   static async updateUserProfile(profile: any) {
-    const response = await this.request('/api/users/me', {
-      method: 'PUT',
-      body: JSON.stringify(profile),
-    });
-    return response?.json();
+    return BaseApiClient.put('/api/users/me', profile);
   }
 
   // Teams API
   static async getTeams() {
-    const response = await this.request('/api/teams');
-    return response?.json();
+    return BaseApiClient.get('/api/teams');
   }
 
   static async createTeam(team: any) {
-    const response = await this.request('/api/teams', {
-      method: 'POST',
-      body: JSON.stringify(team),
-    });
-    return response?.json();
+    return BaseApiClient.post('/api/teams', team);
   }
 }
 
-// Export cho backward compatibility
+// Export for backward compatibility
 export { AuthService as default };

@@ -92,9 +92,10 @@ export const ROUTE_NAVIGATION_CONFIG: Record<string, RouteConfig> = {
     },
     navItems: [
       {
-        label: 'Feed',
+        label: '',
+
         href: '/newsfeed',
-        icon: SIDEBAR_ICONS.newsfeed,
+
       },
     ],
     actions: [],

@@ -107,49 +107,22 @@ const UserMenu = ({
   }
   // Default menu sections - matches Asana design
   const defaultSections: MenuSection[] = [
-    {
-      id: 'workspace',
-      items: [
-        {
-          id: 'admin-console',
-          label: 'Admin console',
-          onClick: onAdminConsole,
-        },
-        {
-          id: 'new-workspace',
-          label: 'New workspace',
-          onClick: onCreateTeam,
-        },
-      ],
-    },
-    {
-      id: 'invite',
-      items: [
-        {
-          id: 'invite-to-asana',
-          label: 'Invite to Asana',
-          onClick: onInviteMembers,
-        },
-      ],
-    },
+
+
     {
       id: 'account',
       items: [
         {
           id: 'profile',
           label: 'Profile',
-          onClick: () => router.push('/profile'),
+          onClick: () => router.push('/profile/me/posts'),
         },
         {
           id: 'settings',
           label: 'Settings',
           onClick: () => setShowSettingsModal(true),
         },
-        {
-          id: 'add-account',
-          label: 'Add another account',
-          onClick: onDisplayPicture,
-        },
+
       ],
     },
   ];
@@ -162,12 +135,11 @@ const UserMenu = ({
   // Get icon for menu item
   const getMenuIcon = (itemId: string) => {
     const iconMap: Record<string, React.ReactNode> = {
-      'admin-console': <Monitor className="w-4 h-4" />,
-      'new-workspace': <Plus className="w-4 h-4" />,
-      'invite-to-asana': <Users className="w-4 h-4" />,
+
+
       'profile': <User className="w-4 h-4" />,
       'settings': <Settings className="w-4 h-4" />,
-      'add-account': <Plus className="w-4 h-4" />,
+
       'logout': <LogOut className="w-4 h-4" />,
     };
     return iconMap[itemId] || null;

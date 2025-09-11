@@ -1,142 +1,201 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   Users,
   Folder,
   CheckSquare,
-  Target,
-  Briefcase,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SearchDropdown, SearchResult, SavedSearch, SearchTab } from "@/components/ui/SearchDropdown";
-import { DARK_THEME } from "@/constants/theme";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchEntity, SearchTask, SearchProject, SearchUser, SearchTeam } from "@/types/search";
 
 interface SearchPanelProps {
   onSearch: (query: string) => void;
   className?: string;
+  scope?: 'my' | 'team' | 'organization' | 'all';
 }
-
-
 
 const SEARCH_TABS: SearchTab[] = [
   { id: "tasks", label: "Tasks", icon: CheckSquare },
   { id: "projects", label: "Projects", icon: Folder },
   { id: "people", label: "People", icon: Users },
-  { id: "portfolios", label: "Portfolios", icon: Briefcase },
-  { id: "goals", label: "Goals", icon: Target },
+  { id: "teams", label: "Teams", icon: Users }, // Changed from Portfolios to Teams
 ];
+
+// Map our search entities to UI tabs (aligned with backend implementation)
+const TAB_TO_ENTITY_MAP: Record<string, SearchEntity> = {
+  tasks: 'tasks',
+  projects: 'projects',
+  people: 'users',
+  teams: 'teams', // Changed from portfolios to teams
+};
 
 export default function SearchPanel({
   onSearch,
   className = "",
+  scope = 'all'
 }: SearchPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("tasks");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [recentItems, setRecentItems] = useState<SearchResult[]>([]);
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  const mockSearchResults: Record<string, SearchResult[]> = useMemo(
-    () => ({
-      tasks: [
-        {
-          id: "1",
-          title: "Draft projects brief",
-          type: "task",
-          description: "Cross-functional projects plan",
-          avatar: "LC",
-        },
-        {
-          id: "2",
-          title: "Schedule kickoff meeting",
-          type: "task",
-          description: "Cross-functional projects plan",
-          avatar: "JD",
-        },
-      ],
-      projects: [
-        {
-          id: "3",
-          title: "Cross-functional projects plan",
-          type: "project",
-          description: "K",
-          avatar: "K",
-        },
-        {
-          id: "4",
-          title: "K 1 projects",
-          type: "project",
-          description: "Marketing initiative",
-        },
-      ],
-      people: [
-        {
-          id: "5",
-          title: "John Doe",
-          type: "people",
-          description: "Product Manager",
-          avatar: "JD",
-        },
-      ],
-    }),
-    []
-  );
+  // Use real search hook with all implemented features - OPTIMIZED
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    loading: isSearching,
+    error: searchError,
+    suggestions,
+    searchHistory,
+    smartSuggestions,
+    search,
+    quickSearch,
+    clearResults,
+    clearHistory,
+    retry,
+    loadMore
+  } = useSearch({
+    entities: [TAB_TO_ENTITY_MAP[activeTab]],
+    autoSearch: true, // ENABLE auto-search to trigger suggestions
+    debounceMs: 500, // Increase debounce time
+    enableHistory: true,
+    enableSuggestions: true, // ENABLE smart suggestions since backend endpoint is available
+    defaultScope: scope,
+    pageSize: 20
+  });
 
-  const mockRecentItems = useMemo(
-    () => [
-      {
-        id: "r1",
-        title: "Cross-functional projects plan",
-        type: "project",
-        description: "K",
-        avatar: "K",
-      },
-      {
-        id: "r2",
-        title: "Schedule kickoff meeting",
-        type: "task",
-        description: "Cross-functional projects plan",
-        avatar: "LC",
-      },
-      {
-        id: "r3",
-        title: "Draft projects brief",
-        type: "task",
-        description: "Cross-functional projects plan",
-        avatar: "LC",
-      },
-    ],
-    []
-  );
+  // Transform API results to UI format (aligned with backend DTO structure)
+  const transformedResults = useMemo(() => {
+    if (!searchResults) return [];
 
-  const mockSavedSearches = useMemo(
-    () => [
-      {
-        id: "s1",
-        title: "Tasks I've created",
-        description: "→ Tasks I've assigned to others",
-        icon: CheckSquare,
-      },
-      {
-        id: "s2",
-        title: "Recently completed tasks",
-        description: "● Recently completed tasks",
-        icon: Clock,
-      },
-    ],
-    []
-  );
+    const entityKey = TAB_TO_ENTITY_MAP[activeTab] as keyof typeof searchResults;
+    const entityResults = searchResults[entityKey];
 
-  useEffect(() => {
-    setRecentItems(mockRecentItems);
-    setSavedSearches(mockSavedSearches);
-  }, [mockRecentItems, mockSavedSearches]);
+    if (!entityResults?.content) return [];
 
+    return entityResults.content.map((item: any): SearchResult => {
+      switch (activeTab) {
+        case 'tasks':
+          const task = item as SearchTask;
+          return {
+            id: task.id.toString(),
+            title: task.title,
+            type: 'task',
+            description: task.description || `Assigned to: ${task.assigneeName}`,
+            avatar: task.assigneeName?.slice(0, 2).toUpperCase() || 'T',
+            metadata: {
+              status: task.status,
+              priority: task.priority,
+              dueDate: task.dueDate,
+              projectName: task.projectName
+            }
+          };
+
+        case 'projects':
+          const project = item as SearchProject;
+          return {
+            id: project.id.toString(),
+            title: project.name,
+            type: 'project',
+            description: project.description || `Owner: ${project.ownerName}`,
+            avatar: project.name?.slice(0, 2).toUpperCase() || 'P',
+            metadata: {
+              status: project.status,
+              memberCount: project.memberCount,
+              completion: project.completionPercentage
+            }
+          };
+
+        case 'people':
+          const user = item as SearchUser;
+          return {
+            id: user.id.toString(),
+            title: user.fullName,
+            type: 'people',
+            description: user.jobTitle || user.email,
+            avatar: user.avatar || user.fullName?.slice(0, 2).toUpperCase() || 'U',
+            metadata: {
+              department: user.department,
+              isActive: user.isActive,
+              email: user.email
+            }
+          };
+
+        case 'teams':
+          const team = item as SearchTeam;
+          return {
+            id: team.id.toString(),
+            title: team.name,
+            type: 'team', // Changed from 'portfolio' to 'team'
+            description: team.description || `${team.memberCount} members`,
+            avatar: team.name?.slice(0, 2).toUpperCase() || 'T',
+            metadata: {
+              type: team.type,
+              memberCount: team.memberCount,
+              department: team.department,
+              performanceScore: team.performanceScore
+            }
+          };
+
+        default:
+          return {
+            id: item.id?.toString() || Math.random().toString(),
+            title: item.title || item.name || 'Unknown',
+            type: activeTab as any,
+            description: item.description || '',
+            avatar: 'U'
+          };
+      }
+    });
+  }, [searchResults, activeTab]);
+
+  // Transform search history to recent items
+  const recentItems = useMemo(() => {
+    // Ensure searchHistory is an array before calling slice
+    if (!Array.isArray(searchHistory)) {
+      return [];
+    }
+
+    return searchHistory.slice(0, 5).map((historyItem): SearchResult => ({
+      id: historyItem.id,
+      title: historyItem.query,
+      type: 'recent',
+      description: `${historyItem.resultCount} results • ${new Date(historyItem.timestamp).toLocaleDateString()}`,
+      avatar: 'H'
+    }));
+  }, [searchHistory]);
+
+  // Saved searches aligned with backend smart suggestions API
+  const savedSearches = useMemo(() => [
+    {
+      id: "s1",
+      title: "My assigned tasks",
+      description: "→ Tasks assigned to me",
+      icon: CheckSquare,
+    },
+    {
+      id: "s2",
+      title: "Recently completed tasks",
+      description: "● Tasks completed in last 7 days",
+      icon: Clock,
+    },
+    {
+      id: "s3",
+      title: "High priority items",
+      description: "⚡ Urgent and high priority tasks",
+      icon: CheckSquare,
+    },
+  ], []);
+
+  // Keyboard shortcuts and click outside handling
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -165,33 +224,24 @@ export default function SearchPanel({
     };
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      setIsSearching(true);
-      const timer = setTimeout(() => {
-        const results = mockSearchResults[activeTab] || [];
-        const filtered = results.filter(
-          (item) =>
-            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(filtered);
-        setIsSearching(false);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    } else {
-      setSearchResults([]);
-      setIsSearching(false);
-    }
-  }, [searchQuery, activeTab, mockSearchResults]);
-
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearchQuery(value);
       onSearch(value);
+
+      // Only open panel if value has content and is different from current
+      if (value.trim() && value !== searchQuery) {
+        setIsOpen(true);
+        // Manually trigger search with debouncing
+        const timeoutId = setTimeout(() => {
+          search(value);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+      } else if (!value.trim()) {
+        setIsOpen(false);
+      }
     },
-    [onSearch]
+    [onSearch, setSearchQuery, search, searchQuery] // Add searchQuery to dependencies
   );
 
   const handleOpenPanel = useCallback(() => {
@@ -200,22 +250,87 @@ export default function SearchPanel({
 
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId);
-  }, []);
+
+    // Only trigger search if there's a query AND tab actually changed
+    if (searchQuery.trim() && tabId !== activeTab) {
+      // Clear previous results first
+      clearResults();
+
+      // Trigger new search with delay to prevent spam
+      setTimeout(() => {
+        search(searchQuery);
+      }, 300);
+    }
+  }, [searchQuery, search, activeTab, clearResults]); // Fixed dependencies
 
   const handleResultClick = useCallback((result: SearchResult) => {
-    console.log("Navigate to:", result.id);
-    setIsOpen(false);
-  }, []);
+    console.log("Navigate to:", result.type, result.id);
 
-  const handleSavedSearchClick = useCallback((search: SavedSearch) => {
-    console.log("Execute saved search:", search.id);
+    // Enhanced navigation with proper Next.js router
+    switch (result.type) {
+      case 'task':
+        router.push(`/tasks/${result.id}`);
+        break;
+      case 'project':
+        router.push(`/projects/${result.id}`);
+        break;
+      case 'people':
+        router.push(`/profile/${result.id}`);
+        break;
+      case 'team':
+        router.push(`/teams/${result.id}`);
+        break;
+      case 'recent':
+        // Re-execute recent search
+        setSearchQuery(result.title);
+        break;
+    }
+
     setIsOpen(false);
-  }, []);
+  }, [router, setSearchQuery]);
+
+  const handleSavedSearchClick = useCallback(async (savedSearch: SavedSearch) => {
+    console.log("Execute saved search:", savedSearch.id);
+
+    // Execute predefined searches using backend API format
+    switch (savedSearch.id) {
+      case 's1':
+        // My assigned tasks - using proper API query format
+        await quickSearch('assignee:me');
+        setActiveTab('tasks');
+        break;
+      case 's2':
+        // Recently completed tasks
+        await quickSearch('status:completed');
+        setActiveTab('tasks');
+        break;
+      case 's3':
+        // High priority items
+        await quickSearch('priority:high OR priority:urgent');
+        setActiveTab('tasks');
+        break;
+    }
+
+    setIsOpen(true);
+  }, [quickSearch]);
 
   const handleRecentClick = useCallback((item: SearchResult) => {
-    console.log("Navigate to recent:", item.id);
-    setIsOpen(false);
-  }, []);
+    console.log("Execute recent search:", item.title);
+    setSearchQuery(item.title);
+    setIsOpen(true);
+  }, [setSearchQuery]);
+
+  const handleRetry = useCallback(async () => {
+    await retry();
+  }, [retry]);
+
+  const handleClearHistory = useCallback(async () => {
+    await clearHistory();
+  }, [clearHistory]);
+
+  const handleLoadMore = useCallback(async () => {
+    await loadMore(TAB_TO_ENTITY_MAP[activeTab]);
+  }, [loadMore, activeTab]);
 
   return (
     <div className={`relative w-full ${className}`} ref={searchRef}>
@@ -230,10 +345,29 @@ export default function SearchPanel({
         className="max-w-2xl mx-auto"
       />
 
+      {/* Enhanced error state with retry functionality */}
+      {searchError && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-red-600">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <span className="text-sm">{searchError}</span>
+            </div>
+            <button
+              onClick={handleRetry}
+              className="flex items-center px-2 py-1 text-xs text-red-600 hover:text-red-800 transition-colors"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       <SearchDropdown
-        isOpen={isOpen}
+        isOpen={isOpen && !searchError}
         searchQuery={searchQuery}
-        searchResults={searchResults}
+        searchResults={transformedResults}
         recentItems={recentItems}
         savedSearches={savedSearches}
         isSearching={isSearching}
@@ -244,6 +378,12 @@ export default function SearchPanel({
         onSavedSearchClick={handleSavedSearchClick}
         onRecentClick={handleRecentClick}
         position="center"
+        // Enhanced functionality aligned with backend implementation
+        suggestions={suggestions}
+        smartSuggestions={smartSuggestions}
+        onClearHistory={handleClearHistory}
+        showLoadMore={searchResults?.[TAB_TO_ENTITY_MAP[activeTab] as keyof typeof searchResults]?.hasNext}
+        onLoadMore={handleLoadMore}
       />
     </div>
   );

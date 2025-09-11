@@ -6,7 +6,7 @@ import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
 import { teamsService } from '@/services/teams/teamsService';
 import { tasksService } from '@/services/tasks/tasksService';
-import postsService from '@/services/postsService';
+import PostsService from '@/services/post/PostsService';
 
 interface GlobalData {
   user: any;
@@ -71,7 +71,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
           sortBy: 'startDate',
           sortDir: 'desc'
         }),
-        postsService.getNewsfeed(0, 20) // Load recent posts
+        PostsService.getNewsfeed(0, 20) // Load recent posts
       ]);
 
       const newGlobalData = {
@@ -88,19 +88,14 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
       setGlobalData(newGlobalData);
 
-      // Populate SWR cache with prefetched data using correct cache keys
+      // Populate SWR cache with prefetched data using proper URL-based keys
       await Promise.all([
-        mutate(['teams', 'my-teams'], teamsResponse),
-        mutate(['projects', 'my-projects'], projectsResponse),
-        mutate(['tasks', 'my-tasks', 'stats'], taskStatsResponse),
-        mutate(['tasks', 'my-tasks', 'summary', {
-          page: 0,
-          size: 1000,
-          sortBy: 'startDate',
-          sortDir: 'desc'
-        }], tasksSummaryResponse),
-        mutate(['posts', 'feed', 0], postsResponse),
-        mutate(['posts', 'user', user.id, 0], await postsService.getUserPosts(user.id, 0, 20))
+        mutate('/api/teams/my-teams', teamsResponse),
+        mutate('/api/projects/my-projects', projectsResponse),
+        mutate('/api/tasks/my-tasks/stats', taskStatsResponse),
+        mutate('/api/tasks/my-tasks/summary?page=0&size=1000&sortBy=startDate&sortDir=desc', tasksSummaryResponse),
+        mutate('/api/posts/feed?page=0&size=20', postsResponse),
+        mutate(`/api/posts/user/${user.id}?page=0&size=20`, await PostsService.getUserPosts(user.id, 0, 20))
       ]);
 
     } catch (error) {
@@ -139,18 +134,32 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     }));
   };
 
-  const addPost = (newPost: any) => {
-    setGlobalData(prev => ({
-      ...prev,
-      posts: [newPost, ...prev.posts]
-    }));
-    
-    // Also update SWR cache immediately
-    mutate(
-      key => Array.isArray(key) && key[0] === 'posts',
-      undefined,
-      { revalidate: true }
-    );
+  const addPost = async (newPost: any) => {
+    try {
+      // Create post via API first
+      const response = await PostsService.createPost(newPost);
+
+      if (response.success && response.data) {
+        // Add to local state immediately for optimistic update
+        setGlobalData(prev => ({
+          ...prev,
+          posts: [response.data, ...prev.posts]
+        }));
+
+        // Simple cache invalidation - back to original approach
+        await mutate(
+          key => Array.isArray(key) && key[0] === 'posts',
+          undefined,
+          { revalidate: true }
+        );
+
+        return response.data;
+      }
+      throw new Error('Failed to create post');
+    } catch (error) {
+      console.error('Error creating post in GlobalData:', error);
+      throw error;
+    }
   };
 
   const updateTeam = (teamId: number, updatedTeam: any) => {
@@ -192,12 +201,24 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   const invalidatePostsCache = () => {
     console.log('🔄 Invalidating all posts cache from GlobalDataContext...');
 
-    // Force revalidate all posts-related SWR caches
-    mutate(
-      key => Array.isArray(key) && key[0] === 'posts',
-      undefined,
-      { revalidate: true }
-    );
+    // Force revalidate all posts-related SWR caches using proper URL-based keys
+    Promise.all([
+      mutate(
+        key => typeof key === 'string' && key.includes('/api/posts/feed'),
+        undefined,
+        { revalidate: true }
+      ),
+      mutate(
+        key => typeof key === 'string' && key.includes('/api/posts/user/'),
+        undefined,
+        { revalidate: true }
+      ),
+      mutate(
+        key => typeof key === 'string' && key.startsWith('/api/posts/') && !key.includes('feed') && !key.includes('user'),
+        undefined,
+        { revalidate: true }
+      )
+    ]);
   };
 
   // Effect to sync user changes and prefetch data

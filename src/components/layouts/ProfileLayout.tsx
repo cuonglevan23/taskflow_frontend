@@ -4,6 +4,7 @@ import React from "react";
 import { DARK_THEME } from "@/constants/theme";
 import PrivateLayout from "@/layouts/private/PrivateLayout";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
+// @ts-ignore
 import type { AuthUser } from "@/lib/auth/types";
 
 interface ProfileLayoutProps {

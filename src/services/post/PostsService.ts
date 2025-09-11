@@ -9,7 +9,8 @@ import {
   LikeResponse,
   CommentResponse,
   CommentsResponse,
-  UploadUrlResponse
+  UploadUrlResponse,
+  CreateCommentRequest
 } from '../../types/post';
 import { PostApiClient } from './apiClient';
 import { PostDataTransformer } from './transformer';
@@ -84,18 +85,52 @@ class PostsService {
     return this.apiClient.toggleLike(postId);
   }
 
+  // ==================== ENHANCED COMMENTS SYSTEM ====================
+
   /**
-   * Add comment to post
+   * Add comment to post (supports both top-level comments and replies)
    */
-  async addComment(postId: number, content: string): Promise<CommentResponse> {
-    return this.apiClient.addComment(postId, content);
+  async addComment(postId: number, content: string, parentCommentId?: number): Promise<CommentResponse> {
+    const request: CreateCommentRequest = {
+      content,
+      parentCommentId: parentCommentId || null
+    };
+    return this.apiClient.addComment(postId, request);
   }
 
   /**
-   * Get comments for a post
+   * Get comments for a post with pagination
    */
   async getComments(postId: number, page = 0, size = 20): Promise<CommentsResponse> {
     return this.apiClient.getComments(postId, page, size);
+  }
+
+  /**
+   * Like or unlike a comment
+   */
+  async toggleCommentLike(commentId: number): Promise<CommentResponse> {
+    return this.apiClient.toggleCommentLike(commentId);
+  }
+
+  /**
+   * Get replies for a specific comment
+   */
+  async getCommentReplies(commentId: number, page = 0, size = 10): Promise<CommentsResponse> {
+    return this.apiClient.getCommentReplies(commentId, page, size);
+  }
+
+  /**
+   * Edit a comment (if user has permission)
+   */
+  async editComment(commentId: number, content: string): Promise<CommentResponse> {
+    return this.apiClient.editComment(commentId, content);
+  }
+
+  /**
+   * Delete a comment (if user has permission)
+   */
+  async deleteComment(commentId: number): Promise<{ success: boolean; message: string }> {
+    return this.apiClient.deleteComment(commentId);
   }
 }
 

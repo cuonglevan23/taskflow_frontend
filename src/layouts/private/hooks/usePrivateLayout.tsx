@@ -126,6 +126,21 @@ export function usePrivateLayout() {
         requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
       },
       {
+        id: "messages",
+        title: "Messages",
+        icon: "message-circle",
+        items: [
+          {
+            key: "messages",
+            title: "Messages",
+            href: "/messages",
+            icon: "message-circle",
+          },
+        ],
+        order: 4,
+        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+      },
+      {
         id: "management",
         title: "Management",
         icon: "briefcase",
@@ -143,7 +158,7 @@ export function usePrivateLayout() {
             icon: "chart-line",
           },
         ],
-        order: 4,
+        order: 5,
         requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
       },
     ],

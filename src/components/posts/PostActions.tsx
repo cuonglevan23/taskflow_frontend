@@ -1,72 +1,83 @@
 "use client";
 
 import React from "react";
-import Button from "@/components/ui/Button/Button";
-import { Heart, MessageCircle, Share } from "lucide-react";
+import { Heart, MessageCircle, Share, MoreHorizontal } from "lucide-react";
+import { PostData } from "@/types/post";
 
 interface PostActionsProps {
-  likes: number;
-  comments: number;
-  shares?: number;
-  isLiked?: boolean;
-  onLike?: () => void;
-  onComment?: () => void;
-  onShare?: () => void;
+  post: PostData;
+  onLike: () => void;
+  onComment: () => void;
+  onShare: () => void;
   showShareCount?: boolean;
 }
 
 export default function PostActions({
-  likes,
-  comments,
-  shares = 0,
-  isLiked = false,
+  post,
   onLike,
   onComment,
-  onShare,
-  showShareCount = false
+
+
 }: PostActionsProps) {
-  // Ensure numbers are valid and not NaN
-  const safeLikes = typeof likes === 'number' && !isNaN(likes) ? likes : 0;
-  const safeComments = typeof comments === 'number' && !isNaN(comments) ? comments : 0;
-  const safeShares = typeof shares === 'number' && !isNaN(shares) ? shares : 0;
-
   return (
-    <div className="flex items-center justify-between pt-3 border-t border-gray-600">
-      <div className="flex gap-6">
-        {/* Like Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-red-500'
-          }`}
-        >
-          <Heart className={`w-5 h-5 transition-all ${isLiked ? 'fill-current text-red-500' : 'text-gray-400'}`} />
-          <span className="font-medium">{safeLikes}</span>
-        </Button>
+    <div className="border-t border-gray-700 pt-3">
+      {/* Stats */}
+      <div className="flex items-center justify-between mb-3 text-sm text-gray-400">
+        <div className="flex items-center space-x-4">
+          {post.likesCount > 0 && (
+            <span className="flex items-center space-x-1">
+              <span className="text-red-500">❤️</span>
+              <span>{post.likesCount}</span>
+            </span>
+          )}
+          {post.commentsCount > 0 && (
+            <span>{post.commentsCount} bình luận</span>
+          )}
+        </div>
 
-        {/* Comment Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onComment}
-          className="text-gray-400 hover:text-blue-400 flex items-center gap-2"
-        >
-          <MessageCircle className="w-5 h-5" />
-          <span className="font-medium">{safeComments}</span>
-        </Button>
+      </div>
 
-        {/* Share Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onShare}
-          className="text-gray-400 hover:text-green-400 flex items-center gap-2"
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-1">
+          {/* Like Button */}
+          <button
+            onClick={onLike}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors hover:bg-gray-700 ${
+              post.isLikedByCurrentUser 
+                ? 'text-red-500' 
+                : 'text-gray-400 hover:text-red-400'
+            }`}
+            aria-label={post.isLikedByCurrentUser ? 'Bỏ thích' : 'Thích'}
+          >
+            <Heart
+              className={`w-5 h-5 ${post.isLikedByCurrentUser ? 'fill-current' : ''}`}
+            />
+            <span className="text-sm font-medium">
+              {post.isLikedByCurrentUser ? 'Đã thích' : 'Thích'}
+            </span>
+          </button>
+
+          {/* Comment Button */}
+          <button
+            onClick={onComment}
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors hover:bg-gray-700 text-gray-400 hover:text-blue-400"
+            aria-label="Bình luận"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-sm font-medium">Bình luận</span>
+          </button>
+
+
+        </div>
+
+        {/* More Actions */}
+        <button
+          className="p-2 rounded-lg transition-colors hover:bg-gray-700 text-gray-400 hover:text-gray-300"
+          aria-label="Thêm tùy chọn"
         >
-          <Share className="w-5 h-5" />
-          {showShareCount ? <span className="font-medium">{safeShares}</span> : <span>Share</span>}
-        </Button>
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );

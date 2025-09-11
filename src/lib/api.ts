@@ -1,8 +1,8 @@
 // Centralized API Client - Backend JWT Authentication Only
 import axios, {
-  AxiosInstance, 
-  AxiosRequestConfig, 
-  AxiosResponse, 
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
   AxiosError,
   InternalAxiosRequestConfig,
   AxiosProgressEvent
@@ -107,7 +107,7 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         const normalizedError = this.normalizeError(error);
-        
+
         // Handle authentication errors
         if (normalizedError.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
@@ -140,7 +140,7 @@ class ApiClient {
         if (!normalizedError.status || normalizedError.status >= 500 || normalizedError.isConnectionError) {
           this.recordFailure();
         }
-        
+
         // Handle other error cases
         if (normalizedError.status === 403) {
           SafeLogger.error('🚨 403 Forbidden - Check user permissions');
@@ -164,7 +164,7 @@ class ApiClient {
     const data = axiosError?.response?.data;
 
     // Check for connection errors
-    const isConnectionError = 
+    const isConnectionError =
       axiosError?.code === 'ECONNREFUSED' ||
       axiosError?.code === 'ENOTFOUND' ||
       axiosError?.code === 'ETIMEDOUT' ||
@@ -214,7 +214,7 @@ class ApiClient {
   private recordFailure(): void {
     this.circuitBreaker.failureCount++;
     this.circuitBreaker.lastFailureTime = Date.now();
-    
+
     if (this.circuitBreaker.failureCount >= this.config.circuitBreakerThreshold) {
       this.circuitBreaker.isOpen = true;
       this.circuitBreaker.nextAttemptTime = Date.now() + this.config.circuitBreakerTimeout;
@@ -226,7 +226,7 @@ class ApiClient {
     if (this.circuitBreaker.isOpen || this.circuitBreaker.failureCount > 0) {
       SafeLogger.info('✅ Circuit breaker CLOSED - Server is back online');
     }
-    
+
     this.circuitBreaker.isOpen = false;
     this.circuitBreaker.failureCount = 0;
     this.circuitBreaker.lastFailureTime = 0;
@@ -235,13 +235,13 @@ class ApiClient {
 
   private isCircuitBreakerOpen(): boolean {
     if (!this.circuitBreaker.isOpen) return false;
-    
+
     // Check if we should try again (half-open state)
     if (Date.now() >= this.circuitBreaker.nextAttemptTime) {
       SafeLogger.info('🔄 Circuit breaker HALF-OPEN - Attempting to reconnect...');
       return false;
     }
-    
+
     return true;
   }
 
@@ -317,7 +317,7 @@ class ApiClient {
         '/api/users/me',
         '/api/tasks',
       ];
-      
+
       for (const endpoint of testEndpoints) {
         try {
           await this.get(endpoint);
@@ -326,7 +326,7 @@ class ApiClient {
           // Continue to next endpoint
         }
       }
-      
+
       SafeLogger.error('❌ All authentication endpoints failed');
       return false;
     } catch (error) {

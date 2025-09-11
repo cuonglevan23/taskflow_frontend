@@ -22,6 +22,9 @@ export type {
   UploadSuccessRequest
 } from './simpleFileService';
 
+// Profile Services
+export { ProfileService } from './profile';
+export type { OnlineStatus } from './profile';
 // Team Task Services
 export { teamTaskService } from './teams';
 export type {

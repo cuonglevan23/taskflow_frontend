@@ -9,10 +9,14 @@ export * from './api';
 
 // UI types
 export * from './ui';
+
+// Search types
+export * from './search';
+
 // task
 // @ts-ignore
 export * from './task';
 
 
 // Project types
-export * from './project'; 
+export * from './project';

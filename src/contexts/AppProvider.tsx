@@ -8,6 +8,7 @@ import { ProjectsProvider } from "./ProjectsContext";
 import { TasksProvider } from "./TasksContext";
 import { NotificationProvider } from "./NotificationContext";
 
+
 // Global App Provider - Backend JWT Authentication Only
 interface AppProviderProps {
   children: ReactNode;
@@ -26,6 +27,8 @@ interface AppProviderProps {
  * - Authentication flow simplified to backend-only JWT with HTTP-only cookies
  */
 export const AppProvider = ({ children }: AppProviderProps) => {
+
+
   return (
     <GlobalDataProvider>
       <NotificationProvider>

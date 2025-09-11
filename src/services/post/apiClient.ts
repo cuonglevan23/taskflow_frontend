@@ -11,7 +11,8 @@ import {
   CommentsResponse,
   UploadUrlResponse,
   ApiPostsResponse,
-  ApiPostResponse
+  ApiPostResponse,
+  CreateCommentRequest
 } from '../../types/post';
 
 export class PostApiClient {
@@ -193,16 +194,16 @@ export class PostApiClient {
   }
 
   /**
-   * Add comment to post
+   * Add comment to post (supports nested replies)
    */
-  async addComment(postId: number, content: string): Promise<CommentResponse> {
+  async addComment(postId: number, request: CreateCommentRequest): Promise<CommentResponse> {
     const response = await fetch(`${this.baseURL}/posts/${postId}/comment`, {
       method: 'POST',
       headers: {
         ...this.getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
@@ -218,6 +219,83 @@ export class PostApiClient {
   async getComments(postId: number, page = 0, size = 20): Promise<CommentsResponse> {
     const response = await fetch(`${this.baseURL}/posts/${postId}/comments?page=${page}&size=${size}`, {
       method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Toggle like on a comment
+   */
+  async toggleCommentLike(commentId: number): Promise<CommentResponse> {
+    const response = await fetch(`${this.baseURL}/posts/comments/${commentId}/like`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Get replies for a specific comment
+   */
+  async getCommentReplies(commentId: number, page = 0, size = 10): Promise<CommentsResponse> {
+    const response = await fetch(`${this.baseURL}/posts/comments/${commentId}/replies?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Edit a comment
+   */
+  async editComment(commentId: number, content: string): Promise<CommentResponse> {
+    const response = await fetch(`${this.baseURL}/posts/comments/${commentId}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Delete a comment
+   */
+  async deleteComment(commentId: number): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${this.baseURL}/posts/comments/${commentId}`, {
+      method: 'DELETE',
       headers: {
         ...this.getAuthHeaders(),
         'Content-Type': 'application/json',

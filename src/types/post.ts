@@ -2,6 +2,65 @@
  * Post-related TypeScript interfaces and types
  */
 
+// User Data Interface for Comments
+export interface CommentUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  avatarUrl: string | null;
+  premiumBadgeUrl: string | null;
+  isOnline: boolean;
+}
+
+// Recent Like Interface
+export interface RecentLike {
+  userId: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  likedAt: string;
+}
+
+// Enhanced Comment Data Interface
+export interface CommentData {
+  id: number;
+  content: string;
+  user: CommentUser;
+  parentCommentId: number | null;
+  likeCount: number;
+  isLikedByCurrentUser: boolean;
+  createdAt: string;
+  updatedAt: string;
+  replies: CommentData[];
+  replyCount: number;
+  recentLikes: RecentLike[];
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+// Create Comment Request
+export interface CreateCommentRequest {
+  content: string;
+  parentCommentId?: number | null;
+}
+
+// Comments Response Interface
+export interface CommentsResponse {
+  success: boolean;
+  message: string;
+  data: CommentData[];
+  pagination: PaginationData;
+}
+
+// Single Comment Response Interface
+export interface SingleCommentResponse {
+  success: boolean;
+  message: string;
+  data: CommentData;
+}
+
 // Core Post Data Interface
 export interface PostData {
   id: number;
@@ -29,20 +88,6 @@ export interface PostData {
   commentsCount: number;
   isLikedByCurrentUser: boolean;
   comments?: CommentData[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Comment Data Interface
-export interface CommentData {
-  id: number;
-  content: string;
-  postId: number;
-  authorId: number;
-  authorName: string;
-  authorUsername: string;
-  authorAvatar: string | null;
-  authorPremiumBadge?: string | null;
   createdAt: string;
   updatedAt: string;
 }

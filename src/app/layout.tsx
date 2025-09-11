@@ -5,7 +5,10 @@ import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { AppProvider } from "@/contexts/AppProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SWRProvider } from "@/providers/SWRProvider";
+import { ChatProvider } from "@/contexts/ChatContext";
+import { GlobalDataProvider } from "@/contexts/GlobalDataContext";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { ChatManager } from "@/components/chat/ChatManager"; // ✅ THÊM: Import ChatManager
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,13 +39,19 @@ export default function RootLayout({
         {/* Sử dụng AuthProvider mới thay vì NextAuth - backend JWT only */}
         <AuthProvider>
           <SWRProvider>
-            <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
-              <AppProvider>
-                <DetailPanelProvider>
-                  {children}
-                </DetailPanelProvider>
-              </AppProvider>
-            </ThemeProvider>
+            <GlobalDataProvider>
+              <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
+                <AppProvider>
+                  <ChatProvider>
+                    <DetailPanelProvider>
+                      {children}
+                      {/* ✅ THÊM: ChatManager để render chat windows */}
+                      <ChatManager />
+                    </DetailPanelProvider>
+                  </ChatProvider>
+                </AppProvider>
+              </ThemeProvider>
+            </GlobalDataProvider>
           </SWRProvider>
         </AuthProvider>
       </body>
