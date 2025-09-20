@@ -118,7 +118,7 @@ const AddTaskModal = ({
               disabled={!taskName.trim()}
               className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                backgroundColor: taskName.trim() ? theme.colors?.primary || '#3B82F6' : theme.background.secondary,
+                backgroundColor: taskName.trim() ? theme.background.primary|| '#3B82F6' : theme.background.secondary,
                 color: taskName.trim() ? 'white' : theme.text.secondary
               }}
             >

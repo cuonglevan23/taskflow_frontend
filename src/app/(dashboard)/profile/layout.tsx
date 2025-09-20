@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import PageLayout from "@/layouts/page/PageLayout";
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useProfile, useFriendship, useProfileTabs } from '@/hooks/profile';
@@ -17,7 +17,7 @@ interface ProfileLayoutProps {
   children: React.ReactNode;
 }
 
-const ProfileLayout = ({ children }: ProfileLayoutProps) => {
+const ProfileLayout = React.memo(({ children }: ProfileLayoutProps) => {
   const { isLoading } = useAuth();
 
   // Use custom hooks for modular logic
@@ -40,17 +40,35 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
     handleTabChange
   } = useProfileTabs(profileData, isOwnProfile || false, userId);
 
-  // Handle profile actions
-  const handleEditProfile = () => {
-    console.log("Edit profile");
-  };
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleEditProfile = useCallback(() => {
+    // Handle edit profile action
+  }, []);
 
-  const handleChangeCoverPhoto = () => {
-    console.log("Change cover photo");
-  };
+  const handleChangeCoverPhoto = useCallback(() => {
+    // Handle cover photo change
+  }, []);
+
+  // Memoize friendship component to prevent re-renders when tab changes
+  const friendshipComponent = useMemo(() => {
+    if (isOwnProfile) return null;
+
+    return (
+      <FriendshipActions
+        friendshipStatus={friendshipStatus}
+        loading={friendshipLoading}
+        onFriendAction={handleFriendAction}
+      />
+    );
+  }, [isOwnProfile, friendshipStatus, friendshipLoading, handleFriendAction]);
+
+  // Memoize loading state check
+  const isPageLoading = useMemo(() => {
+    return isLoading || profileLoading || !profileData;
+  }, [isLoading, profileLoading, profileData]);
 
   // Loading state
-  if (isLoading || profileLoading || !profileData) {
+  if (isPageLoading) {
     return (
       <PageLayout>
         <ProfileSkeleton />
@@ -63,19 +81,11 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Profile Header */}
         <ProfileHeader
-          profileData={profileData}
+          profileData={profileData!}
           isOwnProfile={isOwnProfile || false}
           onEditProfile={handleEditProfile}
           onChangeCoverPhoto={handleChangeCoverPhoto}
-          friendshipComponent={
-            !isOwnProfile && (
-              <FriendshipActions
-                friendshipStatus={friendshipStatus}
-                loading={friendshipLoading}
-                onFriendAction={handleFriendAction}
-              />
-            )
-          }
+          friendshipComponent={friendshipComponent}
         />
 
         {/* Navigation Tabs */}
@@ -95,10 +105,10 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
 
       {/* Chat Manager - Renders all open chat windows */}
       <ChatManager />
-
-
     </PageLayout>
   );
-};
+});
+
+ProfileLayout.displayName = 'ProfileLayout';
 
 export default ProfileLayout;

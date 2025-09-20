@@ -10,6 +10,12 @@ export * from './api';
 // UI types
 export * from './ui';
 
+// Settings types
+export * from './settings';
+
+// Edit Profile types
+export * from './editProfile';
+
 // Search types
 export * from './search';
 

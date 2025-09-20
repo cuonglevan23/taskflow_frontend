@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { TabType, ProfileData } from '@/types/profile';
 
@@ -7,52 +7,57 @@ export const useProfileTabs = (profileData: ProfileData | null, isOwnProfile: bo
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<TabType>('posts');
 
-  const tabs = [
+  // Memoize tabs array to prevent recreation on every render
+  const tabs = useMemo(() => [
     {
       id: 'posts' as TabType,
       label: 'Posts',
-      count: profileData?.tabCounts.postsCount || 0,
+      count: profileData?.tabCounts?.postsCount || 0,
       href: isOwnProfile ? '/profile/me/posts' : `/profile/${userId}/posts`
     },
     {
       id: 'friends' as TabType,
       label: 'Friends',
-      count: profileData?.tabCounts.friendsCount || 0,
+      count: profileData?.tabCounts?.friendsCount || 0,
       href: isOwnProfile ? '/profile/me/friends' : `/profile/${userId}/friends`
     },
     {
       id: 'portfolio' as TabType,
       label: 'Portfolio',
-      count: profileData?.tabCounts.tasksCount || 0,
+      count: profileData?.tabCounts?.tasksCount || 0,
       href: isOwnProfile ? '/profile/me/portfolio' : `/profile/${userId}/portfolio`
     },
-  ];
+  ], [profileData?.tabCounts, isOwnProfile, userId]);
 
-  // Set active tab based on current path
+  // Memoize tab detection logic
+  const getTabFromPath = useCallback((path: string): TabType => {
+    if (path.includes('/friends')) return 'friends';
+    if (path.includes('/portfolio')) return 'portfolio';
+    return 'posts';
+  }, []);
+
+  // Optimized useEffect to set active tab from URL
   useEffect(() => {
-    if (pathname.includes('/friends')) {
-      setActiveTab('friends');
-    } else if (pathname.includes('/posts')) {
-      setActiveTab('posts');
-    } else if (pathname.includes('/portfolio')) {
-      setActiveTab('portfolio');
-    } else {
-      setActiveTab('posts');
-      // Redirect to posts tab if on base profile page
-      if (pathname === '/profile' || pathname === '/profile/' || pathname === `/profile/${userId}`) {
-        const targetHref = isOwnProfile ? '/profile/me/posts' : `/profile/${userId}/posts`;
-        router.push(targetHref);
-      }
-    }
-  }, [pathname, router, userId, isOwnProfile]);
+    const newTab = getTabFromPath(pathname);
 
-  // Handle tab change
-  const handleTabChange = (tabId: TabType) => {
+    // Only update if tab actually changed
+    setActiveTab(prevTab => prevTab !== newTab ? newTab : prevTab);
+
+    // Redirect if on base profile page
+    if (pathname === '/profile' || pathname === '/profile/' || pathname === `/profile/${userId}`) {
+      const targetHref = isOwnProfile ? '/profile/me/posts' : `/profile/${userId}/posts`;
+      router.replace(targetHref);
+    }
+  }, [pathname, router, userId, isOwnProfile, getTabFromPath]);
+
+  // Memoized tab change handler
+  const handleTabChange = useCallback((tabId: TabType) => {
     const tab = tabs.find(t => t.id === tabId);
-    if (tab) {
+    if (tab && tab.href !== pathname) {
+      setActiveTab(tabId);
       router.push(tab.href);
     }
-  };
+  }, [tabs, router, pathname]);
 
   return {
     activeTab,

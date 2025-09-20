@@ -1,152 +1,251 @@
 "use client";
 
-import React from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
-import { ACTION_ICONS } from "@/constants/icons";
-import { Bookmark } from "lucide-react";
-import { InboxNotification, InboxActions } from "../hooks/useInboxActions";
-import { Button } from "@/components/ui";
+import React, { useState } from "react";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { FormattedNotification } from "../hooks/useNotificationFormatter";
+import {
+  Bookmark,
+  Archive,
+  Trash2,
+  MoreHorizontal,
+  Check,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 interface InboxActionButtonsProps {
-  notification: InboxNotification;
-  actions: InboxActions;
-  isLoading?: boolean;
-  showMoreMenu?: boolean;
-  onHideMoreActions?: () => void;
+  notification: FormattedNotification;
+  onMarkAsRead?: () => void;
+  onMarkAsUnread?: () => void;
+  onBookmark?: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
+  isBookmarkPage?: boolean;
+  isArchivePage?: boolean;
 }
 
 const InboxActionButtons = ({
   notification,
-  actions,
-  isLoading = false,
-  showMoreMenu = false,
-  onHideMoreActions,
+  onMarkAsRead,
+  onMarkAsUnread,
+  onBookmark,
+  onArchive,
+  onDelete,
+  isBookmarkPage = false,
+  isArchivePage = false,
 }: InboxActionButtonsProps) => {
-  const { theme } = useTheme();
+  const { theme, themeMode } = useThemeContext();
+  const { messages, isLoading: languageLoading } = useLanguageContext();
+  const isDark = themeMode === 'dark';
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
-  const handleMoreActions = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.stopPropagation();
-    actions.showMoreActions(notification.id);
-  };
+  // Add loading state for language
+  if (languageLoading || !messages || !messages.notifications) {
+    return (
+      <div className="flex items-center space-x-1">
+        <div className="w-6 h-6 animate-pulse bg-gray-300 rounded"></div>
+        <div className="w-6 h-6 animate-pulse bg-gray-300 rounded"></div>
+        <div className="w-6 h-6 animate-pulse bg-gray-300 rounded"></div>
+      </div>
+    );
+  }
 
-  const handleBookmark = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.stopPropagation();
-    if (notification.isBookmarked) {
-      actions.unbookmark(notification.id);
-    } else {
-      actions.bookmark(notification.id);
-    }
-  };
-
-  const handleArchive = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    e?.stopPropagation();
-    actions.archive(notification.id);
-  };
-
-  const handleMoreMenuAction = (action: string, e: React.MouseEvent) => {
+  const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onBookmark?.();
+  };
 
-    switch (action) {
-      case "markAsRead":
-        actions.markAsRead(notification.id);
-        break;
-      case "markAsUnread":
-        actions.markAsUnread(notification.id);
-        break;
-    }
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onArchive?.();
+  };
 
-    onHideMoreActions?.();
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  };
+
+  const handleMarkAsRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMarkAsRead?.();
+  };
+
+  const handleMarkAsUnread = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMarkAsUnread?.();
+  };
+
+  const handleMoreClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMoreMenu(!showMoreMenu);
   };
 
   return (
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-      {/* More Actions Button */}
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleMoreActions}
-          disabled={isLoading}
-          className="!p-2"
-          icon={
-            <ACTION_ICONS.menu
-              className="w-4 h-4"
-              style={{ color: theme.text.muted }}
-            />
-          }
-        />
+    <div className="flex items-center space-x-1 relative">
+      {/* Primary Actions */}
+      <div className="flex items-center space-x-1">
+        {/* Mark as Read/Unread */}
+        {!notification.isRead ? (
+          <button
+            onClick={handleMarkAsRead}
+            className="p-1.5 rounded-md transition-colors"
+            style={{
+              backgroundColor: 'transparent',
+              color: theme.status.success
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            title={messages.notifications.actions.markAsRead}
+          >
+            <Check className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleMarkAsUnread}
+            className="p-1.5 rounded-md transition-colors"
+            style={{
+              backgroundColor: 'transparent',
+              color: theme.text.muted
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            title={messages.notifications.actions.markAsUnread}
+          >
+            <EyeOff className="w-4 h-4" />
+          </button>
+        )}
 
-        {/* More Actions Dropdown */}
-        {showMoreMenu && (
-          <>
-            {/* Overlay to close menu when clicking outside */}
-            <div className="fixed inset-0 z-10" onClick={onHideMoreActions} />
+        {/* Bookmark/Unbookmark */}
+        {!isBookmarkPage && (
+          <button
+            onClick={handleBookmark}
+            className="p-1.5 rounded-md transition-colors"
+            style={{
+              backgroundColor: 'transparent',
+              color: notification.isBookmarked ? theme.status.warning : theme.text.muted
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            title={notification.isBookmarked ? messages.notifications.actions.removeBookmark : messages.notifications.actions.bookmark}
+          >
+            <Bookmark className="w-4 h-4" />
+          </button>
+        )}
 
-            <div
-              className="absolute right-0 top-full mt-1 py-2 w-48 rounded-lg shadow-lg z-20 border"
+        {/* Archive/Unarchive */}
+        <button
+          onClick={handleArchive}
+          className="p-1.5 rounded-md transition-colors"
+          style={{
+            backgroundColor: 'transparent',
+            color: theme.button.primary.background
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title={isArchivePage ? messages.notifications.actions.unarchive : messages.notifications.actions.archive}
+        >
+          <Archive className="w-4 h-4" />
+        </button>
+
+        {/* More Actions */}
+        <button
+          onClick={handleMoreClick}
+          className="p-1.5 rounded-md transition-colors"
+          style={{
+            backgroundColor: 'transparent',
+            color: theme.text.muted
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title={messages.notifications.actions.moreActions}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* More Actions Menu */}
+      {showMoreMenu && (
+        <div
+          className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg z-10"
+          style={{
+            backgroundColor: theme.dropdown.background,
+            borderColor: theme.border.default,
+            borderWidth: '1px',
+            boxShadow: `0 10px 15px -3px ${theme.dropdown.shadow}`
+          }}
+        >
+          <div className="py-1">
+            {/* Remove Bookmark (only on bookmark page) */}
+            {isBookmarkPage && (
+              <button
+                onClick={handleBookmark}
+                className="flex items-center w-full px-4 py-2 text-sm transition-colors"
+                style={{
+                  color: theme.text.primary,
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.dropdown.hover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <Bookmark className="w-4 h-4 mr-3" />
+                {messages.notifications.actions.removeBookmark}
+              </button>
+            )}
+
+            {/* Delete */}
+            <button
+              onClick={handleDelete}
+              className="flex items-center w-full px-4 py-2 text-sm transition-colors"
               style={{
-                backgroundColor: theme.background.primary,
-                borderColor: theme.border.default,
+                color: theme.status.error,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark ? 'rgba(220, 38, 38, 0.2)' : 'rgba(254, 242, 242, 1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              <button
-                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-700 transition-colors"
-                style={{ color: theme.text.primary }}
-                onClick={(e) =>
-                  handleMoreMenuAction(
-                    notification.isRead ? "markAsUnread" : "markAsRead",
-                    e
-                  )
-                }
-              >
-                {notification.isRead ? "Mark as unread" : "Mark as read"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+              <Trash2 className="w-4 h-4 mr-3" />
+              {messages.notifications.actions.delete}
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* Bookmark Button */}
-      <div
-        title={
-          notification.isBookmarked ? "Remove bookmark" : "Add to bookmarks"
-        }
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBookmark}
-          disabled={isLoading}
-          className="!p-2"
-          icon={
-            <Bookmark
-              className="w-4 h-4"
-              style={{
-                color: notification.isBookmarked
-                  ? theme.button.primary.background
-                  : theme.text.muted,
-              }}
-            />
-          }
+      {/* Click outside to close menu */}
+      {showMoreMenu && (
+        <div
+          className="fixed inset-0 z-5"
+          onClick={() => setShowMoreMenu(false)}
         />
-      </div>
-
-      {/* Archive Button */}
-      <div title="Archive notification">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleArchive}
-          disabled={isLoading}
-          className="!p-2"
-          icon={
-            <ACTION_ICONS.download
-              className="w-4 h-4"
-              style={{ color: theme.text.muted }}
-            />
-          }
-        />
-      </div>
+      )}
     </div>
   );
 };

@@ -126,12 +126,7 @@ const CuratedWork = ({
         >
           Curated work
         </h2>
-        <button 
-          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          onClick={onViewAllWork}
-        >
-          View all work
-        </button>
+
       </div>
 
       {/* Sections - More compact */}
@@ -188,14 +183,6 @@ const CuratedWork = ({
         </button>
       </div>
 
-      {/* Add Section Button */}
-      <button 
-        className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300 transition-colors mt-4"
-        onClick={onAddSection}
-      >
-        <ACTION_ICONS.create className="w-4 h-4" />
-        Add section
-      </button>
     </div>
   );
 };

@@ -1,27 +1,58 @@
 import React, { useState } from 'react';
-import { Plus, Globe, Triangle, Smile, AtSign, Star, Paperclip, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
+import { Plus, Triangle, Smile, AtSign, Star, Paperclip, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { TaskListItem } from '@/components/TaskList/types';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { useCommentActions } from '@/hooks/useComments';
 import { useAuth } from '@/components/auth/AuthProvider';
 
-interface TaskDetailFooterProps {
+export interface TaskDetailFooterProps {
   task: TaskListItem | null;
   comment: string;
-  setComment: (comment: string) => void;
+  setComment: ((comment: string) => void) | ((value: string) => void);
+
+  // Computed assignees from ProjectTaskAssignees - replaces old calculations
+  computedAssignees?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  }>;
+
+  // Project-specific comment override props
+  overrideComments?: boolean;
+  onCreateComment?: () => void;
+  commentSubmitting?: boolean;
 }
 
 const TaskDetailFooter = ({
   task,
   comment,
-  setComment
+  setComment,
+  computedAssignees,
+  overrideComments,
+  onCreateComment,
+  commentSubmitting,
 }: TaskDetailFooterProps) => {
   const [showCommentEditor, setShowCommentEditor] = useState(false);
   
   // Get current user
   const { user } = useAuth();
+
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
   // Get task ID
   const taskId = task?.id ? String(task.id) : null;
@@ -32,33 +63,45 @@ const TaskDetailFooter = ({
   
   // Handle comment submission
   const handleCreateComment = async () => {
-    if (!comment.trim()) return;
-    
+    if (!comment?.trim()) return;
+
     try {
-      await addComment(comment.trim());
-      setComment('');
-      setShowCommentEditor(false);
+      if (overrideComments && onCreateComment) {
+        // Use project-specific comment creation
+        await onCreateComment();
+        setShowCommentEditor(false);
+      } else {
+        // Use generic comment creation
+        await addComment(comment.trim());
+        setComment('');
+        setShowCommentEditor(false);
+      }
     } catch (error: unknown) {
       console.error('Failed to create comment:', error);
-      // Error notification is already handled in the hook
       // Keep the editor open so user can try again
     }
   };
+
+  // Determine if we're submitting based on override or generic system
+  const isCommentSubmitting = overrideComments ? (commentSubmitting || false) : isSubmitting;
 
   return (
     <div 
       className="border-t"
       style={{ 
-        borderColor: DARK_THEME.border.default,
-        backgroundColor: DARK_THEME.background.primary
+        borderColor: theme.border.default,
+        backgroundColor: theme.background.primary
       }}
     >
       {/* Add Comment UI */}
       <div className="p-6">
-        <h3 className="text-sm font-medium text-white mb-4">Add Comment</h3>
+        <h3 className="text-sm font-medium mb-4" style={{ color: theme.text.primary }}>
+          {t('taskDetailFooter.addComment')}
+        </h3>
         <div className="flex items-start gap-3">
           <UserAvatar
-            name={user?.name || user?.email || 'Current User'}
+            name={user?.name || user?.email || t('taskDetailFooter.currentUser')}
+            email={user?.email || 'unknown@email.com'}
             avatar={user?.avatar}
             size="sm"
             className="w-8 h-8"
@@ -68,8 +111,8 @@ const TaskDetailFooter = ({
               <div 
                 className="rounded-lg overflow-hidden border shadow-md transition-all duration-200"
                 style={{
-                  backgroundColor: DARK_THEME.sidebar.background,
-                  borderColor: DARK_THEME.border.focus,
+                  backgroundColor: theme.sidebar.background,
+                  borderColor: theme.border.focus,
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                 }}
               >
@@ -77,45 +120,69 @@ const TaskDetailFooter = ({
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Add a comment"
+                    placeholder={t('taskDetailFooter.commentPlaceholder')}
                     autoFocus
-                    className="w-full min-h-[120px] bg-transparent border-none outline-none resize-none text-white placeholder:text-gray-400 text-sm"
+                    className="w-full min-h-[120px] bg-transparent border-none outline-none resize-none text-sm placeholder:opacity-60"
+                    style={{
+                      color: theme.text.primary
+                    }}
                   />
                 </div>
                 <div 
                   className="flex items-center justify-between p-3 border-t"
                   style={{
-                    backgroundColor: DARK_THEME.background.secondary,
-                    borderColor: DARK_THEME.border.muted
+                    backgroundColor: theme.background.secondary,
+                    borderColor: theme.border.muted
                   }}
                 >
                   <div className="flex items-center gap-3">
                     {/* Icon toolbar */}
                     <div className="flex items-center gap-2">
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Plus className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Triangle className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Smile className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <AtSign className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Star className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Paperclip className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-400 hover:text-white p-1 rounded transition-colors">
+                      <button
+                        className="p-1 rounded transition-colors hover:opacity-80"
+                        style={{ color: theme.text.muted }}
+                      >
                         <Sparkles className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400 ml-4">
-                      <span>0 people will be notified</span>
+                    <div className="flex items-center gap-2 text-xs ml-4" style={{ color: theme.text.muted }}>
+                      <span>{t('taskDetailFooter.notificationCount')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -123,17 +190,22 @@ const TaskDetailFooter = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowCommentEditor(false)}
-                      className="text-gray-300 hover:text-white text-sm h-8 px-3 transition-colors"
+                      className="text-sm h-8 px-3 transition-colors"
+                      style={{ color: theme.text.muted }}
                     >
-                      Cancel
+                      {t('taskDetailFooter.cancel')}
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-500 text-white text-sm h-8 px-4 font-medium transition-colors shadow-sm"
+                      className="text-sm h-8 px-4 font-medium transition-colors shadow-sm"
+                      style={{
+                        backgroundColor: theme.button.primary.background,
+                        color: theme.button.primary.text
+                      }}
                       onClick={handleCreateComment}
-                      disabled={isSubmitting || !comment.trim()}
+                      disabled={isCommentSubmitting || !comment?.trim()}
                     >
-                      {isSubmitting ? 'Posting...' : 'Comment'}
+                      {isCommentSubmitting ? t('taskDetailFooter.posting') : t('taskDetailFooter.comment')}
                     </Button>
                   </div>
                 </div>
@@ -143,18 +215,18 @@ const TaskDetailFooter = ({
                 className="min-h-[52px] border rounded-lg p-4 cursor-text transition-all duration-200 ease-in-out flex items-center hover:shadow-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
                 tabIndex={0}
                 role="button"
-                aria-label="Add a comment"
+                aria-label={t('taskDetailFooter.addCommentAriaLabel')}
                 style={{
-                  backgroundColor: DARK_THEME.sidebar.background,
-                  borderColor: DARK_THEME.border.muted
+                  backgroundColor: theme.sidebar.background,
+                  borderColor: theme.border.muted
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.borderColor = DARK_THEME.border.focus;
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.borderColor = theme.border.focus;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.sidebar.background;
-                  e.currentTarget.style.borderColor = DARK_THEME.border.muted;
+                  e.currentTarget.style.backgroundColor = theme.sidebar.background;
+                  e.currentTarget.style.borderColor = theme.border.muted;
                 }}
                 onClick={() => setShowCommentEditor(true)}
                 onKeyDown={(e) => {
@@ -164,7 +236,9 @@ const TaskDetailFooter = ({
                   }
                 }}
               >
-                <span className="text-gray-400 text-sm">Add a comment...</span>
+                <span className="text-sm" style={{ color: theme.text.muted }}>
+                  {t('taskDetailFooter.addCommentPlaceholder')}
+                </span>
               </div>
             )}
           </div>
@@ -175,33 +249,41 @@ const TaskDetailFooter = ({
       <div 
         className="px-6 py-4 border-t"
         style={{
-          backgroundColor: `${DARK_THEME.background.weakHover}60`,
-          borderColor: DARK_THEME.border.default
+          backgroundColor: `${theme.background.weakHover}60`,
+          borderColor: theme.border.default
         }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-300">Collaborators</span>
+            <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+              {t('taskDetailFooter.collaborators')}
+            </span>
             <div className="flex items-center gap-1">
-              {task?.assignees?.slice(0, 3).map((assignee) => (
+              {computedAssignees?.slice(0, 3).map((assignee, index) => (
                 <UserAvatar
-                  key={assignee.id}
+                  key={assignee.id || index}
                   name={assignee.name}
+                  email={assignee.email}
                   avatar={assignee.avatar}
                   size="sm"
-                  className="w-8 h-8 -ml-1 first:ml-0 border-2 border-gray-900"
+                  className="w-8 h-8 -ml-1 first:ml-0 border-2"
+                  style={{ borderColor: theme.background.primary }}
                 />
               ))}
-              <Button variant="ghost" size="sm" className="w-8 h-8 rounded-full border-2 border-dashed border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300 -ml-1">
-                <Plus className="w-3 h-3" />
-              </Button>
-              <Button variant="ghost" size="sm" className="w-8 h-8 rounded-full border-2 border-dashed border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300 -ml-1">
-                <Plus className="w-3 h-3" />
-              </Button>
 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-8 h-8 rounded-full border-2 border-dashed -ml-1 hover:opacity-80"
+                style={{
+                  borderColor: theme.border.muted,
+                  color: theme.text.muted
+                }}
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

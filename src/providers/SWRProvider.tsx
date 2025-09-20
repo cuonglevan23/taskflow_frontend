@@ -156,7 +156,7 @@ export function SWRProvider({ children }: SWRProviderProps) {
           }
         },
         onSuccess: (data, key) => {
-          console.log('🔄 SWR Cache Updated:', key);
+          // Cache updated successfully - no logging needed
         },
       }}
     >

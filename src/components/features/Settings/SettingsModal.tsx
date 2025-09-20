@@ -54,12 +54,8 @@ const SettingsModal = ({
 
   const tabs = [
     { id: 'profile', label: 'Profile' },
-    { id: 'notifications', label: 'Notifications' },
-    { id: 'email-forwarding', label: 'Email Forwarding' },
-    { id: 'account', label: 'Account' },
     { id: 'display', label: 'Display' },
-    { id: 'apps', label: 'Apps' },
-    { id: 'hacks', label: 'Hacks' },
+
   ] as const;
 
   const handleInputChange = (field: string, value: string) => {
@@ -260,8 +256,8 @@ const SettingsModal = ({
                         variant="outline"
                         size="sm"
                         onClick={handleRecordAudio}
-                        leftIcon={<Mic className="w-4 h-4" />}
                       >
+                        <Mic className="w-4 h-4" />
                         Record audio clip
                       </Button>
                     </div>
@@ -405,91 +401,8 @@ const SettingsModal = ({
               )}
             </div>
 
-            {/* Sidebar */}
-            <div 
-              className="w-80 border-l p-6 overflow-y-auto"
-              style={{ borderLeftColor: theme.border.default }}
-            >
-              {/* Frequent collaborators */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 
-                    className="text-sm font-medium"
-                    style={{ color: theme.text.primary }}
-                  >
-                    Frequent collaborators
-                  </h3>
-                  <span 
-                    className="text-sm"
-                    style={{ color: theme.text.secondary }}
-                  >
-                    ⓘ
-                  </span>
-                </div>
-                <button
-                  className="w-full py-2 px-3 border border-dashed rounded-lg text-center transition-colors"
-                  style={{
-                    borderColor: theme.border.default,
-                    color: theme.text.secondary,
-                  }}
-                >
-                  + Invite teammates
-                </button>
-                <p 
-                  className="text-xs mt-4 text-center"
-                  style={{ color: theme.text.secondary }}
-                >
-                  This space is for your frequent collaborators.
-                </p>
-              </div>
 
-              {/* My goals */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 
-                    className="text-sm font-medium"
-                    style={{ color: theme.text.primary }}
-                  >
-                    My goals
-                  </h3>
-                  <span 
-                    className="text-sm"
-                    style={{ color: theme.text.secondary }}
-                  >
-                    ⓘ
-                  </span>
-                  <button className="text-blue-600 text-sm">
-                    Create goal
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  <div 
-                    className="p-3 border rounded-lg"
-                    style={{ borderColor: theme.border.default }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span 
-                        className="text-sm font-medium"
-                        style={{ color: theme.text.primary }}
-                      >
-                        Objective
-                      </span>
-                    </div>
-                    <p 
-                      className="text-sm"
-                      style={{ color: theme.text.secondary }}
-                    >
-                      demo
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: theme.text.secondary }}>
-                      <span>🔄 No status (0%)</span>
-                      <span>📅 Q3 FY25</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>

@@ -78,7 +78,7 @@ export const useProjectTasksByProject = (projectId: number, page = 0, size = 20)
       revalidateOnFocus: false,
       dedupingInterval: 30000, // Cache for 30 seconds
       // Don't retry on 404 errors
-      errorRetryCount: (error) => error?.response?.status === 404 ? 0 : 3,
+
     }
   );
 
@@ -121,7 +121,7 @@ export const useCreateProjectTask = () => {
   return useSWRMutation(
     'create-project-task',
     async (key: string, { arg }: { arg: CreateProjectTaskRequest }) => {
-      // Create optimistic task for instant UI
+      // Create optimistic task for instant UI with special flag to prevent calendar sync
       const optimisticTask = {
         id: Date.now(), // Temporary ID
         title: arg.title,
@@ -137,6 +137,8 @@ export const useCreateProjectTask = () => {
         additionalAssignees: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        // 🔥 FIXED: Add flag to prevent Google Calendar sync for optimistic tasks
+        isOptimistic: true, // Prevent calendar operations for optimistic tasks
       };
 
       // Optimistic update - add task instantly

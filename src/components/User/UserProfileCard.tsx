@@ -48,11 +48,7 @@ export const UserProfileCard: React.FC = () => {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        // Sử dụng API client mới để upload avatar
-        await ApiClient.request('/api/users/me/avatar', {
-          method: 'POST',
-          body: formData,
-        });
+
 
         await refreshAuth(); // Refresh user data
       } catch (error) {

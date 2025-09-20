@@ -52,27 +52,6 @@ const FALLBACK_COLORS: BackendTaskColor[] = [
     group: 'in_progress'
   },
   {
-    status: 'testing',
-    backgroundColor: '#3b82f6',
-    borderColor: '#1d4ed8',
-    textColor: '#ffffff',
-    group: 'in_progress'
-  },
-  {
-    status: 'review',
-    backgroundColor: '#8b5cf6',
-    borderColor: '#7c3aed',
-    textColor: '#ffffff',
-    group: 'in_progress'
-  },
-  {
-    status: 'blocked',
-    backgroundColor: '#dc2626',
-    borderColor: '#991b1b',
-    textColor: '#ffffff',
-    group: 'other'
-  },
-  {
     status: 'completed',
     backgroundColor: '#10b981',
     borderColor: '#059669',
@@ -84,10 +63,7 @@ const FALLBACK_COLORS: BackendTaskColor[] = [
 const FALLBACK_STATUSES: BackendTaskStatus[] = [
   { code: 'TODO', label: 'To Do', group: 'todo', order: 1, isDefault: true },
   { code: 'IN_PROGRESS', label: 'In Progress', group: 'in_progress', order: 2 },
-  { code: 'TESTING', label: 'Testing', group: 'in_progress', order: 3 },
-  { code: 'REVIEW', label: 'In Review', group: 'in_progress', order: 4 },
-  { code: 'BLOCKED', label: 'Blocked', group: 'other', order: 5 },
-  { code: 'DONE', label: 'Completed', group: 'completed', order: 6 }
+  { code: 'DONE', label: 'Completed', group: 'completed', order: 3 }
 ];
 
 const FALLBACK_PRIORITIES = [

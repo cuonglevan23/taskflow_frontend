@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import React, { ReactNode, useMemo } from "react";
-import { ROUTE_NAVIGATION_CONFIG } from "../configs/routeNavigationConfig";
+import { ROUTE_NAVIGATION_CONFIG } from "../../../config/navigation";
 import { matchRoute, buildNavigationItems } from "../utils/routeMatcher";
 import { NavigationAvatar } from "../components/NavigationAvatar";
 
@@ -52,7 +52,7 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
   const pathname = usePathname();
 
   // Memoized route configuration processing
-  const navigationConfig = useMemo(() => {
+  return useMemo(() => {
     const routeKeys = Object.keys(ROUTE_NAVIGATION_CONFIG);
     const routeMatch = matchRoute(pathname, routeKeys);
 
@@ -62,6 +62,10 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
 
     const config = ROUTE_NAVIGATION_CONFIG[routeMatch.config];
     
+    if (!config) {
+      return null;
+    }
+
     // Build navigation items with dynamic parameters
     const navItems = buildNavigationItems(config.navItems, routeMatch.params).map(item => ({
       ...item,
@@ -83,6 +87,4 @@ export const usePageNavigation = (): PageNavigationConfig | null => {
       showTabsPlus: config.showTabsPlus || false,
     };
   }, [pathname]);
-
-  return navigationConfig;
 };

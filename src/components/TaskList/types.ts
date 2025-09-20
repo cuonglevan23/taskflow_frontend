@@ -26,6 +26,8 @@ export interface TaskListItem {
   assignees: TaskAssignee[];
   assigneeName?: string; // For simple display without full assignee object
   assignedEmails?: string[]; // Email addresses for email-based assignment
+  assigneeId?: number; // Primary assignee ID for project tasks
+  additionalAssignees?: TaskAssignee[]; // Additional assignees for project tasks
   dueDate?: string;
   deadline?: string; // Deadline date for task completion
   startDate?: string; // ISO date string for enhanced calendar
@@ -61,6 +63,7 @@ export interface TaskAssignee {
   id: string;
   name: string;
   avatar?: string;
+  avatarUrl?: string; // Add support for avatarUrl field from API
   email?: string;
 }
 
@@ -79,7 +82,7 @@ export interface TaskAttachment {
 }
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'TESTING' | 'BLOCKED' | 'CANCELLED';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type TaskActionTime = 'recently-assigned' | 'do-today' | 'do-next-week' | 'do-later';
 export type TaskGroupBy = 'status' | 'priority' | 'assignee' | 'project' | 'dueDate' | 'assignmentDate' | 'actionTime';
 

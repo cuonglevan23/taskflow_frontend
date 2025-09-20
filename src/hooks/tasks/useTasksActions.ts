@@ -252,8 +252,14 @@ export const useUpdateTask = () => {
           (currentData: any) => {
             if (currentData?.tasks) {
               const updatedTasks = currentData.tasks.map((task: Task) => 
-                task.id.toString() === id ? updatedTask : task
+                task.id.toString() === id ? { ...task, ...updatedTask } : task
               );
+              console.log('🔄 Updating My Tasks Summary cache with:', {
+                taskId: id,
+                updatedTaskData: updatedTask,
+                originalTasksCount: currentData.tasks.length,
+                updatedTasksCount: updatedTasks.length
+              });
               return {
                 ...currentData,
                 tasks: updatedTasks
@@ -261,11 +267,14 @@ export const useUpdateTask = () => {
             }
             return currentData;
           },
-          true
+          false // Don't revalidate immediately, let manual revalidation handle it
         );
 
         // ✅ FIX: Also force revalidate My Tasks Summary to ensure UI sync
-        mutate((key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'summary');
+        setTimeout(() => {
+          mutate((key) => Array.isArray(key) && key[0] === 'tasks' && key[1] === 'my-tasks' && key[2] === 'summary');
+          console.log('🔄 Force revalidated My Tasks Summary cache');
+        }, 100);
 
         return updatedTask;
       } catch (error) {

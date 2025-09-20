@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { UserRole } from "@/constants/auth";
-import { useAuth } from "@/components/auth/AuthProvider"; // Thay thế useUser
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   LayoutContextValue,
   LayoutActions,
@@ -15,21 +15,10 @@ import {
 export function usePrivateLayout() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading: userDataLoading, logout: authLogout } = useAuth(); // Sử dụng useAuth thay vì useUser
+  const { user, isLoading: userDataLoading, logout: authLogout, isAuthenticated } = useAuth();
 
-  // Layout state với localStorage persistence
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const isMobile = window.innerWidth < 1024;
-      if (isMobile) return false; // Mobile mặc định đóng
-      
-      // Desktop: check localStorage hoặc mặc định mở
-      const saved = localStorage.getItem('sidebar-open');
-      return saved ? JSON.parse(saved) : true;
-    }
-    return true; // SSR fallback
-  });
-  
+  // Layout state - Start with server-safe defaults
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,174 +26,102 @@ export function usePrivateLayout() {
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Persist sidebar state to localStorage
+  // Handle client-side initialization after hydration
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isHydrated) {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        setIsSidebarOpen(false);
+      } else {
+        const saved = localStorage.getItem('sidebar-open');
+        setIsSidebarOpen(saved ? JSON.parse(saved) : true);
+      }
+      setIsHydrated(true);
+    }
+  }, [isHydrated]);
+
+  // Persist sidebar state
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isHydrated) {
       localStorage.setItem('sidebar-open', JSON.stringify(isSidebarOpen));
     }
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, isHydrated]);
 
-  // Chỉ đóng sidebar trên mobile khi navigate
+  // Close sidebar on mobile navigation
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isMobile = window.innerWidth < 1024;
-      if (isMobile) {
-        // Kiểm tra current state thay vì depend vào state
-        const currentSidebarState = JSON.parse(localStorage.getItem('sidebar-open') || 'false');
-        if (currentSidebarState) {
-          // Delay một chút để tránh đóng ngay lập tức
-          const timer = setTimeout(() => {
-            setIsSidebarOpen(false);
-          }, 100);
-          return () => clearTimeout(timer);
-        }
+      if (isMobile && isSidebarOpen) {
+        setIsSidebarOpen(false);
       }
     }
-  }, [pathname]);
+  }, [pathname, isSidebarOpen]);
 
-  // User data is already combined in UserContext - no need to merge here
+  // Action callbacks - defined at top level
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
+  }, []);
 
-  // Mock navigation
-  const navigation = useMemo(
-    () => [
+  const setSidebarOpen = useCallback((open: boolean) => {
+    setIsSidebarOpen(open);
+  }, []);
+
+  const toggleSidebarCollapse = useCallback(() => {
+    setIsSidebarCollapsed(prev => !prev);
+  }, []);
+
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+  }, []);
+
+  const toggleUserMenu = useCallback(() => {
+    setIsUserMenuOpen(prev => !prev);
+  }, []);
+
+  const setUserMenuOpen = useCallback((open: boolean) => {
+    setIsUserMenuOpen(open);
+  }, []);
+
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchQuery(query);
+
+    // Mock search results
+    const mockResults: SearchResult[] = [
       {
-        id: "main",
-        title: "Dashboard",
-        icon: "home",
-        items: [
-          {
-            key: "home",
-            title: "Home",
-            href: "/home",
-            icon: "home",
-          },
-        ],
-        order: 1,
-        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-      },
-      {
-        id: "projects",
-        title: "Projects",
+        id: "1",
+        title: `Project containing "${query}"`,
+        description: "A project that matches your search",
+        type: "project",
+        url: "/projects/1",
         icon: "folder",
-        items: [
-          {
-            key: "projects",
-            title: "Projects",
-            href: "/projects",
-            icon: "folder",
-          },
-          {
-            key: "projects-list",
-            title: "All Projects",
-            href: "/projects/list",
-            icon: "list",
-          },
-        ],
-        order: 2,
-        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
       },
-      {
-        id: "tasks",
-        title: "Tasks",
-        icon: "check-square",
-        items: [
-          {
-            key: "tasks",
-            title: "My Tasks",
-            href: "/my-tasks",
-            icon: "check-square",
-          },
-          {
-            key: "task-board",
-            title: "Task Board",
-            href: "/my-tasks/board",
-            icon: "trello",
-          },
-        ],
-        order: 3,
-        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-      },
-      {
-        id: "messages",
-        title: "Messages",
-        icon: "message-circle",
-        items: [
-          {
-            key: "messages",
-            title: "Messages",
-            href: "/messages",
-            icon: "message-circle",
-          },
-        ],
-        order: 4,
-        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
-      },
-      {
-        id: "management",
-        title: "Management",
-        icon: "briefcase",
-        items: [
-          {
-            key: "management-center",
-            title: "Management Center",
-            href: "/manager",
-            icon: "settings",
-          },
-          {
-            key: "reports",
-            title: "Reports",
-            href: "/reports",
-            icon: "chart-line",
-          },
-        ],
-        order: 5,
-        requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER],
-      },
-    ],
-    []
-  );
+    ];
+    setSearchResults(mockResults);
+  }, []);
 
-  // Layout actions
-  const performSearch = useCallback(
-    async (query: string): Promise<SearchResult[]> => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return [];
-      }
+  const clearSearch = useCallback(() => {
+    setSearchQuery("");
+    setSearchResults([]);
+  }, []);
 
-      setIsLoading(true);
-
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        const mockResults: SearchResult[] = [
-          {
-            id: "1",
-            title: `Project containing "${query}"`,
-            description: "A projects that matches your search",
-            type: "project",
-            url: "/projects/1",
-            icon: "folder",
-          },
-        ];
-
-        setSearchResults(mockResults);
-        return mockResults;
-      } catch (error) {
-        console.error("Search error:", error);
-        setSearchResults([]);
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+  const signOut = useCallback(async () => {
+    try {
+      await authLogout();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }, [authLogout, router]);
 
   const markNotificationAsRead = useCallback((notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
+    setNotifications(prev =>
+      prev.map(notification =>
         notification.id === notificationId
           ? { ...notification, isRead: true }
           : notification
@@ -213,17 +130,16 @@ export function usePrivateLayout() {
   }, []);
 
   const markAllNotificationsAsRead = useCallback(() => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, isRead: true }))
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, isRead: true }))
     );
   }, []);
 
   const refreshNotifications = useCallback(async () => {
     setIsLoading(true);
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+      // Mock implementation
+      await new Promise(resolve => setTimeout(resolve, 500));
       const mockNotifications: HeaderNotification[] = [
         {
           id: "1",
@@ -236,7 +152,6 @@ export function usePrivateLayout() {
           actionText: "View Project",
         },
       ];
-
       setNotifications(mockNotifications);
     } catch (error) {
       console.error("Failed to refresh notifications:", error);
@@ -249,93 +164,84 @@ export function usePrivateLayout() {
     setBreadcrumbs(newBreadcrumbs);
   }, []);
 
-  const signOut = useCallback(async () => {
-    try {
-      await authLogout();
-      // Redirect to login page after successful logout
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  }, [authLogout, router]);
+  // Navigation groups - static data
+  const navigationGroups = useMemo(() => [
+    {
+      id: "main",
+      title: "Main",
+      icon: "home",
+      items: [
+        { key: "dashboard", title: "Dashboard", href: "/home", icon: "home" },
+        { key: "inbox", title: "Inbox", href: "/inbox", icon: "inbox" },
+        { key: "newsfeed", title: "Newsfeed", href: "/newsfeed", icon: "rss" },
+      ],
+      order: 1,
+      requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+    },
+    {
+      id: "projects",
+      title: "Projects",
+      icon: "folder",
+      items: [
+        { key: "projects", title: "Projects", href: "/projects", icon: "folder" },
+        { key: "projects-list", title: "All Projects", href: "/projects/list", icon: "list" },
+      ],
+      order: 2,
+      requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+    },
+    {
+      id: "tasks",
+      title: "Tasks",
+      icon: "check-square",
+      items: [
+        { key: "tasks", title: "My Tasks", href: "/my-tasks", icon: "check-square" },
+        { key: "task-board", title: "Task Board", href: "/my-tasks/board", icon: "trello" },
+      ],
+      order: 3,
+      requiredRoles: [UserRole.OWNER, UserRole.PM, UserRole.LEADER, UserRole.MEMBER],
+    },
+  ], []);
 
-  // Auto-generate breadcrumbs
-  useEffect(() => {
-    const generateBreadcrumbs = (): BreadcrumbItem[] => {
-      const segments = pathname.split("/").filter(Boolean);
-      const breadcrumbs: BreadcrumbItem[] = [
-        { title: "Home", href: "/home", icon: "home" },
-      ];
+  // ✅ FIX: Ensure user is properly passed to context even during loading
+  const effectiveUser = useMemo(() => {
+    // Return user if authenticated, null otherwise
+    return isAuthenticated && user ? user : null;
+  }, [isAuthenticated, user]);
 
-      let currentPath = "";
-      segments.forEach((segment, index) => {
-        currentPath += `/${segment}`;
-        const isLast = index === segments.length - 1;
+  // Actions object
+  const actions: LayoutActions = {
+    toggleSidebar,
+    setSidebarOpen,
+    toggleSidebarCollapse,
+    setSidebarCollapsed,
+    toggleUserMenu,
+    setUserMenuOpen,
+    performSearch,
+    clearSearch,
+    signOut,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    refreshNotifications,
+    updateBreadcrumbs,
+  };
 
-        const title =
-          segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-
-        breadcrumbs.push({
-          title,
-          href: isLast ? undefined : currentPath,
-          isActive: isLast,
-        });
-      });
-
-      return breadcrumbs;
-    };
-
-    setBreadcrumbs(generateBreadcrumbs());
-  }, [pathname]);
-
-  useEffect(() => {
-    refreshNotifications();
-  }, [refreshNotifications]);
-
-  const context: LayoutContextValue = {
-    user,
-    navigation,
-    notifications,
-    unreadNotificationCount: notifications.filter((n) => !n.isRead).length,
-    breadcrumbs,
-    quickActions: [],
-    isLoading,
+  // Context value - Use effectiveUser instead of raw user
+  const contextValue: LayoutContextValue = {
+    user: effectiveUser, // ✅ FIX: Use effectiveUser instead of user
+    isLoading: userDataLoading || isLoading,
     isSidebarOpen,
     isSidebarCollapsed,
     isUserMenuOpen,
     searchQuery,
     searchResults,
-    currentPath: pathname,
+    notifications,
+    breadcrumbs,
+    navigationGroups,
+    unreadNotificationsCount: notifications.filter(n => !n.isRead).length,
   };
 
-  const actions: LayoutActions = {
-    setSidebarOpen: (open: boolean) => {
-      setIsSidebarOpen(open);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sidebar-open', JSON.stringify(open));
-      }
-    },
-    setSidebarCollapsed: setIsSidebarCollapsed,
-    setUserMenuOpen: setIsUserMenuOpen,
-    toggleSidebar: () => {
-      setIsSidebarOpen((prev: boolean) => {
-        const newState = !prev;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('sidebar-open', JSON.stringify(newState));
-        }
-        return newState;
-      });
-    },
-    toggleSidebarCollapse: () => setIsSidebarCollapsed((prev: boolean) => !prev),
-    toggleUserMenu: () => setIsUserMenuOpen((prev) => !prev),
-    setSearchQuery,
-    performSearch,
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    refreshNotifications,
-    updateBreadcrumbs,
-    signOut,
+  return {
+    context: contextValue,
+    actions,
   };
-
-  return { context, actions };
 }

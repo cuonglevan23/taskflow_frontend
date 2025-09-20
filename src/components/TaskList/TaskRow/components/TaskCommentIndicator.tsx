@@ -1,24 +1,34 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
-import { useTaskCommentCount } from '@/hooks/useComments';
+import { useTaskCommentCount, useProjectTaskCommentCount } from '@/hooks/useComments';
 import { DARK_THEME } from '@/constants/theme';
 
 interface TaskCommentIndicatorProps {
   taskId: string;
   initialCount?: number; // Optional initial count from task data
   className?: string;
+  taskType?: 'mytask' | 'project'; // NEW: Specify task type to use correct API
 }
 
 export const TaskCommentIndicator: React.FC<TaskCommentIndicatorProps> = ({
   taskId,
   initialCount = 0,
-  className = ''
+  className = '',
+  taskType = 'mytask' // Default to mytask for backward compatibility
 }) => {
-  // Use the simple SWR-based hook - much cleaner!
-  const { count, isLoading } = useTaskCommentCount(taskId);
-  
-  // Use real-time count if available, otherwise fallback to initial count
-  const commentCount = !isLoading ? count : initialCount;
+  // Always fetch count for accurate display - don't rely on initialCount
+  const myTaskHook = useTaskCommentCount(
+    taskType === 'mytask' ? taskId : null
+  );
+  const projectTaskHook = useProjectTaskCommentCount(
+    taskType === 'project' ? taskId : null
+  );
+
+  // Select the correct hook data based on task type
+  const { count, isLoading } = taskType === 'project' ? projectTaskHook : myTaskHook;
+
+  // Use fetched count, fallback to initial count only if loading
+  const commentCount = isLoading ? initialCount : count;
 
   // Don't render if no comments
   if (commentCount === 0) {

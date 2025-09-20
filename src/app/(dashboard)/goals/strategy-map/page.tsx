@@ -28,9 +28,10 @@ import {
   Maximize2,
   Calendar,
 } from "lucide-react";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { getAllTeamsProgress, TeamProgress } from "@/services/progressService";
+import { getAllTeamsProgress, TeamProgress } from "@/services/process/progressService";
 
 import "@xyflow/react/dist/style.css";
 
@@ -51,22 +52,25 @@ interface StrategyNodeData extends Record<string, unknown> {
 }
 
 function StrategyNode({ data }: { data: StrategyNodeData }) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const getCategoryConfig = (category: string) => {
     const configs = {
-      Vision: { bg: '#374151', border: '#6b7280', icon: Target, color: '#8b5cf6' },
-      Financial: { bg: '#065f46', border: '#10b981', icon: TrendingUp, color: '#10b981' },
-      Customer: { bg: '#7f1d1d', border: '#ef4444', icon: Users, color: '#ef4444' },
+      Vision: { bg: theme.background.tertiary, border: theme.border.muted, icon: Target, color: '#8b5cf6' },
+      Financial: { bg: '#065f46', border: theme.status.success, icon: TrendingUp, color: theme.status.success },
+      Customer: { bg: '#7f1d1d', border: theme.status.error, icon: Users, color: theme.status.error },
       Process: { bg: '#581c87', border: '#a855f7', icon: Target, color: '#a855f7' },
-      Learning: { bg: '#9a3412', border: '#f97316', icon: Lightbulb, color: '#f97316' }
+      Learning: { bg: '#9a3412', border: theme.status.warning, icon: Lightbulb, color: theme.status.warning }
     };
     return configs[category as keyof typeof configs] || configs.Vision;
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 75) return '#10b981'; // green
-    if (percentage >= 50) return '#f59e0b'; // yellow
-    if (percentage >= 25) return '#ef4444'; // red
-    return '#6b7280'; // gray
+    if (percentage >= 75) return theme.status.success; // green
+    if (percentage >= 50) return theme.status.warning; // yellow
+    if (percentage >= 25) return theme.status.error; // red
+    return theme.text.muted; // gray
   };
 
   const config = getCategoryConfig(data.category);
@@ -76,7 +80,7 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
     <div 
       className="px-4 py-3 rounded-lg border transition-all duration-200 min-w-[280px] max-w-[320px]"
       style={{
-        backgroundColor: DARK_THEME.background.secondary,
+        backgroundColor: theme.background.primary,
         borderColor: config.border,
         borderWidth: '2px'
       }}
@@ -90,12 +94,12 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
             className="p-1.5 rounded-md"
             style={{ backgroundColor: config.bg }}
           >
-            <IconComponent size={16} style={{ color: 'white' }} />
+            <IconComponent size={16} style={{ color: theme.text.primary }} />
           </div>
           <div>
             <h3 
               className="text-sm font-semibold leading-tight"
-              style={{ color: DARK_THEME.text.primary }}
+              style={{ color: theme.text.primary }}
             >
               {data.label}
             </h3>
@@ -103,7 +107,7 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
               className="text-xs"
               style={{ color: config.color }}
             >
-              {data.category}
+              {messages.strategyMap.categories[data.category as keyof typeof messages.strategyMap.categories]}
             </p>
           </div>
         </div>
@@ -117,9 +121,9 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
           </div>
           <p 
             className="text-xs"
-            style={{ color: DARK_THEME.text.secondary }}
+            style={{ color: theme.text.muted }}
           >
-            complete
+            {messages.strategyMap.progress.complete}
           </p>
         </div>
       </div>
@@ -128,7 +132,7 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
       <div className="mb-3">
         <div 
           className="h-1.5 rounded-full overflow-hidden"
-          style={{ backgroundColor: DARK_THEME.background.primary }}
+          style={{ backgroundColor: theme.background.secondary }}
         >
           <div
             className="h-full transition-all duration-500 ease-out"
@@ -139,11 +143,11 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
           />
         </div>
         <div className="flex justify-between mt-1 text-xs">
-          <span style={{ color: DARK_THEME.text.secondary }}>
-            {data.completedTasks} done
+          <span style={{ color: theme.text.muted }}>
+            {data.completedTasks} {messages.strategyMap.progress.done}
           </span>
-          <span style={{ color: DARK_THEME.text.secondary }}>
-            {data.totalTasks} total
+          <span style={{ color: theme.text.muted }}>
+            {data.totalTasks} {messages.strategyMap.progress.total}
           </span>
         </div>
       </div>
@@ -151,12 +155,12 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
       {/* Team Members */}
       <div className="mb-2">
         <div className="flex items-center gap-1 mb-1">
-          <Users size={12} style={{ color: DARK_THEME.text.secondary }} />
-          <span 
+          <Users size={12} style={{ color: theme.text.muted }} />
+          <span
             className="text-xs"
-            style={{ color: DARK_THEME.text.secondary }}
+            style={{ color: theme.text.muted }}
           >
-            Team ({data.teamMembers.length})
+            {messages.strategyMap.team.replace('{count}', data.teamMembers.length.toString())}
           </span>
         </div>
         
@@ -169,7 +173,7 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
               avatar={member.avatarUrl}
               size="xs"
               className="border"
-              style={{ borderColor: DARK_THEME.background.secondary }}
+              style={{ borderColor: theme.background.primary }}
             />
           ))}
           
@@ -177,8 +181,8 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
             <div 
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
               style={{ 
-                backgroundColor: DARK_THEME.background.primary,
-                color: DARK_THEME.text.secondary 
+                backgroundColor: theme.background.secondary,
+                color: theme.text.muted
               }}
             >
               +{data.teamMembers.length - 4}
@@ -189,8 +193,8 @@ function StrategyNode({ data }: { data: StrategyNodeData }) {
 
       {/* Last Updated */}
       <div className="flex items-center gap-1 text-xs">
-        <Calendar size={10} style={{ color: DARK_THEME.text.secondary }} />
-        <span style={{ color: DARK_THEME.text.secondary }}>
+        <Calendar size={10} style={{ color: theme.text.muted }} />
+        <span style={{ color: theme.text.muted }}>
           {new Date(data.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </span>
       </div>
@@ -205,6 +209,10 @@ function StrategyMapContent() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   
+  // Context hooks
+  const { theme } = useThemeContext();
+  const { messages, isLoading: messagesLoading } = useLanguageContext();
+
   // State for real team progress data - use correct TeamProgress type
   const [teamsProgress, setTeamsProgress] = useState<TeamProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -294,13 +302,13 @@ function StrategyMapContent() {
     return teamsProgress.map(convertTeamToStrategyNode);
   }, [teamsProgress, convertTeamToStrategyNode]);
 
-  // Create Mission node (always present)
+  // Create Mission node (always present) - with fallback for when messages aren't loaded
   const missionNode = useMemo<Node>(() => ({
     id: 'mission-center',
     type: 'strategyNode',
     position: { x: 1020, y: 220 },
     data: {
-      label: 'Phát triển công ty trong 1 tháng tới',
+      label: messages?.strategyMap?.missionLabel || 'Company development in the next month',
       category: 'Vision',
       progress: 85,
       totalTasks: 12,
@@ -312,11 +320,10 @@ function StrategyMapContent() {
         { userId: 'cfo', displayName: 'CFO', email: 'cfo@company.com', avatarUrl: '' },
       ]
     } as StrategyNodeData,
-  }), []);
+  }), [messages?.strategyMap?.missionLabel]);
 
   // Combine mission node with team nodes
   const allNodes = useMemo(() => {
-    // Update team nodes positions to be below mission
     const updatedTeamNodes = teamNodes.map((node, index) => ({
       ...node,
       position: {
@@ -328,8 +335,6 @@ function StrategyMapContent() {
     return [missionNode, ...updatedTeamNodes];
   }, [missionNode, teamNodes]);
 
-
-
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
@@ -338,21 +343,19 @@ function StrategyMapContent() {
     const currentNodes = allNodes.length > 1 ? allNodes : [missionNode];
     setNodes(currentNodes);
     
-    // Generate edges - all team nodes connect to mission
     if (currentNodes.length >= 2) {
       const newEdges = [];
-      // Connect all nodes (except mission) to mission node
       for (let i = 1; i < currentNodes.length; i++) {
         newEdges.push({
           id: `e${currentNodes[0].id}-${currentNodes[i].id}`,
-          source: currentNodes[0].id, // Mission node
+          source: currentNodes[0].id,
           target: currentNodes[i].id,
-          style: { stroke: '#6b7280', strokeWidth: 2 }
+          style: { stroke: theme.border.muted, strokeWidth: 2 }
         });
       }
       setEdges(newEdges);
     }
-  }, [allNodes, missionNode, setNodes, setEdges]);
+  }, [allNodes, missionNode, setNodes, setEdges, theme.border.muted]);
 
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -371,7 +374,7 @@ function StrategyMapContent() {
       type: 'strategyNode',
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 200 },
       data: {
-        label: `New ${category} Goal`,
+        label: messages?.strategyMap?.newGoal?.replace('{category}', messages?.strategyMap?.categories?.[category] || category) || `New ${category} Goal`,
         category,
         progress: Math.floor(Math.random() * 100),
         totalTasks: Math.floor(Math.random() * 20) + 5,
@@ -381,26 +384,24 @@ function StrategyMapContent() {
       } as StrategyNodeData
     };
     setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
+  }, [setNodes, messages]);
 
   const resetView = useCallback(() => {
     setNodes(allNodes);
     
-    // Generate edges for all nodes - all team nodes connect to mission center
     if (allNodes.length >= 2) {
       const newEdges = [];
-      // Connect all team nodes to the mission node
       for (let i = 1; i < allNodes.length; i++) {
         newEdges.push({
           id: `e${allNodes[0].id}-${allNodes[i].id}`,
           source: allNodes[0].id,
           target: allNodes[i].id,
-          style: { stroke: '#6b7280', strokeWidth: 2 }
+          style: { stroke: theme.border.muted, strokeWidth: 2 }
         });
       }
       setEdges(newEdges);
     }
-  }, [allNodes, setNodes, setEdges]);
+  }, [allNodes, setNodes, setEdges, theme.border.muted]);
 
   const saveMap = useCallback(() => {
     const mapData = { nodes, edges, timestamp: new Date().toISOString() };
@@ -419,122 +420,143 @@ function StrategyMapContent() {
     link.click();
   }, [nodes, edges]);
 
+  // Safety check - if messages aren't loaded yet, show loading
+  if (messagesLoading || !messages || !messages.strategyMap) {
+    return (
+      <div
+        className="relative w-full h-full flex items-center justify-center"
+        style={{ backgroundColor: theme.background.primary }}
+      >
+        <div style={{ color: theme.text.primary }} className="text-lg">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative w-full h-full"
-      style={{ backgroundColor: "#1e1e1e" }}
+      style={{ backgroundColor: theme.background.primary }}
     >
       {/* Loading/Error State */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
-          <div className="text-white text-lg">Loading team goals...</div>
+          <div style={{ color: theme.text.primary }} className="text-lg">
+            {messages.strategyMap.loading}
+          </div>
         </div>
       )}
       
       {error && !loading && (
         <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="bg-red-600 text-white px-4 py-2 rounded-lg">
-            Error loading team goals: {error}
+          <div style={{ backgroundColor: theme.status.error, color: theme.text.primary }} className="px-4 py-2 rounded-lg">
+            {messages.strategyMap.errorLoading.replace('{error}', error)}
           </div>
         </div>
       )}
 
       {/* Floating Action Bar */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="flex items-center justify-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-xl border border-gray-700">
+        <div
+          className="flex items-center justify-center gap-2 backdrop-blur-sm rounded-lg px-4 py-2 shadow-xl border"
+          style={{
+            backgroundColor: theme.background.secondary + '90',
+            borderColor: theme.border.default
+          }}
+        >
           {/* Data Source Info */}
-          <div className="text-xs text-gray-400 mr-2">
-            {teamsProgress.length > 0 ? `Mission + ${teamsProgress.length} Teams` : 'Mission + Demo Data'}
+          <div className="text-xs mr-2" style={{ color: theme.text.muted }}>
+            {teamsProgress.length > 0
+              ? messages.strategyMap.missionAndTeams.replace('{count}', teamsProgress.length.toString())
+              : messages.strategyMap.missionAndDemoData
+            }
           </div>
 
           {/* Create Goal Button */}
           <button
             onClick={() => addNewNode("Vision")}
-            className="
-    flex items-center gap-1
-    px-2
-    h-[28px]
-    bg-[#1e1f21] 
-    hover:bg-[#2a2b2e]
-    text-white 
-    rounded-md 
-    text-[12px] 
-    leading-[28px] 
-    font-medium
-    transition-colors
-    border border-white
-    active:border active:border-[#a2a0a2]
-  "
-            title="Create Goal"
+            className="flex items-center gap-1 px-2 h-[28px] rounded-md text-[12px] leading-[28px] font-medium transition-colors border"
+            style={{
+              backgroundColor: theme.background.primary,
+              color: theme.text.primary,
+              borderColor: theme.border.default,
+            }}
+            title={messages.strategyMap.buttons.createGoal}
           >
             <span className="text-sm">+</span>
-            <span>Goal</span>
+            <span>{messages.strategyMap.buttons.createGoal}</span>
           </button>
 
           <div
             className="w-px h-6"
-            style={{ backgroundColor: "var(--color-border-default)" }}
+            style={{ backgroundColor: theme.border.default }}
           ></div>
 
           {/* Zoom Controls */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => zoomIn()}
-              className="p-2 strategy-button-hover rounded-md transition-colors"
-              title="Zoom In"
+              className="p-2 rounded-md transition-colors hover:bg-opacity-80"
+              style={{ backgroundColor: theme.background.muted }}
+              title={messages.strategyMap.buttons.zoomIn}
             >
               <Plus
                 className="w-4 h-4"
-                style={{ color: "var(--color-text-secondary)" }}
+                style={{ color: theme.text.secondary }}
               />
             </button>
             <button
               onClick={() => zoomOut()}
-              className="p-2 strategy-button-hover rounded-md transition-colors"
-              title="Zoom Out"
+              className="p-2 rounded-md transition-colors hover:bg-opacity-80"
+              style={{ backgroundColor: theme.background.muted }}
+              title={messages.strategyMap.buttons.zoomOut}
             >
               <Minus
                 className="w-4 h-4"
-                style={{ color: "var(--color-text-secondary)" }}
+                style={{ color: theme.text.secondary }}
               />
             </button>
             <button
               onClick={() => fitView()}
-              className="p-2 strategy-button-hover rounded-md transition-colors"
-              title="Fit to View"
+              className="p-2 rounded-md transition-colors hover:bg-opacity-80"
+              style={{ backgroundColor: theme.background.muted }}
+              title={messages.strategyMap.buttons.fitToView}
             >
               <Maximize2
                 className="w-4 h-4"
-                style={{ color: "var(--color-text-secondary)" }}
+                style={{ color: theme.text.secondary }}
               />
             </button>
           </div>
 
           <div
             className="w-px h-6"
-            style={{ backgroundColor: "var(--color-border-default)" }}
+            style={{ backgroundColor: theme.border.default }}
           ></div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1">
             <button
               onClick={resetView}
-              className="p-2 strategy-button-hover rounded-md transition-colors"
-              title="Reset View"
+              className="p-2 rounded-md transition-colors hover:bg-opacity-80"
+              style={{ backgroundColor: theme.background.muted }}
+              title={messages.strategyMap.buttons.resetView}
             >
               <RotateCcw
                 className="w-4 h-4"
-                style={{ color: "var(--color-text-secondary)" }}
+                style={{ color: theme.text.secondary }}
               />
             </button>
             <button
               onClick={saveMap}
-              className="p-2 strategy-button-hover rounded-md transition-colors"
-              title="Save"
+              className="p-2 rounded-md transition-colors hover:bg-opacity-80"
+              style={{ backgroundColor: theme.background.muted }}
+              title={messages.strategyMap.buttons.save}
             >
               <Save
                 className="w-4 h-4"
-                style={{ color: "var(--color-text-secondary)" }}
+                style={{ color: theme.text.secondary }}
               />
             </button>
           </div>
@@ -553,14 +575,14 @@ function StrategyMapContent() {
            defaultViewport={{ x: -200, y: -50, zoom: 0.8 }}
           attributionPosition="bottom-left"
           className="w-full h-full"
-          style={{ backgroundColor: "#1e1e1e" }}
+          style={{ backgroundColor: theme.background.primary }}
         >
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
             size={1}
-            color="#333333"
-            style={{ backgroundColor: "#1e1e1e" }}
+            color={theme.border.muted}
+            style={{ backgroundColor: theme.background.primary }}
           />
         </ReactFlow>
       </div>

@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Button, UserAvatar } from "@/components/ui";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 // Helper function to get initials from name
 const getInitials = (name: string): string => {
@@ -41,66 +42,121 @@ export default function MembersTable({
   onAddMember, 
   onMemberAction 
 }: MembersTableProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
+  // Helper function to get role badge colors based on theme
+  const getRoleBadgeStyle = (role: string) => {
+    const baseClasses = "text-sm px-2 py-1 rounded-full";
+
+    switch (role) {
+      case 'OWNER':
+        return {
+          className: baseClasses,
+          style: {
+            backgroundColor: theme.status.info + '33', // 20% opacity
+            color: theme.status.info
+          }
+        };
+      case 'ADMIN':
+      case 'LEADER':
+        return {
+          className: baseClasses,
+          style: {
+            backgroundColor: theme.status.warning + '33', // 20% opacity
+            color: theme.status.warning
+          }
+        };
+      default:
+        return {
+          className: baseClasses,
+          style: {
+            backgroundColor: theme.background.secondary,
+            color: theme.text.muted
+          }
+        };
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Table Header */}
       <div 
         className="grid grid-cols-12 border-b"
         style={{ 
-          backgroundColor: DARK_THEME.background.secondary,
-          borderColor: DARK_THEME.border.default,
-          color: DARK_THEME.text.secondary 
+          backgroundColor: theme.background.secondary,
+          borderColor: theme.border.default,
+          color: theme.text.secondary
         }}
       >
         <div 
           className="col-span-3 text-sm font-medium p-4 border-r"
-          style={{ borderColor: DARK_THEME.border.default }}
+          style={{ borderColor: theme.border.default }}
         >
-          Member
+          {t('common.member')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
-          style={{ borderColor: DARK_THEME.border.default }}
+          style={{ borderColor: theme.border.default }}
         >
-          Job Title
+          {t('profile.jobTitle')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
-          style={{ borderColor: DARK_THEME.border.default }}
+          style={{ borderColor: theme.border.default }}
         >
-          Department
+          {t('profile.department')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
-          style={{ borderColor: DARK_THEME.border.default }}
+          style={{ borderColor: theme.border.default }}
         >
-          Role
+          {t('common.role')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
-          style={{ borderColor: DARK_THEME.border.default }}
+          style={{ borderColor: theme.border.default }}
         >
-          Joined
+          {t('common.joined')}
         </div>
-        <div className="col-span-1 text-sm font-medium p-4">Actions</div>
+        <div className="col-span-1 text-sm font-medium p-4">{t('common.actions')}</div>
       </div>
 
       {/* Table Body */}
-      <div style={{ backgroundColor: DARK_THEME.background.primary }}>
+      <div style={{ backgroundColor: theme.background.primary }}>
         {members.map((member) => {
           const initials = getInitials(member.name);
-          const joinedDate = member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : 'N/A';
-          
+          const joinedDate = member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : t('common.notAvailable');
+          const roleBadge = getRoleBadgeStyle(member.role);
+
           return (
             <div
               key={member.id}
-              className="grid grid-cols-12 border-b hover:bg-opacity-10 hover:bg-gray-500 transition-colors"
-              style={{ borderColor: DARK_THEME.border.default }}
+              className="grid grid-cols-12 border-b transition-colors"
+              style={{
+                borderColor: theme.border.default
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.weakHover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               {/* Member Column */}
               <div 
                 className="col-span-3 p-4 flex items-center space-x-3 border-r"
-                style={{ borderColor: DARK_THEME.border.default }}
+                style={{ borderColor: theme.border.default }}
               >
                 <UserAvatar 
                   name={member.name} 
@@ -108,11 +164,11 @@ export default function MembersTable({
                   size="sm"
                 />
                 <div>
-                  <p style={{ color: DARK_THEME.text.primary }} className="font-medium">
+                  <p style={{ color: theme.text.primary }} className="font-medium">
                     {member.name}
                   </p>
                   {member.email && (
-                    <p style={{ color: DARK_THEME.text.secondary }} className="text-xs">
+                    <p style={{ color: theme.text.secondary }} className="text-xs">
                       {member.email}
                     </p>
                   )}
@@ -122,34 +178,31 @@ export default function MembersTable({
               {/* Job Title Column */}
               <div 
                 className="col-span-2 p-4 flex items-center border-r"
-                style={{ borderColor: DARK_THEME.border.default }}
+                style={{ borderColor: theme.border.default }}
               >
-                <p style={{ color: DARK_THEME.text.secondary }} className="text-sm">
-                  {member.jobTitle || 'N/A'}
+                <p style={{ color: theme.text.secondary }} className="text-sm">
+                  {member.jobTitle || t('common.notAvailable')}
                 </p>
               </div>
 
               {/* Department Column */}
               <div 
                 className="col-span-2 p-4 flex items-center border-r"
-                style={{ borderColor: DARK_THEME.border.default }}
+                style={{ borderColor: theme.border.default }}
               >
-                <p style={{ color: DARK_THEME.text.secondary }} className="text-sm">
-                  {member.department || 'N/A'}
+                <p style={{ color: theme.text.secondary }} className="text-sm">
+                  {member.department || t('common.notAvailable')}
                 </p>
               </div>
 
               {/* Role Column */}
               <div 
                 className="col-span-2 p-4 flex items-center border-r"
-                style={{ borderColor: DARK_THEME.border.default }}
+                style={{ borderColor: theme.border.default }}
               >
                 <span 
-                  className={`text-sm px-2 py-1 rounded-full ${
-                    member.role === 'OWNER' ? 'bg-blue-500 bg-opacity-20 text-blue-400' : 
-                    member.role === 'ADMIN' || member.role === 'LEADER' ? 'bg-purple-500 bg-opacity-20 text-purple-400' :
-                    'bg-gray-500 bg-opacity-20 text-gray-400'
-                  }`}
+                  className={roleBadge.className}
+                  style={roleBadge.style}
                 >
                   {member.role}
                 </span>
@@ -158,9 +211,9 @@ export default function MembersTable({
               {/* Joined Column */}
               <div 
                 className="col-span-2 p-4 flex items-center border-r"
-                style={{ borderColor: DARK_THEME.border.default }}
+                style={{ borderColor: theme.border.default }}
               >
-                <p style={{ color: DARK_THEME.text.secondary }} className="text-sm">
+                <p style={{ color: theme.text.secondary }} className="text-sm">
                   {joinedDate}
                 </p>
               </div>
@@ -171,17 +224,26 @@ export default function MembersTable({
                   variant="ghost"
                   size="sm"
                   onClick={() => onMemberAction?.(member)}
-                  className="w-8 h-8 p-0 rounded-full hover:bg-gray-700"
+                  className="w-8 h-8 p-0 rounded-full transition-colors"
+                  style={{
+                    color: theme.text.muted
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                    e.currentTarget.style.color = theme.text.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.text.muted;
+                  }}
                 >
-                  <span className="text-lg font-light" style={{ color: DARK_THEME.text.muted }}>⋯</span>
+                  <span className="text-lg font-light">⋯</span>
                 </Button>
               </div>
             </div>
           );
         })}
       </div>
-
-     
     </div>
   );
 }

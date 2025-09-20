@@ -4,6 +4,7 @@ import { TaskListItem } from '../../types';
 import { TaskEditState } from '../types';
 import Input from '@/components/ui/Input/Input';
 import ButtonIcon from '@/components/ui/Button/ButtonIcon';
+import { useThemeContext } from '@/providers/ThemeProvider';
 
 interface TaskNameEditProps {
   task: TaskListItem;
@@ -26,6 +27,8 @@ export const TaskNameEdit = ({
   onTaskClick,
   onShowMoveMenu,
 }: TaskNameEditProps) => {
+  const { theme } = useThemeContext();
+
   const handleSave = () => {
     onSave(editState.editValue);
   };
@@ -49,53 +52,41 @@ export const TaskNameEdit = ({
             <Input
               value={editState.editValue}
               onChange={(e) => onUpdateEditValue(e.target.value)}
-              onBlur={handleSave}
-              onClick={(e) => e.stopPropagation()}
               onKeyDown={handleKeyDown}
-              inputSize="sm"
-              className="bg-gray-700 border-blue-400 text-white text-xs h-6"
-              style={{ 
-                width: Math.max(100, editState.editValue.length * 7 + 16) + 'px',
-                minWidth: '100px',
-                maxWidth: '200px'
+              onBlur={handleSave}
+              className="flex-1 bg-transparent border-none outline-none"
+              style={{
+                color: theme.text.primary,
+                backgroundColor: 'transparent'
               }}
               autoFocus
-              onFocus={(e) => e.target.select()}
             />
-            <span className="text-xs text-gray-500 whitespace-nowrap">Enter to save</span>
           </div>
         ) : (
-          <>
-            <span 
-              className={`text-xs cursor-pointer inline-block px-1 py-0.5 rounded hover:bg-gray-700/50 transition-colors ${
-                (task.status === 'DONE' || task.status === 'done' || task.status === 'completed' || task.completed)
-                  ? 'line-through text-green-400 font-medium' 
-                  : 'text-white group-hover:text-blue-100'
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartEdit();
-              }}
-              title="Click to edit task name"
+          <div className="flex items-center gap-2 w-full">
+            <span
+              className="flex-1 text-sm cursor-pointer hover:opacity-80 transition-colors truncate"
               style={{
-                width: 'fit-content',
-                minWidth: 'auto'
+                color: theme.text.primary,
+                textDecoration: task.status === 'DONE' ? 'line-through' : 'none',
+                opacity: task.status === 'DONE' ? 0.6 : 1
               }}
+              onClick={() => onTaskClick(task)}
+              onDoubleClick={onStartEdit}
             >
               {task.name}
             </span>
-            
 
-            
-            <div 
-              className="flex-1 h-6 cursor-pointer hover:bg-gray-700/20 rounded transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTaskClick(task);
-              }}
-              title="Click to view task details"
+            {/* Move Task Button */}
+            <ButtonIcon
+              icon={ArrowUpDown}
+              onClick={onShowMoveMenu}
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity w-4 h-4 p-0"
+              style={{ color: theme.text.muted }}
             />
-          </>
+          </div>
         )}
       </div>
     </div>

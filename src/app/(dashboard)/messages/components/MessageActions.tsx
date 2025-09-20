@@ -1,47 +1,35 @@
 import React from 'react';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface MessageActionsProps {
-  isVisible: boolean;
   onReactionClick: () => void;
   onReplyClick: () => void;
-  isOwn: boolean;
-  reactionButtonRef: React.RefObject<HTMLButtonElement>;
 }
 
-export const MessageActions: React.FC<MessageActionsProps> = ({
-  isVisible,
+const MessageActions: React.FC<MessageActionsProps> = ({
   onReactionClick,
-  onReplyClick,
-  isOwn,
-  reactionButtonRef
+  onReplyClick
 }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   return (
-    <div
-      className={`absolute flex items-center gap-1 transition-all duration-200 ${
-        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-      } ${isOwn ? 'left-[-60px]' : 'right-[-60px]'}`}
-      style={{
-        top: '50%',
-        transform: 'translateY(-50%)',
-        zIndex: 10
-      }}
-    >
-      {/* Reaction Button */}
+    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      {/* React Button */}
       <button
-        ref={reactionButtonRef}
         onClick={onReactionClick}
         className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg"
         style={{
-          backgroundColor: DARK_THEME.background.primary,
-          border: `1px solid ${DARK_THEME.border.default}`,
+          backgroundColor: theme.background.primary,
+          border: `1px solid ${theme.border.default}`,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
         }}
-        title="Add reaction"
+        title={messages?.chat?.addReaction || 'Add reaction'}
       >
         <svg
           className="w-4 h-4"
-          style={{ color: DARK_THEME.text.secondary }}
+          style={{ color: theme.text.secondary }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -56,15 +44,15 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
         onClick={onReplyClick}
         className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg"
         style={{
-          backgroundColor: DARK_THEME.background.primary,
-          border: `1px solid ${DARK_THEME.border.default}`,
+          backgroundColor: theme.background.primary,
+          border: `1px solid ${theme.border.default}`,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
         }}
-        title="Reply"
+        title={messages?.chat?.reply || 'Reply'}
       >
         <svg
           className="w-4 h-4"
-          style={{ color: DARK_THEME.text.secondary }}
+          style={{ color: theme.text.secondary }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

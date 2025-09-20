@@ -1,0 +1,1319 @@
+{
+  "settings": {
+    "displayPreferences": "Tùy chọn hiển thị",
+    "customizeLanguageTheme": "Tùy chỉnh ngôn ngữ và giao diện theo sở thích của bạn",
+    "language": "Ngôn ngữ",
+    "selectLanguage": "Chọn ngôn ngữ ưa thích cho giao diện",
+    "theme": "Giao diện",
+    "chooseTheme": "Chọn giữa giao diện sáng và tối",
+    "savePreferences": "Lưu tùy chọn hiển thị",
+    "saving": "Đang lưu...",
+    "savedSuccessfully": "Đã lưu cài đặt thành công!",
+    "savingPreferences": "Đang lưu tùy chọn...",
+    "errorLoading": "Lỗi khi tải cài đặt",
+    "retry": "Thử lại",
+    "lightAppearance": "Giao diện sáng",
+    "darkAppearance": "Giao diện tối",
+    "title": "Cài đặt",
+    "profile": "Hồ sơ",
+    "display": "Hiển thị"
+  },
+  "profile": {
+    "title": "Cài đặt hồ sơ",
+    "description": "Cập nhật thông tin cá nhân và chi tiết hồ sơ",
+    "updateSuccess": "Đã cập nhật hồ sơ thành công!",
+    "updateError": "Lỗi khi cập nhật hồ sơ",
+    "avatar": "Ảnh hồ sơ",
+    "uploadPhoto": "Tải ảnh lên",
+    "remove": "Xóa",
+    "uploading": "Đang tải lên...",
+    "avatarNote": "JPG, PNG hoặc GIF. Kích thước tối đa 5MB.",
+    "personalInfo": "Thông tin cá nhân",
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "jobTitle": "Chức vụ",
+    "department": "Phòng ban",
+    "aboutMe": "Giới thiệu bản thân",
+    "required": "*",
+    "firstNamePlaceholder": "Nhập tên",
+    "lastNamePlaceholder": "Nhập họ",
+    "jobTitlePlaceholder": "VD: Quản lý sản phẩm cấp cao",
+    "departmentPlaceholder": "VD: Nhóm sản phẩm",
+    "aboutMePlaceholder": "Hãy giới thiệu về bản thân với nhóm của bạn...",
+    "cancel": "Hủy",
+    "saveChanges": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "uploadingAvatar": "Đang tải ảnh đại diện...",
+    "savingProfile": "Đang lưu hồ sơ..."
+  },
+  "home": {
+    "title": "Trang chủ",
+    "greeting": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối"
+    },
+    "defaultUser": "Người dùng",
+    "myWeek": "Tuần của tôi",
+    "tasksCompleted": "nhiệm vụ đã hoàn thành",
+    "collaborators": "cộng tác viên",
+    "customize": "Tùy chỉnh",
+    "showMore": "Xem thêm",
+    "showLess": "Thu gọn"
+  },
+  "sidebar": {
+    "items": {
+      "home": "Trang chủ",
+      "my-tasks": "Nhiệm vụ của tôi",
+      "messages": "Tin nhắn",
+      "newsfeed": "Bảng tin",
+      "inbox": "Hộp thư đến",
+      "goals": "Mục tiêu"
+    },
+    "sections": {
+      "main": "Chính",
+      "analytics": "Thông tin chi tiết",
+      "projects": "Dự án",
+      "teams": "Nhóm"
+    }
+  },
+  "navigation": {
+    "goals": {
+      "strategyMap": "Bản đồ chiến lược",
+      "teamGoals": "Mục tiêu nhóm",
+      "myGoals": "Mục tiêu của tôi"
+    },
+    "myTasks": {
+      "list": "Danh sách",
+      "board": "Bảng",
+      "calendar": "Lịch",
+      "dashboard": "Bảng điều khiển",
+      "notes": "Ghi chú"
+    },
+    "projects": {
+      "overview": "Tổng quan",
+      "dashboard": "Bảng điều khiển",
+      "list": "Danh sách",
+      "calendar": "Lịch",
+      "timeline": "Thời gian"
+    },
+    "teams": {
+      "overview": "Tổng quan",
+      "dashboard": "Bảng điều khiển",
+      "members": "Thành viên",
+      "allWork": "Tất cả công việc",
+      "calendar": "Lịch",
+      "members": {
+        "title": "Thành viên nhóm",
+        "loading": "Đang tải thành viên...",
+        "error": {
+          "loading": "Không thể tải thành viên nhóm"
+        },
+        "actions": {
+          "addMember": "Thêm thành viên",
+          "sendFeedback": "Gửi phản hồi",
+          "search": "Tìm kiếm thành viên"
+        }
+      }
+    },
+    "inbox": {
+      "activity": "Hoạt động",
+      "bookmarks": "Dấu trang",
+      "archive": "Lưu trữ"
+    }
+  },
+  "taskList": {
+    "headers": {
+      "name": "Tên",
+      "dueDate": "Hạn chót",
+      "priority": "Ưu tiên",
+      "status": "Trạng thái",
+      "collaborators": "Cộng tác viên",
+      "comments": "Bình luận"
+    },
+    "addTask": "Thêm nhiệm vụ...",
+    "addTaskPlaceholder": "Viết tên nhiệm vụ",
+    "pressEnterToSave": "Nhấn Enter để lưu",
+    "addSection": "Thêm phần",
+    "search": {
+      "placeholder": "Tìm kiếm nhiệm vụ...",
+      "expandSearch": "Mở rộng tìm kiếm",
+      "collapseSearch": "Thu gọn tìm kiếm",
+      "clearSearch": "Xóa tìm kiếm",
+      "shortcutHint": "Nhấn ⌘K để tìm kiếm"
+    },
+    "filters": {
+      "title": "Bộ lọc",
+      "button": "Lọc"
+    },
+    "sort": {
+      "title": "Sắp xếp",
+      "button": "Sắp xếp"
+    },
+    "group": {
+      "title": "Nhóm",
+      "button": "Nhóm"
+    },
+    "options": {
+      "title": "Tùy chọn",
+      "button": "Tùy chọn"
+    }
+  },
+  "taskRow": {
+    "dragTask": "Kéo nhiệm vụ",
+    "syncedToGoogleCalendar": "Đã đồng bộ với Google Calendar",
+    "markDone": "Đánh dấu hoàn thành",
+    "markUndone": "Đánh dấu chưa hoàn thành",
+    "deleteTask": "Xóa nhiệm vụ",
+    "addAssignee": "Thêm người thực hiện",
+    "inviteUser": "Mời người dùng",
+    "moveTask": "Di chuyển nhiệm vụ",
+    "multiUserAssignment": "Phân công nhiều người"
+  },
+  "taskSections": {
+    "recentlyAssigned": {
+      "title": "Mới được giao",
+      "description": "Nhiệm vụ mới được giao cho bạn"
+    },
+    "doToday": {
+      "title": "Làm hôm nay",
+      "description": "Nhiệm vụ bạn muốn xử lý hôm nay"
+    },
+    "doNextWeek": {
+      "title": "Làm tuần sau",
+      "description": "Nhiệm vụ cho tuần sau"
+    },
+    "doLater": {
+      "title": "Làm sau",
+      "description": "Nhiệm vụ để làm sau"
+    }
+  },
+  "cards": {
+    "myTasks": {
+      "title": "Nhiệm vụ của tôi",
+      "createTask": "Tạo nhiệm vụ",
+      "upcoming": "Sắp tới",
+      "overdue": "Quá hạn",
+      "completed": "Đã hoàn thành",
+      "noTasks": "Không tìm thấy nhiệm vụ nào",
+      "loading": "Đang tải..."
+    },
+    "projects": {
+      "title": "Dự án",
+      "createProject": "Tạo dự án",
+      "createProjects": "Tạo dự án",
+      "recents": "Gần đây",
+      "noProjects": "Không tìm thấy dự án nào",
+      "loading": "Đang tải dự án...",
+      "failedToLoad": "Không thể tải dự án"
+    },
+    "tasksAssigned": {
+      "title": "Nhiệm vụ tôi đã giao",
+      "assignTask": "Giao nhiệm vụ",
+      "upcoming": "Sắp tới",
+      "overdue": "Quá hạn",
+      "completed": "Đã hoàn thành",
+      "noTasks": "Không tìm thấy nhiệm vụ đã giao",
+      "direct": "Trực tiếp",
+      "team": "Nhóm",
+      "project": "Dự án"
+    },
+    "goals": {
+      "title": "Mục tiêu",
+      "createGoal": "Tạo mục tiêu",
+      "myGoals": "Mục tiêu của tôi",
+      "team": "Nhóm",
+      "openGoals": "Mục tiêu đang mở",
+      "noGoals": "Không tìm thấy mục tiêu nào",
+      "onTrack": "Đúng tiến độ",
+      "atRisk": "Có rủi ro",
+      "offTrack": "Chậm tiến độ"
+    }
+  },
+  "statusCard": {
+    "title": "Cập nhật trạng thái",
+    "description": "Chia sẻ cập nhật nhanh với nhóm của bạn về tiến độ dự án. ",
+    "learnMore": "Tìm hiểu thêm"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối"
+    }
+  },
+  "myTaskDashboard": {
+    "title": "Bảng điều khiển Công việc của tôi",
+    "loading": "Đang tải bảng điều khiển...",
+    "error": "Không thể tải dữ liệu bảng điều khiển",
+    "retry": "Thử lại",
+    "refresh": "Làm mới Bảng điều khiển",
+    "lastUpdated": "Cập nhật lần cuối",
+    "cacheInfo": "Dữ liệu đã được cache",
+    "stats": {
+      "totalCompleted": "Tổng số đã hoàn thành",
+      "totalIncomplete": "Tổng số chưa hoàn thành",
+      "totalOverdue": "Tổng số quá hạn",
+      "totalTasks": "Tổng số nhiệm vụ",
+      "completionRate": "tỷ lệ hoàn thành",
+      "ofTotal": "trên tổng số",
+      "needAttention": "cần chú ý",
+      "createdThisMonth": "được tạo trong tháng này"
+    },
+    "taskStats": {
+      "overdue": "Quá hạn",
+      "completed": "Đã hoàn thành",
+      "countOverdue": "{count} quá hạn",
+      "countCompleted": "{count} đã hoàn thành",
+      "zeroOverdue": "Không có công việc quá hạn",
+      "zeroCompleted": "Không có công việc đã hoàn thành"
+    },
+    "charts": {
+      "tasksByProject": "Công việc theo Dự án",
+      "tasksByStatus": "Công việc theo Trạng thái",
+      "topProjects": "Top Dự án theo Số lượng Công việc",
+      "completionTrend": "Xu hướng Tạo vs Hoàn thành Công việc",
+      "projectsLabel": "dự án",
+      "totalTasksLabel": "tổng công việc",
+      "statusDistribution": "Phân bố trạng thái hiện tại",
+      "showingTop": "Hiển thị top",
+      "projects": "dự án",
+      "monthsTrend": "xu hướng tháng",
+      "tasksCreated": "Công việc đã tạo",
+      "tasksCompleted": "Công việc đã hoàn thành"
+    },
+    "upcomingTasks": {
+      "urgent": "Công việc Khẩn cấp",
+      "dueToday": "Hết hạn Hôm nay",
+      "overdue": "Công việc Quá hạn",
+      "noTasks": "Không tìm thấy công việc",
+      "viewAll": "Xem tất cả"
+    },
+    "empty": {
+      "noData": "Không có dữ liệu bảng điều khiển",
+      "noTasks": "Bạn chưa có công việc nào",
+      "createFirst": "Tạo công việc đầu tiên để bắt đầu"
+    }
+  },
+  "customize": "Tùy chỉnh",
+  "customizeHome": "Tùy chỉnh trang chủ",
+  "background": "Nền",
+  "trial": {
+    "title": "Dùng thử nâng cao",
+    "daysLeft": "Còn 12 ngày",
+    "description": "Khám phá những cách phổ biến mà các nhóm sử dụng ManaKai trong thời gian dùng thử.",
+    "manageContent": "Nội dung quản lý sẽ có sớm...",
+    "tabs": {
+      "explore": "Khám phá",
+      "manage": "Quản lý"
+    },
+    "cards": {
+      "inviteTeam": {
+        "title": "Mời nhóm của bạn",
+        "description": "Bắt đầu cộng tác bằng cách mời các thành viên nhóm vào không gian làm việc của bạn.",
+        "button": "Mời nhóm"
+      },
+      "createProject": {
+        "title": "Tạo một dự án",
+        "description": "Tổ chức công việc của bạn bằng cách tạo dự án đầu tiên.",
+        "button": "Tạo dự án"
+      },
+      "moveToProduction": {
+        "title": "Chuyển sang sản xuất",
+        "description": "Sẵn sàng triển khai? Nâng cấp để mở khóa tất cả tính năng.",
+        "button": "Nâng cấp ngay"
+      }
+    }
+  },
+  "auth": {
+    "processingLogin": "Đang xử lý đăng nhập...",
+    "loginFailed": "Đăng nhập thất bại",
+    "loginSuccessRedirecting": "Đăng nhập thành công! Đang chuyển hướng...",
+    "authVerificationFailed": "Xác thực thất bại",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn",
+    "processingTitle": "Đang xử lý...",
+    "successTitle": "Thành công!",
+    "errorTitle": "Lỗi",
+    "backToLogin": "Quay lại đăng nhập",
+    "pleaseWait": "Vui lòng đợi trong khi chúng tôi xác thực tài khoản của bạn..."
+  },
+  "languages": {
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "ko": "한국어"
+  },
+  "themes": {
+    "light": "Sáng",
+    "dark": "Tối"
+  },
+  "calendar": {
+    "today": "Hôm nay",
+    "month": "Tháng",
+    "week": "Tuần",
+    "day": "Ngày",
+    "noDate": "Không có ngày",
+    "events": {
+      "completed": "Đã hoàn thành",
+      "overdue": "Quá hạn",
+      "multiDay": "Nhiều ngày",
+      "unassigned": "Chưa giao",
+      "untitledTask": "Nhiệm vụ không có tiêu đề"
+    },
+    "navigation": {
+      "previous": "Trước",
+      "next": "Sau",
+      "today": "Hôm nay"
+    },
+    "views": {
+      "month": "Xem theo tháng",
+      "week": "Xem theo tuần",
+      "day": "Xem theo ngày"
+    },
+    "actions": {
+      "createTask": "Tạo nhiệm vụ",
+      "viewTask": "Xem chi tiết nhiệm vụ",
+      "editTask": "Chỉnh sửa nhiệm vụ",
+      "dragTask": "Kéo để di chuyển nhiệm vụ",
+      "resizeTask": "Thay đổi thời gian nhiệm vụ"
+    },
+    "header": {
+      "createNew": "Tạo mới",
+      "export": "Xuất",
+      "import": "Nhập",
+      "settings": "Cài đặt lịch",
+      "exportCalendar": "Xuất lịch",
+      "importCalendar": "Nhập lịch"
+    },
+    "loading": {
+      "calendar": "Đang tải lịch...",
+      "projectCalendar": "Đang tải lịch dự án...",
+      "teamCalendar": "Đang tải lịch nhóm..."
+    },
+    "errors": {
+      "loadFailed": "Không thể tải lịch",
+      "projectLoadFailed": "Không thể tải lịch dự án",
+      "teamLoadFailed": "Không thể tải lịch nhóm"
+    }
+  },
+  "notes": {
+    "title": "Ghi chú",
+    "loading": "Đang tải ghi chú...",
+    "stats": {
+      "notesCount": "ghi chú"
+    },
+    "actions": {
+      "newNote": "Ghi chú mới",
+      "createFirst": "Tạo ghi chú đầu tiên"
+    },
+    "empty": {
+      "title": "Chưa có ghi chú nào",
+      "description": "Tạo ghi chú đầu tiên để bắt đầu tổ chức các suy nghĩ và ý tưởng của bạn."
+    },
+    "error": {
+      "loadFailed": "Không thể tải ghi chú"
+    }
+  },
+  "noteForm": {
+    "defaultTitle": "Ghi chú không có tiêu đề",
+    "title": {
+      "create": "Tạo Ghi chú Mới",
+      "edit": "Chỉnh sửa Ghi chú"
+    },
+    "subtitle": {
+      "project": "Tạo ghi chú cho dự án này",
+      "personal": "Tạo ghi chú cá nhân"
+    },
+    "fields": {
+      "title": "Tiêu đề",
+      "description": "Mô tả",
+      "content": "Nội dung",
+      "makePublic": "Công khai ghi chú này (tất cả thành viên nhóm có thể xem)"
+    },
+    "placeholders": {
+      "title": "Nhập tiêu đề ghi chú",
+      "description": "Mô tả tùy chọn",
+      "content": "Bắt đầu viết ghi chú của bạn..."
+    },
+    "labels": {
+      "characters": "ký tự"
+    },
+    "validation": {
+      "titleRequired": "Tiêu đề là bắt buộc",
+      "titleTooLong": "Tiêu đề phải ít hơn 255 ký tự",
+      "descriptionTooLong": "Mô tả phải ít hơn 1000 ký tự"
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "create": "Tạo Ghi chú",
+      "update": "Cập nhật Ghi chú",
+      "creating": "Đang tạo...",
+      "updating": "Đang cập nhật...",
+      "saving": "Đang lưu..."
+    },
+    "hints": {
+      "keyboardShortcut": "Nhấn Ctrl+Enter (Cmd+Enter) để lưu"
+    }
+  },
+  "noteListItem": {
+    "untitled": "Ghi chú không có tiêu đề",
+    "noContent": "Không có nội dung",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa ghi chú này? Hành động này không thể hoàn tác.",
+    "actions": {
+      "edit": "Chỉnh sửa ghi chú",
+      "delete": "Xóa ghi chú",
+      "archive": "Lưu trữ ghi chú",
+      "unarchive": "Hủy lưu trữ ghi chú",
+      "makePublic": "Công khai ghi chú",
+      "makePrivate": "Đặt ghi chú riêng tư",
+      "showMore": "Xem thêm",
+      "showLess": "Thu gọn"
+    }
+  },
+  "noteSearch": {
+    "placeholder": "Tìm kiếm ghi chú...",
+    "clearSearch": "Xóa tìm kiếm",
+    "advancedFilters": "Bộ lọc nâng cao",
+    "clearAll": "Xóa tất cả",
+    "includeArchived": "Bao gồm ghi chú đã lưu trữ",
+    "noteType": "Loại ghi chú",
+    "allNotes": "Tất cả ghi chú",
+    "publicOnly": "Chỉ công khai",
+    "privateOnly": "Chỉ riêng tư",
+    "createdBy": "Được tạo bởi",
+    "anyone": "Bất kỳ ai",
+    "searchLabel": "Tìm kiếm",
+    "includingArchived": "Bao gồm đã lưu trữ"
+  },
+  "noteDetailLayout": {
+    "defaultTitle": "Không có tiêu đề",
+    "back": "Quay lại",
+    "titlePlaceholder": "Thêm tiêu đề",
+    "editorPlaceholder": "Bắt đầu viết tài liệu của bạn...",
+    "saveStatus": {
+      "justNow": "Vừa xong",
+      "oneMinuteAgo": "1 phút trước",
+      "minutesAgo": "{minutes} phút trước",
+      "oneHourAgo": "1 giờ trước",
+      "hoursAgo": "{hours} giờ trước"
+    },
+    "templates": {
+      "scratchpad": "Sổ tay của tôi",
+      "weeklyPlanning": "Kế hoạch hàng tuần",
+      "meetingNotes": "Ghi chú cuộc họp",
+      "quickLinks": "Liên kết nhanh",
+      "blankNote": "Ghi chú trống"
+    },
+    "templateContent": {
+      "scratchpad": {
+        "title": "Sổ Tay Của Tôi",
+        "content": "Những suy nghĩ và ý tưởng nhanh được ghi ở đây..."
+      },
+      "weeklyPlanning": {
+        "title": "Kế Hoạch Hàng Tuần",
+        "goals": "Mục tiêu",
+        "goal1": "Mục tiêu 1",
+        "tasks": "Nhiệm vụ",
+        "task1": "Nhiệm vụ 1"
+      },
+      "meetingNotes": {
+        "title": "Ghi Chú Cuộc Họp",
+        "attendees": "Người tham dự",
+        "attendeesPlaceholder": "Tôi đã gặp ai?",
+        "notes": "Ghi chú",
+        "notesPlaceholder": "Thêm ghi chú ở đây",
+        "actionItems": "Các hành động cần làm",
+        "actionItemsPlaceholder": "Tôi cần làm gì?"
+      }
+    }
+  },
+  "noteEditor": {
+    "loadingEditor": "Đang tải trình soạn thảo...",
+    "saving": "Đang lưu...",
+    "savedAt": "Đã lưu lúc",
+    "placeholder": "Bắt đầu viết ghi chú của bạn...",
+    "prompts": {
+      "enterUrl": "Nhập URL:",
+      "enterImageUrl": "Nhập URL hình ảnh:"
+    }
+  },
+  "noteEditorLayout": {
+    "tableOfContents": "Mục lục",
+    "showTableOfContents": "Hiển thị mục lục",
+    "hideTableOfContents": "Ẩn mục lục"
+  },
+  "formattingToolbar": {
+    "bold": "Đậm (Ctrl+B)",
+    "italic": "Nghing (Ctrl+I)",
+    "underline": "Gạch chân (Ctrl+U)",
+    "strikethrough": "Gạch ngang",
+    "code": "Mã",
+    "heading1": "Tiêu đề 1",
+    "heading2": "Tiêu đề 2",
+    "heading3": "Tiêu đề 3",
+    "bulletList": "Danh sách dấu đầu dòng",
+    "numberedList": "Danh sách đánh số",
+    "quote": "Trích dẫn",
+    "alignLeft": "Căn trái",
+    "alignCenter": "Căn giữa",
+    "alignRight": "Căn phải",
+    "addLink": "Thêm liên kết (Ctrl+K)",
+    "addImage": "Thêm hình ảnh"
+  },
+  "commentItem": {
+    "invalidDate": "Ngày không hợp lệ",
+    "unknown": "Không xác định",
+    "edited": "đã chỉnh sửa",
+    "edit": "Chỉnh sửa bình luận",
+    "delete": "Xóa bình luận",
+    "editPlaceholder": "Chỉnh sửa bình luận của bạn...",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "timeAgo": {
+      "justNow": "Vừa xong",
+      "minutesAgo": "{minutes} phút trước",
+      "hoursAgo": "{hours} giờ trước",
+      "daysAgo": "{days} ngày trước"
+    }
+  },
+  "commentsList": {
+    "title": "Bình luận ({count})",
+    "loading": "Đang tải bình luận...",
+    "noComments": "Chưa có bình luận nào.",
+    "updateError": "Không thể cập nhật bình luận. Vui lòng thử lại.",
+    "errors": {
+      "accessDenied": "Bạn không có quyền xem bình luận cho công việc này.",
+      "notFound": "Không tìm thấy công việc này hoặc bạn không có quyền truy cập.",
+      "authRequired": "Vui lòng đăng nhập lại để xem bình luận.",
+      "loadError": "Lỗi khi tải bình luận. Vui lòng thử lại."
+    }
+  },
+  "descriptionEditor": {
+    "title": "Mô tả",
+    "placeholder": "Thêm mô tả...",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "clickToAdd": "Nhấp để thêm mô tả...",
+    "noDescription": "Không có mô tả"
+  },
+  "googleCalendar": {
+    "title": "Tích hợp Google Calendar",
+    "eventId": "ID sự kiện",
+    "googleMeet": "Google Meet",
+    "lastSynced": "Đồng bộ lần cuối",
+    "status": {
+      "synced": "Đã đồng bộ với Calendar",
+      "notSynced": "Chưa đồng bộ với Google Calendar",
+      "saving": "⏳ Công việc đang được lưu... Vui lòng đợi để sử dụng Google Calendar."
+    },
+    "actions": {
+      "addToCalendar": "Thêm vào Calendar",
+      "quickMeeting": "Cuộc họp nhanh",
+      "viewInCalendar": "Xem trong Google Calendar",
+      "joinMeet": "Tham gia Google Meet"
+    },
+    "quickMeeting": {
+      "title": "Cuộc họp nhanh",
+      "description": "Cuộc họp nhanh về công việc"
+    },
+    "loading": {
+      "calendarInfo": "⏳ Đang tải thông tin lịch...",
+      "processing": "⏳ Đang xử lý Google Calendar..."
+    },
+    "success": {
+      "meetingCreated": "✅ Cuộc họp đã được tạo!",
+      "meetingCreatedGeneral": "✅ Cuộc họp đã được tạo thành công!",
+      "eventCreated": "✅ Sự kiện lịch đã được tạo thành công!",
+      "eventCreatedGeneral": "✅ Sự kiện lịch đã được tạo thành công!"
+    },
+    "errors": {
+      "invalidTaskId": "ID công việc không hợp lệ",
+      "notConnected": "Bạn chưa kết nối với Google Calendar.",
+      "connectPrompt": "Bạn có muốn kết nối để tiếp tục không?",
+      "backendCreateFailed": "❌ Backend không thể tạo sự kiện Google Calendar.",
+      "projectNotConnected": "Bạn có thể chưa kết nối Google Calendar cho các Công việc Dự án.",
+      "connectQuestion": "Bạn có muốn kết nối Google Calendar không?",
+      "generalError": "❌ Có lỗi xảy ra khi làm việc với Google Calendar",
+      "meetingCreateFailed": "❌ Không thể tạo cuộc họp. Backend trả về success: null/false",
+      "eventCreateFailed": "❌ Không thể tạo sự kiện lịch. Backend trả về success: null/false"
+    }
+  },
+  "taskDetailFooter": {
+    "addComment": "Thêm bình luận",
+    "currentUser": "Người dùng hiện tại",
+    "commentPlaceholder": "Thêm bình luận",
+    "notificationCount": "0 người sẽ được thông báo",
+    "cancel": "Hủy",
+    "comment": "Bình luận",
+    "posting": "Đang đăng...",
+    "addCommentAriaLabel": "Thêm bình luận",
+    "addCommentPlaceholder": "Thêm bình luận...",
+    "collaborators": "Cộng tác viên"
+  },
+  "taskDetailHeader": {
+    "upload": "Tải lên",
+    "googleDrive": "Google Drive",
+    "oneDrive": "OneDrive/SharePoint",
+    "completed": "Đã hoàn thành",
+    "markComplete": "Đánh dấu hoàn thành",
+    "selectOrDragFiles": "Chọn hoặc kéo tệp từ máy tính của bạn",
+    "chooseFile": "Chọn tệp",
+    "connectGoogleDriveDescription": "Kết nối Google Drive của bạn để nhập tệp.",
+    "connectGoogleDrive": "Kết nối Google Drive",
+    "connectOneDriveDescription": "Kết nối OneDrive hoặc SharePoint của bạn để nhập tệp.",
+    "connectOneDrive": "Kết nối OneDrive",
+    "taskIsPrivate": "Công việc này là riêng tư của bạn.",
+    "changePrivacy": "Thay đổi quyền riêng tư"
+  },
+  "taskFields": {
+    "assignee": "Người được giao",
+    "assign": "Giao việc",
+    "dueDate": "Hạn cuối",
+    "startDate": "Ngày bắt đầu",
+    "projects": "Dự án",
+    "addToProjects": "Thêm vào dự án",
+    "noDueDate": "Không có hạn cuối",
+    "noStartDate": "Không có ngày bắt đầu",
+    "moreAssignees": "khác..."
+  },
+  "taskDetailPanel": {
+    "loadingComments": "Đang tải bình luận...",
+    "noCommentsYet": "Chưa có bình luận nào",
+    "commentCount": "{count} bình luận",
+    "commentCountPlural": "{count} bình luận",
+    "edited": "(đã chỉnh sửa)",
+    "editCommentPlaceholder": "Chỉnh sửa bình luận của bạn...",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "unknownUser": "Người dùng không xác định",
+    "commentAuthor": "Tác giả bình luận"
+  },
+  "taskCommentsActivity": {
+    "comments": "Bình luận",
+    "allActivity": "Tất cả hoạt động"
+  },
+  "taskActivityList": {
+    "loadingActivities": "Đang tải hoạt động...",
+    "noActivityYet": "Chưa có hoạt động nào",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "earlier": "Trước đó",
+    "unknownUser": "Người dùng không xác định"
+  },
+  "taskAttachments": {
+    "title": "Tệp đính kèm",
+    "preview": "Xem trước",
+    "download": "Tải xuống",
+    "remove": "Xóa",
+    "uploadedBy": "bởi",
+    "previewAlt": "Xem trước",
+    "closePreview": "Đóng xem trước",
+    "fileSizes": {
+      "bytes": "Bytes",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
+  },
+  "taskTitle": {
+    "placeholder": "Tên nhiệm vụ"
+  },
+  "projectTaskList": {
+    "loading": "Đang tải nhiệm vụ...",
+    "addTask": "Thêm nhiệm vụ...",
+    "addTaskPlaceholder": "Viết tên nhiệm vụ",
+    "pressEnterToSave": "Nhấn Enter để lưu",
+    "headers": {
+      "name": "Tên",
+      "dueDate": "Hạn chót",
+      "priority": "Ưu tiên",
+      "status": "Trạng thái",
+      "collaborators": "Cộng tác viên",
+      "comments": "Bình luận"
+    }
+  },
+  "projectOverview": {
+    "description": {
+      "title": "Mô tả dự án",
+      "placeholder": "Mô tả dự án của bạn...",
+      "clickToAdd": "Nhấp để thêm mô tả dự án...",
+      "noDescription": "Không có mô tả",
+      "saving": "Đang lưu...",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "failedToLoad": "Không thể tải mô tả dự án",
+      "loading": "Đang tải..."
+    },
+    "members": {
+      "title": "Thành viên dự án",
+      "loading": "Đang tải thành viên dự án...",
+      "error": "Lỗi khi tải thành viên",
+      "tryAgain": "Thử lại",
+      "noMembers": "Không có thành viên",
+      "removeMember": "Bạn có chắc chắn muốn xóa {name} khỏi dự án này?",
+      "memberRemoved": "{name} đã được xóa khỏi dự án",
+      "failedToRemove": "Không thể xóa thành viên khỏi dự án"
+    },
+    "status": {
+      "title": "Trạng thái dự án",
+      "planned": "Kế hoạch",
+      "inProgress": "Đang thực hiện",
+      "completed": "Hoàn thành",
+      "atRisk": "Có rủi ro",
+      "blocked": "Bị chặn",
+      "cancelled": "Đã hủy",
+      "onHold": "Tạm dừng"
+    },
+    "timeline": {
+      "title": "Thời gian dự án",
+      "startDate": "Ngày bắt đầu",
+      "endDate": "Ngày kết thúc",
+      "duration": "Thời lượng",
+      "noStartDate": "Chưa có ngày bắt đầu",
+      "noEndDate": "Chưa có ngày kết thúc",
+      "days": "ngày",
+      "saving": "Đang lưu...",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "connectedGoals": {
+      "title": "Mục tiêu liên kết",
+      "noGoals": "Không có mục tiêu liên kết",
+      "loading": "Đang tải mục tiêu...",
+      "error": "Không thể tải mục tiêu",
+      "connectGoal": "Kết nối mục tiêu",
+      "viewGoal": "Xem mục tiêu"
+    }
+  },
+  "postModal": {
+    "imageGallery": {
+      "imageAlt": "Hình ảnh {current} của {total}",
+      "counter": "{current} / {total}",
+      "thumbnailAlt": "Hình thu nhỏ {index}"
+    },
+    "commentForm": {
+      "defaultUserName": "Bạn",
+      "placeholder": "Viết bình luận...",
+      "submitting": "Đang gửi...",
+      "submit": "Gửi"
+    },
+    "linkedContent": {
+      "linkedTask": "Liên kết với nhiệm vụ",
+      "linkedProject": "Liên kết với dự án"
+    },
+    "pinnedPost": "Bài viết được ghim",
+    "comments": {
+      "title": "Bình luận",
+      "loading": "Đang tải...",
+      "loadMore": "Xem thêm bình luận",
+      "noComments": "Chưa có bình luận nào",
+      "beFirst": "Hãy là người đầu tiên bình luận!"
+    },
+    "postHeader": {
+      "verified": "Đã xác minh",
+      "pinned": "Được ghim",
+      "pinnedPostTitle": "Bài viết được ghim",
+      "editPost": "Chỉnh sửa bài viết"
+    }
+
+  },
+  "comments": {
+    "like": "Thích",
+    "liked": "Đã thích",
+    "reply": "Phản hồi",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "write_reply": "Viết phản hồi...",
+    "reply_to": "Phản hồi {{name}}...",
+    "delete_confirmation": "Bạn có chắc muốn xóa bình luận này?",
+    "view_more_replies": "Xem thêm {{count}} phản hồi",
+    "hide_replies": "Ẩn phản hồi",
+    "show_replies": "Hiện {{count}} phản hồi"
+  },
+  "postActions": {
+    "like": "Thích",
+    "liked": "Đã thích",
+    "unlike": "Bỏ thích",
+    "comment": "Bình luận",
+    "comments": "bình luận"
+  },
+
+  "createPost": {
+    "placeholder": "Bạn đang nghĩ gì?",
+    "labels": {
+      "postContent": "Nội dung bài viết"
+    },
+    "hints": {
+      "ctrlEnter": "Nhấn Ctrl+Enter để đăng nhanh",
+      "imageUpload": "Tải lên hình ảnh (JPG, PNG, GIF, WebP - sẽ được tối ưu hóa tự động). Tối đa {{max}} hình ảnh."
+    },
+    "errors": {
+      "contentRequired": "Vui lòng viết gì đó hoặc thêm hình ảnh",
+      "createFailed": "Không thể tạo bài viết. Vui lòng thử lại.",
+      "maxImages": "Bạn chỉ có thể tải lên tối đa {{max}} hình ảnh. Hiện tại đã chọn: {{current}}",
+      "processingFailed": "Không thể xử lý một số hình ảnh. Vui lòng thử lại."
+    },
+    "status": {
+      "processing": "Đang xử lý hình ảnh...",
+      "posting": "Đang đăng..."
+    },
+    "images": {
+      "selected": "{{count}} hình ảnh đã chọn",
+      "previewAlt": "Xem trước: {{name}}",
+      "removeAlt": "Xóa {{name}}"
+    },
+    "actions": {
+      "removeAll": "Xóa tất cả",
+      "maxImages": "Tối đa hình ảnh",
+      "addMore": "Thêm nữa",
+      "photos": "Ảnh",
+      "post": "Đăng"
+    }
+  },
+  "you": "Bạn",
+  "user": "người dùng",
+  "unknown_user": "Người dùng không xác định",
+  "premium": "Premium",
+  "cancel": "Hủy",
+  "save": "Lưu",
+  "saving": "Đang lưu...",
+  "send": "Gửi",
+  "sending": "Đang gửi...",
+  "loading": "Đang tải...",
+  "editPost": {
+    "title": "Chỉnh sửa bài viết",
+    "subtitle": "Cập nhật nội dung, hình ảnh và cài đặt",
+    "placeholder": "Bạn đang nghĩ gì?",
+    "privacy": {
+      "label": "Quyền riêng tư",
+      "public": {
+        "label": "Công khai",
+        "description": "Mọi người đều có thể xem"
+      },
+      "friends": {
+        "label": "Bạn bè",
+        "description": "Chỉ bạn bè có thể xem"
+      },
+      "private": {
+        "label": "Riêng tư",
+        "description": "Chỉ mình bạn có thể xem"
+      }
+    },
+    "pin": {
+      "label": "Ghim bài viết",
+      "pinned": "Bài viết sẽ được ghim ở đầu",
+      "unpinned": "Bài viết sẽ hiển thị bình thường"
+    },
+    "images": {
+      "current": "Hình ảnh hiện tại",
+      "new": "Hình ảnh mới",
+      "addImages": "Thêm ảnh",
+      "restore": "Khôi phục ảnh",
+      "remove": "Xóa ảnh",
+      "willRemove": "Sẽ xóa"
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "status": {
+      "hasChanges": "Có thay đổi chưa lưu",
+      "noChanges": "Không có thay đổi"
+    },
+    "unsavedWarning": {
+      "title": "Bạn có thay đổi chưa lưu",
+      "message": "Bạn có muốn thoát mà không lưu các thay đổi? Tất cả thay đổi sẽ bị mất.",
+      "continueEditing": "Tiếp tục chỉnh sửa",
+      "exitWithoutSaving": "Thoát không lưu"
+    }
+  },
+  "friendList": {
+    "title": "Bạn bè",
+    "loading": "Đang tải...",
+    "error": {
+      "cannotLoad": "Không thể tải danh sách bạn bè"
+    },
+    "empty": {
+      "noFriends": "Chưa có bạn bè nào",
+      "encouragement": "Hãy kết bạn để bắt đầu trò chuyện!"
+    },
+    "status": {
+      "active": "đang hoạt động",
+      "online": "Đang hoạt động",
+      "offline": "Không hoạt động"
+    },
+    "actions": {
+      "chat": "Chat"
+    },
+    "sections": {
+      "activeCount": "{count} đang hoạt động",
+      "onlineCount": "Đang hoạt động ({count})",
+      "offlineCount": "Không hoạt động ({count})"
+    }
+  },
+  "newsfeed": {
+    "createPost": {
+      "placeholder": "Bạn đang nghĩ gì?"
+    },
+    "loading": {
+      "posts": "Đang tải bài viết...",
+      "more": "Đang tải thêm...",
+      "refreshing": "Đang làm mới..."
+    },
+    "actions": {
+      "refresh": "Làm mới bài viết",
+      "loadMore": "Tải thêm bài viết",
+      "retry": "Thử lại"
+    },
+    "error": {
+      "loadPosts": "Có lỗi xảy ra khi tải bài viết"
+    },
+    "empty": {
+      "noPosts": "Chưa có bài viết nào",
+      "createFirst": "Hãy tạo bài viết đầu tiên của bạn!"
+    },
+    "endOfFeed": "🎉 Bạn đã xem hết {count} bài viết"
+  },
+  "inbox": {
+    "title": "Hộp thư đến",
+    "subtitle": "Quản lý thông báo và cập nhật thông tin",
+    "error": {
+      "loading": "Lỗi khi tải thông báo",
+      "retry": "Thử lại"
+    },
+    "empty": {
+      "title": "Không có thông báo",
+      "description": "Bạn đã cập nhật hết rồi! Hãy quay lại sau để xem thông báo mới."
+    },
+    "status": {
+      "unread": "chưa đọc"
+    },
+    "pagination": {
+      "showing": "Hiển thị {start} đến {end} trong tổng số {total} thông báo",
+      "page": "Trang {current} của {total}",
+      "previous": "Trước",
+      "next": "Sau"
+    }
+  },
+  "archive": {
+    "title": "Lưu trữ",
+    "subtitle": "Thông báo đã lưu trữ của bạn",
+    "error": {
+      "loading": "Lỗi khi tải thông báo đã lưu trữ",
+      "retry": "Thử lại"
+    },
+    "empty": {
+      "title": "Không có thông báo đã lưu trữ",
+      "description": "Thông báo đã lưu trữ sẽ xuất hiện ở đây. Lưu trữ thông báo để làm gọn hộp thư đến của bạn."
+    },
+    "status": {
+      "archived": "đã lưu trữ"
+    },
+    "actions": {
+      "clearAll": "Xóa tất cả",
+      "clearAllTooltip": "Xóa vĩnh viễn tất cả thông báo đã lưu trữ",
+      "selected": "{count} đã chọn",
+      "clearSelection": "Bỏ chọn",
+      "selectAll": "Chọn tất cả thông báo",
+      "unarchive": "Bỏ lưu trữ",
+      "delete": "Xóa"
+    },
+    "pagination": {
+      "showing": "Hiển thị {start} đến {end} trong tổng số {total} thông báo đã lưu trữ",
+      "page": "Trang {current} của {total}",
+      "previous": "Trước",
+      "next": "Sau"
+    }
+  },
+  "bookmarks": {
+    "title": "Dấu trang",
+    "subtitle": "Thông báo đã lưu của bạn",
+    "error": {
+      "loading": "Lỗi khi tải thông báo đã đánh dấu",
+      "retry": "Thử lại"
+    },
+    "empty": {
+      "title": "Không có thông báo đã đánh dấu",
+      "description": "Đánh dấu những thông báo quan trọng để dễ dàng tìm thấy sau này."
+    },
+    "status": {
+      "bookmarked": "đã đánh dấu"
+    },
+    "actions": {
+      "selected": "{count} đã chọn",
+      "clearSelection": "Bỏ chọn",
+      "selectAll": "Chọn tất cả thông báo",
+      "removeBookmarks": "Xóa dấu trang",
+      "archive": "Lưu trữ",
+      "delete": "Xóa"
+    },
+    "pagination": {
+      "showing": "Hiển thị {start} đến {end} trong tổng số {total} thông báo đã đánh dấu",
+      "page": "Trang {current} của {total}",
+      "previous": "Trước",
+      "next": "Sau"
+    }
+  },
+  "notifications": {
+    "actions": {
+      "markAsRead": "Đánh dấu đã đọc",
+      "markAsUnread": "Đánh dấu chưa đọc",
+      "bookmark": "Đánh dấu",
+      "removeBookmark": "Xóa dấu trang",
+      "archive": "Lưu trữ",
+      "unarchive": "Bỏ lưu trữ",
+      "delete": "Xóa",
+      "moreActions": "Thêm hành động"
+    },
+    "status": {
+      "bookmarked": "Đã đánh dấu",
+      "overdue": "Quá hạn",
+      "by": "bởi"
+    },
+    "filters": {
+      "filter": "Lọc",
+      "sort": "Sắp xếp",
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "read": "Đã đọc",
+      "allTypes": "Tất cả loại",
+      "tasks": "Nhiệm vụ",
+      "posts": "Bài viết",
+      "meetings": "Cuộc họp",
+      "system": "Hệ thống",
+      "dateCreated": "Ngày tạo",
+      "dateRead": "Ngày đọc",
+      "priority": "Ưu tiên",
+      "newest": "Mới nhất",
+      "oldest": "Cũ nhất",
+      "clearAllFilters": "Xóa tất cả bộ lọc"
+    },
+    "bulkActions": {
+      "selected": "{count} đã chọn",
+      "clearSelection": "Bỏ chọn",
+      "markAsRead": "Đánh dấu đã đọc",
+      "archive": "Lưu trữ",
+      "delete": "Xóa"
+    }
+  },
+  "userMenu": {
+    "profile": "Hồ sơ",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất",
+    "loggingOut": "Đang đăng xuất...",
+    "roles": {
+      "admin": "QUẢN TRỊ",
+      "member": "THÀNH VIÊN"
+    }
+  },
+  "chat": {
+    "title": "Tin nhắn",
+    "newMessage": "Tin nhắn mới",
+    "searchConversations": "Tìm kiếm cuộc trò chuyện...",
+    "noConversations": "Chưa có cuộc trò chuyện nào",
+    "startNewConversation": "Bắt đầu cuộc trò chuyện mới",
+    "online": "Trực tuyến",
+    "offline": "Ngoại tuyến",
+    "lastSeen": "Hoạt động lần cuối",
+    "typing": "đang nhập...",
+    "isTyping": "đang nhập...",
+    "areTyping": "đang nhập...",
+    "sendMessage": "Gửi tin nhắn",
+    "typeMessage": "Nhập tin nhắn...",
+    "attachFile": "Đính kèm tệp",
+    "attachImage": "Đính kèm hình ảnh",
+    "sendFile": "Gửi tệp",
+    "reply": "Trả lời",
+    "replyTo": "Trả lời cho",
+    "cancelReply": "Hủy trả lời",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "copy": "Sao chép",
+    "forward": "Chuyển tiếp",
+    "react": "Phản ứng",
+    "reactions": "Các phản ứng",
+    "addReaction": "Thêm phản ứng",
+    "removeReaction": "Xóa phản ứng",
+    "messageDeleted": "Tin nhắn này đã bị xóa",
+    "messageEdited": "đã chỉnh sửa",
+    "messageUnsent": "Tin nhắn này đã bị thu hồi",
+    "directMessage": "Tin nhắn riêng",
+    "groupChat": "Trò chuyện nhóm",
+    "groupMembers": "Thành viên nhóm",
+    "addMembers": "Thêm thành viên",
+    "removeMember": "Xóa thành viên",
+    "leaveGroup": "Rời nhóm",
+    "groupInfo": "Thông tin nhóm",
+    "groupName": "Tên nhóm",
+    "groupDescription": "Mô tả nhóm",
+    "createGroup": "Tạo nhóm",
+    "editGroup": "Chỉnh sửa nhóm",
+    "memberCount": "{count} thành viên",
+    "youLeftGroup": "Bạn đã rời nhóm này",
+    "memberJoined": "{name} đã tham gia nhóm",
+    "memberLeft": "{name} đã rời nhóm",
+    "groupCreated": "Nhóm đã được tạo",
+    "groupNameChanged": "Tên nhóm đã đổi thành {name}",
+    "messageDelivered": "Đã gửi",
+    "messageRead": "Đã đọc",
+    "messageSent": "Đã gửi",
+    "messageFailed": "Gửi thất bại",
+    "retryMessage": "Thử lại",
+    "deleteMessage": "Xóa tin nhắn",
+    "deleteMessageConfirm": "Bạn có chắc muốn xóa tin nhắn này?",
+    "deleteForEveryone": "Xóa cho mọi người",
+    "deleteForMe": "Chỉ xóa cho tôi",
+    "fileShared": "Đã chia sẻ tệp",
+    "imageShared": "Đã chia sẻ hình ảnh",
+    "voiceMessage": "Tin nhắn thoại",
+    "location": "Vị trí",
+    "contact": "Liên hệ",
+    "document": "Tài liệu",
+    "video": "Video",
+    "audio": "Âm thanh",
+    "downloadFile": "Tải xuống tệp",
+    "fileSize": "Kích thước tệp",
+    "fileName": "Tên tệp",
+    "viewImage": "Xem hình ảnh",
+    "playVideo": "Phát video",
+    "playAudio": "Phát âm thanh",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "thisWeek": "Tuần này",
+    "lastWeek": "Tuần trước",
+    "thisMonth": "Tháng này",
+    "lastMonth": "Tháng trước",
+    "earlierThisYear": "Đầu năm nay",
+    "connected": "Đã kết nối",
+    "connecting": "Đang kết nối...",
+    "disconnected": "Mất kết nối",
+    "reconnecting": "Đang kết nối lại...",
+    "connectionLost": "Mất kết nối",
+    "connectionRestored": "Đã khôi phục kết nối",
+    "messageNotDelivered": "Tin nhắn chưa được gửi",
+    "scrollToBottom": "Cuộn xuống cuối",
+    "newMessages": "Tin nhắn mới",
+    "unreadMessages": "{count} tin nhắn chưa đọc",
+    "markAsRead": "Đánh dấu đã đọc",
+    "markAsUnread": "Đánh dấu chưa đọc",
+    "mute": "Tắt thông báo",
+    "unmute": "Bật thông báo",
+    "block": "Chặn",
+    "unblock": "Bỏ chặn",
+    "report": "Báo cáo",
+    "clearHistory": "Xóa lịch sử",
+    "exportChat": "Xuất cuộc trò chuyện",
+    "searchInChat": "Tìm trong cuộc trò chuyện",
+    "noResults": "Không tìm thấy kết quả",
+    "searchMessages": "Tìm kiếm tin nhắn...",
+    "loading": "Đang tải...",
+    "loadMore": "Tải thêm",
+    "error": "Có lỗi xảy ra",
+    "tryAgain": "Thử lại",
+    "noInternet": "Không có kết nối mạng",
+    "checkConnection": "Kiểm tra kết nối",
+    "messageLimit": "Đã đạt giới hạn tin nhắn",
+    "fileTooLarge": "Tệp quá lớn",
+    "fileTypeNotSupported": "Loại tệp không được hỗ trợ",
+    "maxFileSize": "Kích thước tệp tối đa là {size}MB",
+    "dragDropFiles": "Kéo và thả tệp vào đây",
+    "selectFiles": "Chọn tệp",
+    "camera": "Máy ảnh",
+    "gallery": "Thư viện",
+    "emoji": "Biểu tượng cảm xúc",
+    "sticker": "Nhãn dán",
+    "gif": "GIF"
+  },
+  "strategyMap": {
+    "title": "Bản đồ chiến lược",
+    "loading": "Đang tải mục tiêu nhóm...",
+    "errorLoading": "Lỗi khi tải mục tiêu nhóm: {error}",
+    "missionAndTeams": "Sứ mệnh + {count} Nhóm",
+    "missionAndDemoData": "Sứ mệnh + Dữ liệu demo",
+    "categories": {
+      "Vision": "Tầm nhìn",
+      "Financial": "Tài chính",
+      "Customer": "Khách hàng",
+      "Process": "Quy trình",
+      "Learning": "Học tập"
+    },
+    "progress": {
+      "complete": "hoàn thành",
+      "done": "xong",
+      "total": "tổng"
+    },
+    "team": "Nhóm ({count})",
+    "missionLabel": "Phát triển công ty trong 1 tháng tới",
+    "buttons": {
+      "createGoal": "Mục tiêu",
+      "zoomIn": "Phóng to",
+      "zoomOut": "Thu nhỏ",
+      "fitToView": "Vừa khung nhìn",
+      "resetView": "Đặt lại góc nhìn",
+      "save": "Lưu"
+    },
+    "newGoal": "Mục tiêu {category} mới"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "retry": "Thử lại",
+    "refresh": "Làm mới",
+    "noData": "Không có dữ liệu",
+    "noTasksFound": "Không tìm thấy công việc",
+    "noTasksAvailable": "Không có công việc nào trong khoảng thời gian này.",
+    "task": "Công việc",
+    "assignee": "Người thực hiện",
+    "member": "Thành viên",
+    "role": "Vai trò",
+    "joined": "Tham gia",
+    "actions": "Hành động",
+    "notAvailable": "Không có",
+    "status": { "joined": "Đã tham gia", "complete": "Hoàn thành" },
+    "sort": { "aToZ": "A → Z" }
+
+  },
+  "timeline": {
+    "today": "HÔM NAY",
+    "viewModes": {
+      "day": "Ngày",
+      "week": "Tuần",
+      "month": "Tháng",
+      "quarter": "Quý",
+      "year": "Năm"
+    },
+    "navigation": {
+      "previous": "Trước",
+      "next": "Tiếp",
+      "goToToday": "Về hôm nay"
+    }
+  },
+  "teamDashboard": {
+    "loadingTeamDashboard": "Đang tải bảng điều khiển nhóm...",
+    "teamDashboard": "Bảng điều khiển nhóm",
+    "members": "thành viên",
+    "projects": "dự án",
+    "completionRate": "tỷ lệ hoàn thành",
+    "refreshData": "Làm mới dữ liệu",
+    "teamMembersByRole": "Thành viên nhóm theo vai trò",
+    "currentTeamComposition": "Cấu trúc nhóm hiện tại theo vai trò",
+    "workloadDistribution": "Phân bổ khối lượng công việc",
+    "tasksPerMember": "Nhiệm vụ theo thành viên",
+    "taskDistribution": "Phân bổ nhiệm vụ giữa các thành viên",
+    "projectsByStatus": "Dự án theo trạng thái",
+    "totalProjects": "tổng dự án",
+    "teamPerformanceTrend": "Xu hướng hiệu suất nhóm",
+    "monthlyTaskCompletion": "Hoàn thành nhiệm vụ hàng tháng",
+    "taskCreationVsCompletion": "Tạo nhiệm vụ so với hoàn thành trong 5 tháng qua",
+    "activeProjectsProgress": "Tiến độ dự án đang hoạt động",
+    "upcomingDeadlines": "Hạn chót sắp tới",
+    "thisWeek": "Tuần này",
+    "overdue": "Quá hạn",
+    "due": "Hạn chót",
+    "daysOverdue": "ngày quá hạn",
+    "noUrgentDeadlines": "Không có hạn chót khẩn cấp",
+    "allTasksOnTrack": "Tất cả nhiệm vụ đang đúng tiến độ"
+  }
+}

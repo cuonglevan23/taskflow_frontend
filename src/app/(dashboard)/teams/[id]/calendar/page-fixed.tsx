@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { TeamCalendar } from '@/components/Calendar';
 import { DARK_THEME } from "@/constants/theme";
 import { useTeamAllTasks } from '@/hooks/tasks/useTasksData';
-import { useTeam } from '@/hooks/useTeam';
+import { useTeam } from "@/hooks/teams/useTeam";
 
 // Define type for calendar task
 interface CalendarTask {

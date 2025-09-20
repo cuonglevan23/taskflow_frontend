@@ -1,23 +1,38 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useTheme } from '@/layouts/hooks/useTheme';
-import { useUpdateProject, useProject } from '@/hooks/projects';
+import { useState, useEffect, useMemo } from 'react';
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
+import { useUpdateProject } from '@/hooks/projects';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useProject } from '../../components/DynamicProjectProvider';
 
 export function ProjectDescription() {
-  const params = useParams();
-  const projectId = parseInt(params.id as string);
-  const { theme } = useTheme();
+  const { theme, themeMode } = useThemeContext();
+  const { messages, isLoading: languageLoading } = useLanguageContext();
   const { user } = useAuth();
 
-  // ✅ Use SWR hooks following established architecture
-  const { data: project, isLoading, error } = useProject(projectId);
+  // ✅ Use project from DynamicProjectProvider instead of individual hook
+  const { project, loading: isLoading, error } = useProject();
   const { trigger: updateProject, isMutating } = useUpdateProject();
   
   const [description, setDescription] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+
+  // Safe theme color access with fallbacks
+  const getThemeColor = (colorPath: string, fallback: string = '') => {
+    if (!theme) return fallback;
+    const keys = colorPath.split('.');
+    let value: any = theme;
+    for (const key of keys) {
+      value = value?.[key];
+      if (!value) return fallback;
+    }
+    return value;
+  };
+
+  // Get translated messages from config/i18n/messages
+  const descriptionMessages = messages?.projectOverview?.description || {};
 
   // Sync local state with fetched data
   useEffect(() => {
@@ -30,8 +45,8 @@ export function ProjectDescription() {
     if (!project) return;
     
     try {
-      const updatedProject = await updateProject({
-        id: projectId,
+      await updateProject({
+        id: project.id,
         data: { description }
       });
       
@@ -52,17 +67,55 @@ export function ProjectDescription() {
     setIsEditing(false);
   };
 
-  // Check if user can edit this project - updated to match backend permissions
-  const canEdit = user?.role && ['MEMBER', 'LEADER', 'OWNER', 'PM', 'ADMIN', 'SUPER_ADMIN'].includes(user.role);
-  
+  // Check if user can edit this project - updated to use correct property names
+  const canEdit = useMemo(() => {
+    if (!user || !project) return false;
 
+    // System admin always can edit
+    if (user.role === 'ADMIN') {
+      console.log('✅ Permission granted: System Admin');
+      return true;
+    }
+
+    // Check if user is project owner or creator
+    const userIdNum = Number(user.id);
+    if (project.createdById === userIdNum || project.ownerId === userIdNum) {
+      return true;
+    }
+
+    // Check if user has OWNER role in this specific project
+    if (project.currentUserRole === 'OWNER') {
+      return true;
+    }
+
+    console.log('❌ Permission denied: No matching conditions');
+    return false;
+  }, [user, project]);
+
+  // Show loading state while language is loading
+  if (languageLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-4 bg-gray-200 animate-pulse rounded w-32"></div>
+        <div className="h-24 bg-gray-200 animate-pulse rounded-md"></div>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="font-semibold text-sm" style={{ color: theme.text.secondary }}>Project description</div>
-        <div className="h-24 bg-gray-200 animate-pulse rounded-md"></div>
+        <div
+          className="font-semibold text-sm"
+          style={{ color: getThemeColor('text.secondary', '#64748b') }}
+        >
+          {descriptionMessages.title || 'Mô tả dự án'}
+        </div>
+        <div
+          className="h-24 animate-pulse rounded-md"
+          style={{ background: getThemeColor('background.muted', '#f1f5f9') }}
+        ></div>
       </div>
     );
   }
@@ -71,48 +124,71 @@ export function ProjectDescription() {
   if (error || !project) {
     return (
       <div className="space-y-4">
-        <div className="font-semibold text-sm" style={{ color: theme.text.secondary }}>Project description</div>
-        <div className="text-red-500 text-sm">Failed to load project description</div>
+        <div
+          className="font-semibold text-sm"
+          style={{ color: getThemeColor('text.secondary', '#64748b') }}
+        >
+          {descriptionMessages.title || 'Mô tả dự án'}
+        </div>
+        <div
+          className="text-sm"
+          style={{ color: getThemeColor('status.error', '#ef4444') }}
+        >
+          {descriptionMessages.failedToLoad || 'Không thể tải mô tả dự án'}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="font-semibold text-sm" style={{ color: theme.text.secondary }}>Project description</div>
-      
+      <div
+        className="font-semibold text-sm"
+        style={{ color: getThemeColor('text.secondary', '#64748b') }}
+      >
+        {descriptionMessages.title || 'Mô tả dự án'}
+      </div>
+
       {isEditing ? (
         <div className="space-y-3">
           <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="w-full p-3 text-sm border border-gray-200 rounded-md resize-none
-             focus:outline-none focus:ring-2 focus:ring-blue-500
-             text-white placeholder-white bg-gray-800"
-              placeholder="Describe your project..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="w-full p-3 text-sm border rounded-md resize-none focus:outline-none focus:ring-2"
+            style={{
+              borderColor: getThemeColor('border.default', '#e2e8f0'),
+              backgroundColor: getThemeColor('background.primary', '#ffffff'),
+              color: getThemeColor('text.primary', '#0f172a'),
+              '--tw-ring-color': getThemeColor('status.info', '#3b82f6')
+            } as React.CSSProperties}
+            placeholder={descriptionMessages.placeholder || 'Mô tả dự án của bạn...'}
           />
 
           <div className="flex gap-2">
             <button
-                onClick={handleSave}
-                disabled={isMutating}
-                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+              onClick={handleSave}
+              disabled={isMutating}
+              className="px-3 py-1.5 text-sm rounded-md hover:opacity-80 disabled:opacity-50 transition-opacity"
+              style={{
+                backgroundColor: getThemeColor('status.info', '#3b82f6'),
+                color: '#ffffff'
+              }}
             >
-              {isMutating ? 'Saving...' : 'Save'}
+              {isMutating ? (descriptionMessages.saving || 'Đang lưu...') : (descriptionMessages.save || 'Lưu')}
             </button>
             <button
               onClick={handleCancel}
               className="px-3 py-1.5 border text-sm rounded-md transition-colors"
               style={{
-                borderColor: theme.border.default,
-                color: theme.text.primary,
-                backgroundColor: theme.background.primary
+                borderColor: getThemeColor('border.default', '#e2e8f0'),
+                color: getThemeColor('text.primary', '#0f172a'),
+                backgroundColor: getThemeColor('background.primary', '#ffffff')
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background.secondary}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.background.primary}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = getThemeColor('background.secondary', '#f8fafc')}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = getThemeColor('background.primary', '#ffffff')}
             >
-              Cancel
+              {descriptionMessages.cancel || 'Hủy'}
             </button>
           </div>
         </div>
@@ -123,29 +199,31 @@ export function ProjectDescription() {
             canEdit ? 'cursor-text' : 'cursor-not-allowed'
           }`}
           style={{
-            borderColor: theme.border.default,
-            backgroundColor: theme.background.primary,
+            borderColor: getThemeColor('border.default', '#e2e8f0'),
+            backgroundColor: getThemeColor('background.primary', '#ffffff'),
           }}
-          onMouseEnter={(e) => e.currentTarget.style.borderColor = theme.border.focus}
-          onMouseLeave={(e) => e.currentTarget.style.borderColor = theme.border.default}
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = getThemeColor('border.focus', '#3b82f6')}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = getThemeColor('border.default', '#e2e8f0')}
         >
           {project.description ? (
-            <div className="text-sm whitespace-pre-wrap" style={{ color: theme.text.primary }}>
+            <div
+              className="text-sm whitespace-pre-wrap"
+              style={{ color: getThemeColor('text.primary', '#0f172a') }}
+            >
               {project.description}
             </div>
           ) : (
-            <div className="text-sm" style={{ color: theme.text.muted }}>
-              {canEdit ? 'Click to add project description...' : 'No description available'}
+            <div
+              className="text-sm"
+              style={{ color: getThemeColor('text.muted', '#64748b') }}
+            >
+              {canEdit
+                ? (descriptionMessages.clickToAdd || 'Nhấp để thêm mô tả dự án...')
+                : (descriptionMessages.noDescription || 'Không có mô tả')
+              }
             </div>
           )}
-          
-          {!canEdit && (
-            <div className="text-xs mt-2" style={{ color: theme.text.muted }}>
-              <span className="inline-flex items-center">
-                🔒 Only authenticated project members can edit descriptions
-              </span>
-            </div>
-          )}
+
         </div>
       )}
     </div>

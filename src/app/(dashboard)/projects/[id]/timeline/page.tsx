@@ -2,25 +2,51 @@
 
 import React, { useState, ReactNode } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2, List, AlertCircle, Clock, Calendar as CalendarIcon, CalendarCheck, CalendarDays } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle } from "lucide-react";
 import SimpleGantt from '@/components/TimelineGantt/SimpleGantt';
 import { useProject } from '../components/DynamicProjectProvider';
 import { useProjectTasksContext } from '../context/ProjectTasksProvider';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
-const Alert = ({ children }: { children: ReactNode }) => (
-  <div className="bg-muted/20 border border-border/50 p-4 rounded-lg shadow-sm">
-    {children}
-  </div>
-);
+const Alert = ({ children }: { children: ReactNode }) => {
+  const { theme } = useThemeContext();
+  return (
+    <div
+      className="border p-4 rounded-lg shadow-sm"
+      style={{
+        backgroundColor: theme.background.secondary,
+        borderColor: theme.border.default
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
-const AlertTitle = ({ children }: { children: ReactNode }) => (
-  <h5 className="font-medium mb-2 text-foreground flex items-center gap-2">{children}</h5>
-);
+const AlertTitle = ({ children }: { children: ReactNode }) => {
+  const { theme } = useThemeContext();
+  return (
+    <h5
+      className="font-medium mb-2 flex items-center gap-2"
+      style={{ color: theme.text.primary }}
+    >
+      {children}
+    </h5>
+  );
+};
 
-const AlertDescription = ({ children }: { children: ReactNode }) => (
-  <p className="text-sm text-muted-foreground">{children}</p>
-);
+const AlertDescription = ({ children }: { children: ReactNode }) => {
+  const { theme } = useThemeContext();
+  return (
+    <p
+      className="text-sm"
+      style={{ color: theme.text.secondary }}
+    >
+      {children}
+    </p>
+  );
+};
 
 export default function TimelinePage() {
   // Get params but don't use directly - needed for context providers
@@ -28,16 +54,13 @@ export default function TimelinePage() {
   
   const { project } = useProject();
   const { tasks } = useProjectTasksContext();
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'quarter' | 'year'>('week');
 
   
   const isLoading = !project || !tasks;
-
-  const handleViewModeChange = (value: string) => {
-    setViewMode(value as 'day' | 'week' | 'month' | 'quarter' | 'year');
-  };
-
 
   // Process tasks for different time categories
   const today = new Date();
@@ -54,10 +77,10 @@ export default function TimelinePage() {
              new Date().toISOString()),
     priority: (task.priority || 'medium') as 'low' | 'medium' | 'high',
     status: task.status || 'TODO', // Use original status string
-    description: task.description || `Task #${task.id} - ${task.title}`,
+    description: task.description || `${messages?.common?.task || 'Task'} #${task.id} - ${task.title}`,
     assignee: task.assigneeId ? {
       id: String(task.assigneeId),
-      name: task.assigneeName || 'Assignee',
+      name: task.assigneeName || (messages?.common?.assignee || 'Assignee'),
       avatar: undefined
     } : undefined
   })) : [];
@@ -65,12 +88,21 @@ export default function TimelinePage() {
 
   
   // Combine real tasks with sample tasks if needed
-  const allTasks = formattedTasks.length > 0 ? formattedTasks : [] ;
-  
+  const allTasks = formattedTasks.length > 0 ? formattedTasks : [];
+
 
 
   return (
-    <div className="flex h-full w-full" style={{ width: "100%", minWidth: "100%", height: "100%", display: "flex" }}>
+    <div
+      className="flex h-full w-full"
+      style={{
+        width: "100%",
+        minWidth: "100%",
+        height: "100%",
+        display: "flex",
+        backgroundColor: theme.background.primary
+      }}
+    >
 
 
       {/* Main content */}
@@ -103,16 +135,15 @@ export default function TimelinePage() {
           ) : formattedTasks.length === 0 ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>No tasks found</AlertTitle>
+              <AlertTitle>{messages?.common?.noTasksFound || "No tasks found"}</AlertTitle>
               <AlertDescription>
-                There are no tasks available for this time period.
+                {messages?.common?.noTasksAvailable || "There are no tasks available for this time period."}
               </AlertDescription>
             </Alert>
           ) : (
             <SimpleGantt 
               tasks={allTasks} 
               viewMode={viewMode}
-     
             />
           )}
         </div>

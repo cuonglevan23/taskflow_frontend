@@ -2,15 +2,19 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { BucketTaskList } from "@/components/TaskList";
-import { TaskDetailPanel } from "@/components/TaskDetailPanel";
+import { MyTaskDetailPanel } from "@/components/TaskDetailPanel"; // 🔥 Changed import
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { useThemeContext } from "@/providers/ThemeProvider";
+
 
 interface TaskBucket {
   id: string;
   title: string;
   description: string;
   color: string;
+  textColor?: string; // Add optional textColor property
   tasks: TaskListItem[];
   collapsed?: boolean;
 }
@@ -20,17 +24,28 @@ interface MyTaskListPageProps {
 }
 
 const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
-  // Local state
   const [searchInput, setSearchInput] = useState(searchValue);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const { messages } = useLanguageContext();
+  const { theme } = useThemeContext();
 
-  // Use shared hook - same as board/calendar pages
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const {
     taskListItems,
     isLoading,
     error,
-    actions
+    actions,
+    revalidate
   } = useMyTasksShared({
     page: 0,
     size: 1000,
@@ -39,7 +54,6 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     searchValue: searchInput
   });
 
-  // Action time buckets logic (same as board page)
   const taskBuckets = useMemo((): TaskBucket[] => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -47,81 +61,93 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
 
-    // Filter tasks based on search
-    const filteredTasks = searchInput.trim() 
-      ? taskListItems.filter(task => 
-          task.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-          task.description?.toLowerCase().includes(searchInput.toLowerCase())
+    const filteredTasks = searchInput.trim()
+        ? taskListItems.filter(task =>
+            task.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+            task.description?.toLowerCase().includes(searchInput.toLowerCase())
         )
-      : taskListItems;
+        : taskListItems;
 
-    // Filter tasks based on assignment date and due date
     const recentlyAssigned = filteredTasks.filter(task => {
       const createdAt = new Date(task.createdAt);
-      const daysDiff = (today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
-      return daysDiff <= 7; // Tasks created in last 7 days
+      const daysDiff = Math.abs((today.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
+      return daysDiff <= 30;
     });
 
     const doToday = filteredTasks.filter(task => {
-      if (!task.dueDate) return false;
-      const dueDate = new Date(task.dueDate);
+      if (!task.dueDate && !task.deadline) return false;
+      const dueDate = new Date(task.dueDate || task.deadline || '');
       dueDate.setHours(0, 0, 0, 0);
       return dueDate.getTime() === today.getTime();
     });
 
     const doNextWeek = filteredTasks.filter(task => {
-      if (!task.dueDate) return false;
-      const dueDate = new Date(task.dueDate);
+      if (!task.dueDate && !task.deadline) return false;
+      const dueDate = new Date(task.dueDate || task.deadline || '');
       dueDate.setHours(0, 0, 0, 0);
       return dueDate > today && dueDate <= nextWeek;
     });
 
     const doLater = filteredTasks.filter(task => {
-      if (!task.dueDate) return true; // Tasks without due date go to "Do later"
-      const dueDate = new Date(task.dueDate);
+      if (!task.dueDate && !task.deadline) return false;
+      const dueDate = new Date(task.dueDate || task.deadline || '');
       dueDate.setHours(0, 0, 0, 0);
       return dueDate > nextWeek;
+    });
+
+    const tasksWithoutDates = filteredTasks.filter(task =>
+        !task.dueDate && !task.deadline
+    );
+
+    const allRecentlyAssigned = [...recentlyAssigned, ...tasksWithoutDates];
+
+    const uniqueRecentlyAssigned = allRecentlyAssigned.filter(task => {
+      const isInOtherBuckets = doToday.some(t => t.id === task.id) ||
+          doNextWeek.some(t => t.id === task.id) ||
+          doLater.some(t => t.id === task.id);
+      return !isInOtherBuckets;
     });
 
     return [
       {
         id: "recently-assigned",
-        title: "Recently assigned",
-        description: `Tasks created in the last 7 days (${recentlyAssigned.length})`,
-        color: "#8b5cf6",
-        tasks: recentlyAssigned,
+        title: t('taskSections.recentlyAssigned.title'),
+        description: `${t('taskSections.recentlyAssigned.description')} (${uniqueRecentlyAssigned.length})`,
+        color: theme?.status?.info || "#8b5cf6",
+        textColor: theme?.text?.primary || "#f8fafc", // Use primary text color for better visibility
+        tasks: uniqueRecentlyAssigned,
       },
       {
         id: "do-today",
-        title: "Do today",
-        description: `Tasks due today (${doToday.length})`,
-        color: "#ef4444",
+        title: t('taskSections.doToday.title'),
+        description: `${t('taskSections.doToday.description')} (${doToday.length})`,
+        color: theme?.status?.error || "#ef4444",
+        textColor: theme?.text?.primary || "#f8fafc", // Use primary text color for better visibility
         tasks: doToday,
       },
       {
         id: "do-next-week",
-        title: "Do next week",
-        description: `Tasks due within next week (${doNextWeek.length})`,
-        color: "#f59e0b", 
+        title: t('taskSections.doNextWeek.title'),
+        description: `${t('taskSections.doNextWeek.description')} (${doNextWeek.length})`,
+        color: theme?.status?.warning || "#f59e0b",
+        textColor: theme?.text?.primary || "#f8fafc", // Use primary text color for better visibility
         tasks: doNextWeek,
       },
       {
         id: "do-later",
-        title: "Do later",
-        description: `Tasks due later or without due date (${doLater.length})`,
-        color: "#10b981",
+        title: t('taskSections.doLater.title'),
+        description: `${t('taskSections.doLater.description')} (${doLater.length})`,
+        color: theme?.status?.success || "#10b981",
+        textColor: theme?.text?.primary || "#f8fafc", // Use primary text color for better visibility
         tasks: doLater,
       },
     ];
-  }, [taskListItems, searchInput]);
+  }, [taskListItems, searchInput, t, theme]);
 
-  // Notification helper
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    // Could be replaced with actual toast notification system
-    console.log(`${type === 'success' ? '✅' : '❌'} ${message}`);
+    // Replace with actual toast notification system if available
   }, []);
 
-  // Panel handlers
   const handleTaskClick = useCallback((task: TaskListItem) => {
     setSelectedTaskId(task.id);
     setIsPanelOpen(true);
@@ -136,62 +162,60 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     try {
       const task = taskListItems.find(t => t.id === taskId);
       if (task) {
-        await actions.onTaskEdit({ ...task, ...updates });
+        const updatedTask = { ...task, ...updates };
+        await actions.onTaskEdit(updatedTask);
+        await revalidate(); // Force revalidation after update
         showNotification('Task updated successfully');
-        handleClosePanel();
       }
     } catch (error) {
+      console.error('Failed to update task:', error);
       showNotification('Failed to update task', 'error');
-      console.error('Task save error:', error);
     }
-  }, [taskListItems, actions, showNotification, handleClosePanel]);
+  }, [taskListItems, actions, showNotification, revalidate]);
 
-  // Dedicated description save handler that doesn't close panel
-  const handleDescriptionSave = useCallback(async (taskId: string, description: string) => {
+  const handleTaskEdit = useCallback(async (updatedTask: TaskListItem) => {
     try {
-      const task = taskListItems.find(t => t.id === taskId);
-      if (task) {
-        await actions.onTaskEdit({ ...task, description });
-        showNotification('Description updated successfully');
-        // DON'T close panel for description saves
-      }
+      await actions.onTaskEdit(updatedTask);
+      await revalidate(); // Force revalidation after update
+      showNotification('Task updated successfully');
     } catch (error) {
-      showNotification('Failed to update description', 'error');
-      console.error('Description save error:', error);
+      console.error('Failed to update task:', error);
+      showNotification('Failed to update task', 'error');
     }
-  }, [taskListItems, actions, showNotification]);
+  }, [actions, showNotification, revalidate]);
 
-  const handleTaskStatusChange = useCallback(async (taskId: string, status: string) => {
+  const handleTaskStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
     try {
-      await actions.onTaskStatusChange(taskId, status as TaskStatus);
-      showNotification('Task status updated successfully');
+      await actions.onTaskStatusChange(taskId, status);
+      await revalidate(); // Force revalidation after status change
+      showNotification('Task status updated');
     } catch (error) {
+      console.error('Failed to update task status:', error);
       showNotification('Failed to update task status', 'error');
-      console.error('Task status change error:', error);
     }
-  }, [actions, showNotification]);
+  }, [actions, showNotification, revalidate]);
 
   const handleTaskPriorityChange = useCallback(async (taskId: string, priority: string) => {
     try {
       await actions.onTaskPriorityChange(taskId, priority);
-      showNotification('Task priority updated successfully');
+      await revalidate(); // Force revalidation after priority change
+      showNotification('Task priority updated');
     } catch (error) {
+      console.error('Failed to update task priority:', error);
       showNotification('Failed to update task priority', 'error');
-      console.error('Task priority change error:', error);
     }
-  }, [actions, showNotification]);
+  }, [actions, showNotification, revalidate]);
 
   const handleTaskAssign = useCallback(async (taskId: string, assigneeData: { id: string; name: string; email: string }) => {
     try {
       await actions.onTaskAssign(taskId, assigneeData.email);
+      await revalidate();
       showNotification('Task assigned successfully');
     } catch (error) {
       showNotification('Failed to assign task', 'error');
-      console.error('Task assign error:', error);
     }
-  }, [actions, showNotification]);
+  }, [actions, showNotification, revalidate]);
 
-  // 🚀 NEW: Task Creation Handler - Connect to useMyTasksShared action
   const handleTaskCreate = useCallback(async (taskData: {
     name: string;
     description?: string;
@@ -202,67 +226,45 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     actionTime?: string;
   }) => {
     try {
-      console.log('🔥 handleTaskCreate called with:', taskData);
-
-      // Call the action from useMyTasksShared which will:
-      // 1. Create task via tasksService.createTask
-      // 2. Automatically call revalidate() to refresh the UI
       await actions.onCreateTask(taskData);
-
       showNotification('Task created successfully');
-      console.log('✅ Task created and UI should refresh automatically');
     } catch (error) {
       showNotification('Failed to create task', 'error');
-      console.error('❌ Task creation error:', error);
     }
   }, [actions, showNotification]);
 
-  const toggleFavorite = () => {
-    alert('Add to favorites functionality will be implemented');
-  };
-
-  // Get selected task
-  const selectedTask = useMemo(() => {
-    return taskListItems.find(task => task.id === selectedTaskId) || null;
-  }, [taskListItems, selectedTaskId]);
-
-  // Loading and error states
-  if (isLoading) {
-    return <div>Loading tasks...</div>;
-  }
-
   if (error) {
-    return <div>Error loading tasks: {error.message}</div>;
+    return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Failed to load tasks: {error.message}</div>
+        </div>
+    );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <BucketTaskList
-        buckets={taskBuckets}
-        loading={isLoading}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        onTaskClick={handleTaskClick}
-        onTaskCreate={actions.onCreateTask}
-        onTaskEdit={actions.onTaskEdit}
-        onTaskDelete={actions.onTaskDelete}
-        onTaskStatusChange={handleTaskStatusChange}
-        onTaskAssign={handleTaskAssign}
-      />
+      <div className="flex h-full overflow-hidden">
+        <div className="flex-1 overflow-auto">
+          <BucketTaskList
+              buckets={taskBuckets}
+              onTaskClick={handleTaskClick}
+              onTaskEdit={handleTaskEdit}
+              onTaskStatusChange={(taskId: string, status: string) => handleTaskStatusChange(taskId, status as TaskStatus)}
+              onTaskPriorityChange={handleTaskPriorityChange}
+              onTaskAssign={handleTaskAssign}
+              onTaskCreate={handleTaskCreate}
+              loading={isLoading}
+          />
+        </div>
 
-      {/* Task Detail Panel */}
-      {isPanelOpen && selectedTask && (
-        <TaskDetailPanel
-          task={selectedTask}
-          isOpen={isPanelOpen}
-          onClose={handleClosePanel}
-          onSave={handleTaskSave}
-          onSaveDescription={handleDescriptionSave}
-          onStatusChange={handleTaskStatusChange}
-          onPriorityChange={handleTaskPriorityChange}
+        {/* 🔥 Use MyTaskDetailPanel instead of TaskDetailPanel */}
+        <MyTaskDetailPanel
+            task={selectedTaskId ? taskListItems.find(t => t.id === selectedTaskId) || null : null}
+            isOpen={isPanelOpen}
+            onClose={handleClosePanel}
+            myTasksActions={actions} // 🔥 Pass actions from useMyTasksShared
+            onRevalidate={revalidate} // 🔥 Pass revalidate function
         />
-      )}
-    </div>
+      </div>
   );
 };
 

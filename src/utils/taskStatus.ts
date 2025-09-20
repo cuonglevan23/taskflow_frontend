@@ -5,20 +5,14 @@
 export enum BackendStatus {
   TODO = 'TODO',
   IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE',
-  TESTING = 'TESTING',
-  BLOCKED = 'BLOCKED',
-  REVIEW = 'REVIEW'
+  DONE = 'DONE'
 }
 
 // Frontend display status (for UI)
 export enum FrontendStatus {
   PENDING = 'pending',
   IN_PROGRESS = 'in-progress', 
-  COMPLETED = 'completed',
-  TESTING = 'testing',
-  BLOCKED = 'blocked',
-  REVIEW = 'review'
+  COMPLETED = 'completed'
 }
 
 // Status display configuration
@@ -45,27 +39,6 @@ export const STATUS_CONFIG: Record<FrontendStatus, StatusConfig> = {
     group: 'in_progress',
     icon: '🟡'
   },
-  [FrontendStatus.TESTING]: {
-    label: 'Testing',
-    color: '#3b82f6',
-    bgColor: '#dbeafe',
-    group: 'in_progress',
-    icon: '🔵'
-  },
-  [FrontendStatus.REVIEW]: {
-    label: 'In Review',
-    color: '#8b5cf6',
-    bgColor: '#ede9fe',
-    group: 'in_progress',
-    icon: '🟣'
-  },
-  [FrontendStatus.BLOCKED]: {
-    label: 'Blocked',
-    color: '#dc2626',
-    bgColor: '#fee2e2',
-    group: 'other',
-    icon: '🔴'
-  },
   [FrontendStatus.COMPLETED]: {
     label: 'Completed',
     color: '#10b981',
@@ -79,20 +52,14 @@ export const STATUS_CONFIG: Record<FrontendStatus, StatusConfig> = {
 export const BACKEND_TO_FRONTEND_STATUS: Record<BackendStatus, FrontendStatus> = {
   [BackendStatus.TODO]: FrontendStatus.PENDING,
   [BackendStatus.IN_PROGRESS]: FrontendStatus.IN_PROGRESS,
-  [BackendStatus.DONE]: FrontendStatus.COMPLETED,
-  [BackendStatus.TESTING]: FrontendStatus.TESTING,
-  [BackendStatus.BLOCKED]: FrontendStatus.BLOCKED,
-  [BackendStatus.REVIEW]: FrontendStatus.REVIEW
+  [BackendStatus.DONE]: FrontendStatus.COMPLETED
 };
 
 // Mapping: Frontend Status → Backend Status
 export const FRONTEND_TO_BACKEND_STATUS: Record<FrontendStatus, BackendStatus> = {
   [FrontendStatus.PENDING]: BackendStatus.TODO,
   [FrontendStatus.IN_PROGRESS]: BackendStatus.IN_PROGRESS,
-  [FrontendStatus.COMPLETED]: BackendStatus.DONE,
-  [FrontendStatus.TESTING]: BackendStatus.TESTING,
-  [FrontendStatus.BLOCKED]: BackendStatus.BLOCKED,
-  [FrontendStatus.REVIEW]: BackendStatus.REVIEW
+  [FrontendStatus.COMPLETED]: BackendStatus.DONE
 };
 
 /**
@@ -152,9 +119,9 @@ export interface StatusGroups {
 
 export const STATUS_GROUPS: StatusGroups = {
   todo: [FrontendStatus.PENDING],
-  in_progress: [FrontendStatus.IN_PROGRESS, FrontendStatus.TESTING, FrontendStatus.REVIEW],
+  in_progress: [FrontendStatus.IN_PROGRESS],
   completed: [FrontendStatus.COMPLETED],
-  other: [FrontendStatus.BLOCKED]
+  other: []
 };
 
 /**

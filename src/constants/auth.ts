@@ -1,42 +1,36 @@
 // Auth Constants - Role-Based Access Control (RBAC)
 // Compatible with Backend JWT authentication system
 
+// System-level roles (toàn hệ thống)
+export enum SystemRole {
+  ADMIN = 'ADMIN',    // Quản trị viên hệ thống
+  MEMBER = 'MEMBER'   // Người dùng thông thường
+}
+
+// Project-level roles (trong từng project)
+export enum ProjectRole {
+  OWNER = 'OWNER',    // Người tạo project (có quyền cao nhất)
+  MEMBER = 'MEMBER'   // Thành viên project
+}
+
+// Team-level roles (trong từng team)
+export enum TeamRole {
+  OWNER = 'OWNER',    // Người tạo team
+  MEMBER = 'MEMBER',  // Thành viên team
+  LEADER = 'LEADER'   // Người lãnh đạo team
+}
+
+// Backward compatibility - legacy UserRole enum
 export enum UserRole {
-  // System Level
-  ADMIN = 'ADMIN',               // Quản trị viên hệ thống
-  MEMBER = 'MEMBER',             // Thành viên thông thường
-
-  // Team Level
-  TEAM_OWNER = 'TEAM_OWNER',     // Chủ sở hữu team
-  TEAM_MEMBER = 'TEAM_MEMBER',   // Thành viên team
-
-  // Project Level
-  PROJECT_OWNER = 'PROJECT_OWNER', // Chủ sở hữu project
-  PROJECT_MEMBER = 'PROJECT_MEMBER', // Thành viên project
-
-  // Legacy roles for compatibility
-  SUPER_ADMIN = 'SUPER_ADMIN',   // Super admin
-  OWNER = 'OWNER',               // Owner
-  PM = 'PM',                     // Project Manager
-  LEADER = 'LEADER',             // Team Leader
-  GUEST = 'GUEST'                // Guest user
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER'
 }
 
 export enum Permission {
-  // System Management
-  MANAGE_SYSTEM = 'MANAGE_SYSTEM',           // Quản lý cấu hình hệ thống
-  VIEW_ANALYTICS = 'VIEW_ANALYTICS',         // Xem thống kê, phân tích
-
-  // Workspace Management
-  CREATE_WORKSPACE = 'CREATE_WORKSPACE',
-  MANAGE_WORKSPACE = 'MANAGE_WORKSPACE',
-  DELETE_WORKSPACE = 'DELETE_WORKSPACE',
-
-  // User & Role Management
-  INVITE_USERS = 'INVITE_USERS',
-  MANAGE_USERS = 'MANAGE_USERS',            // CRUD users
-  MANAGE_ROLES = 'MANAGE_ROLES',            // Assign/remove roles
-  VIEW_MEMBERS = 'VIEW_MEMBERS',
+  // System Management (chỉ ADMIN)
+  MANAGE_SYSTEM = 'MANAGE_SYSTEM',
+  VIEW_ANALYTICS = 'VIEW_ANALYTICS',
+  MANAGE_USERS = 'MANAGE_USERS',
 
   // Project Management
   CREATE_PROJECT = 'CREATE_PROJECT',
@@ -47,334 +41,215 @@ export enum Permission {
 
   // Team Management
   CREATE_TEAM = 'CREATE_TEAM',
-  MANAGE_TEAM = 'MANAGE_TEAM',              // Add/remove members
+  UPDATE_TEAM = 'UPDATE_TEAM',
   DELETE_TEAM = 'DELETE_TEAM',
+  VIEW_TEAM = 'VIEW_TEAM',
+  MANAGE_TEAM_MEMBERS = 'MANAGE_TEAM_MEMBERS',
 
   // Task Management
   CREATE_TASK = 'CREATE_TASK',
-  ASSIGN_TASK = 'ASSIGN_TASK',
   UPDATE_TASK = 'UPDATE_TASK',
   DELETE_TASK = 'DELETE_TASK',
   VIEW_TASK = 'VIEW_TASK',
+  ASSIGN_TASK = 'ASSIGN_TASK',
   COMMENT_ON_TASK = 'COMMENT_ON_TASK',
 
-  // Resource Management
+  // File Management
   UPLOAD_FILE = 'UPLOAD_FILE',
   DELETE_FILE = 'DELETE_FILE',
   VIEW_FILES = 'VIEW_FILES',
 
-  // Reporting & Analytics
-  VIEW_REPORTS = 'VIEW_REPORTS',
-  EXPORT_DATA = 'EXPORT_DATA',
-
-  // Billing & Subscription (for SaaS)
-  MANAGE_BILLING = 'MANAGE_BILLING',
-  VIEW_BILLING = 'VIEW_BILLING',
-
-  // Notifications
-  MANAGE_NOTIFICATIONS = 'MANAGE_NOTIFICATIONS',
-  SEND_NOTIFICATIONS = 'SEND_NOTIFICATIONS',
-
-  // Integration Management
-  MANAGE_INTEGRATIONS = 'MANAGE_INTEGRATIONS',
-  VIEW_INTEGRATIONS = 'VIEW_INTEGRATIONS',
-
-  // API Access
-  API_ACCESS = 'API_ACCESS',
-  WEBHOOK_MANAGEMENT = 'WEBHOOK_MANAGEMENT',
+  // Basic permissions
+  VIEW_MEMBERS = 'VIEW_MEMBERS',
+  INVITE_USERS = 'INVITE_USERS'
 }
 
-// Role to permissions mapping
-export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  [UserRole.SUPER_ADMIN]: [
-    // All permissions
+// System Role Permissions
+export const SYSTEM_ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
+  [SystemRole.ADMIN]: [
+    // Admin có tất cả quyền
     Permission.MANAGE_SYSTEM,
     Permission.VIEW_ANALYTICS,
-    Permission.CREATE_WORKSPACE,
-    Permission.MANAGE_WORKSPACE,
-    Permission.DELETE_WORKSPACE,
-    Permission.INVITE_USERS,
     Permission.MANAGE_USERS,
-    Permission.MANAGE_ROLES,
-    Permission.VIEW_MEMBERS,
     Permission.CREATE_PROJECT,
     Permission.UPDATE_PROJECT,
     Permission.DELETE_PROJECT,
     Permission.VIEW_PROJECT,
     Permission.MANAGE_PROJECT_SETTINGS,
     Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
+    Permission.UPDATE_TEAM,
     Permission.DELETE_TEAM,
+    Permission.VIEW_TEAM,
+    Permission.MANAGE_TEAM_MEMBERS,
     Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
     Permission.UPDATE_TASK,
     Permission.DELETE_TASK,
     Permission.VIEW_TASK,
+    Permission.ASSIGN_TASK,
     Permission.COMMENT_ON_TASK,
     Permission.UPLOAD_FILE,
     Permission.DELETE_FILE,
     Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.MANAGE_BILLING,
-    Permission.VIEW_BILLING,
-    Permission.MANAGE_NOTIFICATIONS,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.MANAGE_INTEGRATIONS,
-    Permission.VIEW_INTEGRATIONS,
-    Permission.API_ACCESS,
-    Permission.WEBHOOK_MANAGEMENT,
+    Permission.VIEW_MEMBERS,
+    Permission.INVITE_USERS
   ],
 
-  [UserRole.ADMIN]: [
-    Permission.VIEW_ANALYTICS,
-    Permission.MANAGE_WORKSPACE,
-    Permission.INVITE_USERS,
-    Permission.MANAGE_USERS,
-    Permission.MANAGE_ROLES,
-    Permission.VIEW_MEMBERS,
-    Permission.CREATE_PROJECT,
+  [SystemRole.MEMBER]: [
+    // Member chỉ có quyền cơ bản
+    Permission.VIEW_PROJECT,
+    Permission.VIEW_TEAM,
+    Permission.VIEW_TASK,
+    Permission.COMMENT_ON_TASK,
+    Permission.UPLOAD_FILE,
+    Permission.VIEW_FILES,
+    Permission.VIEW_MEMBERS
+  ]
+}
+
+// Project Role Permissions
+export const PROJECT_ROLE_PERMISSIONS: Record<ProjectRole, Permission[]> = {
+  [ProjectRole.OWNER]: [
     Permission.UPDATE_PROJECT,
     Permission.DELETE_PROJECT,
     Permission.VIEW_PROJECT,
     Permission.MANAGE_PROJECT_SETTINGS,
     Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
-    Permission.DELETE_TEAM,
     Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
     Permission.UPDATE_TASK,
     Permission.DELETE_TASK,
     Permission.VIEW_TASK,
+    Permission.ASSIGN_TASK,
     Permission.COMMENT_ON_TASK,
     Permission.UPLOAD_FILE,
     Permission.DELETE_FILE,
     Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.VIEW_BILLING,
-    Permission.MANAGE_NOTIFICATIONS,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.VIEW_INTEGRATIONS,
-    Permission.API_ACCESS,
+    Permission.VIEW_MEMBERS,
+    Permission.INVITE_USERS
   ],
 
-  [UserRole.OWNER]: [
-    Permission.MANAGE_WORKSPACE,
-    Permission.INVITE_USERS,
-    Permission.MANAGE_USERS,
-    Permission.VIEW_MEMBERS,
-    Permission.CREATE_PROJECT,
-    Permission.UPDATE_PROJECT,
-    Permission.DELETE_PROJECT,
+  [ProjectRole.MEMBER]: [
     Permission.VIEW_PROJECT,
-    Permission.MANAGE_PROJECT_SETTINGS,
-    Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
-    Permission.DELETE_TEAM,
     Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
+    Permission.UPDATE_TASK,
+    Permission.VIEW_TASK,
+    Permission.COMMENT_ON_TASK,
+    Permission.UPLOAD_FILE,
+    Permission.VIEW_FILES,
+    Permission.VIEW_MEMBERS
+  ]
+}
+
+// Team Role Permissions
+export const TEAM_ROLE_PERMISSIONS: Record<TeamRole, Permission[]> = {
+  [TeamRole.OWNER]: [
+    Permission.UPDATE_TEAM,
+    Permission.DELETE_TEAM,
+    Permission.VIEW_TEAM,
+    Permission.MANAGE_TEAM_MEMBERS,
+    Permission.CREATE_TASK,
     Permission.UPDATE_TASK,
     Permission.DELETE_TASK,
     Permission.VIEW_TASK,
+    Permission.ASSIGN_TASK,
     Permission.COMMENT_ON_TASK,
     Permission.UPLOAD_FILE,
     Permission.DELETE_FILE,
     Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.MANAGE_BILLING,
-    Permission.VIEW_BILLING,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.VIEW_INTEGRATIONS,
+    Permission.INVITE_USERS
   ],
 
-  [UserRole.PM]: [
-    Permission.VIEW_MEMBERS,
-    Permission.CREATE_PROJECT,
-    Permission.UPDATE_PROJECT,
-    Permission.VIEW_PROJECT,
-    Permission.MANAGE_PROJECT_SETTINGS,
-    Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
+  [TeamRole.LEADER]: [
+    Permission.UPDATE_TEAM,
+    Permission.VIEW_TEAM,
+    Permission.MANAGE_TEAM_MEMBERS,
     Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
     Permission.UPDATE_TASK,
     Permission.DELETE_TASK,
     Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-    Permission.SEND_NOTIFICATIONS,
-  ],
-
-  [UserRole.LEADER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.VIEW_PROJECT,
-    Permission.MANAGE_TEAM,
-    Permission.CREATE_TASK,
     Permission.ASSIGN_TASK,
-    Permission.UPDATE_TASK,
-    Permission.VIEW_TASK,
     Permission.COMMENT_ON_TASK,
     Permission.UPLOAD_FILE,
     Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
+    Permission.INVITE_USERS
   ],
 
-  [UserRole.TEAM_OWNER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.CREATE_PROJECT,
-    Permission.UPDATE_PROJECT,
-    Permission.VIEW_PROJECT,
-    Permission.CREATE_TEAM,
-    Permission.MANAGE_TEAM,
-    Permission.DELETE_TEAM,
-    Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
-    Permission.UPDATE_TASK,
-    Permission.DELETE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-  ],
-
-  [UserRole.TEAM_MEMBER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.VIEW_PROJECT,
+  [TeamRole.MEMBER]: [
+    Permission.VIEW_TEAM,
     Permission.CREATE_TASK,
     Permission.UPDATE_TASK,
     Permission.VIEW_TASK,
     Permission.COMMENT_ON_TASK,
     Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-  ],
+    Permission.VIEW_FILES
+  ]
+}
 
-  [UserRole.PROJECT_OWNER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.UPDATE_PROJECT,
-    Permission.VIEW_PROJECT,
-    Permission.MANAGE_PROJECT_SETTINGS,
-    Permission.CREATE_TASK,
-    Permission.ASSIGN_TASK,
-    Permission.UPDATE_TASK,
-    Permission.DELETE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-    Permission.VIEW_REPORTS,
-  ],
+// Legacy compatibility - Role to permissions mapping
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  [UserRole.ADMIN]: SYSTEM_ROLE_PERMISSIONS[SystemRole.ADMIN],
+  [UserRole.MEMBER]: SYSTEM_ROLE_PERMISSIONS[SystemRole.MEMBER]
+}
 
-  [UserRole.PROJECT_MEMBER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.VIEW_PROJECT,
-    Permission.CREATE_TASK,
-    Permission.UPDATE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-  ],
+// Default roles
+export const DEFAULT_SYSTEM_ROLE = SystemRole.MEMBER;
+export const DEFAULT_PROJECT_ROLE = ProjectRole.MEMBER;
+export const DEFAULT_TEAM_ROLE = TeamRole.MEMBER;
 
-  [UserRole.MEMBER]: [
-    Permission.VIEW_MEMBERS,
-    Permission.VIEW_PROJECT,
-    Permission.CREATE_TASK,
-    Permission.UPDATE_TASK,
-    Permission.VIEW_TASK,
-    Permission.COMMENT_ON_TASK,
-    Permission.UPLOAD_FILE,
-    Permission.VIEW_FILES,
-  ],
-
-  [UserRole.GUEST]: [
-    Permission.VIEW_PROJECT,
-    Permission.VIEW_TASK,
-    Permission.VIEW_FILES,
-  ],
-};
-
-// Helper functions for role hierarchy
-export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  [UserRole.GUEST]: 0,
-  [UserRole.MEMBER]: 1,
-  [UserRole.PROJECT_MEMBER]: 2,
-  [UserRole.TEAM_MEMBER]: 2,
-  [UserRole.PROJECT_OWNER]: 3,
-  [UserRole.LEADER]: 4,
-  [UserRole.TEAM_OWNER]: 4,
-  [UserRole.PM]: 5,
-  [UserRole.OWNER]: 6,
-  [UserRole.ADMIN]: 7,
-  [UserRole.SUPER_ADMIN]: 8,
-};
-
-// Default role for new users
+// Legacy compatibility
 export const DEFAULT_USER_ROLE = UserRole.MEMBER;
 
-// Public roles that don't require authentication
-export const PUBLIC_ROLES = [UserRole.GUEST];
-
-// Admin roles
-export const ADMIN_ROLES = [
-  UserRole.SUPER_ADMIN,
-  UserRole.ADMIN,
-  UserRole.OWNER,
-];
-
-// Management roles
-export const MANAGEMENT_ROLES = [
-  UserRole.SUPER_ADMIN,
-  UserRole.ADMIN,
-  UserRole.OWNER,
-  UserRole.PM,
-  UserRole.LEADER,
-  UserRole.TEAM_OWNER,
-  UserRole.PROJECT_OWNER,
-];
-
-// Helper function to check if a role has higher or equal priority
-export function hasRolePriority(userRole: UserRole, requiredRole: UserRole): boolean {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+// Helper functions
+export function getSystemPermissions(role: SystemRole): Permission[] {
+  return SYSTEM_ROLE_PERMISSIONS[role] || [];
 }
 
-// Helper function to get permissions for a role
-export function getPermissionsForRole(role: UserRole): Permission[] {
-  return ROLE_PERMISSIONS[role] || [];
+export function getProjectPermissions(role: ProjectRole): Permission[] {
+  return PROJECT_ROLE_PERMISSIONS[role] || [];
 }
 
-// Helper function to check if a role has a specific permission
-export function roleHasPermission(role: UserRole, permission: Permission): boolean {
-  const permissions = getPermissionsForRole(role);
-  return permissions.includes(permission);
+export function getTeamPermissions(role: TeamRole): Permission[] {
+  return TEAM_ROLE_PERMISSIONS[role] || [];
 }
 
-// Helper function to check if user can access a resource
-export function canAccessResource(
-  userRole: UserRole,
-  allowedRoles: UserRole[],
-  requiredPermissions?: Permission[]
+export function hasSystemPermission(role: SystemRole, permission: Permission): boolean {
+  return getSystemPermissions(role).includes(permission);
+}
+
+export function hasProjectPermission(role: ProjectRole, permission: Permission): boolean {
+  return getProjectPermissions(role).includes(permission);
+}
+
+export function hasTeamPermission(role: TeamRole, permission: Permission): boolean {
+  return getTeamPermissions(role).includes(permission);
+}
+
+// Check if user has permission in any context
+export function hasPermission(
+  systemRole: SystemRole,
+  permission: Permission,
+  projectRole?: ProjectRole,
+  teamRole?: TeamRole
 ): boolean {
-  // Check role access
-  const hasRoleAccess = allowedRoles.some(allowedRole =>
-    hasRolePriority(userRole, allowedRole)
-  );
-
-  if (!hasRoleAccess) {
-    return false;
+  // Check system-level permission first
+  if (hasSystemPermission(systemRole, permission)) {
+    return true;
   }
 
-  // Check permission access if required
-  if (requiredPermissions && requiredPermissions.length > 0) {
-    const userPermissions = getPermissionsForRole(userRole);
-    return requiredPermissions.every(permission =>
-      userPermissions.includes(permission)
-    );
+  // Check project-level permission
+  if (projectRole && hasProjectPermission(projectRole, permission)) {
+    return true;
   }
 
-  return true;
+  // Check team-level permission
+  if (teamRole && hasTeamPermission(teamRole, permission)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Legacy compatibility function
+export function roleHasPermission(role: UserRole, permission: Permission): boolean {
+  const permissions = ROLE_PERMISSIONS[role] || [];
+  return permissions.includes(permission);
 }

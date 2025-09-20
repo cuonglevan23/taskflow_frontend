@@ -1,18 +1,168 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import BaseCard from "@/components/ui/BaseCard/BaseCard";
 import PostHeader from "./PostHeader";
 import PostActions from "./PostActions";
 import PostModal from "./PostModal";
-import { PostData } from "@/services/postsService";
+import EditPostModal from "./EditPostModal";
+import { PostData } from "@/types/post";
 import { usePostCard, useSyncedPost } from "@/hooks";
+import { usePostManagement } from "@/hooks/posts";
+import { useGalleryLayout, ImageItem } from "@/hooks/posts/useGalleryLayout";
+import { Edit3, Trash2 } from "lucide-react";
 
 interface PostCardProps {
   post: PostData;
   showShareCount?: boolean;
 }
+
+// Optimized Image Grid Component with Facebook-style layout
+interface ImageGridProps {
+  images: string[];
+  onImageClick: (index: number) => void;
+}
+
+const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
+  // Convert string URLs to ImageItem objects
+  const imageItems: ImageItem[] = useMemo(() =>
+    images.map((url, index) => ({
+      id: index,
+      url,
+      alt: `Post image ${index + 1}`,
+    }))
+  , [images]);
+
+  const layout = useGalleryLayout(imageItems);
+
+  if (layout.totalImages === 0) {
+    return null;
+  }
+
+  // Single image layout - Facebook style
+  if (layout.totalImages === 1) {
+    const image = layout.rows[0][0];
+    return (
+      <div className="mt-3 overflow-hidden rounded-lg">
+        <figure
+          className="relative w-full cursor-pointer group"
+          onClick={() => onImageClick(0)}
+        >
+          <img
+            src={image.url}
+            alt={image.alt}
+            className="w-full h-auto max-h-[500px] object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+            loading="lazy"
+          />
+        </figure>
+      </div>
+    );
+  }
+
+  // Two images layout - Facebook style side by side
+  if (layout.totalImages === 2) {
+    return (
+      <div className="mt-3 overflow-hidden rounded-lg">
+        <div className="grid grid-cols-2 gap-[2px] min-w-0">
+          {images.slice(0, 2).map((url, index) => (
+            <figure
+              key={index}
+              className="relative aspect-square cursor-pointer group overflow-hidden"
+              onClick={() => onImageClick(index)}
+            >
+              <img
+                src={url}
+                alt={`Post image ${index + 1}`}
+                className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                loading="lazy"
+              />
+            </figure>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Three images layout - Facebook style: 1 large left + 2 stacked right
+  if (layout.totalImages === 3) {
+    return (
+      <div className="mt-3 overflow-hidden rounded-lg">
+        <div className="grid grid-cols-2 gap-[2px] h-[300px] min-w-0">
+          {/* Large image on the left */}
+          <figure
+            className="relative cursor-pointer group overflow-hidden"
+            onClick={() => onImageClick(0)}
+          >
+            <img
+              src={images[0]}
+              alt="Post image 1"
+              className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+              loading="lazy"
+            />
+          </figure>
+
+          {/* Two smaller images stacked on the right */}
+          <div className="grid grid-rows-2 gap-[2px] min-w-0">
+            {images.slice(1, 3).map((url, index) => (
+              <figure
+                key={index + 1}
+                className="relative cursor-pointer group overflow-hidden"
+                onClick={() => onImageClick(index + 1)}
+              >
+                <img
+                  src={url}
+                  alt={`Post image ${index + 2}`}
+                  className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                  loading="lazy"
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Four or more images layout - Facebook style: 2x2 grid with overlay
+  const visibleImages = images.slice(0, 4);
+  const remainingCount = Math.max(0, images.length - 4);
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-lg">
+      <div className="grid grid-cols-2 grid-rows-2 gap-[2px] aspect-square min-w-0">
+        {visibleImages.map((url, index) => {
+          const isLastImage = index === 3;
+          const showOverlay = isLastImage && remainingCount > 0;
+
+          return (
+            <figure
+              key={index}
+              className="relative cursor-pointer group overflow-hidden"
+              onClick={() => onImageClick(index)}
+            >
+              <img
+                src={url}
+                alt={`Post image ${index + 1}`}
+                className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                loading="lazy"
+              />
+
+              {/* Overlay for additional images */}
+              {showOverlay && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
+                  <span className="text-white text-2xl font-semibold">
+                    +{remainingCount}
+                  </span>
+                </div>
+              )}
+            </figure>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export default function PostCard({
   post: initialPost,
@@ -21,141 +171,260 @@ export default function PostCard({
   // Use synced post data that updates with SWR cache changes
   const post = useSyncedPost(initialPost);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const {
     formatTimestamp,
     handleLike,
     handleShare,
     handleAuthorClick,
-    getImageAlt,
   } = usePostCard(post);
+
+  const {
+    canEditPost,
+    canDeletePost,
+    deletePost,
+    isDeleting
+  } = usePostManagement();
+
+  // Check if user has any menu actions available
+  const hasMenuActions = canEditPost(post) || canDeletePost(post);
+
+  // Get images array (support both single and multiple images)
+  const images = useMemo(() => {
+    if (post.imageUrls && post.imageUrls.length > 0) {
+      return post.imageUrls;
+    } else if (post.imageUrl) {
+      return [post.imageUrl];
+    }
+    return [];
+  }, [post.imageUrls, post.imageUrl]);
+
+  const hasImages = images.length > 0;
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMenuOpen]);
+
+  // Handle menu click - only if user has permissions
+  const handleMenuClick = () => {
+    if (hasMenuActions) {
+      setIsMenuOpen(!isMenuOpen);
+    }
+  };
+
+  // Handle edit click - with permission check
+  const handleEditClick = () => {
+    if (!canEditPost(post)) {
+      console.warn('Unauthorized edit attempt');
+      return;
+    }
+    setIsEditModalOpen(true);
+    setIsMenuOpen(false);
+  };
+
+  // Handle delete click - with permission check
+  const handleDeleteClick = async () => {
+    if (!canDeletePost(post)) {
+      console.warn('Unauthorized delete attempt');
+      return;
+    }
+
+    if (window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+      try {
+        await deletePost(
+          post.id,
+          () => {
+            console.log('Post deleted successfully');
+          },
+          (error) => {
+            console.error('Failed to delete post:', error);
+            alert('Không thể xóa bài viết. Vui lòng thử lại.');
+          }
+        );
+      } catch (error) {
+        console.error('Error deleting post:', error);
+      }
+    }
+    setIsMenuOpen(false);
+  };
 
   // Handle comment button click to open modal
   const handleComment = () => {
     setIsModalOpen(true);
   };
 
+  // Handle image click - open modal with specific image
+  const handleImageClick = (index: number) => {
+    setModalImageIndex(index);
+    setIsModalOpen(true);
+  };
+
+  // Handle edit success - with permission check
+  const handleEditSuccess = (updatedPost: PostData) => {
+    if (!canEditPost(post)) {
+      console.warn('Unauthorized edit success callback');
+      return;
+    }
+    setIsEditModalOpen(false);
+    // The post will be automatically updated via SWR cache
+  };
+
   return (
     <>
-      <BaseCard variant="compact" title="">
-        {/* Post Header */}
-        <PostHeader
-          authorName={post.authorName}
-          authorAvatar={post.authorAvatar}
-          isPremium={!!post.authorPremiumBadge}
-          timestamp={formatTimestamp}
-          onAuthorClick={handleAuthorClick}
-        />
+      <div className="relative">
+        <BaseCard
+          variant="compact"
+          title=""
+          onMenuClick={hasMenuActions ? handleMenuClick : undefined}
+        >
+          {/* Post Header */}
+          <PostHeader
+            post={post}
+            authorName={post.authorName}
+            authorAvatar={post.authorAvatar}
+            isPremium={!!post.authorPremiumBadge}
+            timestamp={formatTimestamp}
+            onAuthorClick={handleAuthorClick}
+            onEdit={canEditPost(post) ? handleEditClick : undefined}
+          />
 
-        {/* Pinned Indicator */}
-        {post.isPinned && (
-          <div className="mb-2" role="banner" aria-label="Pinned post">
-            <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
-              📌 Pinned Post
-            </span>
+          {/* Pinned Indicator */}
+          {post.isPinned && (
+            <div className="mb-2" role="banner" aria-label="Pinned post">
+              <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
+                📌 Pinned Post
+              </span>
+            </div>
+          )}
+
+          {/* Linked Task/Project */}
+          {(post.linkedTask || post.linkedProject) && (
+            <aside
+              className="mb-3 p-2 bg-gray-700/50 rounded border-l-4 border-blue-500"
+              aria-label="Related content"
+            >
+              {post.linkedTask && (
+                <div className="text-sm text-gray-300">
+                  <span role="img" aria-label="Task">🎯</span>
+                  <span className="font-medium ml-1">Task:</span>
+                  <Link
+                    href={`/tasks/${post.linkedTask.id}`}
+                    className="hover:text-blue-400 transition-colors ml-1"
+                    aria-label={`View task: ${post.linkedTask.title}`}
+                  >
+                    {post.linkedTask.title}
+                  </Link>
+                  <span
+                    className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                      post.linkedTask.status === 'COMPLETED' ? 'bg-green-600' : 'bg-blue-600'
+                    }`}
+                    aria-label={`Task status: ${post.linkedTask.status}`}
+                  >
+                    {post.linkedTask.status}
+                  </span>
+                </div>
+              )}
+              {post.linkedProject && (
+                <div className="text-sm text-gray-300">
+                  <span role="img" aria-label="Project">📁</span>
+                  <span className="font-medium ml-1">Project:</span>
+                  <Link
+                    href={`/projects/${post.linkedProject.id}`}
+                    className="hover:text-blue-400 transition-colors ml-1"
+                    aria-label={`View project: ${post.linkedProject.title}`}
+                  >
+                    {post.linkedProject.title}
+                  </Link>
+                </div>
+              )}
+            </aside>
+          )}
+
+          {/* Post Content */}
+          <article className="mb-4 min-w-0 overflow-hidden">
+            <p className="text-white whitespace-pre-wrap break-words" role="main">
+              {post.content}
+            </p>
+
+            {/* Multiple Images Grid */}
+            {hasImages && (
+              <ImageGrid
+                images={images}
+                onImageClick={handleImageClick}
+              />
+            )}
+          </article>
+
+          {/* Post Actions */}
+          <PostActions
+            post={post}
+            onLike={handleLike}
+            onComment={handleComment}
+            onShare={handleShare}
+            showShareCount={showShareCount}
+          />
+        </BaseCard>
+
+        {/* Dropdown Menu - Only show if user has permissions */}
+        {isMenuOpen && hasMenuActions && (
+          <div
+            ref={menuRef}
+            className="absolute top-12 right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-2 z-50 min-w-[160px]"
+          >
+            {canEditPost(post) && (
+              <button
+                onClick={handleEditClick}
+                className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2 transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+                Chỉnh sửa
+              </button>
+            )}
+            {canDeletePost(post) && (
+              <button
+                onClick={handleDeleteClick}
+                disabled={isDeleting(post.id)}
+                className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center gap-2 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting(post.id) ? 'Đang xóa...' : 'Xóa'}
+              </button>
+            )}
           </div>
         )}
-
-        {/* Linked Task/Project */}
-        {(post.linkedTask || post.linkedProject) && (
-          <aside
-            className="mb-3 p-2 bg-gray-700/50 rounded border-l-4 border-blue-500"
-            aria-label="Related content"
-          >
-            {post.linkedTask && (
-              <div className="text-sm text-gray-300">
-                <span role="img" aria-label="Task">🎯</span>
-                <span className="font-medium ml-1">Task:</span>
-                <Link
-                  href={`/tasks/${post.linkedTask.id}`}
-                  className="hover:text-blue-400 transition-colors ml-1"
-                  aria-label={`View task: ${post.linkedTask.title}`}
-                >
-                  {post.linkedTask.title}
-                </Link>
-                <span
-                  className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                    post.linkedTask.status === 'COMPLETED' ? 'bg-green-600' : 'bg-blue-600'
-                  }`}
-                  aria-label={`Task status: ${post.linkedTask.status}`}
-                >
-                  {post.linkedTask.status}
-                </span>
-              </div>
-            )}
-            {post.linkedProject && (
-              <div className="text-sm text-gray-300">
-                <span role="img" aria-label="Project">📁</span>
-                <span className="font-medium ml-1">Project:</span>
-                <Link
-                  href={`/projects/${post.linkedProject.id}`}
-                  className="hover:text-blue-400 transition-colors ml-1"
-                  aria-label={`View project: ${post.linkedProject.title}`}
-                >
-                  {post.linkedProject.title}
-                </Link>
-              </div>
-            )}
-          </aside>
-        )}
-
-        {/* Post Content */}
-        <article className="mb-4">
-          <p className="text-white whitespace-pre-wrap" role="main">
-            {post.content}
-          </p>
-
-          {/* Post Image */}
-          {post.imageUrl && (
-            <figure className="mt-3 rounded-lg overflow-hidden bg-gray-800">
-              <img
-                src={post.imageUrl}
-                alt={getImageAlt()}
-                className="w-full h-auto object-cover max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
-                loading="lazy"
-                onClick={() => {
-                  // Open image in modal or new tab
-                  const link = document.createElement('a');
-                  link.href = post.imageUrl!;
-                  link.target = '_blank';
-                  link.rel = 'noopener noreferrer';
-                  link.click();
-                }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  const container = target.parentElement;
-                  if (container) {
-                    container.innerHTML = `
-                      <div class="flex items-center justify-center h-32 bg-gray-700 text-gray-400">
-                        <svg class="w-8 h-8 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                        </svg>
-                        <span class="text-sm">Image not available</span>
-                      </div>
-                    `;
-                  }
-                }}
-              />
-            </figure>
-          )}
-        </article>
-
-        {/* Post Actions */}
-        <PostActions
-          post={post}
-          onLike={handleLike}
-          onComment={handleComment}
-          onShare={handleShare}
-          showShareCount={showShareCount}
-        />
-      </BaseCard>
+      </div>
 
       {/* Post Modal */}
       <PostModal
         post={post}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        initialImageIndex={modalImageIndex}
       />
+
+      {/* Edit Post Modal - Only render if user can edit */}
+      {canEditPost(post) && (
+        <EditPostModal
+          post={post}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </>
   );
 }

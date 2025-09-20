@@ -1,10 +1,10 @@
 "use client";
 
 import React, { memo, useCallback, useRef, useEffect, useState } from 'react';
-import { DARK_THEME } from '@/constants/theme';
 import { ChatMessage, ChatUser, ReactionType } from '@/types/chat';
 import { useReactions } from '@/hooks/chat/useReactions';
 import { chatService } from '@/services/chat';
+import { useThemeContext } from "@/providers/ThemeProvider";
 import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput/ChatInput';
@@ -17,6 +17,7 @@ interface ChatContentProps {
     participants: ChatUser[];
     avatarUrl?: string;
     isOnline?: boolean;
+    memberCount?: number; // Add memberCount property
   };
   messages: ChatMessage[];
   typingUsers: string[];
@@ -37,6 +38,9 @@ export const ChatContent = memo(({
   onSendWithAttachments,
   onTyping
 }: ChatContentProps) => {
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+
   // State management
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -50,8 +54,8 @@ export const ChatContent = memo(({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize reactions hook
-  const { toggleReaction } = useReactions();
+  // Initialize reactions hook - remove unused toggleReaction
+  const { } = useReactions();
 
   // Effect to load reactions for messages
   useEffect(() => {
@@ -246,7 +250,7 @@ export const ChatContent = memo(({
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col" style={{ backgroundColor: DARK_THEME.background.primary }}>
+    <div className="flex-1 flex flex-col" style={{ backgroundColor: theme.background.primary }}>
       {/* Chat Header */}
       <ChatHeader
         conversation={conversation}

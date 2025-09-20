@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { dashboardService } from './dashboardService';
+import { dashboardService } from './projectDashboardService';
 import type { DashboardOverviewResponse, DashboardHookResult } from './types';
 
 /**

@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, differenceInDays, parseISO, subDays } from 'date-fns';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface SimpleGanttProps {
   tasks: {
@@ -35,8 +37,12 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [dateHeaders, setDateHeaders] = useState<Date[]>([]);
-  const [currentDateOffset, setCurrentDateOffset] = useState(0); // New state for date navigation
+  const [currentDateOffset, setCurrentDateOffset] = useState(0);
   const [currentViewMode, setCurrentViewMode] = useState<'day' | 'week' | 'month' | 'quarter' | 'year'>(viewMode);
+
+  // Add theme and language context hooks
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
 
   // Handle view mode change
   const handleViewModeChange = (newMode: 'day' | 'week' | 'month' | 'quarter' | 'year') => {
@@ -64,37 +70,35 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                     currentViewMode === 'week' ? '60px' : '45px';
 
   useEffect(() => {
-    console.log("Recalculating headers due to change in viewMode, tasks, or currentDateOffset:", currentDateOffset);
+    // Remove excessive logging that causes performance issues during tab switches
     generateDateHeaders();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentViewMode, tasks, currentDateOffset]);
   
   // Navigation functions
   const goToToday = () => {
-    console.log("Going to today (resetting offset)");
     setCurrentDateOffset(0); // Reset to today
   };
   
   const goToPrevious = () => {
-    console.log("Going to previous, current offset:", currentDateOffset);
     // Calculate the appropriate offset based on view mode and update state
     const newOffset = currentDateOffset - 1;
-    console.log("Setting new offset:", newOffset);
     setCurrentDateOffset(newOffset);
   };
   
   const goToNext = () => {
-    console.log("Going to next, current offset:", currentDateOffset);
     // Calculate the appropriate offset based on view mode and update state
     const newOffset = currentDateOffset + 1;
-    console.log("Setting new offset:", newOffset);
     setCurrentDateOffset(newOffset);
   };
 
   // Function to generate date headers based on viewMode and tasks
   const generateDateHeaders = () => {
-    console.log("Generating date headers with offset:", currentDateOffset, "view mode:", currentViewMode);
-    
+    // Only log in development when needed for debugging
+    if (process.env.NODE_ENV === 'development' && currentDateOffset === 0) {
+      console.log("Generating headers for view mode:", currentViewMode);
+    }
+
     // Default date range
     const today = new Date();
     const baseDate = new Date(today);
@@ -394,38 +398,80 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
     }
   };
 
-  // Get background color based on task status
+  // Get background color based on task status using theme colors
   const getTaskBackground = (status: string, priority: string) => {
-    // Convert status to lowercase for case-insensitive comparison
     const statusLower = status.toLowerCase();
     
-    if (statusLower === 'done' || statusLower === 'completed') return 'bg-green-100 dark:bg-green-900/15';
-    if (statusLower === 'in_progress' || statusLower === 'inprogress' || statusLower === 'in-progress') return 'bg-blue-100 dark:bg-blue-900/15';
-    if (statusLower === 'on_hold' || statusLower === 'blocked') return 'bg-amber-100 dark:bg-amber-900/15';
-    if (statusLower === 'review' || statusLower === 'testing') return 'bg-purple-100 dark:bg-purple-900/15';
-    
+    if (statusLower === 'done' || statusLower === 'completed') {
+      return theme.status.success + '20'; // 20% opacity
+    }
+    if (statusLower === 'in_progress' || statusLower === 'inprogress' || statusLower === 'in-progress') {
+      return theme.status.info + '20';
+    }
+    if (statusLower === 'on_hold' || statusLower === 'blocked') {
+      return theme.status.warning + '20';
+    }
+    if (statusLower === 'review' || statusLower === 'testing') {
+      return theme.status.info + '20'; // Use theme info color instead of hardcoded purple
+    }
+
     // Not started or todo - use priority color
-    if (priority.toLowerCase() === 'high' || priority.toLowerCase() === 'critical') return 'bg-red-100 dark:bg-red-900/15';
-    if (priority.toLowerCase() === 'medium') return 'bg-orange-100 dark:bg-orange-900/15';
-    
-    return 'bg-muted/30';
+    if (priority.toLowerCase() === 'high' || priority.toLowerCase() === 'critical') {
+      return theme.status.error + '20';
+    }
+    if (priority.toLowerCase() === 'medium') {
+      return theme.status.warning + '20';
+    }
+
+    return theme.background.muted + '40'; // Add opacity for consistency
   };
 
-  // Get border color based on task status
+  // Get border color based on task status using theme colors
   const getTaskBorder = (status: string, priority: string) => {
-    // Convert status to lowercase for case-insensitive comparison
     const statusLower = status.toLowerCase();
     
-    if (statusLower === 'done' || statusLower === 'completed') return 'border-green-300 dark:border-green-800';
-    if (statusLower === 'in_progress' || statusLower === 'inprogress' || statusLower === 'in-progress') return 'border-blue-300 dark:border-blue-800';
-    if (statusLower === 'on_hold' || statusLower === 'blocked') return 'border-amber-300 dark:border-amber-800';
-    if (statusLower === 'review' || statusLower === 'testing') return 'border-purple-300 dark:border-purple-800';
-    
+    if (statusLower === 'done' || statusLower === 'completed') {
+      return theme.status.success;
+    }
+    if (statusLower === 'in_progress' || statusLower === 'inprogress' || statusLower === 'in-progress') {
+      return theme.status.info;
+    }
+    if (statusLower === 'on_hold' || statusLower === 'blocked') {
+      return theme.status.warning;
+    }
+    if (statusLower === 'review' || statusLower === 'testing') {
+      return theme.status.info; // Use theme info color instead of hardcoded purple
+    }
+
     // Not started or todo - use priority color
-    if (priority.toLowerCase() === 'high' || priority.toLowerCase() === 'critical') return 'border-red-300 dark:border-red-800';
-    if (priority.toLowerCase() === 'medium') return 'border-orange-300 dark:border-orange-800';
-    
-    return 'border-muted';
+    if (priority.toLowerCase() === 'high' || priority.toLowerCase() === 'critical') {
+      return theme.status.error;
+    }
+    if (priority.toLowerCase() === 'medium') {
+      return theme.status.warning;
+    }
+
+    return theme.border.default;
+  };
+
+  // Get status text color based on task status using theme colors
+  const getStatusTextColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+
+    if (statusLower === 'done' || statusLower === 'completed') {
+      return theme.status.success;
+    }
+    if (statusLower === 'in_progress' || statusLower === 'inprogress' || statusLower === 'in-progress') {
+      return theme.status.info;
+    }
+    if (statusLower === 'on_hold' || statusLower === 'blocked') {
+      return theme.status.warning;
+    }
+    if (statusLower === 'review' || statusLower === 'testing') {
+      return theme.status.info;
+    }
+
+    return theme.text.muted;
   };
 
   // Handle mouse events for dragging
@@ -452,7 +498,14 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
 
   if (isLoading) {
     return (
-      <div className="border border-border/30 rounded-lg bg-card/30 p-6 space-y-4 w-full">
+      <div
+        className="rounded-lg p-6 space-y-4 w-full"
+        style={{
+          backgroundColor: theme.background.secondary,
+          borderColor: theme.border.default,
+          border: '1px solid'
+        }}
+      >
         <div className="flex gap-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-24" />
@@ -464,16 +517,25 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
   }
 
   return (
-    <div className="border border-border/30 rounded-lg bg-card/30 w-full" style={{ 
-      width: "100%", 
-      minWidth: "100%", 
-      height: "100%", 
-      display: "flex", 
-      flexDirection: "column",
-      flex: 1
-    }}>
+    <div
+      className="rounded-lg w-full"
+      style={{
+        width: "100%",
+        minWidth: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        backgroundColor: theme.background.secondary,
+        borderColor: theme.border.default,
+        border: '1px solid'
+      }}
+    >
       {/* Navigation buttons */}
-      <div className="flex flex-col space-y-2 border-b border-border/30">
+      <div
+        className="flex flex-col space-y-2"
+        style={{ borderBottom: `1px solid ${theme.border.muted}` }}
+      >
         {/* Date navigation */}
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center space-x-2">
@@ -485,7 +547,23 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                 console.log("Previous button clicked");
                 goToPrevious();
               }}
-              className="p-1 rounded-md hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1 rounded-md transition-colors"
+              style={{
+                backgroundColor: 'transparent',
+                color: theme.text.muted,
+                ':hover': {
+                  backgroundColor: theme.background.muted,
+                  color: theme.text.primary
+                }
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.muted;
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = theme.text.muted;
+              }}
               aria-label="Previous"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -500,9 +578,20 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                 console.log("Today button clicked");
                 goToToday();
               }}
-              className="px-3 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              className="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+              style={{
+                backgroundColor: theme.button.primary.background + '20',
+                color: theme.button.primary.background,
+                border: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.button.primary.background + '30';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.button.primary.background + '20';
+              }}
             >
-              TODAY
+              {messages?.timeline?.today || "TODAY"}
             </button>
             <button 
               type="button"
@@ -512,7 +601,19 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                 console.log("Next button clicked");
                 goToNext();
               }}
-              className="p-1 rounded-md hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1 rounded-md transition-colors"
+              style={{
+                backgroundColor: 'transparent',
+                color: theme.text.muted
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.muted;
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = theme.text.muted;
+              }}
               aria-label="Next"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -520,7 +621,7 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
               </svg>
             </button>
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm" style={{ color: theme.text.muted }}>
             {dateHeaders.length > 0 && (
               <span>
                 {format(dateHeaders[0], 'MMM dd, yyyy')} 
@@ -532,62 +633,34 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
         
         {/* View mode selector */}
         <div className="flex items-center justify-center px-4 pb-2">
-          <div className="flex bg-muted/20 rounded-md p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('day')}
-              className={`px-3 py-1 rounded-sm transition-colors ${
-                currentViewMode === 'day' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-muted/50 text-muted-foreground'
-              }`}
-            >
-              Day
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('week')}
-              className={`px-3 py-1 rounded-sm transition-colors ${
-                currentViewMode === 'week' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-muted/50 text-muted-foreground'
-              }`}
-            >
-              Week
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('month')}
-              className={`px-3 py-1 rounded-sm transition-colors ${
-                currentViewMode === 'month' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-muted/50 text-muted-foreground'
-              }`}
-            >
-              Month
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('quarter')}
-              className={`px-3 py-1 rounded-sm transition-colors ${
-                currentViewMode === 'quarter' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-muted/50 text-muted-foreground'
-              }`}
-            >
-              Quarter
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('year')}
-              className={`px-3 py-1 rounded-sm transition-colors ${
-                currentViewMode === 'year' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-muted/50 text-muted-foreground'
-              }`}
-            >
-              Year
-            </button>
+          <div
+            className="flex rounded-md p-0.5 text-xs"
+            style={{ backgroundColor: theme.background.muted }}
+          >
+            {(['day', 'week', 'month', 'quarter', 'year'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => handleViewModeChange(mode)}
+                className="px-3 py-1 rounded-sm transition-colors"
+                style={{
+                  backgroundColor: currentViewMode === mode ? theme.button.primary.background : 'transparent',
+                  color: currentViewMode === mode ? theme.button.primary.text : theme.text.muted
+                }}
+                onMouseEnter={(e) => {
+                  if (currentViewMode !== mode) {
+                    e.currentTarget.style.backgroundColor = theme.background.muted + '80';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentViewMode !== mode) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                {messages?.timeline?.viewModes?.[mode] || mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -622,15 +695,22 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
           gridTemplateColumns: `repeat(${dateHeaders.length}, minmax(${cellWidth}, 1fr))`,
           position: 'sticky',
           top: 0,
-          background: 'var(--color-background-primary)',
+          backgroundColor: theme.background.primary,
           zIndex: 10,
           marginBottom: '12px',
           width: '100%',
           minWidth: '100%'
         }}>
           {dateHeaders.map((date, index) => (
-            <div key={index} className="text-center text-xs font-medium border-r border-border/20 p-2 text-muted-foreground">
-              {currentViewMode === 'year' 
+            <div
+              key={index}
+              className="text-center text-xs font-medium p-2"
+              style={{
+                borderRight: `1px solid ${theme.border.muted}`,
+                color: theme.text.muted
+              }}
+            >
+              {currentViewMode === 'year'
                 ? format(date, 'yyyy')
                 : currentViewMode === 'quarter' 
                 ? `Q${Math.floor(date.getMonth() / 3) + 1} ${format(date, 'yyyy')}`
@@ -707,29 +787,35 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                     className={`hover:shadow-lg hover:brightness-105 task-card group ${getTaskBackground(task.status, task.priority)} ${getTaskBorder(task.status, task.priority)} relative`}
                   >
                     {/* Task tooltip */}
-                    <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible bg-popover text-popover-foreground shadow-lg rounded-md p-3 z-50 w-64 pointer-events-none" 
+                    <div
+                      className="absolute opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible shadow-lg rounded-md p-3 z-50 w-64 pointer-events-none"
                       style={{
                         bottom: 'calc(100% + 10px)',
                         left: '50%',
                         transform: 'translateX(-50%)',
                         maxWidth: '300px',
-                        boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
+                        backgroundColor: theme.background.primary,
+                        color: theme.text.primary,
+                        border: `1px solid ${theme.border.default}`,
+                        boxShadow: `0 5px 15px ${theme.background.primary === '#1e1f21' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)'}`
                       }}
                     >
                       <div className="space-y-2">
-                        <h3 className="font-medium text-sm">{task.title}</h3>
+                        <h3 className="font-medium text-sm" style={{ color: theme.text.primary }}>
+                          {task.title}
+                        </h3>
                         {task.description && (
-                          <p className="text-xs text-muted-foreground">{task.description}</p>
+                          <p className="text-xs" style={{ color: theme.text.muted }}>
+                            {task.description}
+                          </p>
                         )}
                         <div className="grid grid-cols-2 gap-1 text-xs">
                           <div>
-                            <span className="text-muted-foreground">Status:</span>
-                            <span className={`ml-1 font-medium ${
-                              (task.status.toLowerCase() === 'done' || task.status.toLowerCase() === 'completed' || task.status.toUpperCase() === 'DONE') ? 'text-green-500' :
-                              (task.status.toLowerCase() === 'in_progress' || task.status.toLowerCase() === 'inprogress' || task.status.toUpperCase() === 'IN_PROGRESS') ? 'text-blue-500' :
-                              (task.status.toLowerCase() === 'on_hold' || task.status.toLowerCase() === 'blocked' || task.status.toUpperCase() === 'BLOCKED') ? 'text-amber-500' :
-                              (task.status.toLowerCase() === 'review' || task.status.toLowerCase() === 'testing' || task.status.toUpperCase() === 'REVIEW' || task.status.toUpperCase() === 'TESTING') ? 'text-purple-500' : 'text-muted-foreground'
-                            }`}>
+                            <span style={{ color: theme.text.muted }}>Status:</span>
+                            <span
+                              className="ml-1 font-medium"
+                              style={{ color: getStatusTextColor(task.status) }}
+                            >
                               {task.status.toLowerCase() === 'not_started' || task.status.toLowerCase() === 'todo' || task.status.toUpperCase() === 'TODO' ? 'Not Started' :
                                task.status.toLowerCase() === 'in_progress' || task.status.toLowerCase() === 'inprogress' || task.status.toUpperCase() === 'IN_PROGRESS' ? 'In Progress' :
                                task.status.toLowerCase() === 'done' || task.status.toLowerCase() === 'completed' || task.status.toUpperCase() === 'DONE' ? 'Done' :
@@ -739,50 +825,74 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Priority:</span>
-                            <span className={`ml-1 font-medium ${
-                              task.priority === 'high' ? 'text-red-500' :
-                              task.priority === 'medium' ? 'text-orange-500' : 'text-muted-foreground'
-                            }`}>
+                            <span style={{ color: theme.text.muted }}>Priority:</span>
+                            <span
+                              className="ml-1 font-medium"
+                              style={{
+                                color: task.priority === 'high' ? theme.status.error :
+                                       task.priority === 'medium' ? theme.status.warning :
+                                       theme.text.muted
+                              }}
+                            >
                               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Start:</span>
-                            <span className="ml-1">{format(parseISO(task.startDate), 'MMM dd, yyyy')}</span>
+                            <span style={{ color: theme.text.muted }}>Start:</span>
+                            <span className="ml-1" style={{ color: theme.text.secondary }}>
+                              {format(parseISO(task.startDate), 'MMM dd, yyyy')}
+                            </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">End:</span>
-                            <span className="ml-1">{format(parseISO(task.endDate), 'MMM dd, yyyy')}</span>
+                            <span style={{ color: theme.text.muted }}>End:</span>
+                            <span className="ml-1" style={{ color: theme.text.secondary }}>
+                              {format(parseISO(task.endDate), 'MMM dd, yyyy')}
+                            </span>
                           </div>
                           {task.assignee && (
                             <div className="col-span-2">
-                              <span className="text-muted-foreground">Assignee:</span>
-                              <span className="ml-1">{task.assignee.name}</span>
+                              <span style={{ color: theme.text.muted }}>Assignee:</span>
+                              <span className="ml-1" style={{ color: theme.text.secondary }}>
+                                {task.assignee.name}
+                              </span>
                             </div>
                           )}
                         </div>
                       </div>
                       {/* Tooltip arrow */}
-                      <div className="absolute w-3 h-3 bg-popover rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"></div>
+                      <div
+                        className="absolute w-3 h-3 rotate-45 -bottom-1.5 left-1/2 -translate-x-1/2"
+                        style={{
+                          backgroundColor: theme.background.primary,
+                          border: `1px solid ${theme.border.default}`,
+                          borderTop: 'none',
+                          borderLeft: 'none'
+                        }}
+                      ></div>
                     </div>
-                    <div className="flex justify-between items-center mb-1 px-2 pt-2">
-                      <div className={`font-medium truncate max-w-[150px] text-foreground group-hover:text-foreground/90 flex items-center gap-1 ${
+                    <div
+                      className="flex justify-between items-center mb-1 px-2 pt-2"
+                      style={{ color: theme.text.primary }}
+                    >
+                      <div className={`font-medium truncate max-w-[150px] flex items-center gap-1 ${
                         currentViewMode === 'year' ? 'text-[10px]' : 
                         currentViewMode === 'quarter' ? 'text-[11px]' : 
                         currentViewMode === 'month' ? 'text-xs' : 'text-sm'
-                      }`}>
+                      }`}
+                      style={{ color: theme.text.primary }}
+                      >
                         {(task.status.toLowerCase() === 'done' || task.status.toLowerCase() === 'completed' || task.status.toUpperCase() === 'DONE') && (
                           <svg 
                             xmlns="http://www.w3.org/2000/svg" 
                             viewBox="0 0 24 24" 
-                            className={`text-green-500 flex-shrink-0 ${
+                            className={`flex-shrink-0 ${
                               currentViewMode === 'year' ? 'w-2.5 h-2.5' : 
                               currentViewMode === 'quarter' ? 'w-3 h-3' : 
                               currentViewMode === 'month' ? 'w-3.5 h-3.5' : 'w-4 h-4'
                             }`}
                             fill="currentColor"
                             strokeWidth="2"
+                            style={{ color: theme.status.success }}
                           >
                             <circle cx="12" cy="12" r="10" fill="currentColor" />
                             <path d="M8 12l3 3 5-6" stroke="white" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -792,17 +902,28 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                       </div>
                     </div>
                     {(currentViewMode !== 'year') && (
-                      <div className={`text-muted-foreground/80 flex items-center gap-1 px-2 ${
+                      <div className={`flex items-center gap-1 px-2 ${
                         currentViewMode === 'quarter' ? 'text-[10px]' : 
                         currentViewMode === 'month' ? 'text-xs' : 'text-xs'
-                      }`}>
+                      }`}
+                      style={{ color: theme.text.muted }}
+                      >
                         {task.assignee && currentViewMode !== 'quarter' && (
-                          <span className="inline-block text-[10px] px-1 py-0.5 bg-muted/30 rounded-sm">
+                          <span
+                            className="inline-block text-[10px] px-1 py-0.5 rounded-sm"
+                            style={{
+                              backgroundColor: theme.background.muted + '50',
+                              color: theme.text.secondary
+                            }}
+                          >
                             {task.assignee.name}
                           </span>
                         )}
-                        <span className={currentViewMode === 'quarter' ? 'text-[9px]' : 'text-[10px] ml-auto'}>
-                          {currentViewMode === 'quarter' 
+                        <span
+                          className={currentViewMode === 'quarter' ? 'text-[9px]' : 'text-[10px] ml-auto'}
+                          style={{ color: theme.text.muted }}
+                        >
+                          {currentViewMode === 'quarter'
                             ? format(parseISO(task.startDate), 'MMM')
                             : format(parseISO(task.startDate), 'MMM dd')}
                         </span>
@@ -822,13 +943,24 @@ const SimpleGantt: React.FC<SimpleGanttProps> = ({
                 alignItems: "center",
                 justifyContent: "center"
               }}>
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm w-full" style={{ 
-                  width: "100%",
-                  height: "100%"
-                }}>
+                <div
+                  className="absolute inset-0 flex items-center justify-center text-sm w-full"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    color: theme.text.muted
+                  }}
+                >
                   <div className="text-center p-4">
-                    <p>Không có task nào</p>
-                    <p className="text-xs mt-1">Khi có task, chúng sẽ hiển thị ở đây</p>
+                    <p style={{ color: theme.text.muted }}>
+                      {messages?.gantt?.noTasks || 'Không có task nào'}
+                    </p>
+                    <p
+                      className="text-xs mt-1"
+                      style={{ color: theme.text.muted + '80' }}
+                    >
+                      {messages?.gantt?.noTasksHint || 'Khi có task, chúng sẽ hiển thị ở đây'}
+                    </p>
                   </div>
                 </div>
               </div>

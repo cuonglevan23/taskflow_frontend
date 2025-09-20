@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { DARK_THEME } from "@/constants/theme";
-import { ACTION_ICONS } from "@/constants/icons";
-import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
-import { TeamProvider } from "@/contexts/TeamContext";
-import { useTeam } from "@/hooks/useTeam";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { useTeam } from "@/hooks/teams/useTeam";
 import InviteModal, { type InviteFormData } from "@/components/modals/InviteModal";
-import TeamMemberService from "@/services/teamMemberService";
-import { 
+import { teamsService } from "@/services/teams/teamsService";
+import {
   TeamHeader, 
   CuratedWork, 
   Members, 
@@ -18,6 +16,15 @@ import {
   type TeamMember 
 } from "@/components/teams";
 import { transformTeamMemberForMembersView } from "@/types/shared-teams";
+// ✅ ENHANCED: Use professional notification system and error handling
+import { useNotify } from "@/components/ui/NotificationProvider";
+import { useApiErrorHandler } from "@/hooks/error/useApiErrorHandler";
+
+// Types for better type safety
+interface InviteResult {
+  successful: string[];
+  failed: Array<{ email: string; error: string }>;
+}
 
 // Helper function to get team initials
 const getTeamInitials = (teamName: string): string => {
@@ -35,6 +42,28 @@ function TeamOverviewContent() {
   const params = useParams();
   const teamId = parseInt(params.id as string);
 
+  const { theme, isLoading: themeLoading } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // ✅ ENHANCED: Professional notification and error handling
+  const notify = useNotify();
+  const { handleApiError } = useApiErrorHandler();
+
+  // Safe theme color access with fallbacks
+  const getThemeColor = (colorPath: string, fallback: string = '') => {
+    if (!theme) return fallback;
+    const keys = colorPath.split('.');
+    let value: any = theme;
+    for (const key of keys) {
+      value = value?.[key];
+      if (!value) return fallback;
+    }
+    return value;
+  };
+
+  // Get translated messages from config/i18n/messages
+  const teamMessages = messages?.teams || {};
+
   // Use team hook for all team operations
   const {
     team,
@@ -45,303 +74,394 @@ function TeamOverviewContent() {
     teamDescription,
     isEditingDescription,
     memberCount,
-    updateTeamInfo,
     saveDescription,
-    addMember,
     kickMember,
     startEditingDescription,
     stopEditingDescription,
+    refetch: refetchTeam, // Get refetch function from hook
   } = useTeam(teamId);
 
   // Local state for description editing
   const [editingDescription, setEditingDescription] = useState("");
   
-  // State for invite modal
+  // State for invite modal and operations
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
+  const [isRemoving, setIsRemoving] = useState<number | null>(null);
 
-  // Event Handlers
-  const handleDescriptionChange = async (description: string) => {
-    try {
-      await saveDescription(description);
-      console.log('Description updated successfully');
-    } catch (error) {
-      console.error('Failed to update description:', error);
-    }
-  };
+  // Helper function to parse emails from different formats
+  const parseEmailsFromInviteData = useCallback((data: InviteFormData): string[] => {
+    let emailList: string[] = [];
 
-  const handleStartEditingDescription = () => {
-    setEditingDescription(teamDescription);
-    startEditingDescription();
-  };
-
-  const handleSaveDescription = async () => {
-    await handleDescriptionChange(editingDescription);
-  };
-
-  const handleCancelEditingDescription = () => {
-    setEditingDescription("");
-    stopEditingDescription();
-  };
-
-  const handleCreateWork = () => {
-    console.log('Create work clicked');
-    // TODO: Open create work modal
-  };
-
-  const handleViewAllWork = () => {
-    console.log('View all work clicked');
-    // TODO: Navigate to all work page
-  };
-
-  const handleWorkItemClick = (item: WorkItem) => {
-    console.log('Work item clicked:', item);
-    // TODO: Open item details or navigate
-  };
-
-  const handleAddSection = () => {
-    console.log('Add section clicked');
-    // TODO: Add new section functionality
-  };
-
-  const handleViewAllMembers = () => {
-    console.log('View all members clicked');
-    // TODO: Navigate to members page
-  };
-
-  const handleAddMember = async () => {
-    setIsInviteModalOpen(true);
-  };
-
-  const handleInviteSubmit = async (data: InviteFormData) => {
-    try {
-      // Parse emails from the form data
-      const emailList = data.emails
+    // Priority order: emailInvites > selectedUsers > emails string
+    if (data.emailInvites?.length) {
+      emailList = data.emailInvites;
+    } else if (data.selectedUsers?.length) {
+      emailList = data.selectedUsers
+        .map(user => user.email)
+        .filter(Boolean);
+    } else if (data.emails?.trim()) {
+      emailList = data.emails
         .split(',')
         .map(email => email.trim())
-        .filter(email => email.length > 0);
+        .filter(Boolean);
+    }
+
+    return emailList;
+  }, []);
+
+  // Helper function for user-friendly notifications
+  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    switch (type) {
+      case 'success':
+        notify.success(teamMessages.success || 'Thành công', message);
+        break;
+      case 'error':
+        notify.error(teamMessages.error || 'Lỗi', message);
+        break;
+      case 'warning':
+        notify.warning(teamMessages.warning || 'Cảnh báo', message);
+        break;
+    }
+  }, [notify, teamMessages]);
+
+  // Process member invitations with proper error handling
+  const processInvitations = useCallback(async (emailList: string[]): Promise<InviteResult> => {
+    const results: InviteResult = { successful: [], failed: [] };
+
+    for (const email of emailList) {
+      try {
+        await teamsService.addMemberByEmail(teamId, { email });
+        results.successful.push(email);
+        console.log(`✅ Successfully added member: ${email}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : (teamMessages.unknownError || 'Lỗi không xác định');
+        results.failed.push({ email, error: errorMessage });
+        console.error(`❌ Failed to add member ${email}:`, errorMessage);
+      }
+    }
+
+    return results;
+  }, [teamId, teamMessages]);
+
+  // Event Handlers with proper async handling
+  const handleDescriptionChange = useCallback(async (description: string) => {
+    try {
+      if (saveDescription) {
+        await saveDescription(description);
+        notify.success(
+          teamMessages.descriptionUpdated || 'Đã cập nhật mô tả',
+          teamMessages.descriptionUpdatedMessage || 'Mô tả nhóm đã được cập nhật thành công'
+        );
+      }
+    } catch (error) {
+      handleApiError(error, 'description update');
+    }
+  }, [saveDescription, notify, handleApiError, teamMessages]);
+
+  const handleStartEditingDescription = useCallback(() => {
+    setEditingDescription(teamDescription || '');
+    startEditingDescription();
+  }, [teamDescription, startEditingDescription]);
+
+  const handleSaveDescription = useCallback(async () => {
+    await handleDescriptionChange(editingDescription);
+    stopEditingDescription();
+  }, [editingDescription, handleDescriptionChange, stopEditingDescription]);
+
+  const handleCancelEditingDescription = useCallback(() => {
+    setEditingDescription("");
+    stopEditingDescription();
+  }, [stopEditingDescription]);
+
+  // Work-related handlers
+  const handleCreateWork = useCallback(() => {
+    console.log('Create work clicked');
+    // TODO: Open create work modal
+  }, []);
+
+  const handleViewAllWork = useCallback(() => {
+    console.log('View all work clicked');
+    // TODO: Navigate to all work page
+  }, []);
+
+  const handleWorkItemClick = useCallback((item: WorkItem) => {
+    console.log('Work item clicked:', item);
+    // TODO: Open item details or navigate
+  }, []);
+
+  const handleAddSection = useCallback(() => {
+    console.log('Add section clicked');
+    // TODO: Add new section functionality
+  }, []);
+
+  // Member-related handlers
+  const handleViewAllMembers = useCallback(() => {
+    console.log('View all members clicked');
+    // TODO: Navigate to members page
+  }, []);
+
+  const handleAddMember = useCallback(() => {
+    setIsInviteModalOpen(true);
+  }, []);
+
+  // Enhanced invite submit with proper error handling
+  const handleInviteSubmit = useCallback(async (data: InviteFormData) => {
+    if (isInviting) return; // Prevent double submission
+
+    try {
+      setIsInviting(true);
+      console.log('📥 Processing invite data:', data);
+
+      const emailList = parseEmailsFromInviteData(data);
 
       if (emailList.length === 0) {
-        console.error('No valid emails to invite');
+        notify.warning(
+          teamMessages.invalidInput || 'Đầu vào không hợp lệ',
+          teamMessages.enterValidEmail || 'Vui lòng nhập ít nhất một địa chỉ email hợp lệ hoặc chọn người dùng'
+        );
         return;
       }
 
-      console.log(`🔄 Inviting ${emailList.length} member(s) to team ${teamId}...`);
+      console.log(`🔄 Adding ${emailList.length} member(s) to team ${teamId}...`);
 
-      // Use the TeamMemberService to invite multiple members
-      const result = await TeamMemberService.inviteMultipleMembers(teamId, emailList);
+      const results = await processInvitations(emailList);
 
-      // Show results summary
-      if (result.successful.length > 0) {
-        console.log(`✅ Successfully invited ${result.successful.length} member(s)`);
-        result.successful.forEach(({ email, data }) => {
-          console.log(`  - ${email}: ${data.firstName} ${data.lastName} (ID: ${data.id})`);
-        });
-      }
-      
-      if (result.failed.length > 0) {
-        console.error(`❌ Failed to invite ${result.failed.length} member(s):`);
-        result.failed.forEach(({ email, error }) => {
-          console.error(`  - ${email}: ${error}`);
-        });
-        // TODO: Show error notification to user with specific errors
-      }
+      // Handle notification based on results
+      if (results.successful.length > 0 && results.failed.length === 0) {
+        // All successful
+        const successMessage = results.successful.length === 1
+          ? teamMessages.memberAddedSuccess?.replace('{email}', results.successful[0]) || `Đã thêm thành viên ${results.successful[0]} thành công`
+          : teamMessages.membersAddedSuccess?.replace('{count}', results.successful.length.toString()) || `Đã thêm ${results.successful.length} thành viên thành công`;
 
-      // Close modal if at least one invitation was successful
-      if (result.successful.length > 0) {
-        setIsInviteModalOpen(false);
-        // TODO: Refresh members list or update local state
-        // You might want to trigger a refetch of team members here
-      }
-
-      // Show summary notification
-      if (result.successful.length === emailList.length) {
-        console.log('🎉 All invitations sent successfully!');
-        // TODO: Show success toast
-      } else if (result.successful.length > 0) {
-        console.log(`⚠️ ${result.successful.length}/${emailList.length} invitations sent successfully`);
-        // TODO: Show partial success toast
+        showNotification(successMessage, 'success');
+      } else if (results.successful.length > 0 && results.failed.length > 0) {
+        // Partial success
+        const partialMessage = teamMessages.partialSuccess?.replace('{successful}', results.successful.length.toString()).replace('{failed}', results.failed.length.toString()) ||
+          `Đã thêm ${results.successful.length} thành viên thành công, ${results.failed.length} thất bại`;
+        showNotification(partialMessage, 'warning');
       } else {
-        console.error('💥 All invitations failed');
-        // Check if it's because backend is not implemented
-        const hasNotImplementedError = result.failed.some(f => 
-          f.error.includes('not yet available') || f.error.includes('not implemented')
-        );
-        
-        if (hasNotImplementedError) {
-          console.error('🚧 Backend team invitation API is not implemented yet');
-          // TODO: Show "feature coming soon" message
-        } else {
-          // TODO: Show error toast
+        // All failed
+        const failureMessage = teamMessages.allMembersFailed || 'Không thể thêm thành viên nào';
+        showNotification(failureMessage, 'error');
+      }
+
+      // Close modal and refresh team data
+      setIsInviteModalOpen(false);
+      if (refetchTeam) {
+        await refetchTeam(); // Refresh team data to show new members
+      }
+
+    } catch (error) {
+      console.error('❌ Invite submission error:', error);
+      handleApiError(error, 'member invitation');
+    } finally {
+      setIsInviting(false);
+    }
+  }, [isInviting, parseEmailsFromInviteData, notify, teamMessages, teamId, processInvitations, showNotification, refetchTeam, handleApiError]);
+
+  const handleRemoveMember = useCallback(async (member: TeamMember) => {
+    if (isRemoving) return; // Prevent multiple removals
+
+    const confirmMessage = teamMessages.confirmRemoveMember?.replace('{name}', member.name) ||
+      `Bạn có chắc chắn muốn xóa ${member.name} khỏi nhóm này không?`;
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      setIsRemoving(member.id);
+      if (kickMember) {
+        await kickMember(member.id);
+
+        const successMessage = teamMessages.memberRemovedSuccess?.replace('{name}', member.name) ||
+          `Đã xóa ${member.name} khỏi nhóm thành công`;
+        showNotification(successMessage, 'success');
+
+        if (refetchTeam) {
+          await refetchTeam(); // Refresh team data
         }
       }
-      
     } catch (error) {
-      console.error('Failed to process invitations:', error);
-      
-      // Check if it's a "not implemented" error
-      const errorMessage = error instanceof Error ? error.message : '';
-      if (errorMessage.includes('not yet available') || errorMessage.includes('not implemented')) {
-        console.error('🚧 Team invitation feature is not ready yet');
-        // TODO: Show "feature coming soon" notification
-      } else {
-        // TODO: Show error toast/notification
-      }
+      console.error('❌ Remove member error:', error);
+      handleApiError(error, 'member removal');
+    } finally {
+      setIsRemoving(null);
     }
-  };
+  }, [isRemoving, kickMember, showNotification, refetchTeam, handleApiError, teamMessages]);
 
-  const handleCloseInviteModal = () => {
-    setIsInviteModalOpen(false);
-  };
+  // Goals-related handlers
+  const handleViewAllGoals = useCallback(() => {
+    console.log('View all goals clicked');
+    // TODO: Navigate to goals page
+  }, []);
 
-  const handleMemberClick = (member: TeamMember) => {
-    console.log('Member clicked:', member);
-    // TODO: Show member profile or options
-  };
-
-  const handleRemoveMember = async (memberId: number) => {
-    try {
-      if (window.confirm('Are you sure you want to remove this member?')) {
-        console.log(`🔄 Removing member ${memberId} from team ${teamId}...`);
-        
-        await TeamMemberService.removeMember({
-          teamId: teamId,
-          memberId: memberId
-        });
-        
-        console.log(`✅ Successfully removed member ${memberId}`);
-        // TODO: Refresh members list or update local state
-      }
-    } catch (error) {
-      console.error('Failed to remove member:', error);
-      // TODO: Show error toast/notification
-    }
-  };
-
-  const handleCreateGoal = () => {
+  const handleCreateGoal = useCallback(() => {
     console.log('Create goal clicked');
     // TODO: Open create goal modal
-  };
+  }, []);
 
-  return (
-    <div 
-      className="min-h-screen"
-      style={{ backgroundColor: DARK_THEME.background.primary }}
-    >
-      {/* Team Header with Cover Image */}
-      <TeamHeader 
-        teamId={teamId}
-        teamName={teamName || "Loading..."}
-        description={teamDescription || "Click to add team description..."}
-        onDescriptionChange={handleDescriptionChange}
-        onCreateWork={handleCreateWork}
-      />
+  // Show loading state while theme is loading
+  if (themeLoading) {
+    return (
+      <div className="min-h-screen animate-pulse">
+        <div className="h-full bg-gray-200"></div>
+      </div>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="pb-8">
-        {/* Main Container with proper spacing */}
-        <div className="flex flex-col px-8 lg:px-16 xl:px-24 gap-4 max-w-7xl mx-auto">
-          {/* Team Info Section - Full Width at Top */}
-          <div className="flex flex-col items-start  gap-4 px-6">
-            {/* Team Avatar - Large với positioning để overlap cover */}
-            <div className="rounded-full flex items-center justify-center border-4 border-white shadow-lg bg-green-200 w-30 min-w-[120px] h-30 -mb-16 relative -top-16 -left-1 overflow-hidden">
-              <span className="text-3xl font-bold text-gray-800">
-                {getTeamInitials(teamName || 'Team')}
-              </span>
-            </div>
-            
-            {/* Team Info - phía dưới avatar */}
-            <div className="flex flex-col items-start gap-2">
-              <h1 className="text-2xl font-semibold text-white">
-                {loading ? 'Loading...' : teamName || 'Team Name'}
-              </h1>
-              
-              {/* Editable Description */}
-              {!isEditingDescription ? (
-                <div
-                  className="text-sm cursor-pointer rounded px-2 py-1 -mx-2 transition-colors min-h-[40px] flex items-center text-gray-400 hover:text-gray-300"
-                  onClick={handleStartEditingDescription}
-                >
-                  {teamDescription || "Click to add team description..."}
-                </div>
-              ) : (
-                <div className="w-full">
-                  <div className="box-border border border-transparent flex-grow w-full -my-1 mx-1">
-                    <textarea
-                      value={editingDescription}
-                      onChange={(e) => setEditingDescription(e.target.value)}
-                      onBlur={handleSaveDescription}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.shiftKey) {
-                          return;
-                        }
-                        if (e.key === 'Enter') {
-                          handleSaveDescription();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCancelEditingDescription();
-                        }
-                      }}
-                      placeholder="Add team description..."
-                      className="resize-none outline-none bg-transparent text-gray-300 p-2 w-full max-w-2xl h-13 box-border border-none m-0"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Content Row: CuratedWork | Right Sidebar */}
-          <div className="p-6">
-            <div className="flex flex-col lg:flex-row items-start justify-center gap-4">
-              {/* Left Content - CuratedWork */}
-              <div className="flex-1 max-w-3xl">
-                <div 
-                  className="flex flex-col rounded-lg gap-2 p-4"
-                  style={{ backgroundColor: '#252628' }}
-                >
-                  <CuratedWork 
-                    onViewAllWork={handleViewAllWork}
-                    onItemClick={handleWorkItemClick}
-                    onAddSection={handleAddSection}
-                  />
-                </div>
-              </div>
-
-              {/* Right Sidebar - Aligned with CuratedWork */}
-              <div className="w-full lg:w-80 flex flex-col gap-4">
-                <Members 
-                  members={members.map(transformTeamMemberForMembersView)}
-                  totalCount={memberCount}
-                  onViewAll={handleViewAllMembers}
-                  onAddMember={handleAddMember}
-                  onMemberClick={handleMemberClick}
-                />
-                
-                <Goals 
-                  hasGoals={false}
-                  onCreateGoal={handleCreateGoal}
-                />
+  // Main loading state
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen p-4"
+        style={{ backgroundColor: getThemeColor('background.primary', '#ffffff') }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div
+                className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
+                style={{ borderColor: getThemeColor('status.info', '#3b82f6') }}
+              ></div>
+              <div
+                style={{ color: getThemeColor('text.muted', '#64748b') }}
+              >
+                {teamMessages.loading || 'Đang tải thông tin nhóm...'}
               </div>
             </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Invite Modal */}
-      <InviteModal
-        isOpen={isInviteModalOpen}
-        onClose={handleCloseInviteModal}
-        onSubmit={handleInviteSubmit}
-        showProjectSelection={false}
-        modalTitle={`Invite people to ${teamName || 'team'}`}
-        requireSameDomain={false}
-      />
+  // Error state
+  if (error) {
+    return (
+      <div
+        className="min-h-screen p-4"
+        style={{ backgroundColor: getThemeColor('background.primary', '#ffffff') }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div
+                className="text-6xl mb-4"
+                style={{ color: getThemeColor('status.error', '#ef4444') }}
+              >
+                ⚠️
+              </div>
+              <div
+                className="text-lg mb-2"
+                style={{ color: getThemeColor('status.error', '#ef4444') }}
+              >
+                {teamMessages.errorLoading || 'Không thể tải thông tin nhóm'}
+              </div>
+              <div
+                className="text-sm"
+                style={{ color: getThemeColor('text.muted', '#64748b') }}
+              >
+                {error}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <div
+        className="min-h-screen p-4"
+        style={{ backgroundColor: getThemeColor('background.primary', '#ffffff') }}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div
+                style={{ color: getThemeColor('text.muted', '#64748b') }}
+              >
+                {teamMessages.teamNotFound || 'Không tìm thấy nhóm'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform team members for the Members component
+  const transformedMembers = members?.map(transformTeamMemberForMembersView) || [];
+
+  return (
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: getThemeColor('background.primary', '#ffffff') }}
+    >
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        {/* Team Header */}
+        <TeamHeader
+          teamName={teamName}
+          teamDescription={teamDescription}
+          memberCount={memberCount}
+          isEditingDescription={isEditingDescription}
+          editingDescription={editingDescription}
+          onDescriptionChange={setEditingDescription}
+          onStartEditingDescription={handleStartEditingDescription}
+          onSaveDescription={handleSaveDescription}
+          onCancelEditingDescription={handleCancelEditingDescription}
+          teamInitials={getTeamInitials(teamName)}
+        />
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Curated Work Section */}
+            <CuratedWork
+              onCreateWork={handleCreateWork}
+              onViewAllWork={handleViewAllWork}
+              onWorkItemClick={handleWorkItemClick}
+              onAddSection={handleAddSection}
+            />
+          </div>
+
+          {/* Right Column - Sidebar */}
+          <div className="space-y-8">
+            {/* Members Section */}
+            <Members
+              members={transformedMembers}
+              memberCount={memberCount}
+              onViewAllMembers={handleViewAllMembers}
+              onAddMember={handleAddMember}
+              onRemoveMember={handleRemoveMember}
+              isRemoving={isRemoving}
+            />
+
+            {/* Goals Section */}
+            <Goals
+              onViewAllGoals={handleViewAllGoals}
+              onCreateGoal={handleCreateGoal}
+            />
+          </div>
+        </div>
+
+        {/* Invite Modal */}
+        <InviteModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          onSubmit={handleInviteSubmit}
+          isLoading={isInviting}
+          title={teamMessages.inviteMembers || 'Mời thành viên'}
+          type="team"
+        />
+      </div>
     </div>
   );
 }
 
-// Main exported component - TeamProvider now at layout level
-export default function TeamOverviewPage() {
+// Main component export
+export default function TeamOverview() {
   return <TeamOverviewContent />;
 }

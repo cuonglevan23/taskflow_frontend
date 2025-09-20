@@ -11,13 +11,23 @@ interface ProjectTasksContextValue {
   loading: boolean;
   error: string | null;
   pagination: any;
-  
+
   // Actions
   createTask: (taskData: CreateProjectTaskRequest) => Promise<ProjectTaskResponseDto>;
-  updateTask: (taskId: number, updates: UpdateProjectTaskRequest) => Promise<ProjectTaskResponseDto>;
+  updateTask: (taskId: number, updates: {
+      title: string;
+      description: string;
+      status: "TODO" | "IN_PROGRESS" | "DONE" | "TESTING" | "BLOCKED" | "REVIEW";
+      priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+      startDate: string | undefined;
+      deadline: string | undefined;
+      progressPercentage: any
+  }) => Promise<ProjectTaskResponseDto>;
   deleteTask: (taskId: number) => Promise<void>;
   updateTaskStatus: (taskId: number, status: string) => Promise<void>;
   assignTask: (taskId: number, userId: number) => Promise<void>;
+  // ADDED: Refresh function to reload tasks data
+  refreshTasks: () => void;
 }
 
 const ProjectTasksContext = createContext<ProjectTasksContextValue | null>(null);
@@ -35,11 +45,12 @@ export const ProjectTasksProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const projectId = project?.id;
 
   // Single source of truth for project tasks
-  const { 
-    tasks, 
-    loading, 
-    error, 
-    pagination 
+  const {
+    tasks,
+    loading,
+    error,
+    pagination,
+    revalidate: refreshTasks
   } = useProjectTasksByProject(projectId || 0, 0, 100);
 
   // Shared mutations
@@ -53,26 +64,41 @@ export const ProjectTasksProvider: React.FC<{ children: React.ReactNode }> = ({ 
     loading,
     error,
     pagination,
-    
+
     createTask: async (taskData: CreateProjectTaskRequest) => {
-      return await createTask(taskData);
+      const result = await createTask(taskData);
+      // Auto-refresh after creating task
+      refreshTasks();
+      return result;
     },
-    
+
     updateTask: async (taskId: number, updates: UpdateProjectTaskRequest) => {
-      return await updateTaskMutation({ taskId, updates });
+      const result = await updateTaskMutation({ taskId, updates });
+      // Auto-refresh after updating task
+      refreshTasks();
+      return result;
     },
-    
+
     deleteTask: async (taskId: number) => {
       await deleteTaskMutation(taskId);
+      // Auto-refresh after deleting task
+      refreshTasks();
     },
-    
+
     updateTaskStatus: async (taskId: number, status: string) => {
       await updateTaskMutation({ taskId, updates: { status: status as any } });
+      // Auto-refresh after updating status
+      refreshTasks();
     },
-    
+
     assignTask: async (taskId: number, userId: number) => {
       await updateTaskMutation({ taskId, updates: { assigneeId: userId } });
+      // Auto-refresh after assigning task
+      refreshTasks();
     },
+
+    // ADDED: Expose refresh function for manual refresh
+    refreshTasks,
   };
 
   return (

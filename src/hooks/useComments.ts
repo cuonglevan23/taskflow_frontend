@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import useSWR, { mutate } from 'swr';
 import { CommentService } from '@/services/commentService';
+import { ProjectTaskCommentsService } from '@/services/tasks/projectTaskCommentsService';
 import type { CommentListResponse, TaskComment } from '@/types/comment';
 
 // Simple SWR-based comment count hook - replaces complex cache manager
@@ -15,13 +16,19 @@ export function useTaskCommentCount(taskId: number | null | string) {
       dedupingInterval: 30000, // 30 seconds cache
       errorRetryCount: 1,
       errorRetryInterval: 2000,
+      onError: (error) => {
+        // Silently handle 404 errors for newly created tasks - they don't have comments yet
+        if (error?.status === 404 || error?.response?.status === 404) {
+          console.log(`Task ${numericTaskId} comment count not found - likely a new task`);
+        }
+      }
     }
   );
 
   return {
     count: data?.commentCount || 0,
     isLoading,
-    error,
+    error: error?.status === 404 ? null : error, // Don't expose 404 as error for new tasks
   };
 }
 
@@ -46,6 +53,36 @@ export function useTaskComments(taskId: number | null | string, page = 0, size =
     isLoading,
     error,
     revalidate,
+  };
+}
+
+// NEW: SWR-based project task comment count hook
+export function useProjectTaskCommentCount(projectTaskId: number | null | string) {
+  const numericTaskId = projectTaskId !== null && typeof projectTaskId === 'string'
+    ? parseInt(projectTaskId, 10)
+    : projectTaskId;
+
+  const { data, error, isLoading } = useSWR<number>(
+    numericTaskId ? `/api/project-task-comments/project-task/${numericTaskId}/count` : null,
+    numericTaskId ? () => ProjectTaskCommentsService.getCommentCount(numericTaskId) : null,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // 30 seconds cache
+      errorRetryCount: 1,
+      errorRetryInterval: 2000,
+      onError: (error) => {
+        // Silently handle 404 errors for newly created tasks - they don't have comments yet
+        if (error?.status === 404 || error?.response?.status === 404) {
+          console.log(`Project task ${numericTaskId} comment count not found - likely a new task`);
+        }
+      }
+    }
+  );
+
+  return {
+    count: data || 0,
+    isLoading,
+    error: error?.status === 404 ? null : error, // Don't expose 404 as error for new tasks
   };
 }
 
@@ -139,6 +176,42 @@ export function useCommentActions(taskId: number | null) {
     }
   }, [taskId, isSubmitting]);
 
+  const updateComment = useCallback(async (commentId: number, content: string) => {
+    if (!content.trim() || isSubmitting || !taskId) return;
+
+    setIsSubmitting(true);
+    try {
+      const updatedComment = await CommentService.updateComment({
+        id: commentId,
+        content
+      });
+
+      // Optimistic update for the comments list
+      const commentsKey = `/api/task-comments/task/${taskId}`;
+      mutate(commentsKey, (current: CommentListResponse | undefined) => {
+        if (!current) return current;
+        return {
+          ...current,
+          comments: current.comments.map(comment =>
+            comment.id === commentId
+              ? { ...comment, content, isEdited: true, updatedAt: new Date().toISOString() }
+              : comment
+          )
+        };
+      }, false);
+
+      return updatedComment;
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+      if (taskId) {
+        commentMutations.invalidateTaskComments(taskId);
+      }
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [taskId, isSubmitting]);
+
   const deleteComment = useCallback(async (commentId: number | string) => {
     if (!taskId) return;
     
@@ -159,6 +232,7 @@ export function useCommentActions(taskId: number | null) {
 
   return {
     addComment,
+    updateComment,
     deleteComment,
     isSubmitting
   };

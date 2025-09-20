@@ -71,7 +71,8 @@ export interface PostData {
   authorAvatar: string | null;
   authorPremiumBadge?: string | null;
   privacy: 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
-  imageUrl?: string | null;
+  imageUrl?: string | null; // Keep for backward compatibility
+  imageUrls?: string[]; // New: Support multiple images
   linkedTask?: {
     id: number;
     title: string;
@@ -98,8 +99,24 @@ export interface CreatePostData {
   privacy?: 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
   linkedTaskId?: number;
   linkedProjectId?: number;
-  image?: File;
+  image?: File; // Keep for backward compatibility
+  images?: File[]; // New: Support multiple images
+  files?: File[]; // New: Support file attachments
   isPinned?: boolean;
+}
+
+// Update Post Data Interface
+export interface UpdatePostData {
+  content?: string;
+  privacy?: 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
+  linkedTaskId?: number;
+  linkedProjectId?: number;
+  image?: File; // Single image update
+  images?: File[]; // Multiple images update
+  files?: File[]; // File attachments update
+  isPinned?: boolean;
+  removeImageIds?: number[]; // IDs of images to remove
+  removeFileIds?: number[]; // IDs of files to remove
 }
 
 // Upload URL Response Interface
@@ -167,6 +184,7 @@ export interface ApiPostResponse {
   content: string;
   privacy: string;
   imageUrl?: string | null;
+  imageUrls?: string[]; // New: Support multiple images from backend
   author?: {
     id: number;
     email?: string;

@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
 import { TaskListItem, TaskStatus, TaskListActions } from "@/components/TaskList/types";
 import { DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
@@ -38,7 +40,20 @@ const KanbanBoard = ({
   className = "",
   searchValue: externalSearchValue = "",
 }) => {
-  const { theme } = useTheme();
+  const { theme: legacyTheme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const [activeTask, setActiveTask] = useState<TaskListItem | null>(null);
   const [isEnhancedCalendarOpen, setIsEnhancedCalendarOpen] = useState(false);
   const [newTaskSection, setNewTaskSection] = useState<string>("recently-assigned");
@@ -73,30 +88,30 @@ const KanbanBoard = ({
     return Object.values(filteredTasksByAssignmentDate).some(tasks => tasks.length > 0);
   }, [filteredTasksByAssignmentDate, searchValue]);
 
-  // Column definitions based on assignment date groups
+  // Column definitions based on assignment date groups with theme and i18n
   const columns: KanbanColumn[] = [
     {
       id: "recently-assigned",
-      title: "Recently assigned",
-      color: "#6B7280",
+      title: t('taskSections.recentlyAssigned.title'),
+      color: theme?.status?.info || "#6B7280",
       count: filteredTasksByAssignmentDate["recently-assigned"]?.length || 0,
     },
     {
       id: "do-today",
-      title: "Do today",
-      color: "#DC2626",
+      title: t('taskSections.doToday.title'),
+      color: theme?.status?.error || "#DC2626",
       count: filteredTasksByAssignmentDate["do-today"]?.length || 0,
     },
     {
       id: "do-next-week",
-      title: "Do next week",
-      color: "#F59E0B",
+      title: t('taskSections.doNextWeek.title'),
+      color: theme?.status?.warning || "#F59E0B",
       count: filteredTasksByAssignmentDate["do-next-week"]?.length || 0,
     },
     {
       id: "do-later",
-      title: "Do later",
-      color: "#10B981",
+      title: t('taskSections.doLater.title'),
+      color: theme?.status?.success || "#10B981",
       count: filteredTasksByAssignmentDate["do-later"]?.length || 0,
     },
   ];
@@ -529,3 +544,4 @@ const KanbanBoard = ({
 };
 
 export default KanbanBoard;
+

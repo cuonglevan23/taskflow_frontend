@@ -1,16 +1,15 @@
 /**
  * Sidebar Section Component
- * Tách logic render từng navigation section
+ * Simplified - No role-based filtering
  */
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Crown, Shield, ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { RBACGuard } from '@/components/guards/RBACGuard';
-import { UserRole, Permission } from '@/constants/auth';
-import type { NavigationSection } from '@/config/rbac-navigation';
-import { SIDEBAR_CLASSES, NAV_SECTIONS } from '../constants/sidebarConstants';
+import type { NavigationSection } from '@/config/navigation';
 import SidebarNavigationItem from './SidebarNavigationItem';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface SidebarSectionProps {
   section: NavigationSection;
@@ -31,7 +30,17 @@ export default function SidebarSection({
   pathname,
   checkItemActive,
 }: SidebarSectionProps) {
-  const router = useRouter();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   // Render section header with role-specific icons
   const renderSectionHeader = () => {
@@ -40,13 +49,25 @@ export default function SidebarSection({
     return (
       <button
         onClick={() => section.collapsible && onToggle(section.id)}
-        className={SIDEBAR_CLASSES.SECTION_HEADER}
+        className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200"
+        style={{
+          color: theme.text.secondary,
+          backgroundColor: 'transparent'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.background.secondary;
+          e.currentTarget.style.color = theme.text.primary;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.color = theme.text.secondary;
+        }}
       >
         <span className="flex items-center gap-2">
           {/* Role-specific icons */}
           {section.id === "owner" && <Crown size={12} />}
           {section.id === "admin" && <Shield size={12} />}
-          {section.title}
+          {t(`sidebar.sections.${section.id}`) || section.title}
         </span>
         {section.collapsible &&
           (isExpanded ? (
@@ -58,89 +79,27 @@ export default function SidebarSection({
     );
   };
 
-  // Render quick action buttons for specific sections
-  const renderQuickActions = () => {
-    if (!showLabels) return null;
-
-    const quickActions = [];
-
-    // Projects section - Create projects button
-    if (section.id === NAV_SECTIONS.PROJECTS) {
-      quickActions.push(
-        <li key="create-project">
-          <RBACGuard
-            minimumRole={UserRole.PM}
-            permissions={[Permission.CREATE_PROJECT]}
-            showFallback={false}
-          >
-            <button
-              onClick={() => router.push("/projects/create")}
-              className={SIDEBAR_CLASSES.CREATE_BUTTON}
-            >
-              <Plus size={16} />
-              <span>Create project</span>
-            </button>
-          </RBACGuard>
-        </li>
-      );
-    }
-
-    // Teams section - Create team button
-    if (section.id === NAV_SECTIONS.TEAMS) {
-      quickActions.push(
-        <li key="create-team">
-          <RBACGuard
-            minimumRole={UserRole.PM}
-            permissions={[Permission.CREATE_TEAM]}
-            showFallback={false}
-          >
-            <button
-              onClick={() => router.push("/teams/create")}
-              className={SIDEBAR_CLASSES.CREATE_BUTTON}
-            >
-              <Plus size={16} />
-              <span>Create team</span>
-            </button>
-          </RBACGuard>
-        </li>
-      );
-    }
-
-    return quickActions;
-  };
-
-  // Check if section content should be shown
-  const shouldShowContent = () => {
-    return !section.title || !section.collapsible || isExpanded;
-  };
-
   return (
-    <RBACGuard
-      roles={section.allowedRoles}
-      minimumRole={section.minimumRole}
-      permissions={section.requiredPermissions}
-      showFallback={false}
-    >
-      <div className="mb-4">
-        {renderSectionHeader()}
+    <div className="mb-4">
+      {/* Section Header */}
+      {renderSectionHeader()}
 
-        {shouldShowContent() && (
-          <ul className="space-y-1">
-            {section.items.map((item) => (
-              <SidebarNavigationItem
-                key={item.id}
-                item={item}
-                isActive={checkItemActive(item, pathname)}
-                isCollapsed={isCollapsed}
-                showLabels={showLabels}
-              />
-            ))}
+      {/* Section Content */}
+      {(!section.collapsible || isExpanded) && (
+        <ul className="space-y-1 mt-2">
 
-            {/* Quick action buttons */}
-            {renderQuickActions()}
-          </ul>
-        )}
-      </div>
-    </RBACGuard>
+          {/* Navigation Items */}
+          {section.items.map((item) => (
+            <SidebarNavigationItem
+              key={item.id}
+              item={item}
+              isActive={checkItemActive(item, pathname)}
+              isCollapsed={isCollapsed}
+              showLabels={showLabels}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -23,29 +23,15 @@ export class ProfileService {
     let profileData: any;
 
     if (isOwnProfile) {
-      // ✅ SỬA: Dùng endpoint có online status cho own profile
+      // Chỉ sử dụng endpoint /api/user-profiles/me - endpoint duy nhất có trong backend
       try {
-        // Thử endpoint /me trước (có thể có online status)
         profileData = await BaseApiClient.get<any>('/api/user-profiles/me');
-
-        // Nếu không có online status, thử endpoint profile page
-        if (!profileData.hasOwnProperty('isOnline') && !profileData.hasOwnProperty('onlineStatus')) {
-          console.log('🔄 /me endpoint no online status, trying profile page...');
-          const profilePageData = await BaseApiClient.get<any>('/api/user-profiles/me/profile');
-          // Merge data, prioritize profile page data
-          profileData = { ...profileData, ...profilePageData };
-        }
       } catch (error) {
-        console.warn('⚠️ /me endpoint failed, trying profile page:', error);
-        try {
-          profileData = await BaseApiClient.get<any>('/api/user-profiles/me/profile');
-        } catch (fallbackError) {
-          console.error('❌ All own profile endpoints failed:', fallbackError);
-          throw fallbackError;
-        }
+        console.error('❌ Failed to load own profile:', error);
+        throw error;
       }
     } else {
-      // Load other user's profile - sử dụng endpoint có online status
+      // Load other user's profile
       profileData = await BaseApiClient.get<any>(`/api/user-profiles/${userId}`);
     }
 
@@ -334,3 +320,7 @@ export class ProfileService {
     this.clearFriendshipStatusCache();
   }
 }
+
+// Export EditProfileService
+export { default as EditProfileService } from './editProfileService';
+export * from './editProfileService';

@@ -4,7 +4,8 @@ import React from 'react';
 import { Plus, Search, Filter, ArrowUpDown, Grid3X3, Settings, Check } from 'lucide-react';
 import { Button } from '@/components/ui';
 import Dropdown, { DropdownItem, DropdownSeparator } from '@/components/ui/Dropdown/Dropdown';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
 
 interface TaskListHeaderProps {
   searchValue?: string;
@@ -40,303 +41,247 @@ const TaskListHeader = ({
   hideLeftSide = false,
 }: TaskListHeaderProps) => {
   const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   return (
     <div 
       className={`flex items-center ${hideLeftSide ? '' : 'justify-between py-4 px-6'} w-full ${className}`}
       style={{ 
-        backgroundColor: DARK_THEME.background.primary,
-        borderBottom: hideLeftSide ? 'none' : `1px solid ${DARK_THEME.border.default}`,
+        backgroundColor: theme.background.primary,
+        borderBottom: hideLeftSide ? 'none' : `1px solid ${theme.border.default}`,
         width: '100%',
         minWidth: '100%',
         position: 'relative',
-        zIndex: 40 // Higher than column headers (z-30)
+        zIndex: 40,
       }}
     >
-      {/* Left side - Empty space where Add Task Button was */}
+      {/* Left Side - Create Button */}
       {!hideLeftSide && (
         <div className="flex items-center">
-          {/* Add task button removed */}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onCreateTask}
+            className="flex items-center gap-2"
+            style={{
+              backgroundColor: theme.status.error,
+              color: theme.text.inverse,
+              border: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.status.error;
+              e.currentTarget.style.filter = 'brightness(0.9)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = theme.status.error;
+              e.currentTarget.style.filter = 'none';
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            {t('cards.myTasks.createTask')}
+          </Button>
         </div>
       )}
 
-      {/* Right side - Action Dropdowns */}
-      <div className="flex items-center gap-2">
-
-        {showFilters && (
-          <Dropdown
-            usePortal={true}
-            trigger={
-              <button 
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-                style={{
-                  color: DARK_THEME.text.secondary,
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.color = DARK_THEME.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
-                }}
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filter</span>
-              </button>
-            }
-            placement="bottom-right"
-          >
-            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Status</div>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                To Do
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                In Progress
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Review
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Done
-              </DropdownItem>
-              <DropdownSeparator />
-              <div className="text-xs font-semibold uppercase tracking-wide px-2 py-1" style={{ color: DARK_THEME.text.secondary }}>Priority</div>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Low
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Medium
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                High
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Urgent
-              </DropdownItem>
-            </div>
-          </Dropdown>
-        )}
-
-        {showSort && (
-          <Dropdown
-            usePortal={true}
-            trigger={
-              <button 
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-                style={{
-                  color: DARK_THEME.text.secondary,
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.color = DARK_THEME.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
-                }}
-              >
-                <ArrowUpDown className="w-4 h-4" />
-                <span>Sort</span>
-              </button>
-            }
-            placement="bottom-right"
-          >
-            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => {}}>
-                Name
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Due Date
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Priority
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Status
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Created Date
-              </DropdownItem>
-              <DropdownSeparator />
-              <DropdownItem onClick={() => {}}>
-                Ascending
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Descending
-              </DropdownItem>
-            </div>
-          </Dropdown>
-        )}
-
-        {showGroup && (
-          <Dropdown
-            usePortal={true}
-            trigger={
-              <button 
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-                style={{
-                  color: DARK_THEME.text.secondary,
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.color = DARK_THEME.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
-                }}
-              >
-                <Grid3X3 className="w-4 h-4" />
-                <span>Group</span>
-              </button>
-            }
-            placement="bottom-right"
-          >
-            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-blue-600" />
-                Status
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Priority
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Assignment Date
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Project
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                <Check className="w-4 h-4 text-transparent" />
-                Assignee
-              </DropdownItem>
-              <DropdownSeparator />
-              <DropdownItem onClick={() => {}}>
-                No Grouping
-              </DropdownItem>
-            </div>
-          </Dropdown>
-        )}
-
-        {showOptions && (
-          <Dropdown
-            usePortal={true}
-            trigger={
-              <button 
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors"
-                style={{
-                  color: DARK_THEME.text.secondary,
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.color = DARK_THEME.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
-                }}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Options</span>
-              </button>
-            }
-            placement="bottom-right"
-          >
-            <div className="p-2" style={{ backgroundColor: DARK_THEME.background.primary }}>
-              <DropdownItem onClick={() => {}}>
-                View Settings
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Column Settings
-              </DropdownItem>
-              <DropdownSeparator />
-              <DropdownItem onClick={() => {}}>
-                Export Tasks
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Import Tasks
-              </DropdownItem>
-              <DropdownSeparator />
-              <DropdownItem onClick={() => {}}>
-                Keyboard Shortcuts
-              </DropdownItem>
-              <DropdownItem onClick={() => {}}>
-                Help & Support
-              </DropdownItem>
-            </div>
-          </Dropdown>
-        )}
-
+      {/* Right Side - Actions */}
+      <div className="flex items-center gap-3">
+        {/* Search */}
         {showSearch && (
-          <div className="relative">
+          <div className="flex items-center">
             {isSearchExpanded ? (
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchValue}
-                    onChange={(e) => onSearchChange?.(e.target.value)}
-                    onBlur={() => {
-                      if (!searchValue) {
-                        setIsSearchExpanded(false);
-                      }
-                    }}
-                    placeholder="Search task names"
-                    className="pl-10 pr-12 py-2 w-80 rounded-full border transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500"
-                    style={{
-                      backgroundColor: DARK_THEME.background.primary,
-                      borderColor: DARK_THEME.border.default,
-                      color: DARK_THEME.text.primary,
-                    }}
-                    autoFocus
-                  />
+              <div className="flex items-center bg-transparent border rounded-lg px-3 py-2 min-w-[300px]"
+                style={{
+                  borderColor: theme.border.default,
+                  backgroundColor: theme.background.secondary,
+                }}
+              >
+                <Search className="w-4 h-4 mr-2" style={{ color: theme.text.muted }} />
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                  placeholder={t('taskList.search.placeholder')}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  style={{
+                    color: theme.text.primary,
+                  }}
+                  autoFocus
+                  onBlur={() => {
+                    if (!searchValue) {
+                      setIsSearchExpanded(false);
+                    }
+                  }}
+                />
+                {searchValue && (
                   <button
-                    onClick={() => setIsSearchExpanded(false)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      onSearchChange?.('');
+                      setIsSearchExpanded(false);
+                    }}
+                    className="ml-2 p-1 rounded hover:opacity-70"
+                    style={{ color: theme.text.muted }}
                   >
-                    ⋯
+                    ×
                   </button>
-                </div>
+                )}
               </div>
             ) : (
               <button
                 onClick={() => setIsSearchExpanded(true)}
                 className="p-2 rounded-lg transition-colors"
                 style={{
-                  color: DARK_THEME.text.secondary,
+                  color: theme.text.secondary,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.background.secondary;
-                  e.currentTarget.style.color = DARK_THEME.text.primary;
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.color = theme.text.primary;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
+                  e.currentTarget.style.color = theme.text.secondary;
                 }}
+                title={t('taskList.search.expandSearch')}
               >
                 <Search className="w-4 h-4" />
               </button>
             )}
           </div>
+        )}
+
+        {/* Filter */}
+        {showFilters && (
+          <Dropdown
+            trigger={
+              <button
+                className="p-2 rounded-lg transition-colors flex items-center gap-2"
+                style={{
+                  color: theme.text.secondary,
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.text.secondary;
+                }}
+                title={t('taskList.filters.title')}
+              >
+                <Filter className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('taskList.filters.button')}</span>
+              </button>
+            }
+          >
+            <DropdownItem onClick={onFilterClick}>
+              {t('taskList.filters.title')}
+            </DropdownItem>
+          </Dropdown>
+        )}
+
+        {/* Sort */}
+        {showSort && (
+          <Dropdown
+            trigger={
+              <button
+                className="p-2 rounded-lg transition-colors flex items-center gap-2"
+                style={{
+                  color: theme.text.secondary,
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.text.secondary;
+                }}
+                title={t('taskList.sort.title')}
+              >
+                <ArrowUpDown className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('taskList.sort.button')}</span>
+              </button>
+            }
+          >
+            <DropdownItem onClick={onSortClick}>
+              {t('taskList.sort.title')}
+            </DropdownItem>
+          </Dropdown>
+        )}
+
+        {/* Group */}
+        {showGroup && (
+          <Dropdown
+            trigger={
+              <button
+                className="p-2 rounded-lg transition-colors flex items-center gap-2"
+                style={{
+                  color: theme.text.secondary,
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.text.secondary;
+                }}
+                title={t('taskList.group.title')}
+              >
+                <Grid3X3 className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('taskList.group.button')}</span>
+              </button>
+            }
+          >
+            <DropdownItem onClick={onGroupClick}>
+              {t('taskList.group.title')}
+            </DropdownItem>
+          </Dropdown>
+        )}
+
+        {/* Options */}
+        {showOptions && (
+          <Dropdown
+            trigger={
+              <button
+                className="p-2 rounded-lg transition-colors flex items-center gap-2"
+                style={{
+                  color: theme.text.secondary,
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.secondary;
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.text.secondary;
+                }}
+                title={t('taskList.options.title')}
+              >
+                <Settings className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('taskList.options.button')}</span>
+              </button>
+            }
+          >
+            <DropdownItem onClick={onOptionsClick}>
+              {t('taskList.options.title')}
+            </DropdownItem>
+          </Dropdown>
         )}
       </div>
     </div>

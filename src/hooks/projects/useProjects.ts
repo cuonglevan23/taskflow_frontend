@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useSWR, { KeyedMutator } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { mutate } from 'swr';
-import type { ProjectStatus } from '@/types/project';
 import { projectsService } from '@/services/projects';
+import { toast } from 'react-hot-toast';
+import type { ProjectStatus, ProjectPriority } from '@/types/project';
 import type {
   Project,
   CreateProjectDTO,
@@ -60,17 +61,17 @@ export const useProjects = (params?: ProjectQueryParams) => {
 export const useMyProjects = (params?: {
   page?: number;
   size?: number;
-  status?: string[];
-  priority?: string[];
+  status?: ProjectStatus[];
+  priority?: ProjectPriority[];
 }) => {
-  const key = React.useMemo(() => 
-    projectKeys.list(params), 
+  const key = React.useMemo(() =>
+    projectKeys.list(params),
     [params?.page, params?.size, params?.status, params?.priority]
   );
 
   return useSWR(
     key,
-    () => projectsService.getMyProjects(params).then(data => 
+    () => projectsService.getMyProjects(params).then(data =>
       Array.isArray(data) ? data : data?.projects || []
     ),
     {
@@ -88,8 +89,8 @@ export const useMyProjects = (params?: {
 export const useTeamProjects = (teamId: number | null, params?: {
   page?: number;
   size?: number;
-  status?: string[];
-  priority?: string[];
+  status?: ProjectStatus[];
+  priority?: ProjectPriority[];
 }) => {
   return useSWR(
     teamId ? projectKeys.teamProjects(teamId) : null,
@@ -153,20 +154,20 @@ export const useCreateProject = () => {
     projectKeys.myProjects(),
     async (key, { arg }: { arg: CreateProjectDTO }) => {
       const newProject = await projectsService.createProject(arg);
-      
-      // Update global cache optimistically 
+
+      // Update global cache optimistically
       // No global mutations needed - SWR handles cache updates automatically
       // addProject will be called from component level
-      
+
       return newProject;
     },
     {
-      populateCache: (newProject: Project, currentData) => {
-        if (currentData && 'projects' in currentData) {
+      populateCache: (newProject: Project, currentData: any) => {
+        if (currentData && 'projects' in currentData && Array.isArray(currentData.projects)) {
           return {
             ...currentData,
             projects: [newProject, ...currentData.projects],
-            totalElements: currentData.totalElements + 1,
+            totalElements: (currentData.totalElements || currentData.projects.length) + 1,
           };
         }
         return newProject;
@@ -176,58 +177,123 @@ export const useCreateProject = () => {
   );
 };
 
-// Update project mutation
+// Update project mutation using SWR
 export const useUpdateProject = () => {
   return useSWRMutation(
     projectKeys.all,
     async (key, { arg }: { arg: { id: number; data: UpdateProjectDTO } }) => {
       const { id, data } = arg;
+      console.log(`🔄 Hook: Starting update for project ${id}`, data);
       const updatedProject = await projectsService.updateProject(id, data);
-      
-      // ✅ FIX: Update individual project cache immediately
-      mutate(projectKeys.detail(id), updatedProject, false);
-      
+      console.log(`✅ Hook: Successfully updated project ${id}`);
       return { id, project: updatedProject };
     },
     {
-      populateCache: ({ id, project }, currentData) => {
-        // Update project in list cache
-        if (currentData && 'projects' in currentData) {
+      populateCache: ({ id, project }: { id: number; project: Project }, currentData: any) => {
+        // Update project in list cache optimistically
+        if (currentData && 'projects' in currentData && Array.isArray(currentData.projects)) {
           return {
             ...currentData,
-            projects: currentData.projects.map((p: Project) => 
+            projects: currentData.projects.map((p: Project) =>
               p.id === id ? project : p
             ),
           };
         }
         return project;
       },
-      revalidate: false, // Don't revalidate since we're updating optimistically
+      revalidate: true, // Revalidate to ensure data consistency
+      onSuccess: ({ id, project }: { id: number; project: Project }) => {
+        console.log(`🎉 Successfully updated project ${id}`);
+        toast.success('Project updated successfully');
+
+        // Update individual project cache
+        mutate(projectKeys.detail(id), project, false);
+
+        // Revalidate related caches
+        mutate(projectKeys.myProjects(), undefined, true);
+        mutate(projectKeys.list(), undefined, true);
+      },
+      onError: (error: any) => {
+        console.error('❌ Update project failed:', error);
+        const errorMessage = error?.message || 'Failed to update project';
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
     }
   );
 };
 
-// Delete project mutation
+// Delete project mutation with enhanced error handling and optimistic updates
 export const useDeleteProject = () => {
   return useSWRMutation(
     projectKeys.all,
     async (key, { arg }: { arg: number }) => {
+      console.log(`🗑️ Hook: Starting delete for project ${arg}`);
       await projectsService.deleteProject(arg);
+      console.log(`✅ Hook: Successfully deleted project ${arg}`);
       return arg;
     },
     {
-      populateCache: (deletedId: number, currentData) => {
-        // Remove project from list cache
-        if (currentData && 'projects' in currentData) {
+      populateCache: (deletedId: number, currentData: any) => {
+        // Remove project from list cache optimistically
+        if (currentData && 'projects' in currentData && Array.isArray(currentData.projects)) {
+          const updatedProjects = currentData.projects.filter((p: Project) => p.id !== deletedId);
           return {
             ...currentData,
-            projects: currentData.projects.filter((p: Project) => p.id !== deletedId),
-            totalElements: currentData.totalElements - 1,
+            projects: updatedProjects,
+            totalElements: Math.max((currentData.totalElements || currentData.projects.length) - 1, 0),
+          };
+        }
+        return currentData;
+      },
+      revalidate: true, // Revalidate to ensure data consistency
+      onSuccess: (deletedId: number) => {
+        console.log(`🎉 Successfully deleted project ${deletedId}`);
+        // Clear individual project cache
+        mutate(projectKeys.detail(deletedId), undefined, false);
+      },
+      onError: (error: any) => {
+        console.error('❌ Delete project failed:', error);
+        // Show user-friendly error message
+        throw new Error(error.message || 'Failed to delete project');
+      }
+    }
+  );
+};
+
+// Bulk delete projects mutation
+export const useBulkDeleteProjects = () => {
+  return useSWRMutation(
+    projectKeys.all,
+    async (key, { arg }: { arg: number[] }) => {
+      console.log(`🗑️ Hook: Starting bulk delete for projects`, arg);
+      const result = await projectsService.deleteProjects(arg);
+      console.log(`✅ Hook: Bulk delete completed`, result);
+      return result;
+    },
+    {
+      populateCache: (result: { success: number[]; failed: { id: number; error: string }[] }, currentData: any) => {
+        // Remove successfully deleted projects from cache
+        if (currentData && 'projects' in currentData && Array.isArray(currentData.projects)) {
+          const updatedProjects = currentData.projects.filter((p: Project) =>
+            !result.success.includes(p.id)
+          );
+          return {
+            ...currentData,
+            projects: updatedProjects,
+            totalElements: Math.max((currentData.totalElements || currentData.projects.length) - result.success.length, 0),
           };
         }
         return currentData;
       },
       revalidate: true,
+      onSuccess: (result) => {
+        console.log(`🎉 Bulk delete completed: ${result.success.length} succeeded, ${result.failed.length} failed`);
+        // Clear individual project caches for successfully deleted projects
+        result.success.forEach(id => {
+          mutate(projectKeys.detail(id), undefined, false);
+        });
+      }
     }
   );
 };
@@ -242,11 +308,12 @@ export const useUpdateProjectStatus = () => {
       return { id, project: updatedProject };
     },
     {
-      populateCache: ({ id, project }, currentData) => {
-        if (currentData && 'projects' in currentData) {
+      populateCache: ({ id, project }: { id: number; project: Project }, currentData: any) => {
+        // Update project in list cache
+        if (currentData && 'projects' in currentData && Array.isArray(currentData.projects)) {
           return {
             ...currentData,
-            projects: currentData.projects.map((p: Project) => 
+            projects: currentData.projects.map((p: Project) =>
               p.id === id ? project : p
             ),
           };
@@ -275,7 +342,7 @@ export const useSearchProjects = (query: string, filters?: Partial<ProjectQueryP
 // Helper to manually revalidate all project-related caches
 export const revalidateProjects = async () => {
   const { mutate } = await import('swr');
-  
+
   // Revalidate all project caches
   await mutate(
     (key) => Array.isArray(key) && key[0] === 'projects',
@@ -287,7 +354,7 @@ export const revalidateProjects = async () => {
 // Helper to clear all project caches
 export const clearProjectCaches = async () => {
   const { mutate } = await import('swr');
-  
+
   // Clear all project caches
   await mutate(
     (key) => Array.isArray(key) && key[0] === 'projects',

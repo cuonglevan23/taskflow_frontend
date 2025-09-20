@@ -2,18 +2,29 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import BaseCard, { type ActionButtonConfig } from "@/components/ui/BaseCard";
 import { FaPlus } from "react-icons/fa";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { GrProjects } from "react-icons/gr";
 import { useMyProjects } from "@/hooks/projects/useProjects";
-import type { ProjectResponseDto } from "@/types/projects";
+import type { BackendProject } from "@/types/project";
 
 // Professional ProjectsCard using BaseCard & Real SWR API Integration
 const ProjectsCard = () => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
   const router = useRouter();
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   // Use SWR hook with revalidation settings
   const { data: projectsData, isLoading: loading, error, mutate } = useMyProjects();
@@ -40,7 +51,8 @@ const ProjectsCard = () => {
   const projects = React.useMemo(() => {
     if (!projectsData) return [];
     // Handle both array response and paginated response
-    return Array.isArray(projectsData) ? projectsData : (projectsData.projects || []);
+    // Since useMyProjects already transforms the data to an array, we can safely use it
+    return Array.isArray(projectsData) ? projectsData : [];
   }, [projectsData]);
 
   // Process real API data
@@ -56,7 +68,7 @@ const ProjectsCard = () => {
   const hasMoreProjects = regularProjects.length > initialLimit;
 
   // Project Item Component - Same hover effects as Featured Project
-  const ProjectItem = ({ project }: { project: ProjectResponseDto }) => {
+  const ProjectItem = ({ project }: { project: BackendProject }) => {
     const IconComponent = GrProjects; // Use default icon for API projects
 
     const handleProjectClick = () => {
@@ -97,7 +109,7 @@ const ProjectsCard = () => {
   };
 
   // Featured Project Component - Large size w-10 h-10
-  const FeaturedProject = ({ project }: { project: ProjectResponseDto }) => {
+  const FeaturedProject = ({ project }: { project: BackendProject }) => {
     const IconComponent = GrProjects; // Use default icon for API projects
 
     const handleFeaturedProjectClick = () => {

@@ -40,11 +40,11 @@ const TeamHeader = ({
   return (
     <div className="relative">
       {/* Cover Image Background - Clean without avatar */}
-      <div 
+      <div
         className="h-32 w-full relative overflow-hidden"
         style={{
-          backgroundImage: coverImageUrl 
-            ? `url(${coverImageUrl})` 
+          backgroundImage: coverImageUrl
+            ? `url(${coverImageUrl})`
             : `linear-gradient(135deg, #4F8A8B 0%, #5A9A8B 100%)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',

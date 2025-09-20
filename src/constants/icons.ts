@@ -121,7 +121,6 @@ export const NAVIGATION_ICONS = {
   projectsOpen: FolderOpen,
   tasks: CustomTaskIcon,
   inbox: CustomInboxIcon,
-  reporting: CustomReportingIcon,
   goals: CustomGoalIcon,
   teams: Users,
 } as const;
@@ -250,7 +249,6 @@ export const SIDEBAR_ICONS = {
   inbox: CustomInboxIcon,
   messages: MessageIcon, // Thêm MessageIcon mới với SVG chat-outline
   newsfeed: Rss, // Added NewsFeed icon
-  reporting: CustomReportingIcon,
   goals: CustomGoalIcon,
   projects: Folder,
   teams: Users,

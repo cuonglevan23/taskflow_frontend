@@ -3,19 +3,33 @@
 import React, { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from '@/components/auth/AuthProvider'; // Use new auth system
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { MembersHeader, MembersTable } from "@/components/teams";
-import { useTeam } from "@/hooks/useTeam";
+import { useTeam } from "@/hooks/teams/useTeam";
 import { transformTeamMemberForMembersTable, type MembersTableData } from "@/types/shared-teams";
 
 const TeamMembersPage = React.memo(() => {
   const params = useParams();
   const { user, isLoading: authLoading } = useAuth(); // Use new auth system
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const teamId = useMemo(() => {
     const id = params.id as string;
     return parseInt(id, 10);
   }, [params.id]);
   
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
   // Use TeamContext for real data with automatic fetching
   const {
     team,
@@ -57,15 +71,30 @@ const TeamMembersPage = React.memo(() => {
     return (
       <div 
         className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: DARK_THEME.background.primary }}
+        style={{ backgroundColor: theme.background.primary }}
       >
         <div className="text-center">
-          <p className="text-red-400 mb-4">Error loading team members: {membersError}</p>
-          <button 
-            onClick={refresh}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          <p
+            className="mb-4"
+            style={{ color: theme.status.error }}
           >
-            Retry
+            {t('teams.members.error.loading')}: {membersError}
+          </p>
+          <button
+            onClick={refresh}
+            className="px-4 py-2 rounded transition-colors"
+            style={{
+              backgroundColor: theme.status.info,
+              color: theme.text.inverse
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.background.weakHover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = theme.status.info;
+            }}
+          >
+            {t('common.actions.retry')}
           </button>
         </div>
       </div>
@@ -75,7 +104,7 @@ const TeamMembersPage = React.memo(() => {
   return (
     <div 
       className="min-h-screen"
-      style={{ backgroundColor: DARK_THEME.background.primary }}
+      style={{ backgroundColor: theme.background.primary }}
     >
       {/* Page Header */}
       <MembersHeader
@@ -89,13 +118,15 @@ const TeamMembersPage = React.memo(() => {
         <div 
           className="rounded-lg border overflow-hidden"
           style={{ 
-            backgroundColor: DARK_THEME.background.secondary,
-            borderColor: DARK_THEME.border.default 
+            backgroundColor: theme.background.secondary,
+            borderColor: theme.border.default
           }}
         >
           {membersLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-400">Loading team members...</div>
+              <div style={{ color: theme.text.muted }}>
+                {t('teams.members.loading')}
+              </div>
             </div>
           ) : (
             <MembersTable

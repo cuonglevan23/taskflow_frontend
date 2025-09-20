@@ -5,7 +5,8 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
 import type { Task } from "@/types";
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
@@ -42,20 +43,16 @@ export interface FullCalendarViewProps {
 }
 
 // Convert tasks to FullCalendar events
-const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => { backgroundColor: string; borderColor: string }): CalendarEvent[] => {
+const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => { backgroundColor: string; borderColor: string }, t: (key: string) => string): CalendarEvent[] => {
   if (!tasks || !Array.isArray(tasks)) {
     return [];
   }
   
-      console.log('🔍 FullCalendarView: Converting tasks:', tasks.map(t => ({
-    id: t.id,
-    title: t.title,
-    startDate: t.startDate,
-    deadline: t.deadline,
-    dueDate: t.dueDate,
-    dueDateISO: t.dueDateISO
-  })));
-  
+  // Only log in development when needed for debugging
+  if (process.env.NODE_ENV === 'development' && tasks.length > 0) {
+    console.log('🔍 FullCalendarView: Converting', tasks.length, 'tasks');
+  }
+
   return tasks.map(task => {
     try {
       let startDate: string;
@@ -190,20 +187,24 @@ const convertTasksToEvents = (tasks: Task[], getTaskColorsFunc: (task: Task) => 
         hasMultipleDays = startDateStr !== deadlineStr;
       }
 
-
+      // Build task title with multilingual status indicators
+      let titleSuffix = '';
+      if (isCompleted) titleSuffix += ` ✓`;
+      if (isOverdue) titleSuffix += ` ⚠️`;
+      if (hasMultipleDays) titleSuffix += ` 📅`;
 
       return {
         id: task.id?.toString() || Math.random().toString(),
-        title: `${task.title || 'Untitled Task'}${isCompleted ? ' ✓' : ''}${isOverdue ? ' ⚠️' : ''}${hasMultipleDays ? ' 📅' : ''}`,
+        title: `${task.title || t('calendar.events.untitledTask')}${titleSuffix}`,
         start: startDate,
-        end: endDate,  // This is set for all tasks with deadline 
+        end: endDate,
         allDay: true,
         backgroundColor,
         borderColor,
         textColor: '#FFFFFF',
         extendedProps: {
           originalTask: task,
-          assignee: task.assigneeId || 'Unassigned',
+          assignee: task.assigneeId || t('calendar.events.unassigned'),
           description: task.description || '',
           project: task.projectId?.toString() || '',
           status: task.status || 'pending',
@@ -227,59 +228,69 @@ export const FullCalendarView = ({
   height = "100%",
   className = ""
 }: FullCalendarViewProps) => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
   const calendarRef = useRef<FullCalendar>(null);
   
-  // Simple local color function (no backend dependency)
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
+  // Task color function with theme integration
   const getTaskColors = (task: Task) => {
     const isCompleted = task.completed || task.status === 'completed' || task.status === 'DONE';
     const isOverdue = task.dueDateISO && task.dueDateISO < new Date() && !isCompleted;
     
     // Priority: completed > overdue > status > priority > default
     if (isCompleted) {
-      return { backgroundColor: '#b8acff', borderColor: '#b8acff' }; // Purple for completed
+      return { backgroundColor: theme.status.success, borderColor: theme.status.success };
     }
     
     if (isOverdue) {
-      return { backgroundColor: '#dc2626', borderColor: '#991b1b' }; // Red
+      return { backgroundColor: theme.status.error, borderColor: theme.status.error };
     }
     
-    // Status-based colors
+    // Status-based colors with theme integration
     if (task.status === 'IN_PROGRESS' || task.status === 'in-progress') {
-      return { backgroundColor: '#f59e0b', borderColor: '#d97706' }; // Orange
+      return { backgroundColor: theme.status.warning, borderColor: theme.status.warning };
     }
     
     if (task.status === 'TESTING') {
-      return { backgroundColor: '#3b82f6', borderColor: '#1d4ed8' }; // Blue
+      return { backgroundColor: theme.status.info, borderColor: theme.status.info };
     }
     
     if (task.status === 'REVIEW') {
-      return { backgroundColor: '#8b5cf6', borderColor: '#7c3aed' }; // Purple
+      return { backgroundColor: '#8b5cf6', borderColor: '#7c3aed' };
     }
     
     if (task.status === 'BLOCKED') {
-      return { backgroundColor: '#dc2626', borderColor: '#991b1b' }; // Red
+      return { backgroundColor: theme.status.error, borderColor: theme.status.error };
     }
     
     // Priority-based colors (fallback)
     if (task.priority === 'high') {
-      return { backgroundColor: '#ef4444', borderColor: '#dc2626' }; // Red
+      return { backgroundColor: theme.status.error, borderColor: theme.status.error };
     }
     
     if (task.priority === 'medium') {
-      return { backgroundColor: '#f59e0b', borderColor: '#d97706' }; // Orange
+      return { backgroundColor: theme.status.warning, borderColor: theme.status.warning };
     }
     
     // Default theme color
-    return { backgroundColor: '#5da283', borderColor: '#5da283' }; // Green theme
+    return { backgroundColor: theme.status.success, borderColor: theme.status.success };
   };
 
-  // Convert tasks to calendar events
+  // Convert tasks to calendar events with theme and i18n support
   const calendarEvents = useMemo(() => {
-    const events = convertTasksToEvents(tasks, getTaskColors);
-
+    const events = convertTasksToEvents(tasks, getTaskColors, t);
     return events;
-  }, [tasks]);
+  }, [tasks, theme, messages]);
 
   // Auto-resize calendar when window resizes (simple solution)
   useEffect(() => {
@@ -401,16 +412,6 @@ export const FullCalendarView = ({
       assignedEmails?: string[];
     } | undefined;
     
-    // Debug log for calendar task data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Calendar task data:', {
-        title: eventInfo.event.title,
-        hasTask: !!task,
-        assigneesCount: task?.assignees?.length || 0,
-        assignedEmailsCount: task?.assignedEmails?.length || 0
-      });
-    }
-    
     if (!task) {
       return null;
     }
@@ -418,12 +419,14 @@ export const FullCalendarView = ({
     const assignedEmails = task.assignedEmails || [];
     const assignees = task.assignees || [];
     
-    // Since assignees type doesn't have email field, we'll show both but limit to avoid overcrowding
     const totalAssignees = assignees.length + assignedEmails.length;
 
     return (
       <div className="flex items-center justify-between w-full px-1 py-0.5">
-        <span className="text-xs font-medium truncate flex-1 mr-1">
+        <span
+          className="text-xs font-medium truncate flex-1 mr-1"
+          style={{ color: theme.text.inverse }}
+        >
           {eventInfo.event.title}
         </span>
         
@@ -463,7 +466,13 @@ export const FullCalendarView = ({
               ).length;
               const totalUniqueAssignees = assignees.length + uniqueEmailsCount;
               return totalUniqueAssignees > 4 && (
-                <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border border-white">
+                <div
+                  className="w-4 h-4 rounded-full flex items-center justify-center text-xs border border-white"
+                  style={{
+                    backgroundColor: theme.background.muted,
+                    color: theme.text.primary
+                  }}
+                >
                   +{totalUniqueAssignees - 4}
                 </div>
               );
@@ -472,12 +481,59 @@ export const FullCalendarView = ({
         )}
       </div>
     );
-  }, []);
-
-  // Removed event handlers for drag, drop, and resize since calendar is read-only
+  }, [theme, t]);
 
   return (
     <div className={`w-full transition-all duration-300 ${className}`} style={{ height }}>
+      <style jsx global>{`
+        .fc {
+          background-color: ${theme.background.primary} !important;
+          color: ${theme.text.primary} !important;
+        }
+        .fc-toolbar {
+          background-color: ${theme.background.primary} !important;
+        }
+        .fc-toolbar-title {
+          color: ${theme.text.primary} !important;
+        }
+        .fc-button {
+          background-color: ${theme.background.secondary} !important;
+          border-color: ${theme.border.default} !important;
+          color: ${theme.text.primary} !important;
+        }
+        .fc-button:hover {
+          background-color: ${theme.background.tertiary} !important;
+          border-color: ${theme.border.default} !important;
+          color: ${theme.text.primary} !important;
+        }
+        .fc-button-active {
+          background-color: ${theme.status.info} !important;
+          border-color: ${theme.status.info} !important;
+          color: ${theme.text.inverse} !important;
+        }
+        .fc-daygrid-day {
+          background-color: ${theme.background.primary} !important;
+        }
+        .fc-day-today {
+          background-color: ${theme.background.weakHover} !important;
+        }
+        .fc-col-header-cell {
+          background-color: ${theme.background.secondary} !important;
+          border-color: ${theme.border.default} !important;
+        }
+        .fc-col-header-cell-cushion {
+          color: ${theme.text.secondary} !important;
+        }
+        .fc-daygrid-day-number {
+          color: ${theme.text.primary} !important;
+        }
+        .fc-scrollgrid {
+          border-color: ${theme.border.default} !important;
+        }
+        .fc-scrollgrid td, .fc-scrollgrid th {
+          border-color: ${theme.border.default} !important;
+        }
+      `}</style>
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}
@@ -487,23 +543,29 @@ export const FullCalendarView = ({
           center: 'title',
           right: 'dayGridMonth,dayGridWeek'
         }}
+        buttonText={{
+          today: t('calendar.today'),
+          month: t('calendar.month'),
+          week: t('calendar.week'),
+          day: t('calendar.day')
+        }}
         height="100%"
         events={calendarEvents}
         
-                // Calendar Interaction Settings - Enable drag & drop when handlers are provided
-        editable={!!onEventDrop || !!onEventResize} // Enable drag & drop if handlers provided
-        droppable={!!onEventDrop} // Enable dropping if handler provided
-        selectable={false} // Keep date selection disabled
-        selectMirror={false} // Disable selection mirror
-        eventResizableFromStart={!!onEventResize} // Enable resizing from start if handler provided
-        eventDurationEditable={!!onEventResize} // Enable duration editing if handler provided
-        
+        // Calendar Interaction Settings
+        editable={!!onEventDrop || !!onEventResize}
+        droppable={!!onEventDrop}
+        selectable={false}
+        selectMirror={false}
+        eventResizableFromStart={!!onEventResize}
+        eventDurationEditable={!!onEventResize}
+
         // Event Handlers
-        eventClick={handleEventClick} // Keep event click for viewing details
-        dateClick={handleDateClick} // Keep date click for creating tasks
-        eventDrop={onEventDrop ? handleEventDrop : undefined} // Add drop handler
-        eventResize={onEventResize ? handleEventResize : undefined} // Add resize handler
-        
+        eventClick={handleEventClick}
+        dateClick={handleDateClick}
+        eventDrop={onEventDrop ? handleEventDrop : undefined}
+        eventResize={onEventResize ? handleEventResize : undefined}
+
         // Custom event content with avatars
         eventContent={renderEventContent}
         
@@ -512,213 +574,13 @@ export const FullCalendarView = ({
         weekends={true}
         firstDay={1} // Monday
         displayEventTime={false}
-        nowIndicator={true}
         eventDisplay="block"
-        
-        // Multi-day event settings
-        eventOverlap={true}
-        eventConstraint={undefined}
-        selectOverlap={true}
-        buttonText={{
-          today: 'Today',       // đổi từ "today" → "Today"
-          month: 'Month',
-          week: 'Week',
-          day: 'Day'
-        }}
-
-        
-        // Custom styling
-        eventDidMount={(info) => {
-          const el = info.el;
-          const priority = info.event.extendedProps?.priority || 'low';
-          const status = info.event.extendedProps?.status || '';
-          const originalTask = info.event.extendedProps?.originalTask;
-          const isCompleted = originalTask?.completed || status === 'completed' || status === 'DONE';
-          
-          if (el && el.classList) {
-            el.classList.add('fc-event-custom');
-            el.classList.add(`fc-event-priority-${priority}`);
-            
-            if (isCompleted) {
-              el.classList.add('fc-event-completed');
-            }
-          }
-        }}
+        showNonCurrentDates={true}
+        fixedWeekCount={false}
       />
-
-      {/* FullCalendar Custom Styles */}
-      <style jsx global>{`
-        .fc {
-          font-family: inherit !important;
-          background-color: ${theme?.background?.primary || '#1f2937'};
-          color: ${theme?.text?.primary || '#ffffff'};
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-        
-        .fc-theme-standard .fc-scrollgrid {
-          border-color: rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-        
-        .fc-theme-standard td, .fc-theme-standard th {
-          border-color: rgba(255, 255, 255, 0.08);
-          transition: all 0.2s ease;
-        }
-        
-        .fc-col-header-cell {
-          background-color: ${theme?.background?.secondary || '#374151'};
-          color: ${theme?.text?.primary || '#ffffff'};
-          font-weight: 600;
-          font-size: 0.875rem;
-          padding: 0 0;
-        }
-        
-        .fc-daygrid-day {
-          background-color: ${theme?.background?.primary || '#1f2937'};
-          color: ${theme?.text?.primary || '#ffffff'};
-          min-height: 100px;
-        }
-        
-        .fc-day-today {
-          background-color: ${theme?.background?.secondary || '#1e1f21'} !important;
-        }
-        
-        .fc-daygrid-day-number {
-          color: ${theme?.text?.primary || '#ffffff'};
-          font-weight: 500;
-          font-size: 0.875rem;
-          padding: 0.5rem;
-        }
-        
-        .fc-day-today .fc-daygrid-day-number {
-          background-color: #3B82F6;
-          color: white;
-          border-radius: 50%;
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-        }
-        
-        .fc-event {
-          border-radius: 6px !important;
-          font-size: 12px;
-          font-weight: 500;
-          margin: 1px;
-          cursor: pointer;
-          min-height: 36px;
-          height: auto;
-          margin-bottom: 4px;
-          display: flex;
-          align-items: center;
-          padding: 6px 8px;
-          line-height: 1.3;
-        }
-        
-        .fc-event-title {
-          word-wrap: break-word;
-          word-break: break-word;
-          white-space: normal;
-          overflow-wrap: break-word;
-          hyphens: auto;
-        }
-        
-        .fc-event:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
-          transition: all 0.2s ease;
-        }
-        
-        .fc-event.fc-event-completed {
-          opacity: 0.5;
-          box-shadow: none;
-        }
-        
-        .fc-event-custom {
-          border-radius: 6px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .fc-event-priority-high {
-          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-        }
-        
-        .fc-event-priority-medium {
-          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-        }
-        
-        .fc-event-priority-low {
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-        }
-        
-        /* Clean Minimal Toolbar styling */
-        .fc-toolbar {
-          background-color: transparent;
-          padding: 5px 5px;
-          border: none;
-          
-          border-bottom: 1px solid ${theme?.border?.default || 'rgba(255, 255, 255, 0.1)'};
-        }
-        
-        .fc-toolbar-chunk {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        
-        .fc-toolbar-title {
-          color: ${theme?.text?.primary || '#ffffff'};
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin: 0;
-          
-        }
-        .fc .fc-toolbar.fc-header-toolbar {
-          margin: 0;
-        }
-        /* trạng thái bình thường: chỉ có text */
-        .fc .fc-button-primary {
-          background-color: transparent !important;
-          border: none !important;
-          color: #fff;
-          box-shadow: none !important;
-         
-        
-        }
-
-        /* hover: nền mờ */
-        .fc .fc-button-primary:hover {
-          background-color: rgba(255, 255, 255, 0.1) !important;
-          border: none !important;
-         
-        }
-
-        /* active (đang chọn): nền xanh nổi bật */
-        .fc .fc-button-primary.fc-button-active {
-          background-color:rgba(255, 255, 255, .06)!important; /* xanh Tailwind emerald-500 */
-          color: white !important;
-          border: none !important;
-   
-        }
-
-        /* disabled: chỉ text xám */
-        .fc .fc-button-primary:disabled {
-          background-color: transparent !important;
-          border: none !important;
-          color: #6b7280 !important; /* text gray */
-       
-        }
-        
-
-
-      `}</style>
     </div>
   );
 };
 
 export default FullCalendarView;
+

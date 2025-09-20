@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { useTeamGoals } from "@/hooks/useTeamGoals";
-import { useTeamProgress } from "@/hooks/useTeamProgress";
+import { useTeamGoals } from "@/hooks/process/useTeamGoals";
+import { useTeamProgress } from "@/hooks/process/useTeamProgress";
 import { GoalTable } from "@/components/goals/GoalTable";
 import { TeamProgressCard } from "@/components/teams/TeamProgressCard";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { LayoutGrid, List } from "lucide-react";
 
 function TeamGoalsContent() {
   const { goals, toggleGoalExpanded, loading: goalsLoading, error: goalsError } = useTeamGoals();
   const { teamsProgress, loading: progressLoading, error: progressError } = useTeamProgress();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const loading = goalsLoading || progressLoading;
   const error = goalsError || progressError;
 
@@ -31,40 +34,40 @@ function TeamGoalsContent() {
   return (
     <div
       className="flex-1 min-h-0 flex flex-col"
-      style={{ backgroundColor: DARK_THEME.background.secondary }}
+      style={{ backgroundColor: theme.background.secondary }}
     >
       <div
         className="flex-1 min-h-0 flex flex-col"
         style={{
-          backgroundColor: DARK_THEME.background.primary,
-          borderColor: DARK_THEME.border?.default || "#424244",
+          backgroundColor: theme.background.primary,
+          borderColor: theme.border?.default || "#424244",
         }}
       >
         {/* Header */}
         <div
           className="flex justify-between items-center px-6 py-4 border-b border-gray-700 sticky top-0 z-30"
-          style={{ backgroundColor: DARK_THEME.background.primary }}
+          style={{ backgroundColor: theme.background.primary }}
         >
           <div>
             <h1
               className="text-xl font-semibold"
-              style={{ color: DARK_THEME.text.primary }}
+              style={{ color: theme.text.primary }}
             >
-              Team Goals
+              {messages?.navigation?.goals?.teamGoals || "Team Goals"}
             </h1>
             {teamsProgress.length > 0 && (
               <p
                 className="text-sm mt-1"
-                style={{ color: DARK_THEME.text.secondary }}
+                style={{ color: theme.text.secondary }}
               >
-                {teamsProgress.length} {teamsProgress.length === 1 ? 'team' : 'teams'} • {Math.round(stats.avgProgress)}% average progress • {stats.completedTasks}/{stats.totalTasks} tasks completed
+                {teamsProgress.length} {teamsProgress.length === 1 ? (messages?.common?.team || 'team') : (messages?.common?.teams || 'teams')} • {Math.round(stats.avgProgress)}% {messages?.common?.averageProgress || 'average progress'} • {stats.completedTasks}/{stats.totalTasks} {messages?.common?.tasksCompleted || 'tasks completed'}
               </p>
             )}
           </div>
 
           <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
-            <div className="flex items-center rounded-lg border" style={{ borderColor: DARK_THEME.border?.default }}>
+            <div className="flex items-center rounded-lg border" style={{ borderColor: theme.border?.default }}>
               <button
                 className={`p-2 rounded-l-lg transition-colors ${
                   viewMode === 'cards' 
@@ -72,11 +75,11 @@ function TeamGoalsContent() {
                     : ''
                 }`}
                 style={{ 
-                  backgroundColor: viewMode === 'cards' ? DARK_THEME.button.primary.background : 'transparent',
-                  color: viewMode === 'cards' ? 'white' : DARK_THEME.text.secondary 
+                  backgroundColor: viewMode === 'cards' ? theme.status.info : 'transparent',
+                  color: viewMode === 'cards' ? theme.text.inverse : theme.text.secondary
                 }}
                 onClick={() => setViewMode('cards')}
-                title="Card view"
+                title={messages?.common?.cardView || "Card view"}
               >
                 <LayoutGrid size={16} />
               </button>
@@ -87,11 +90,11 @@ function TeamGoalsContent() {
                     : ''
                 }`}
                 style={{ 
-                  backgroundColor: viewMode === 'table' ? DARK_THEME.button.primary.background : 'transparent',
-                  color: viewMode === 'table' ? 'white' : DARK_THEME.text.secondary 
+                  backgroundColor: viewMode === 'table' ? theme.status.info : 'transparent',
+                  color: viewMode === 'table' ? theme.text.inverse : theme.text.secondary
                 }}
                 onClick={() => setViewMode('table')}
-                title="Table view"
+                title={messages?.common?.tableView || "Table view"}
               >
                 <List size={16} />
               </button>
@@ -105,27 +108,36 @@ function TeamGoalsContent() {
             <div className="flex justify-center items-center h-full">
               <div className="flex flex-col items-center">
                 <div className="animate-pulse flex space-x-4 mb-4">
-                  <div className="rounded-full bg-slate-700 h-12 w-12"></div>
+                  <div
+                    className="rounded-full h-12 w-12"
+                    style={{ backgroundColor: theme.background.muted }}
+                  ></div>
                   <div className="flex-1 space-y-4 py-1">
-                    <div className="h-4 bg-slate-700 rounded w-40"></div>
-                    <div className="h-4 bg-slate-700 rounded w-24"></div>
+                    <div
+                      className="h-4 rounded w-40"
+                      style={{ backgroundColor: theme.background.muted }}
+                    ></div>
+                    <div
+                      className="h-4 rounded w-24"
+                      style={{ backgroundColor: theme.background.muted }}
+                    ></div>
                   </div>
                 </div>
                 <div 
                   className="text-xl mt-2"
-                  style={{ color: DARK_THEME.text.secondary }}
+                  style={{ color: theme.text.secondary }}
                 >
-                  Loading team progress...
+                  {messages?.common?.loadingTeamProgress || "Loading team progress..."}
                 </div>
               </div>
             </div>
           ) : error ? (
             <div className="flex justify-center items-center h-full">
               <div 
-                className="text-xl text-red-500"
-                style={{ color: "#ef4444" }}
+                className="text-xl"
+                style={{ color: theme.status.error }}
               >
-                Error loading team progress: {error}
+                {messages?.common?.errorLoadingTeamProgress || "Error loading team progress"}: {error}
               </div>
             </div>
           ) : teamsProgress.length > 0 ? (
@@ -150,15 +162,15 @@ function TeamGoalsContent() {
               <div className="text-6xl mb-4">👥</div>
               <h2
                 className="text-2xl font-semibold mb-2"
-                style={{ color: DARK_THEME.text.primary }}
+                style={{ color: theme.text.primary }}
               >
-                No team progress found
+                {messages?.common?.noTeamProgress || "No team progress found"}
               </h2>
               <p
                 className="text-lg mb-4"
-                style={{ color: DARK_THEME.text.primary }}
+                style={{ color: theme.text.primary }}
               >
-                You are not a member of any team with active tasks
+                {messages?.common?.notTeamMember || "You are not a member of any team with active tasks"}
               </p>
             </div>
           )}

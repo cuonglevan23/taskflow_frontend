@@ -1,10 +1,9 @@
 import React, { memo, useState, useRef, useCallback } from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
 import { ChatMessage, ReactionType } from '@/types/chat';
+import { useThemeContext } from "@/providers/ThemeProvider";
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
 // Import các components con
-const MessageActions = React.lazy(() => import('./MessageActions'));
 const ReactionMenu = React.lazy(() => import('./ReactionMenu'));
 const ReactionBadge = React.lazy(() => import('./ReactionBadge'));
 const ReplyPreview = React.lazy(() => import('./ReplyPreview'));
@@ -39,7 +38,7 @@ const formatFileSize = (bytes: number) => {
 };
 
 // File attachment component - Exact same approach as FileDisplayGrid
-const FileAttachment = ({ message }: { message: ChatMessage }) => {
+const FileAttachment = ({ message, theme }: { message: ChatMessage; theme: any }) => {
   if (!message.fileUrl || !message.fileName) return null;
 
   const isImage = message.type === 'IMAGE' || message.fileName?.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)$/);
@@ -62,21 +61,27 @@ const FileAttachment = ({ message }: { message: ChatMessage }) => {
             className="w-full h-full object-cover cursor-pointer"
             onClick={handleDownload}
             onError={(e) => {
-              // Exact same fallback as FileDisplayGrid
+              // Fallback when image fails to load
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
-              target.nextElementSibling?.classList.remove('hidden');
+              const fallbackElement = target.nextElementSibling as HTMLElement;
+              if (fallbackElement) {
+                fallbackElement.style.display = 'flex';
+              }
             }}
           />
 
-          {/* Fallback icon when image fails - hidden by default */}
-          <div className="hidden w-12 h-12 text-gray-400 flex items-center justify-center">
+          {/* Fallback icon when image fails - hidden by default, shows as flex when needed */}
+          <div
+            className="w-12 h-12 text-gray-400 items-center justify-center"
+            style={{ display: 'none' }}
+          >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
 
-          {/* Hover overlay - exact same as FileDisplayGrid */}
+          {/* Hover overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,8 +124,8 @@ const FileAttachment = ({ message }: { message: ChatMessage }) => {
       <div
         className="flex items-center gap-3 p-3 rounded-lg border border-opacity-20 hover:border-opacity-40 transition-all duration-200 cursor-pointer max-w-xs"
         style={{
-          backgroundColor: `${DARK_THEME.background.muted}40`,
-          borderColor: DARK_THEME.border.default
+          backgroundColor: `${theme.background.muted}40`,
+          borderColor: theme.border.default
         }}
         onClick={handleDownload}
       >
@@ -128,11 +133,11 @@ const FileAttachment = ({ message }: { message: ChatMessage }) => {
           {getFileIcon(message.fileName || '')}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" style={{ color: DARK_THEME.text.primary }}>
+          <p className="text-sm font-medium truncate" style={{ color: theme.text.primary }}>
             {message.fileName}
           </p>
           {message.fileSize && (
-            <p className="text-xs opacity-75" style={{ color: DARK_THEME.text.muted }}>
+            <p className="text-xs opacity-75" style={{ color: theme.text.muted }}>
               {formatFileSize(message.fileSize)}
             </p>
           )}
@@ -164,6 +169,9 @@ export const MessageItem = memo(({
   onToggleReaction,
   onReply
 }: MessageItemProps) => {
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+
   const [isHovered, setIsHovered] = useState(false);
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [reactionMenuPosition, setReactionMenuPosition] = useState({ x: 0, y: 0 });
@@ -260,7 +268,7 @@ export const MessageItem = memo(({
       <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
         {/* Sender Name */}
         {!isOwn && showAvatar && (
-          <span className="text-xs mb-1 px-1" style={{ color: DARK_THEME.text.muted }}>
+          <span className="text-xs mb-1 px-1" style={{ color: theme.text.muted }}>
             {message.senderName}
           </span>
         )}
@@ -284,8 +292,8 @@ export const MessageItem = memo(({
               isOwn ? 'rounded-br-md' : 'rounded-bl-md'
             }`}
             style={{
-              backgroundColor: isOwn ? THEME_COLORS.primary[500] : DARK_THEME.background.muted,
-              color: isOwn ? '#ffffff' : DARK_THEME.text.primary,
+              backgroundColor: isOwn ? theme.status.info : theme.background.muted,
+              color: isOwn ? '#ffffff' : theme.text.primary,
               wordBreak: 'break-word',
             }}
           >
@@ -295,20 +303,56 @@ export const MessageItem = memo(({
             )}
 
             {/* File Attachment - Show directly in message bubble */}
-            <FileAttachment message={message} />
+            <FileAttachment message={message} theme={theme} />
           </div>
 
-          {/* Message Actions (Hover) - Pass ref to reaction button */}
-          <React.Suspense fallback={null}>
-            <MessageActions
-              isVisible={isHovered}
-              onReactionClick={handleReactionClick}
-              onReplyClick={handleReplyClick}
-              isOwn={isOwn}
-              reactionButtonRef={reactionButtonRef}
-            />
-          </React.Suspense>
+          {/* Message Actions (Hover) - Inline reaction and reply buttons */}
+          {isHovered && (
+            <div
+              className={`absolute top-0 flex items-center gap-1 transition-opacity duration-200 ${
+                isOwn ? 'right-full mr-2' : 'left-full ml-2'
+              }`}
+              style={{ transform: 'translateY(-50%)', top: '50%' }}
+            >
+              {/* Reaction Button */}
+              <button
+                ref={reactionButtonRef}
+                onClick={handleReactionClick}
+                className="p-1.5 rounded-full transition-colors hover:scale-110"
+                style={{
+                  backgroundColor: theme.background.primary,
+                  border: `1px solid ${theme.border.default}`,
+                  color: theme.text.muted,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                }}
+                title="Add reaction"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+              </button>
 
+              {/* Reply Button */}
+              <button
+                onClick={handleReplyClick}
+                className="p-1.5 rounded-full transition-colors hover:scale-110"
+                style={{
+                  backgroundColor: theme.background.primary,
+                  border: `1px solid ${theme.border.default}`,
+                  color: theme.text.muted,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                }}
+                title="Reply"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                </svg>
+              </button>
+            </div>
+          )}
           {/* Reaction Badges - Now positioned right at the edge of the message bubble */}
           {hasReactions && (
             <React.Suspense fallback={null}>
@@ -324,7 +368,7 @@ export const MessageItem = memo(({
         </div>
 
         {/* Timestamp and Status - Now properly separated from the bubble+reactions */}
-        <span className="text-xs px-1" style={{ color: DARK_THEME.text.muted }}>
+        <span className="text-xs px-1" style={{ color: theme.text.muted }}>
           {formatTime(message.createdAt)}
           {/* Show read/delivered status for own messages */}
           {isOwn && (

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { backgroundColors } from "../types/color-bg.types";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface ToggleBackgroundPanelProps {
   colors?: string[];
@@ -17,7 +18,18 @@ export default function ToggleBackgroundPanel({
   onClose,
   onColorChange,
 }: ToggleBackgroundPanelProps) {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split(".");
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const [selectedColor, setSelectedColor] = useState(defaultColor);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +64,7 @@ export default function ToggleBackgroundPanel({
           className="text-lg font-semibold"
           style={{ color: theme.text.primary }}
         >
-          Customize home
+          {t("customizeHome")}
         </h3>
         <button
           onClick={onClose}
@@ -72,7 +84,7 @@ export default function ToggleBackgroundPanel({
         className="text-sm font-medium mb-2"
         style={{ color: theme.text.secondary }}
       >
-        Background
+        {t("background")}
       </p>
       <div className="grid grid-cols-6 gap-3 ">
         {colors.map((color) => (

@@ -1,6 +1,7 @@
 import React from 'react';
-import { TeamProgress } from '@/services/progressService';
-import { DARK_THEME } from '@/constants/theme';
+import { TeamProgress } from '@/services/process/progressService';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { Users, Calendar } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 
@@ -10,6 +11,9 @@ interface TeamProgressCardProps {
 }
 
 export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const {
     teamName,
     totalTasks,
@@ -21,10 +25,10 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
   } = teamProgress;
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 75) return '#10b981'; // green
-    if (percentage >= 50) return '#f59e0b'; // yellow
-    if (percentage >= 25) return '#ef4444'; // red
-    return '#6b7280'; // gray
+    if (percentage >= 75) return theme.status.success; // green
+    if (percentage >= 50) return theme.status.warning; // yellow
+    if (percentage >= 25) return theme.status.error; // red
+    return theme.text.muted; // gray
   };
 
   const formatDate = (dateString: string) => {
@@ -40,17 +44,17 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
     <div
       className="p-6 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-lg"
       style={{
-        backgroundColor: DARK_THEME.background.secondary,
-        borderColor: DARK_THEME.border?.default || '#424244',
+        backgroundColor: theme.background.secondary,
+        borderColor: theme.border?.default || '#424244',
       }}
       onClick={onClick}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.borderColor = DARK_THEME.text.secondary;
+        e.currentTarget.style.borderColor = theme.text.secondary;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.borderColor = DARK_THEME.border?.default || '#424244';
+        e.currentTarget.style.borderColor = theme.border?.default || '#424244';
       }}
     >
       {/* Header */}
@@ -58,22 +62,22 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
         <div className="flex items-center gap-3">
           <div 
             className="p-2 rounded-lg"
-            style={{ backgroundColor: DARK_THEME.background.primary }}
+            style={{ backgroundColor: theme.background.primary }}
           >
-            <Users size={20} style={{ color: DARK_THEME.text.secondary }} />
+            <Users size={20} style={{ color: theme.text.secondary }} />
           </div>
           <div>
             <h3 
               className="text-lg font-semibold"
-              style={{ color: DARK_THEME.text.primary }}
+              style={{ color: theme.text.primary }}
             >
               {teamName}
             </h3>
             <p 
               className="text-sm"
-              style={{ color: DARK_THEME.text.secondary }}
+              style={{ color: theme.text.secondary }}
             >
-              Team Owner: {teamOwner.displayName}
+              {messages?.common?.teamOwner || "Team Owner"}: {teamOwner.displayName}
             </p>
           </div>
         </div>
@@ -87,9 +91,9 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
           </div>
           <p 
             className="text-xs"
-            style={{ color: DARK_THEME.text.secondary }}
+            style={{ color: theme.text.secondary }}
           >
-            completion
+            {messages?.common?.completion || "completion"}
           </p>
         </div>
       </div>
@@ -98,7 +102,7 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
       <div className="mb-4">
         <div 
           className="h-2 rounded-full overflow-hidden"
-          style={{ backgroundColor: DARK_THEME.background.primary }}
+          style={{ backgroundColor: theme.background.primary }}
         >
           <div
             className="h-full transition-all duration-500 ease-out"
@@ -109,11 +113,11 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
           />
         </div>
         <div className="flex justify-between mt-2 text-sm">
-          <span style={{ color: DARK_THEME.text.secondary }}>
-            {completedTasks} completed
+          <span style={{ color: theme.text.secondary }}>
+            {completedTasks} {messages?.common?.completed || "completed"}
           </span>
-          <span style={{ color: DARK_THEME.text.secondary }}>
-            {totalTasks} total tasks
+          <span style={{ color: theme.text.secondary }}>
+            {totalTasks} {messages?.common?.totalTasks || "total tasks"}
           </span>
         </div>
       </div>
@@ -121,17 +125,17 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
       {/* Team Members */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <Users size={14} style={{ color: DARK_THEME.text.secondary }} />
-          <span 
+          <Users size={14} style={{ color: theme.text.secondary }} />
+          <span
             className="text-sm font-medium"
-            style={{ color: DARK_THEME.text.secondary }}
+            style={{ color: theme.text.secondary }}
           >
-            Team Members ({teamMembers.length})
+            {messages?.common?.teamMembers || "Team Members"} ({teamMembers.length})
           </span>
         </div>
         
         <div className="flex items-center gap-1">
-          {teamMembers.slice(0, 5).map((member) => (
+          {teamMembers.slice(0, 5).map((member: any) => (
             <div key={member.userId} className="relative group">
               <UserAvatar
                 name={member.displayName}
@@ -139,13 +143,13 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
                 avatar={member.avatarUrl}
                 size="sm"
                 className="border-2"
-                style={{ borderColor: DARK_THEME.background.secondary }}
+                style={{ borderColor: theme.background.secondary }}
               />
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10"
                 style={{ 
-                  backgroundColor: DARK_THEME.background.primary,
-                  color: DARK_THEME.text.primary,
-                  border: `1px solid ${DARK_THEME.border?.default}`
+                  backgroundColor: theme.background.primary,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border?.default}`
                 }}
               >
                 {member.displayName}
@@ -157,8 +161,8 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
             <div 
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
               style={{ 
-                backgroundColor: DARK_THEME.background.primary,
-                color: DARK_THEME.text.secondary 
+                backgroundColor: theme.background.primary,
+                color: theme.text.secondary
               }}
             >
               +{teamMembers.length - 5}
@@ -169,9 +173,9 @@ export function TeamProgressCard({ teamProgress, onClick }: TeamProgressCardProp
 
       {/* Last Updated */}
       <div className="flex items-center gap-2 text-xs">
-        <Calendar size={12} style={{ color: DARK_THEME.text.secondary }} />
-        <span style={{ color: DARK_THEME.text.secondary }}>
-          Last updated: {formatDate(lastUpdated)}
+        <Calendar size={12} style={{ color: theme.text.secondary }} />
+        <span style={{ color: theme.text.secondary }}>
+          {messages?.common?.lastUpdated || "Last updated"}: {formatDate(lastUpdated)}
         </span>
       </div>
     </div>

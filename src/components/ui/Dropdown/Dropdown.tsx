@@ -4,7 +4,8 @@ import { useState, useRef, useCallback, useMemo, useEffect, ReactNode } from "re
 import { cn } from "@/lib/utils";
 import Portal from "../Portal/Portal";
 import { Z_INDEX } from "@/styles/z-index";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export interface DropdownProps {
   trigger: ReactNode;
@@ -27,7 +28,8 @@ export default function Dropdown({
   contentClassName,
   usePortal = false,
 }: DropdownProps) {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { language } = useLanguageContext();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -145,18 +147,34 @@ export function DropdownItem({
   disabled = false,
   className,
 }: DropdownItemProps) {
+  const { theme } = useThemeContext();
+
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={cn(
         "w-full flex items-center px-4 py-2 text-sm text-left",
-        "text-gray-700 dark:text-gray-200",
-        "hover:bg-gray-100 dark:hover:bg-gray-700/50",
-        "hover:text-gray-900 dark:hover:text-white",
-        "disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+        "transition-colors",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
         className
       )}
+      style={{
+        color: theme.text.primary,
+        backgroundColor: 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = theme.background.muted;
+          e.currentTarget.style.color = theme.text.primary;
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.color = theme.text.primary;
+        }
+      }}
     >
       {icon && <div className="mr-3 h-4 w-4 flex-shrink-0">{icon}</div>}
       {children}
@@ -169,7 +187,14 @@ export interface DropdownSeparatorProps {
 }
 
 export function DropdownSeparator({ className }: DropdownSeparatorProps) {
+  const { theme } = useThemeContext();
+
   return (
-    <div className={cn("my-2 mx-2 border-t border-gray-200 dark:border-gray-600", className)} />
+    <div
+      className={cn("my-2 mx-2 border-t", className)}
+      style={{
+        borderColor: theme.border.default
+      }}
+    />
   );
 }

@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/layouts/hooks/useTheme";
+import { AppProviders } from "@/providers";
 import "./globals.css";
 import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
-import { AppProvider } from "@/contexts/AppProvider";
+import { ChatProvider } from "@/contexts/ChatContext";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SWRProvider } from "@/providers/SWRProvider";
-import { ChatProvider } from "@/contexts/ChatContext";
-import { GlobalDataProvider } from "@/contexts/GlobalDataContext";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ChatManager } from "@/components/chat/ChatManager"; // ✅ THÊM: Import ChatManager
+import { AppProvider } from "@/contexts/AppProvider";
+import { NotificationProvider } from "@/components/ui/NotificationProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,24 +35,19 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {/* Sử dụng AuthProvider mới thay vì NextAuth - backend JWT only */}
-        <AuthProvider>
-          <SWRProvider>
-            <GlobalDataProvider>
-              <ThemeProvider defaultTheme="dark" storageKey="taskmanagement-theme">
-                <AppProvider>
-                  <ChatProvider>
-                    <DetailPanelProvider>
-                      {children}
-                      {/* ✅ THÊM: ChatManager để render chat windows */}
-                      <ChatManager />
-                    </DetailPanelProvider>
-                  </ChatProvider>
-                </AppProvider>
-              </ThemeProvider>
-            </GlobalDataProvider>
-          </SWRProvider>
-        </AuthProvider>
+        <AppProviders defaultTheme="dark" enableBackendSync={true}>
+          <AuthProvider>
+            <SWRProvider>
+              <ChatProvider>
+                <NotificationProvider>
+                  <DetailPanelProvider>
+                    <AppProvider>{children}</AppProvider>
+                  </DetailPanelProvider>
+                </NotificationProvider>
+              </ChatProvider>
+            </SWRProvider>
+          </AuthProvider>
+        </AppProviders>
       </body>
     </html>
   );

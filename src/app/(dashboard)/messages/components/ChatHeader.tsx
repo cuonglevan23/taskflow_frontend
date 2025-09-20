@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { ChatUser } from '@/types/chat';
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
 
@@ -13,6 +14,7 @@ interface ChatHeaderProps {
     participants: ChatUser[];
     avatarUrl?: string;
     isOnline?: boolean;
+    memberCount?: number; // Add memberCount property
   };
   currentUser?: ChatUser;
   isConnected: boolean;
@@ -23,6 +25,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   currentUser,
   isConnected
 }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Add fallback for header messages
+  const headerMessages = messages?.chat?.header || {
+    online: 'Online',
+    offline: 'Offline',
+    members: 'members',
+    member: 'member',
+    connected: 'Connected',
+    disconnected: 'Disconnected'
+  };
+
   // Computed values
   const conversationTitle = conversation.type === 'DIRECT'
     ? conversation.participants.find(p => p.id !== currentUser?.id)?.name || conversation.name
@@ -60,8 +75,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     <div
       className="flex-shrink-0 p-4 border-b"
       style={{
-        backgroundColor: DARK_THEME.header.background,
-        borderColor: DARK_THEME.border.default
+        backgroundColor: theme.header.background,
+        borderColor: theme.border.default
       }}
     >
       <div className="flex items-center gap-3">
@@ -70,8 +85,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center font-medium"
               style={{
-                backgroundColor: `${THEME_COLORS.info[500]}20`,
-                color: THEME_COLORS.info[500]
+                backgroundColor: `${theme.status.info}20`,
+                color: theme.status.info
               }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,17 +106,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         </div>
 
         <div className="flex-1">
-          <h3 className="font-semibold" style={{ color: DARK_THEME.text.primary }}>
+          <h3 className="font-semibold" style={{ color: theme.text.primary }}>
             {conversationTitle}
           </h3>
           {conversation.type === 'DIRECT' && otherParticipant && (
-            <p className="text-sm" style={{ color: DARK_THEME.text.muted }}>
-              {otherParticipant.isOnline ? 'Online' : 'Offline'}
+            <p className="text-sm" style={{ color: theme.text.muted }}>
+              {otherParticipant.isOnline ? headerMessages.online : headerMessages.offline}
             </p>
           )}
           {conversation.type === 'GROUP' && (
-            <p className="text-sm" style={{ color: DARK_THEME.text.muted }}>
-              {conversation.participants.length} members
+            <p className="text-sm" style={{ color: theme.text.muted }}>
+              {conversation.memberCount || conversation.participants.length} {headerMessages.members}
             </p>
           )}
         </div>
@@ -111,19 +126,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="w-2 h-2 rounded-full"
             style={{
               backgroundColor: isConnected
-                ? THEME_COLORS.success[500]
-                : THEME_COLORS.error[500]
+                ? theme.status.success
+                : theme.status.error
             }}
           />
           <span
             className="text-xs"
             style={{
               color: isConnected
-                ? THEME_COLORS.success[500]
-                : THEME_COLORS.error[500]
+                ? theme.status.success
+                : theme.status.error
             }}
           >
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? headerMessages.connected : headerMessages.disconnected}
           </span>
         </div>
       </div>

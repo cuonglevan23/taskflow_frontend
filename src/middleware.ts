@@ -11,10 +11,7 @@ const protectedRoutes = [
   '/teams',
   '/portfolios',
   '/goals',
-  '/reporting',
   '/admin',
-  '/manager',
-  '/role-demo',
   '/profile'
 ];
 
@@ -54,8 +51,6 @@ export function middleware(request: NextRequest) {
   );
 
   // Get authentication status from HTTP-only cookie
-  // Note: We can't read HTTP-only cookies in middleware
-  // So we'll let the AuthProvider handle authentication checks
   const hasAccessToken = request.cookies.has('accessToken');
 
   // If trying to access protected route without token, redirect to login
@@ -66,7 +61,7 @@ export function middleware(request: NextRequest) {
 
   // If trying to access auth route with token, redirect to home
   if (isAuthRoute && hasAccessToken) {
-    const homeUrl = new URL('/home', request.url); // Thay đổi từ '/dashboard' thành '/home'
+    const homeUrl = new URL('/home', request.url);
     return NextResponse.redirect(homeUrl);
   }
 
@@ -74,8 +69,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all routes except static files and API routes
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
-  ],
-}
+    '/((?!_next|_vercel|.*\\..*).*)'
+  ]
+};

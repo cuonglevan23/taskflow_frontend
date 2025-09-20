@@ -29,54 +29,48 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const sizeClasses = {
       sm: "h-8 px-3 text-sm",
-      md: "h-10 px-4 text-base",
-      lg: "h-12 px-4 text-lg",
+      md: "h-10 px-3 text-sm",
+      lg: "h-12 px-4 text-base",
     };
 
     const variantClasses = {
-      default: "border-gray-300 focus:border-blue-500 focus:ring-blue-500",
-      search:
-        "border-gray-300 focus:border-gray-400 focus:ring-gray-400 bg-gray-50",
+      default: "border-input bg-background",
+      search: "border-input bg-muted/50",
     };
 
     return (
       <div className="w-full">
         <div className="relative">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <div className="h-5 w-5 text-gray-400">{leftIcon}</div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {leftIcon}
             </div>
           )}
-
           <input
-            ref={ref}
             type={type}
             className={cn(
-              "block w-full rounded-lg border bg-white shadow-sm transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-offset-0",
-              "disabled:cursor-not-allowed disabled:opacity-50",
+              "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
               sizeClasses[inputSize],
               variantClasses[variant],
               leftIcon && "pl-10",
               rightIcon && "pr-10",
-              error && "border-red-500 focus:border-red-500 focus:ring-red-500",
+              error && "border-destructive focus-visible:ring-destructive",
               className
             )}
+            ref={ref}
             {...props}
           />
-
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              <div className="h-5 w-5 text-gray-400">{rightIcon}</div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {rightIcon}
             </div>
           )}
         </div>
-
         {helperText && (
           <p
             className={cn(
-              "mt-1 text-sm",
-              error ? "text-red-600" : "text-gray-500"
+              "mt-1 text-xs",
+              error ? "text-destructive" : "text-muted-foreground"
             )}
           >
             {helperText}
@@ -90,3 +84,4 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 export default Input;
+export { Input };

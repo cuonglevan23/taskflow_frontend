@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, ReactNode, useState } from 'react
 import { useParams, useRouter } from 'next/navigation';
 import { useProject as useSWRProject } from '@/hooks/projects/useProjects';
 // Use the Project type from projects to match the hook return type
-import type { Project } from '@/types/projects';
+import type { Project } from '@/types/project';
 
 interface ProjectContextValue {
   project: Project | null;

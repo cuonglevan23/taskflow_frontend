@@ -59,26 +59,13 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
     // Create unique key for this call
     const callKey = `${projectId || 'personal'}-${filters.isArchived || false}-${page}-${pageSize}`;
 
-    console.log('🔍 [useNotes] loadNotes called with:', {
-      page,
-      append,
-      forceLoad,
-      callKey,
-      projectId,
-      filters,
-      isLoadingRef: isLoadingRef.current,
-      lastCallParamsRef: lastCallParamsRef.current
-    });
-
     // More aggressive duplicate prevention
     if (!forceLoad && isLoadingRef.current) {
-      console.log('🚫 Already loading, skipping:', callKey);
       return;
     }
 
     // Check if same call was made recently (within 1 second)
     if (!forceLoad && lastCallParamsRef.current === callKey) {
-      console.log('🚫 Duplicate call prevented:', callKey);
       return;
     }
 
@@ -92,14 +79,6 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
       isLoadingRef.current = true;
       lastCallParamsRef.current = callKey;
 
-      console.log('🌐 Loading notes with params:', {
-        callKey,
-        projectId,
-        isArchived: filters.isArchived || false,
-        page,
-        pageSize
-      });
-
       if (!append) {
         setLoading(true);
       }
@@ -107,7 +86,6 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
 
       let response;
       if (projectId) {
-        console.log('📁 Loading PROJECT notes for projectId:', projectId);
         response = await NoteApiService.getProjectNotesPaginated(
           projectId,
           filters.isArchived || false,
@@ -115,11 +93,8 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
           pageSize
         );
       } else {
-        console.log('👤 Loading PERSONAL notes using regular endpoint (as per docs)');
-
         // Use regular endpoint as primary (per documentation)
         const regularNotes = await NoteApiService.getPersonalNotes(filters.isArchived || false);
-        console.log('✅ Regular endpoint response:', regularNotes);
 
         // Convert to paginated format for consistency
         const startIndex = page * pageSize;
@@ -140,11 +115,7 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
           numberOfElements: paginatedContent.length,
           size: pageSize
         };
-
-        console.log('✅ Converted regular endpoint to paginated format:', response);
       }
-
-      console.log('✅ Notes API response:', response);
 
       if (append) {
         setNotes(prev => [...prev, ...response.content]);
@@ -161,11 +132,6 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
       });
 
       initialLoadDoneRef.current = true;
-      console.log('✅ Notes loaded successfully:', {
-        notesCount: response.content.length,
-        totalElements: response.totalElements,
-        currentPage: response.currentPage
-      });
 
     } catch (err: any) {
       if (err.name !== 'AbortError') {
@@ -193,14 +159,11 @@ export const useNotes = (options: UseNotesOptions = {}): UseNotesReturn => {
   const createNote = useCallback(async (data: CreateNoteRequest): Promise<NoteResponse> => {
     try {
       setError(null);
-      console.log('🔄 Creating note with data:', data);
 
       const newNote = await NoteApiService.createNote({
         ...data,
         projectId: projectId || data.projectId
       });
-
-      console.log('✅ Note created successfully:', newNote);
 
       // Add to the beginning of the list
       setNotes(prev => [newNote, ...prev]);

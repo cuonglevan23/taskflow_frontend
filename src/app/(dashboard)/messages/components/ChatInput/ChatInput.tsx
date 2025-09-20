@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { ChatMessage } from '@/types/chat';
 import FileAttachmentButton from './FileAttachmentButton';
 import ImageAttachmentButton from './ImageAttachmentButton';
@@ -37,6 +38,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   isConnected,
   disabled = false
 }) => {
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
 
@@ -113,19 +118,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
     <div
       className="flex-shrink-0 border-t"
       style={{
-        backgroundColor: DARK_THEME.header.background,
-        borderColor: DARK_THEME.border.default
+        backgroundColor: theme.header.background,
+        borderColor: theme.border.default
       }}
     >
       {/* Reply Preview */}
       {replyToMessage && (
-        <div className="p-3 border-b" style={{ borderColor: DARK_THEME.border.default }}>
+        <div className="p-3 border-b" style={{ borderColor: theme.border.default }}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <svg
                   className="w-4 h-4 flex-shrink-0"
-                  style={{ color: THEME_COLORS.primary[500] }}
+                  style={{ color: theme.status.info }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -134,14 +139,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 </svg>
                 <span
                   className="text-xs font-medium"
-                  style={{ color: THEME_COLORS.primary[500] }}
+                  style={{ color: theme.status.info }}
                 >
-                  Replying to {replyToMessage.senderName}
+                  {messages?.chat?.replyTo || 'Replying to'} {replyToMessage.senderName}
                 </span>
               </div>
               <p
                 className="text-sm truncate"
-                style={{ color: DARK_THEME.text.secondary }}
+                style={{ color: theme.text.secondary }}
               >
                 {replyToMessage.content}
               </p>
@@ -149,7 +154,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <button
               onClick={onCancelReply}
               className="p-1 rounded-full transition-colors hover:bg-opacity-10"
-              style={{ color: DARK_THEME.text.muted }}
+              style={{ color: theme.text.muted }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
@@ -190,16 +195,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
               onChange={onInputChange}
               onKeyDown={handleKeyDown}
               placeholder={replyToMessage
-                ? `Reply to ${replyToMessage.senderName}...`
-                : isConnected ? "Type a message..." : "Disconnected"
+                ? `${messages?.chat?.replyPlaceholder || 'Reply to'} ${replyToMessage.senderName}...`
+                : isConnected
+                  ? messages?.chat?.placeholder || "Type a message..."
+                  : messages?.chat?.disconnected || "Disconnected"
               }
               disabled={!isConnected || disabled}
               rows={1}
               className="w-full px-4 py-2 rounded-2xl border focus:outline-none focus:ring-2 disabled:opacity-50 resize-none"
               style={{
-                backgroundColor: DARK_THEME.search.background,
-                color: DARK_THEME.search.text,
-                borderColor: DARK_THEME.border.default,
+                backgroundColor: theme.search.background,
+                color: theme.search.text,
+                borderColor: theme.border.default,
                 minHeight: '40px',
                 maxHeight: '120px'
               }}
@@ -213,8 +220,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
             className="p-2 rounded-full transition-colors disabled:opacity-50"
             style={{
               backgroundColor: hasContent && isConnected && !disabled
-                ? THEME_COLORS.primary[500]
-                : DARK_THEME.background.muted,
+                ? theme.status.info
+                : theme.background.muted,
               color: '#ffffff',
               width: '40px',
               height: '40px'

@@ -12,8 +12,11 @@ import {
   LogOut,
   Monitor
 } from "lucide-react";
-import { SettingsModal } from "@/components/features/Settings/SettingsModal";
-import { AuthService } from "@/lib/auth-backend";
+import { SettingsContainer } from "@/components/settings";
+import { useAuth } from "@/components/auth/AuthProvider"; // ✅ FIX: Use AuthProvider instead of AuthService
+import { SystemRole } from "@/constants/auth";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 // User interface
 export interface User {
@@ -28,74 +31,84 @@ export interface User {
 export interface MenuItem {
   id: string;
   label: string;
-  onClick?: () => void;
-  className?: string;
-  disabled?: boolean;
+  icon: React.ComponentType<{ size?: number }>;
+  onClick: () => void;
+  variant?: 'default' | 'danger';
+  separator?: boolean;
 }
 
-// Menu section interface
-export interface MenuSection {
-  id: string;
-  items: MenuItem[];
-}
-
-// UserMenu Props - Flexible and reusable
-export interface UserMenuProps {
+interface UserMenuProps {
   user: User;
-  onProfileSettings?: () => void;
-  onDisplayPicture?: () => void;
-  onNotificationSettings?: () => void;
-  onSwitchTeams?: () => void;
-  onCreateTeam?: () => void;
-  onAdminConsole?: () => void;
-  onInviteMembers?: () => void;
   onLogout?: () => void;
-  className?: string;
-  customMenuSections?: MenuSection[];
-  showDefaultSections?: boolean;
 }
 
-// UserMenu Component - Professional & Reusable
-const UserMenu = ({
-  user,
-  onProfileSettings,
-  onDisplayPicture,
-  onNotificationSettings,
-  onSwitchTeams,
-  onCreateTeam,
-  onAdminConsole,
-  onInviteMembers,
-  onLogout,
-  className = "",
-  customMenuSections = [],
-  showDefaultSections = true,
-}: UserMenuProps) => {
+export default function UserMenu({ user, onLogout }: UserMenuProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+  const { logout } = useAuth(); // ✅ FIX: Get logout from AuthProvider
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const router = useRouter();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Handle logout functionality with new AuthService
+  // Helper function to get display role
+  const getDisplayRole = (role?: string): string => {
+    if (!role) return t('userMenu.roles.member') || 'MEMBER';
+
+    const normalizedRole = role.toUpperCase();
+
+    // Map backend role to display role with translation
+    switch (normalizedRole) {
+      case 'ADMIN':
+      case SystemRole.ADMIN:
+        return t('userMenu.roles.admin') || 'ADMIN';
+      case 'MEMBER':
+      case SystemRole.MEMBER:
+        return t('userMenu.roles.member') || 'MEMBER';
+      default:
+        return t('userMenu.roles.member') || 'MEMBER'; // Default fallback
+    }
+  };
+
+  // Get role badge color
+  const getRoleBadgeColor = (role?: string): string => {
+    const displayRole = getDisplayRole(role);
+
+    switch (displayRole) {
+      case 'ADMIN':
+        return 'bg-red-100 text-red-800';
+      case 'MEMBER':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // ✅ FIX: Simplified logout using AuthProvider
   const handleLogout = async () => {
-    if (isLoggingOut) return; // Prevent multiple logout attempts
+    if (isLoggingOut) return;
 
     setIsLoggingOut(true);
 
     try {
-      console.log('🚪 Starting logout process...');
+      // Use AuthProvider's logout method which handles everything properly
+      await logout();
 
-      // Only call the onLogout callback (AuthProvider's logout method)
-      // This will handle calling AuthService.logout() internally
-      if (onLogout) {
-        await onLogout();
-      } else {
-        // Fallback: if no onLogout provided, call AuthService directly
-        await AuthService.logout();
-      }
+      // AuthProvider will handle redirect to login, but we can force redirect to public page
+      router.replace('/');
 
     } catch (error) {
-      console.error('❌ Logout failed:', error);
-      // Fallback redirect if something goes wrong
-      window.location.href = '/login';
+      // Force redirect to public page if logout fails
+      window.location.href = '/';
     } finally {
       setIsLoggingOut(false);
     }
@@ -105,75 +118,26 @@ const UserMenu = ({
   if (!user) {
     return null;
   }
-  // Default menu sections - matches Asana design
-  const defaultSections: MenuSection[] = [
 
-
+  // Menu items configuration
+  const menuItems = [
     {
-      id: 'account',
-      items: [
-        {
-          id: 'profile',
-          label: 'Profile',
-          onClick: () => router.push('/profile/me/posts'),
-        },
-        {
-          id: 'settings',
-          label: 'Settings',
-          onClick: () => setShowSettingsModal(true),
-        },
-
-      ],
+      id: 'profile',
+      label: t('userMenu.profile') || 'Profile',
+      icon: <User className="w-4 h-4" />,
+      onClick: () => router.push('/profile/me/posts'),
+    },
+    {
+      id: 'settings',
+      label: t('userMenu.settings') || 'Settings',
+      icon: <Settings className="w-4 h-4" />,
+      onClick: () => setShowSettingsModal(true),
     },
   ];
 
-  // Combine default and custom sections
-  const menuSections = showDefaultSections 
-    ? [...defaultSections, ...customMenuSections]
-    : customMenuSections;
-
-  // Get icon for menu item
-  const getMenuIcon = (itemId: string) => {
-    const iconMap: Record<string, React.ReactNode> = {
-
-
-      'profile': <User className="w-4 h-4" />,
-      'settings': <Settings className="w-4 h-4" />,
-
-      'logout': <LogOut className="w-4 h-4" />,
-    };
-    return iconMap[itemId] || null;
-  };
-
-  // Render menu section
-  const renderMenuSection = (section: MenuSection, index: number) => (
-    <React.Fragment key={section.id}>
-      {index > 0 && <DropdownSeparator />}
-      <div className="py-1">
-        {section.items.map((item) => (
-          <DropdownItem
-            key={item.id}
-            onClick={item.onClick}
-            disabled={item.disabled}
-            icon={getMenuIcon(item.id)}
-          >
-            <span 
-              className={
-                item.className || 
-                (item.id === 'logout' ? 'text-red-400 text-sm font-medium' : 'text-gray-200 text-sm')
-              }
-            >
-              {item.label}
-            </span>
-          </DropdownItem>
-        ))}
-      </div>
-    </React.Fragment>
-  );
-
   return (
     <>
-      <div className={`relative ${className}`}>
+      <div className="relative">
         <Dropdown
           trigger={
             <button className="flex items-center p-1 rounded hover:bg-gray-700 transition-colors ml-1">
@@ -190,7 +154,7 @@ const UserMenu = ({
           contentClassName="w-64 max-w-xs"
         >
           {/* User Info Header */}
-          <div className="p-4 border-b" style={{ borderColor: '#374151' }}>
+          <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
             <div className="flex items-center space-x-3">
               <UserAvatar
                 user={user}
@@ -198,30 +162,46 @@ const UserMenu = ({
                 className="ring-2 ring-orange-500"
               />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-white text-base truncate">
+                <p className="font-semibold text-base truncate" style={{ color: theme.text.primary }}>
                   {user.name}
                 </p>
-                <p className="text-sm text-gray-400 truncate">
+                <p className="text-sm truncate" style={{ color: theme.text.secondary }}>
                   {user.email}
                 </p>
                 <div className="flex items-center mt-1">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                    {user.role?.toUpperCase() || 'UNKNOWN'}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                    {getDisplayRole(user.role)}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Menu Sections */}
-          {menuSections.map((section, index) => renderMenuSection(section, index))}
+          {/* Menu Items */}
+          <div className="py-1">
+            {menuItems.map((item) => (
+              <DropdownItem
+                key={item.id}
+                onClick={item.onClick}
+                icon={item.icon}
+              >
+                <span className="text-sm" style={{ color: theme.text.primary }}>
+                  {item.label}
+                </span>
+              </DropdownItem>
+            ))}
+          </div>
 
-          {/* Logout Section - Always last */}
+          {/* Logout Section */}
           <DropdownSeparator />
           <div className="py-1">
-            <DropdownItem onClick={handleLogout} icon={<LogOut className="w-4 h-4" />}>
+            <DropdownItem
+              onClick={handleLogout}
+              icon={<LogOut className="w-4 h-4" />}
+              disabled={isLoggingOut}
+            >
               <span className="text-red-400 text-sm font-medium">
-                Log out
+                {isLoggingOut ? (t('userMenu.loggingOut') || 'Logging out...') : (t('userMenu.logout') || 'Log out')}
               </span>
             </DropdownItem>
           </div>
@@ -230,15 +210,11 @@ const UserMenu = ({
 
       {/* Settings Modal */}
       {showSettingsModal && (
-        <SettingsModal 
+        <SettingsContainer
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
-          user={user}
-          customBackdrop="rgba(66, 66, 68, .75)"
         />
       )}
     </>
   );
-};
-
-export default UserMenu;
+}

@@ -267,7 +267,6 @@ export const tasksService = {
   updateTask: async (id: string, data: UpdateTaskDTO): Promise<Task> => {
     try {
       // Backend JWT authentication is handled automatically via HTTP-only cookies
-      console.log('🔑 Using HTTP-only cookie authentication via API client for update');
 
       const backendData: Record<string, unknown> = {};
       
@@ -542,29 +541,9 @@ export const tasksService = {
     } = params || {};
 
     try {
-      console.log('🔍 [getMyTasksSummary] Fetching tasks with params:', { page, size, sortBy, sortDir });
-
       // Use the main my-tasks endpoint as documented - returns MyTasksFullItem[] with profile info
       const response = await api.get<PaginatedResponse<MyTasksFullItem>>('/api/tasks/my-tasks', {
         params: { page, size, sortBy, sortDir }
-      });
-
-      console.log('✅ [getMyTasksSummary] API Response received:', {
-        status: response.status,
-        totalElements: response.data.totalElements,
-        contentLength: response.data.content?.length || 0,
-        firstFewTasks: response.data.content?.slice(0, 5).map(t => ({
-          id: t.id,
-          title: t.title,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
-          startDate: t.startDate
-        })) || [],
-        lastFewTasks: response.data.content?.slice(-3).map(t => ({
-          id: t.id,
-          title: t.title,
-          updatedAt: t.updatedAt
-        })) || []
       });
 
       const { content, totalElements, totalPages, number, size: pageSize } = response.data;
@@ -584,22 +563,6 @@ export const tasksService = {
       // Use transformMyTasksFull to handle profile information
       const tasks = content.map(transformMyTasksFull);
 
-      console.log('🔄 [getMyTasksSummary] Tasks transformed:', {
-        transformedCount: tasks.length,
-        firstFewTransformed: tasks.slice(0, 5).map(t => ({
-          id: t.id,
-          title: t.title,
-          status: t.status,
-          createdAt: t.createdAt.toISOString(),
-          updatedAt: t.updatedAt.toISOString(),
-          startDate: t.startDate
-        })),
-        // Check if task ID 81 exists (latest created)
-        hasTaskId81: tasks.some(t => t.id.toString() === '81'),
-        // Check recent task IDs
-        recentTaskIds: tasks.slice(0, 5).map(t => t.id),
-        allTaskIds: tasks.map(t => t.id).slice(0, 15)
-      });
 
       return {
         tasks,

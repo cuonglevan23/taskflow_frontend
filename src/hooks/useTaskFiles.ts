@@ -54,7 +54,6 @@ export const useTaskFiles = (taskId: number): UseTaskFilesReturn => {
       setAttachments(filesResponse);
       setStats(statsResponse);
 
-      console.log('✅ Fetched task files:', filesResponse.length, 'files');
     } catch (error) {
       console.error('❌ Error fetching files:', error);
       // Set empty state instead of failing completely
@@ -83,7 +82,6 @@ export const useTaskFiles = (taskId: number): UseTaskFilesReturn => {
       // Refresh files list
       await fetchFiles();
 
-      console.log('✅ File uploaded successfully:', file.name);
       return true;
     } catch (error) {
       console.error('❌ Upload failed:', error);
@@ -103,7 +101,6 @@ export const useTaskFiles = (taskId: number): UseTaskFilesReturn => {
       for (const file of files) {
         try {
           await simpleFileService.uploadFile(file, taskId, folder);
-          console.log('✅ Uploaded:', file.name);
         } catch (error) {
           console.error('❌ Failed to upload:', file.name, error);
           allSuccess = false;
@@ -112,12 +109,6 @@ export const useTaskFiles = (taskId: number): UseTaskFilesReturn => {
 
       // Refresh files list
       await fetchFiles();
-
-      if (allSuccess) {
-        console.log('✅ All files uploaded successfully');
-      } else {
-        console.warn('⚠️ Some files failed to upload');
-      }
 
       return allSuccess;
     } catch (error) {
@@ -135,7 +126,6 @@ export const useTaskFiles = (taskId: number): UseTaskFilesReturn => {
       // Refresh files list
       await fetchFiles();
 
-      console.log('✅ File deleted successfully');
       return true;
     } catch (error) {
       console.error('❌ Delete failed:', error);

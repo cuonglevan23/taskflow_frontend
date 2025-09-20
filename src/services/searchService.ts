@@ -1,5 +1,5 @@
 /**
- * Enhanced SearchService with AuthService integration
+ * Enhanced SearchService with BaseApiClient integration
  * Ensures all API calls use Bearer token + automatic refresh
  */
 
@@ -12,7 +12,7 @@ import {
   SmartSuggestionsRequest,
   SmartSuggestionsResponse
 } from '@/types/search';
-import { AuthService } from '@/lib/auth-backend'; // Use AuthService instead of BaseApiClient
+import { BaseApiClient } from '@/lib/baseApiClient'; // Use BaseApiClient instead of AuthService
 
 // Utility class for building query parameters
 class SearchQueryBuilder {
@@ -62,17 +62,27 @@ export class SearchService {
   } as const;
 
   /**
-   * Helper method to make authenticated API calls using AuthService
+   * Helper method to make authenticated API calls using BaseApiClient
    */
   private static async makeRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await AuthService.makeAuthenticatedRequest(endpoint, options);
+    try {
+      // Use BaseApiClient.get for GET requests, BaseApiClient.post for others
+      if (!options || !options.method || options.method === 'GET') {
+        return await BaseApiClient.get<T>(endpoint);
+      } else if (options.method === 'POST') {
+        const body = options.body ? JSON.parse(options.body as string) : undefined;
+        return await BaseApiClient.post<T>(endpoint, body);
+      } else if (options.method === 'PUT') {
+        const body = options.body ? JSON.parse(options.body as string) : undefined;
+        return await BaseApiClient.put<T>(endpoint, body);
+      } else if (options.method === 'DELETE') {
+        return await BaseApiClient.delete<T>(endpoint);
+      }
 
-    if (!response.ok) {
-      const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      throw new Error(errorMessage);
+      throw new Error(`Unsupported HTTP method: ${options.method}`);
+    } catch (error: any) {
+      throw new Error(error.message || 'API request failed');
     }
-
-    return response.json();
   }
 
   /**
@@ -80,7 +90,7 @@ export class SearchService {
    */
   static async search(searchQuery: SearchQuery): Promise<SearchResponse> {
     try {
-      return await AuthService.post<SearchResponse>(
+      return await BaseApiClient.post<SearchResponse>(
         this.ENDPOINTS.SEARCH,
         searchQuery
       );
@@ -104,7 +114,7 @@ export class SearchService {
         .add('scope', scope)
         .build();
 
-      return await AuthService.get<SearchResponse>(
+      return await BaseApiClient.get<SearchResponse>(
         `${this.ENDPOINTS.QUICK_SEARCH}?${queryString}`
       );
     } catch (error: any) {
@@ -129,7 +139,7 @@ export class SearchService {
         .add('entity', entity)
         .build();
 
-      return await AuthService.get<AutocompleteResponse>(
+      return await BaseApiClient.get<AutocompleteResponse>(
         `${this.ENDPOINTS.AUTOCOMPLETE}?${queryString}`
       );
     } catch (error: any) {
@@ -154,7 +164,7 @@ export class SearchService {
         .add('size', size)
         .build();
 
-      return await AuthService.get<SearchResponse>(
+      return await BaseApiClient.get<SearchResponse>(
         `${this.ENDPOINTS.MY_CONTENT}?${queryString}`
       );
     } catch (error: any) {
@@ -189,7 +199,7 @@ export class SearchService {
 
       const queryString = queryBuilder.build();
 
-      return await AuthService.get<SearchResponse>(
+      return await BaseApiClient.get<SearchResponse>(
         `${this.ENDPOINTS.ENTITY_SEARCH(entity)}?${queryString}`
       );
     } catch (error: any) {
@@ -253,7 +263,7 @@ export class SearchService {
   }
 
   /**
-   * Get search history with AuthService integration
+   * Get search history with BaseApiClient integration
    */
   static async getSearchHistory(limit: number = 10): Promise<SearchHistory[]> {
     try {
@@ -271,7 +281,7 @@ export class SearchService {
   }
 
   /**
-   * Save search to history with AuthService integration
+   * Save search to history with BaseApiClient integration
    */
   static async saveSearchToHistory(
     searchQuery: SearchQuery,
@@ -294,7 +304,7 @@ export class SearchService {
   }
 
   /**
-   * Clear search history with AuthService integration
+   * Clear search history with BaseApiClient integration
    */
   static async clearSearchHistory(): Promise<void> {
     try {
@@ -307,7 +317,7 @@ export class SearchService {
   }
 
   /**
-   * Remove specific search from history with AuthService integration
+   * Remove specific search from history with BaseApiClient integration
    */
   static async removeSearchFromHistory(historyId: string): Promise<void> {
     try {
@@ -357,7 +367,7 @@ export class SearchService {
         }
       };
 
-      return await AuthService.post(this.ENDPOINTS.SMART_SUGGESTIONS, request);
+      return await BaseApiClient.post(this.ENDPOINTS.SMART_SUGGESTIONS, request);
     } catch (error: any) {
       return {
         suggestions: [],
@@ -420,26 +430,16 @@ export class SearchService {
    * Get current user ID from context (HTTP-only cookies only)
    */
   private static async getCurrentUserId(): Promise<number> {
-    // Use AuthService to get current user with HTTP-only cookies
+    // Use BaseApiClient to get current user with HTTP-only cookies
     if (typeof window !== 'undefined') {
       try {
-        // Use AuthService to get current user info
-        const response = await AuthService.makeAuthenticatedRequest('/api/user-profiles/me', {
-          method: 'GET'
-        });
-
-        if (response.ok) {
-          const user = await response.json();
-          return user.id || 1;
-        }
-
-        // If 401, token might be expired - let AuthService handle refresh
-        if (response.status === 401) {
-          console.log('🔄 User not authenticated, attempting refresh...');
-          // This will be handled by the AuthService in other parts of the app
-        }
+        // Use BaseApiClient.get to get current user info
+        const user = await BaseApiClient.get<{ id: number }>('/api/user-profiles/me');
+        return user.id;
       } catch (error) {
         console.warn('Failed to get user from API:', error);
+        // Fallback - this should be handled by auth context
+        return 1;
       }
     }
 

@@ -6,7 +6,8 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useCallback, useEffect, forwardRef, useImperativeHandle, useState } from "react";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { NoteEditorProps } from "@/types/note";
 
 // Add interface for editor commands
@@ -20,11 +21,24 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
   onSave,
   readOnly = false,
   className = "",
-  placeholder = "Start writing your note..."
+  placeholder
 }, ref) => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
   // Parse initial content from JSON string or Block array
   const parsedInitialContent = useCallback((): PartialBlock[] => {
@@ -131,13 +145,13 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
           }
           break;
         case 'link':
-          const url = prompt('Enter URL:');
+          const url = prompt(t('noteEditor.prompts.enterUrl'));
           if (url) {
             editor.createLink(url);
           }
           break;
         case 'image':
-          const imageUrl = prompt('Enter image URL:');
+          const imageUrl = prompt(t('noteEditor.prompts.enterImageUrl'));
           if (imageUrl) {
             const currentBlock = editor.getTextCursorPosition().block;
             editor.insertBlocks([{
@@ -152,7 +166,7 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
     } catch (error) {
       console.error(`Error executing command ${command}:`, error);
     }
-  }, [editor]);
+  }, [editor, t]);
 
   // Expose both editor and executeCommand via ref
   useImperativeHandle(ref, () => ({
@@ -221,9 +235,9 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
     return (
       <div
         className={`flex items-center justify-center p-8 ${className}`}
-        style={{ color: DARK_THEME.text.muted }}
+        style={{ color: theme.text.muted }}
       >
-        Loading editor...
+        {t('noteEditor.loadingEditor')}
       </div>
     );
   }
@@ -233,17 +247,15 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
       <div
         className="blocknote-editor-wrapper"
         style={{
-          backgroundColor: DARK_THEME.background.primary,
-          color: DARK_THEME.text.primary,
+          backgroundColor: theme.background.primary,
+          color: theme.text.primary,
           minHeight: '400px',
-
-
         }}
       >
         <BlockNoteView
           editor={editor}
           editable={!readOnly}
-          theme="dark"
+          theme={theme.name === 'dark' ? 'dark' : 'light'}
           data-theming-css-variables-demo
         />
       </div>
@@ -252,22 +264,21 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(({
       {!readOnly && (
         <div
           className="flex items-center justify-between mt-2 px-2 py-1 text-xs"
-          style={{ color: DARK_THEME.text.muted }}
+          style={{ color: theme.text.muted }}
         >
           <div className="flex items-center gap-2">
             {isSaving && (
               <span className="flex items-center gap-1">
                 <div className="animate-spin h-3 w-3 border border-current border-t-transparent rounded-full" />
-                Saving...
+                {t('noteEditor.saving')}
               </span>
             )}
             {lastSaved && !isSaving && (
               <span>
-                Saved at {lastSaved.toLocaleTimeString()}
+                {t('noteEditor.savedAt')} {lastSaved.toLocaleTimeString()}
               </span>
             )}
           </div>
-
         </div>
       )}
     </div>

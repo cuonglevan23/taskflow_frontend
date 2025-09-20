@@ -30,13 +30,10 @@ class NoteApiService {
 
   // Validate and sanitize note data before sending
   private static validateCreateNoteData(data: CreateNoteRequest): CreateNoteRequest {
-    console.log('📝 Validating create note data:', data);
-
     // Provide default title if empty
     let validTitle = data.title?.trim() || '';
     if (!validTitle) {
       validTitle = 'Untitled Note';
-      console.log('🔤 Using default title: "Untitled Note"');
     }
 
     // Ensure content is properly formatted JSON
@@ -71,13 +68,10 @@ class NoteApiService {
       isPublic: data.isPublic || false
     };
 
-    console.log('✅ Validated note data:', validated);
     return validated;
   }
 
   private static validateUpdateNoteData(data: UpdateNoteRequest): UpdateNoteRequest {
-    console.log('📝 Validating update note data:', data);
-
     // Validate content if provided
     let validatedContent = data.content;
     if (data.content) {
@@ -101,7 +95,6 @@ class NoteApiService {
       isArchived: data.isArchived
     };
 
-    console.log('✅ Validated update data:', validated);
     return validated;
   }
 
@@ -109,10 +102,8 @@ class NoteApiService {
   static async createNote(data: CreateNoteRequest): Promise<NoteResponse> {
     try {
       const validatedData = this.validateCreateNoteData(data);
-      console.log('🚀 Creating note with validated data:', validatedData);
 
       const result = await BaseApiClient.post<NoteResponse>(this.ENDPOINTS.NOTES, validatedData);
-      console.log('✅ Note created successfully:', result);
       return result;
     } catch (error) {
       console.error('❌ Failed to create note:', error);
@@ -122,9 +113,7 @@ class NoteApiService {
 
   static async getNoteById(noteId: number): Promise<NoteResponse> {
     try {
-      console.log(`🔍 Fetching note by ID: ${noteId}`);
       const result = await BaseApiClient.get<NoteResponse>(this.ENDPOINTS.NOTE_BY_ID(noteId));
-      console.log('✅ Note fetched successfully:', result);
       return result;
     } catch (error) {
       console.error(`❌ Failed to fetch note ${noteId}:`, error);
@@ -135,10 +124,8 @@ class NoteApiService {
   static async updateNote(noteId: number, data: UpdateNoteRequest): Promise<NoteResponse> {
     try {
       const validatedData = this.validateUpdateNoteData(data);
-      console.log(`🔄 Updating note ${noteId} with validated data:`, validatedData);
 
       const result = await BaseApiClient.put<NoteResponse>(this.ENDPOINTS.NOTE_BY_ID(noteId), validatedData);
-      console.log('✅ Note updated successfully:', result);
       return result;
     } catch (error) {
       console.error(`❌ Failed to update note ${noteId}:`, error);
@@ -148,9 +135,7 @@ class NoteApiService {
 
   static async deleteNote(noteId: number): Promise<void> {
     try {
-      console.log(`🗑️ Deleting note: ${noteId}`);
       await BaseApiClient.delete<void>(this.ENDPOINTS.NOTE_BY_ID(noteId));
-      console.log('✅ Note deleted successfully');
     } catch (error) {
       console.error(`❌ Failed to delete note ${noteId}:`, error);
       throw new Error(`Failed to delete note: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -159,14 +144,8 @@ class NoteApiService {
 
   // Personal Notes
   static async getPersonalNotes(includeArchived = false): Promise<NoteResponse[]> {
-    console.log('🌐 [NoteApiService] getPersonalNotes called with:', {
-      includeArchived,
-      endpoint: this.ENDPOINTS.MY_NOTES
-    });
-
     try {
       const result = await BaseApiClient.get<NoteResponse[]>(this.ENDPOINTS.MY_NOTES, { includeArchived });
-      console.log('✅ [NoteApiService] getPersonalNotes response:', result);
       return result;
     } catch (error) {
       console.error('❌ [NoteApiService] getPersonalNotes failed:', error);
@@ -179,13 +158,6 @@ class NoteApiService {
     page = 0,
     size = 20
   ): Promise<NotePaginationResponse> {
-    console.log('🌐 [NoteApiService] getPersonalNotesPaginated called with:', {
-      includeArchived,
-      page,
-      size,
-      endpoint: this.ENDPOINTS.MY_NOTES_PAGINATED
-    });
-
     try {
       const response = await BaseApiClient.get<any>(this.ENDPOINTS.MY_NOTES_PAGINATED, {
         includeArchived,
@@ -193,15 +165,12 @@ class NoteApiService {
         size
       });
 
-      console.log('✅ [NoteApiService] Personal notes response:', response);
-
       const result = {
         ...response,
         currentPage: page,
         pageSize: size
       } as NotePaginationResponse;
 
-      console.log('✅ [NoteApiService] Formatted response:', result);
       return result;
     } catch (error) {
       console.error('❌ [NoteApiService] getPersonalNotesPaginated failed:', error);

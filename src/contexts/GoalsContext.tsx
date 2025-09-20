@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react";
 import { GoalListItem, GoalFilters, CreateGoalData, UpdateGoalData, GoalTab } from "@/types/goals";
-import { getAllGoals } from "@/services/progressService";
+import { getAllGoals } from "@/services/process/progressService";
 import useSWR from 'swr';
 
 // Key for SWR caching

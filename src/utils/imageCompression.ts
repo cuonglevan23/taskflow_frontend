@@ -56,39 +56,37 @@ export async function compressImage(
   options: CompressionOptions = COMPRESSION_PRESETS.POST_IMAGE
 ): Promise<File> {
   try {
-    console.log('🔄 Starting image compression...', {
-      originalName: file.name,
-      originalSize: formatFileSize(file.size),
-      originalType: file.type,
-      targetOptions: options
-    });
-
     const compressedFile = await imageCompression(file, options);
-
-    const compressionRatio = ((file.size - compressedFile.size) / file.size * 100).toFixed(1);
-
-    console.log('✅ Image compression completed:', {
-      originalSize: formatFileSize(file.size),
-      compressedSize: formatFileSize(compressedFile.size),
-      compressionRatio: `${compressionRatio}%`,
-      newType: compressedFile.type
-    });
-
     return compressedFile;
   } catch (error) {
-    console.error('❌ Image compression failed:', error);
     throw new Error(`Image compression failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Check if a file needs compression based on size and format
+ * Check if a file needs compression based on size, format, and quality
  */
 export function shouldCompressImage(file: File, maxSizeMB: number = 1.5): boolean {
   const sizeMB = file.size / 1024 / 1024;
   const isCompressibleFormat = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type);
 
-  return isCompressibleFormat && sizeMB > maxSizeMB;
+  if (!isCompressibleFormat) {
+    return false;
+  }
+
+  // Always compress if file is larger than target size
+  if (sizeMB > maxSizeMB) {
+    return true;
+  }
+
+  // For post images, be more aggressive with compression
+  // Even files under 1.5MB should be optimized for web
+  if (maxSizeMB <= 1.5) { // This indicates post image use case
+    // Compress if file is larger than 200KB (0.2MB) for better web performance
+    return sizeMB > 0.2;
+  }
+
+  return false;
 }
 
 /**
@@ -119,7 +117,6 @@ export async function optimizeImageForUpload(
 
   // Check if compression is needed
   if (!shouldCompressImage(file, preset.maxSizeMB)) {
-    console.log('ℹ️ Image compression skipped - file is already optimized');
     return file;
   }
 

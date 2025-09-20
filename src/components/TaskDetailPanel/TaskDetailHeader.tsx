@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Share, Paperclip, ExternalLink, CheckCircle, Upload, ChevronDown, FolderOpen, Cloud } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Share, Paperclip, ExternalLink, CheckCircle, Upload, ChevronDown, FolderOpen, Cloud, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { TaskListItem } from '@/components/TaskList/types';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { useSWRFileUpload } from '@/hooks/useSWRFileUpload'; // Use new SWR hook
 
 interface TaskDetailHeaderProps {
@@ -22,6 +23,19 @@ const TaskDetailHeader = ({
   const [activeTab, setActiveTab] = useState('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
   // 🔥 NEW: Use SWR hook for consistent cache management
   const {
     uploadSingleFile,
@@ -31,9 +45,7 @@ const TaskDetailHeader = ({
   // Helper function to check if task is completed
   const isTaskCompleted = (task: TaskListItem): boolean => {
     return task.completed || 
-           task.status === 'DONE' || 
-           (task.status as string) === 'COMPLETED' ||
-           (task.status as string) === 'completed';
+           task.status === 'DONE';
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,25 +56,12 @@ const TaskDetailHeader = ({
 
         if (files.length === 1) {
           // 🔥 Upload using SWR hook - auto mutates cache
-          const result = await uploadSingleFile(files[0], taskId, {
-            method: 'presigned',
-            onProgress: (progress) => {
-              console.log('🔄 Upload progress:', progress);
-            },
-            onComplete: (result) => {
-              console.log('✅ Upload completed:', result);
-              onFileUploadComplete?.(result);
-            },
-            onError: (error) => {
-              console.error('❌ Upload failed:', error);
-            }
-          });
+          const result = await uploadSingleFile(files[0], taskId);
           console.log('🎉 Single file upload result:', result);
+          onFileUploadComplete?.(result);
         } else {
           // 🔥 Upload multiple using SWR hook - auto mutates cache
-          const results = await uploadFiles(Array.from(files), taskId, {
-            method: 'presigned'
-          });
+          const results = await uploadFiles(Array.from(files), taskId);
           console.log('🎉 Multiple upload completed:', results);
           onFileUploadComplete?.(results);
         }
@@ -84,9 +83,9 @@ const TaskDetailHeader = ({
   };
 
   const uploadTabs = [
-    { id: 'upload', label: 'Upload', icon: Upload },
-    { id: 'google-drive', label: 'Google Drive', icon: FolderOpen },
-    { id: 'onedrive', label: 'OneDrive/SharePoint', icon: Cloud },
+    { id: 'upload', label: t('taskDetailHeader.upload'), icon: Upload },
+    { id: 'google-drive', label: t('taskDetailHeader.googleDrive'), icon: FolderOpen },
+    { id: 'onedrive', label: t('taskDetailHeader.oneDrive'), icon: Cloud },
   ];
 
   return (
@@ -94,7 +93,7 @@ const TaskDetailHeader = ({
       {/* Header */}
       <div 
         className="flex items-center justify-between p-4 border-b"
-        style={{ borderColor: DARK_THEME.border.default }}
+        style={{ borderColor: theme.border.default }}
       >
         <div className="flex items-center gap-3">
           {task && (
@@ -104,45 +103,39 @@ const TaskDetailHeader = ({
               className="flex items-center gap-2 text-sm font-medium border transition-all duration-200"
               style={{
                 backgroundColor: isTaskCompleted(task)
-                  ? DARK_THEME.button.success.background
-                  : `${DARK_THEME.background.weakHover}80`,
+                  ? theme.status.success
+                  : `${theme.background.weakHover}80`,
                 borderColor: isTaskCompleted(task)
-                  ? DARK_THEME.button.success.border
-                  : DARK_THEME.border.default,
+                  ? theme.status.success
+                  : theme.border.default,
                 color: isTaskCompleted(task)
-                  ? DARK_THEME.button.success.textStrong
-                  : DARK_THEME.text.secondary
+                  ? 'white'
+                  : theme.text.secondary
               }}
               onMouseEnter={(e) => {
                 if (isTaskCompleted(task)) {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.button.success.hover;
-                  e.currentTarget.style.borderColor = DARK_THEME.button.success.borderHover || DARK_THEME.button.success.border;
-                  e.currentTarget.style.color = DARK_THEME.button.success.textStrong || DARK_THEME.button.success.text;
+                  e.currentTarget.style.opacity = '0.9';
                 } else {
-                  e.currentTarget.style.color = DARK_THEME.button.success.text;
-                  e.currentTarget.style.borderColor = DARK_THEME.button.success.border;
+                  e.currentTarget.style.color = theme.status.success;
+                  e.currentTarget.style.borderColor = theme.status.success;
                 }
               }}
               onMouseLeave={(e) => {
                 if (isTaskCompleted(task)) {
-                  e.currentTarget.style.backgroundColor = DARK_THEME.button.success.background;
-                  e.currentTarget.style.borderColor = DARK_THEME.button.success.border;
-                  e.currentTarget.style.color = DARK_THEME.button.success.textStrong || DARK_THEME.button.success.text;
+                  e.currentTarget.style.opacity = '1';
                 } else {
-                  e.currentTarget.style.color = DARK_THEME.text.secondary;
-                  e.currentTarget.style.borderColor = DARK_THEME.border.default;
+                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.borderColor = theme.border.default;
                 }
               }}
             >
               <CheckCircle 
                 className="w-4 h-4" 
                 style={{
-                  color: isTaskCompleted(task)
-                    ? DARK_THEME.button.success.iconHover || DARK_THEME.button.success.icon
-                    : 'currentColor'
+                  color: isTaskCompleted(task) ? 'white' : 'currentColor'
                 }}
               />
-              {isTaskCompleted(task) ? 'Completed' : 'Mark complete'}
+              {isTaskCompleted(task) ? t('taskDetailHeader.completed') : t('taskDetailHeader.markComplete')}
             </Button>
           )}
         </div>
@@ -151,8 +144,9 @@ const TaskDetailHeader = ({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-2 text-gray-400 hover:text-gray-200"
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover}
+            className="p-2 hover:opacity-80"
+            style={{ color: theme.text.muted }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background.weakHover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <Share className="w-4 h-4" />
@@ -163,9 +157,10 @@ const TaskDetailHeader = ({
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 text-gray-400 hover:text-gray-200 flex items-center gap-1"
+              className="p-2 hover:opacity-80 flex items-center gap-1"
+              style={{ color: theme.text.muted }}
               onClick={() => setShowUploadDropdown(!showUploadDropdown)}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background.weakHover}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <Paperclip className="w-4 h-4" />
@@ -176,13 +171,13 @@ const TaskDetailHeader = ({
               <div
                 className="absolute right-0 top-full mt-2 w-96 rounded-lg shadow-xl border z-50"
                 style={{
-                  backgroundColor: DARK_THEME.background.primary,
-                  borderColor: DARK_THEME.border.default,
+                  backgroundColor: theme.background.primary,
+                  borderColor: theme.border.default,
                   boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
                 }}
               >
                 {/* Tabs */}
-                <div className="flex border-b" style={{ borderColor: DARK_THEME.border.default }}>
+                <div className="flex border-b" style={{ borderColor: theme.border.default }}>
                   {uploadTabs.map((tab) => (
                     <button
                       key={tab.id}
@@ -191,20 +186,20 @@ const TaskDetailHeader = ({
                         activeTab === tab.id ? 'border-b-2' : ''
                       }`}
                       style={{
-                        color: activeTab === tab.id ? DARK_THEME.text.primary : DARK_THEME.text.muted,
-                        borderBottomColor: activeTab === tab.id ? DARK_THEME.button.primary.background : 'transparent',
-                        backgroundColor: activeTab === tab.id ? DARK_THEME.background.weakHover : 'transparent'
+                        color: activeTab === tab.id ? theme.text.primary : theme.text.muted,
+                        borderBottomColor: activeTab === tab.id ? theme.button.primary.background : 'transparent',
+                        backgroundColor: activeTab === tab.id ? theme.background.weakHover : 'transparent'
                       }}
                       onMouseEnter={(e) => {
                         if (activeTab !== tab.id) {
-                          e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover;
-                          e.currentTarget.style.color = DARK_THEME.text.secondary;
+                          e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                          e.currentTarget.style.color = theme.text.secondary;
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (activeTab !== tab.id) {
                           e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = DARK_THEME.text.muted;
+                          e.currentTarget.style.color = theme.text.muted;
                         }
                       }}
                     >
@@ -220,9 +215,9 @@ const TaskDetailHeader = ({
                       <div className="mb-4">
                         <h3
                           className="text-lg font-medium mb-2"
-                          style={{ color: DARK_THEME.text.primary }}
+                          style={{ color: theme.text.primary }}
                         >
-                          Select or drag files from your computer
+                          {t('taskDetailHeader.selectOrDragFiles')}
                         </h3>
                       </div>
 
@@ -231,19 +226,19 @@ const TaskDetailHeader = ({
                         className="px-6 py-3 rounded-lg border-2 border-dashed transition-all duration-200 hover:scale-105"
                         style={{
                           backgroundColor: 'transparent',
-                          borderColor: DARK_THEME.border.default,
-                          color: DARK_THEME.text.primary
+                          borderColor: theme.border.default,
+                          color: theme.text.primary
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.button.primary.background;
-                          e.currentTarget.style.backgroundColor = `${DARK_THEME.button.primary.background}10`;
+                          e.currentTarget.style.borderColor = theme.button.primary.background;
+                          e.currentTarget.style.backgroundColor = `${theme.button.primary.background}10`;
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.border.default;
+                          e.currentTarget.style.borderColor = theme.border.default;
                           e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
-                        Choose a file
+                        {t('taskDetailHeader.chooseFile')}
                       </Button>
 
                       <input
@@ -258,56 +253,30 @@ const TaskDetailHeader = ({
 
                   {activeTab === 'google-drive' && (
                     <div className="text-center">
-                      <p className="text-sm text-gray-500 mb-4">
-                        Connect your Google Drive to import files.
+                      <p className="text-sm mb-4" style={{ color: theme.text.muted }}>
+                        {t('taskDetailHeader.connectGoogleDriveDescription')}
                       </p>
                       <Button
                         variant="outline"
                         className="px-6 py-3 rounded-lg border transition-all duration-200"
-                        style={{
-                          borderColor: DARK_THEME.button.google.border,
-                          color: DARK_THEME.button.google.text,
-                          backgroundColor: DARK_THEME.button.google.background
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.button.google.borderHover;
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.google.backgroundHover;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.button.google.border;
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.google.background;
-                        }}
                       >
                         <img src="/images/google-logo.svg" alt="Google Logo" className="w-4 h-4 mr-2" />
-                        Connect Google Drive
+                        {t('taskDetailHeader.connectGoogleDrive')}
                       </Button>
                     </div>
                   )}
 
                   {activeTab === 'onedrive' && (
                     <div className="text-center">
-                      <p className="text-sm text-gray-500 mb-4">
-                        Connect your OneDrive or SharePoint to import files.
+                      <p className="text-sm mb-4" style={{ color: theme.text.muted }}>
+                        {t('taskDetailHeader.connectOneDriveDescription')}
                       </p>
                       <Button
                         variant="outline"
                         className="px-6 py-3 rounded-lg border transition-all duration-200"
-                        style={{
-                          borderColor: DARK_THEME.button.onedrive.border,
-                          color: DARK_THEME.button.onedrive.text,
-                          backgroundColor: DARK_THEME.button.onedrive.background
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.button.onedrive.borderHover;
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.onedrive.backgroundHover;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = DARK_THEME.button.onedrive.border;
-                          e.currentTarget.style.backgroundColor = DARK_THEME.button.onedrive.background;
-                        }}
                       >
                         <img src="/images/onedrive-logo.svg" alt="OneDrive Logo" className="w-4 h-4 mr-2" />
-                        Connect OneDrive
+                        {t('taskDetailHeader.connectOneDrive')}
                       </Button>
                     </div>
                   )}
@@ -328,11 +297,36 @@ const TaskDetailHeader = ({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-200"
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = DARK_THEME.background.weakHover}
+            className="p-2 hover:opacity-80"
+            style={{ color: theme.text.muted }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.background.weakHover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <ExternalLink className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Task visibility notice */}
+      <div>
+        <div
+          className="flex items-start gap-3 p-4"
+          style={{ backgroundColor: theme.background.secondary }}
+        >
+          <Lock
+            className="w-4 h-4"
+            style={{ color: theme.text.secondary }}
+          />
+          <div className="text-sm" style={{ color: theme.text.secondary }}>
+            {t('taskDetailHeader.taskIsPrivate')}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm ml-auto"
+            style={{ color: theme.button.primary.background }}
+          >
+            {t('taskDetailHeader.changePrivacy')}
           </Button>
         </div>
       </div>

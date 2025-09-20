@@ -45,6 +45,7 @@ export interface TaskAssignee {
   id: string;
   name: string;
   avatar?: string;
+  avatarUrl?: string; // Add support for avatarUrl field from API
   email?: string;
 }
 

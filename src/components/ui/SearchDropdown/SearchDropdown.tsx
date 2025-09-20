@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 import {
   Search,
   CheckSquare,
@@ -8,7 +8,6 @@ import {
   Users,
   Briefcase,
   Target,
-  Clock,
   ArrowRight,
   TrendingUp,
   Sparkles,
@@ -17,8 +16,8 @@ import {
   Trash2,
 } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
-import Button from "@/components/ui/Button/Button";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export interface SearchResult {
   id: string;
@@ -92,6 +91,8 @@ const SearchResultItem = ({
   item: SearchResult;
   onClick: () => void;
 }) => {
+  const { theme } = useThemeContext();
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "task":
@@ -124,7 +125,7 @@ const SearchResultItem = ({
       case 'CANCELLED':
         return '#EF4444';
       default:
-        return DARK_THEME.search.placeholder;
+        return theme.text.muted;
     }
   };
 
@@ -139,7 +140,7 @@ const SearchResultItem = ({
       case 'URGENT':
         return '#EF4444';
       default:
-        return DARK_THEME.search.placeholder;
+        return theme.text.muted;
     }
   };
 
@@ -153,7 +154,7 @@ const SearchResultItem = ({
         backgroundColor: 'transparent',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+        e.currentTarget.style.backgroundColor = theme.background.muted;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
@@ -162,13 +163,13 @@ const SearchResultItem = ({
       {item.avatar ? (
         <UserAvatar name={item.avatar} size="sm" className="w-6 h-6" />
       ) : (
-        <div className="w-6 h-6 flex items-center justify-center" style={{ color: DARK_THEME.search.placeholder }}>
+        <div className="w-6 h-6 flex items-center justify-center" style={{ color: theme.text.muted }}>
           <IconComponent size={16} />
         </div>
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium truncate" style={{ color: DARK_THEME.search.text }}>
+          <p className="text-sm font-medium truncate" style={{ color: theme.text.primary }}>
             {item.title}
           </p>
 
@@ -199,14 +200,14 @@ const SearchResultItem = ({
         </div>
 
         {item.description && (
-          <p className="text-xs truncate mt-1" style={{ color: DARK_THEME.search.placeholder }}>
+          <p className="text-xs truncate mt-1" style={{ color: theme.text.muted }}>
             {item.description}
           </p>
         )}
 
         {/* Additional metadata */}
         {item.metadata && (
-          <div className="flex items-center space-x-2 mt-1 text-xs" style={{ color: DARK_THEME.search.placeholder }}>
+          <div className="flex items-center space-x-2 mt-1 text-xs" style={{ color: theme.text.muted }}>
             {item.metadata.projectName && <span>📁 {item.metadata.projectName}</span>}
             {item.metadata.memberCount && <span>👥 {item.metadata.memberCount} members</span>}
             {item.metadata.completion !== undefined && <span>📊 {item.metadata.completion}%</span>}
@@ -228,26 +229,27 @@ const TabButton = ({
   isActive: boolean;
   onClick: () => void;
 }) => {
+  const { theme } = useThemeContext();
   const IconComponent = tab.icon;
   return (
     <button
       onClick={onClick}
       className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border"
       style={{
-        backgroundColor: isActive ? DARK_THEME.search.focus + '20' : 'transparent',
-        color: isActive ? DARK_THEME.search.focus : DARK_THEME.search.placeholder,
-        borderColor: isActive ? DARK_THEME.search.focus : 'transparent',
+        backgroundColor: isActive ? theme.status.info + '20' : 'transparent',
+        color: isActive ? theme.status.info : theme.text.muted,
+        borderColor: isActive ? theme.status.info : 'transparent',
       }}
       onMouseEnter={(e) => {
         if (!isActive) {
-          e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
-          e.currentTarget.style.color = DARK_THEME.search.text;
+          e.currentTarget.style.backgroundColor = theme.background.muted;
+          e.currentTarget.style.color = theme.text.primary;
         }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
           e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.color = DARK_THEME.search.placeholder;
+          e.currentTarget.style.color = theme.text.muted;
         }
       }}
     >
@@ -266,22 +268,23 @@ const SuggestionItem = ({
   type: 'autocomplete' | 'smart';
   onClick: () => void;
 }) => {
+  const { theme } = useThemeContext();
   return (
     <button
       onClick={onClick}
       className="w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors group"
       style={{ backgroundColor: 'transparent' }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+        e.currentTarget.style.backgroundColor = theme.background.muted;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      <div className="w-4 h-4 flex items-center justify-center" style={{ color: DARK_THEME.search.placeholder }}>
+      <div className="w-4 h-4 flex items-center justify-center" style={{ color: theme.text.muted }}>
         {type === 'smart' ? <Sparkles size={14} /> : <TrendingUp size={14} />}
       </div>
-      <span className="text-sm" style={{ color: DARK_THEME.search.text }}>
+      <span className="text-sm" style={{ color: theme.text.primary }}>
         {suggestion}
       </span>
     </button>
@@ -308,8 +311,11 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   onClearHistory,
   showLoadMore = false,
   onLoadMore,
-  onSmartSuggestionClick, // Destructure new prop
+  onSmartSuggestionClick,
 }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   if (!isOpen) return null;
 
   const positionClasses = {
@@ -327,17 +333,17 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
     <div
       className={`absolute top-full ${positionClasses[position]} mt-2 rounded-xl overflow-hidden z-[100] ${className}`}
       style={{
-        backgroundColor: DARK_THEME.search.backgroundActive,
-        borderColor: DARK_THEME.search.border,
+        backgroundColor: theme.dropdown.background,
+        borderColor: theme.border.default,
         borderWidth: '1px',
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        boxShadow: theme.dropdown.shadow,
         minWidth: "600px",
         maxWidth: "90vw",
         maxHeight: "80vh",
       }}
     >
       {/* Tabs */}
-      <div className="px-6 pt-6 border-b" style={{ borderColor: DARK_THEME.search.border }}>
+      <div className="px-6 pt-6 border-b" style={{ borderColor: theme.border.default }}>
         <div className="flex space-x-2 overflow-x-auto pb-4 scrollbar-hide">
           {tabs.map((tab) => (
             <TabButton
@@ -355,18 +361,18 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         {/* Loading State */}
         {isSearching && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="animate-spin mr-2" size={16} style={{ color: DARK_THEME.search.focus }} />
-            <span className="text-sm" style={{ color: DARK_THEME.search.placeholder }}>
-              Searching...
+            <Loader2 className="animate-spin mr-2" size={16} style={{ color: theme.status.info }} />
+            <span className="text-sm" style={{ color: theme.text.muted }}>
+              {messages?.search?.searching || "Searching..."}
             </span>
           </div>
         )}
 
         {/* Suggestions */}
         {!isSearching && searchQuery && hasSuggestions && (
-          <div className="p-4 border-b" style={{ borderColor: DARK_THEME.search.border }}>
-            <h3 className="text-xs font-medium mb-2" style={{ color: DARK_THEME.search.placeholder }}>
-              Suggestions
+          <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
+            <h3 className="text-xs font-medium mb-2" style={{ color: theme.text.muted }}>
+              {messages?.search?.suggestions || "Suggestions"}
             </h3>
             <div className="space-y-1">
               {suggestions.map((suggestion, index) => (
@@ -375,7 +381,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   suggestion={suggestion}
                   type="autocomplete"
                   onClick={() => {
-                    // This would trigger a new search with the suggestion
                     console.log('Select suggestion:', suggestion);
                   }}
                 />
@@ -386,7 +391,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                   suggestion={suggestion.text}
                   type="smart"
                   onClick={() => {
-                    // Handle smart suggestion click
                     if (onSmartSuggestionClick) {
                       onSmartSuggestionClick(suggestion);
                     }
@@ -401,11 +405,11 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         {!isSearching && searchQuery && hasResults && (
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium" style={{ color: DARK_THEME.search.placeholder }}>
-                Results for "{searchQuery}"
+              <h3 className="text-xs font-medium" style={{ color: theme.text.muted }}>
+                {messages?.search?.resultsFor || "Results for"} "{searchQuery}"
               </h3>
-              <span className="text-xs" style={{ color: DARK_THEME.search.placeholder }}>
-                {searchResults.length} results
+              <span className="text-xs" style={{ color: theme.text.muted }}>
+                {searchResults.length} {messages?.search?.results || "results"}
               </span>
             </div>
             <div className="space-y-1">
@@ -420,22 +424,22 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
             {/* Load More Button */}
             {showLoadMore && onLoadMore && (
-              <div className="mt-3 pt-3 border-t" style={{ borderColor: DARK_THEME.search.border }}>
+              <div className="mt-3 pt-3 border-t" style={{ borderColor: theme.border.default }}>
                 <button
                   onClick={onLoadMore}
                   className="w-full flex items-center justify-center space-x-2 py-2 rounded-lg transition-colors"
                   style={{
                     backgroundColor: 'transparent',
-                    color: DARK_THEME.search.focus
+                    color: theme.status.info
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+                    e.currentTarget.style.backgroundColor = theme.background.muted;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <span className="text-sm">Load more results</span>
+                  <span className="text-sm">{messages?.search?.loadMore || "Load more results"}</span>
                   <ArrowRight size={14} />
                 </button>
               </div>
@@ -446,33 +450,33 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         {/* No Results */}
         {!isSearching && searchQuery && !hasResults && !hasSuggestions && (
           <div className="flex flex-col items-center justify-center py-8">
-            <Search size={24} style={{ color: DARK_THEME.search.placeholder }} className="mb-2" />
-            <p className="text-sm" style={{ color: DARK_THEME.search.placeholder }}>
-              No results found for "{searchQuery}"
+            <Search size={24} style={{ color: theme.text.muted }} className="mb-2" />
+            <p className="text-sm" style={{ color: theme.text.muted }}>
+              {messages?.search?.noResults || "No results found for"} "{searchQuery}"
             </p>
-            <p className="text-xs mt-1" style={{ color: DARK_THEME.search.placeholder }}>
-              Try adjusting your search terms
+            <p className="text-xs mt-1" style={{ color: theme.text.muted }}>
+              {messages?.search?.tryAdjusting || "Try adjusting your search terms"}
             </p>
           </div>
         )}
 
         {/* Recent Items */}
         {!searchQuery && hasRecentItems && (
-          <div className="p-4 border-b" style={{ borderColor: DARK_THEME.search.border }}>
+          <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium" style={{ color: DARK_THEME.search.placeholder }}>
-                Recent searches
+              <h3 className="text-xs font-medium" style={{ color: theme.text.muted }}>
+                {messages?.search?.recentSearches || "Recent searches"}
               </h3>
               {onClearHistory && (
                 <button
                   onClick={onClearHistory}
                   className="text-xs transition-colors"
-                  style={{ color: DARK_THEME.search.placeholder }}
+                  style={{ color: theme.text.muted }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = DARK_THEME.search.text;
+                    e.currentTarget.style.color = theme.text.primary;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = DARK_THEME.search.placeholder;
+                    e.currentTarget.style.color = theme.text.muted;
                   }}
                 >
                   <Trash2 size={12} />
@@ -494,8 +498,8 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         {/* Saved Searches */}
         {!searchQuery && hasSavedSearches && (
           <div className="p-4">
-            <h3 className="text-xs font-medium mb-3" style={{ color: DARK_THEME.search.placeholder }}>
-              Saved searches
+            <h3 className="text-xs font-medium mb-3" style={{ color: theme.text.muted }}>
+              {messages?.search?.savedSearches || "Saved searches"}
             </h3>
             <div className="space-y-1">
               {savedSearches.map((search) => {
@@ -507,20 +511,20 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                     className="w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors group"
                     style={{ backgroundColor: 'transparent' }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundStrong;
+                      e.currentTarget.style.backgroundColor = theme.background.muted;
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
-                    <div className="w-6 h-6 flex items-center justify-center" style={{ color: DARK_THEME.search.focus }}>
+                    <div className="w-6 h-6 flex items-center justify-center" style={{ color: theme.status.info }}>
                       <IconComponent size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: DARK_THEME.search.text }}>
+                      <p className="text-sm font-medium truncate" style={{ color: theme.text.primary }}>
                         {search.title}
                       </p>
-                      <p className="text-xs truncate" style={{ color: DARK_THEME.search.placeholder }}>
+                      <p className="text-xs truncate" style={{ color: theme.text.muted }}>
                         {search.description}
                       </p>
                     </div>

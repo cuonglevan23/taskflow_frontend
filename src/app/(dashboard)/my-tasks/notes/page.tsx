@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useNotes } from '@/components/Note';
 import NoteList from '@/components/Note/NoteList';
 import NoteDetailLayout from '@/components/Note/NoteDetailLayout';
+import { CreateNoteRequest, UpdateNoteRequest, NoteSearchParams } from '@/types/note';
 
 const MyTaskNotesPage = () => {
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
@@ -15,12 +16,12 @@ const MyTaskNotesPage = () => {
     autoRefresh: false
   });
 
-  const handleSearch = useCallback((params: any) => {
+  const handleSearch = useCallback((params: NoteSearchParams) => {
     actions.searchNotes(params);
   }, [actions]);
 
   // Wrapper functions to match NoteList interface expectations
-  const handleUpdateNote = useCallback(async (id: number, data: any) => {
+  const handleUpdateNote = useCallback(async (id: number, data: UpdateNoteRequest) => {
     await actions.updateNote(id, data);
   }, [actions]);
 
@@ -43,19 +44,23 @@ const MyTaskNotesPage = () => {
   }, []);
 
   // Handle create note - create and show detail
-  const handleCreateNote = useCallback(async () => {
+  const handleCreateNote = useCallback(async (data: CreateNoteRequest) => {
     try {
       const newNote = await actions.createNote({
-        title: '',
-        content: JSON.stringify([{
+        title: data.title || '',
+        content: data.content || JSON.stringify([{
           type: "paragraph",
           content: []
         }]),
-        description: ''
+        description: data.description || '',
+        projectId: data.projectId,
+        isPublic: data.isPublic
       });
       setSelectedNoteId(newNote.id);
+      return newNote; // Return the created note
     } catch (error) {
       console.error('Failed to create note:', error);
+      throw error; // Re-throw to let caller handle
     }
   }, [actions]);
 

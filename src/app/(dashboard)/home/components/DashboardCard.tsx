@@ -2,7 +2,8 @@
 
 import React, { ReactNode, useState } from "react";
 import { MoreHorizontal, ChevronDown, Check } from "lucide-react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface CardProps {
   title: string;
@@ -17,7 +18,18 @@ export default function DashboardCard({
   menuCardItems,
   children,
 }: CardProps) {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split(".");
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedDropdown, setSelectedDropdown] = useState(
     dropdownItems?.[0] || ""
@@ -27,10 +39,10 @@ export default function DashboardCard({
   return (
     <div
       className="rounded-lg shadow p-4 h-full flex flex-col"
-      style={{ 
+      style={{
         backgroundColor: theme.background.secondary,
-        height: '100%',
-        maxHeight: '400px'
+        height: "100%",
+        maxHeight: "400px",
       }}
     >
       {/* Header */}

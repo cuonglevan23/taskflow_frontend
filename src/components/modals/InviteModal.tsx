@@ -1,18 +1,22 @@
-// InviteModal - Backend JWT Authentication Only
+// InviteModal - Enhanced with User Lookup System
 "use client";
 
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { X, Info } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import Button from "@/components/ui/Button/Button";
 import Dropdown, { DropdownItem } from "@/components/ui/Dropdown/Dropdown";
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { Z_INDEX } from "@/styles/z-index";
+import { UserLookupPanel } from "@/components/User/UserLookupPanel";
+import { UserLookupDto } from '@/types/user-lookup';
 
 /* ===================== Types ===================== */
 export interface InviteFormData {
   emails: string;
   projectIds?: string[];
+  selectedUsers?: UserLookupDto[];
+  emailInvites?: string[];
 }
 
 interface Project {
@@ -26,9 +30,12 @@ interface Props {
   onClose: () => void;
   onSubmit?: (data: InviteFormData) => Promise<void>;
   projects?: Project[];
-  showProjectSelection?: boolean; // New prop to control project selection visibility
-  modalTitle?: string; // Custom title for the modal
-  requireSameDomain?: boolean; // New prop to control domain validation
+  showProjectSelection?: boolean;
+  modalTitle?: string;
+  requireSameDomain?: boolean;
+  // New props for enhanced user lookup
+  enableUserLookup?: boolean;
+  maxInvites?: number;
 }
 
 /* ===================== Mock Data ===================== */
@@ -45,15 +52,23 @@ export default function InviteModal({
   onClose,
   onSubmit,
   projects = MOCK_PROJECTS,
-  showProjectSelection = true, // Default to true for backward compatibility
-  modalTitle = "Invite people to My workspace", // Default title
-  requireSameDomain = true, // Default to true for backward compatibility
+  showProjectSelection = true,
+  modalTitle = "Invite people to My workspace",
+  requireSameDomain = true,
+  enableUserLookup = true, // Enable the new user lookup by default
+  maxInvites = 50,
 }: Props) {
   const { theme } = useTheme();
-  const { user } = useAuth(); // Get user from AuthProvider
+  const { user } = useAuth();
 
+  // Legacy email input state (for fallback)
   const [emails, setEmails] = useState("");
   const [emailError, setEmailError] = useState("");
+
+  // New user lookup state
+  const [selectedUsers, setSelectedUsers] = useState<UserLookupDto[]>([]);
+  const [emailInvites, setEmailInvites] = useState<string[]>([]);
+
   const [selectedProjects, setSelectedProjects] = useState<Project[]>([]);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +83,55 @@ export default function InviteModal({
 
   const userDomain = getUserDomain();
 
+  // Handle user lookup selection changes
+  const handleUserLookupChange = useCallback((users: UserLookupDto[], emails: string[]) => {
+    setSelectedUsers(users);
+    setEmailInvites(emails);
+    setEmailError(""); // Clear any previous errors
+  }, []);
+
+  // Enhanced validation for user lookup mode
+  const validateInviteData = (): { isValid: boolean; error: string } => {
+    if (enableUserLookup) {
+      const totalInvites = selectedUsers.length + emailInvites.length;
+
+      if (totalInvites === 0) {
+        return {
+          isValid: false,
+          error: "Please select at least one user or enter an email address to invite"
+        };
+      }
+
+      if (totalInvites > maxInvites) {
+        return {
+          isValid: false,
+          error: `Maximum ${maxInvites} invites allowed. Currently selected: ${totalInvites}`
+        };
+      }
+
+      // Validate email domains if required
+      if (requireSameDomain && userDomain) {
+        const wrongDomainEmails = emailInvites.filter(email => {
+          const emailDomain = email.split("@")[1];
+          return emailDomain !== userDomain;
+        });
+
+        if (wrongDomainEmails.length > 0) {
+          return {
+            isValid: false,
+            error: `Emails must be from ${userDomain} domain: ${wrongDomainEmails.join(", ")}`
+          };
+        }
+      }
+
+      return { isValid: true, error: "" };
+    }
+
+    // Fallback to legacy validation
+    return validateEmails(emails);
+  };
+
+  // Legacy email validation (for fallback mode)
   const validateEmails = (emailInput: string): { isValid: boolean; error: string; validEmails: string[] } => {
     if (!emailInput.trim()) {
       return {
@@ -77,7 +141,6 @@ export default function InviteModal({
       };
     }
 
-    // Split emails by comma and clean them
     const emailList = emailInput
       .split(",")
       .map((email) => email.trim())
@@ -96,14 +159,12 @@ export default function InviteModal({
     const wrongDomainEmails: string[] = [];
 
     for (const email of emailList) {
-      // Basic email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         invalidEmails.push(email);
         continue;
       }
 
-      // Check if email domain matches user's domain (only if required)
       if (requireSameDomain && userDomain) {
         const emailDomain = email.split("@")[1];
         if (emailDomain !== userDomain) {
@@ -115,7 +176,6 @@ export default function InviteModal({
       validEmails.push(email);
     }
 
-    // Generate error messages
     let errorMessage = "";
     if (invalidEmails.length > 0) {
       errorMessage += `Invalid email format: ${invalidEmails.join(", ")}. `;
@@ -135,8 +195,8 @@ export default function InviteModal({
   };
 
   const handleSubmit = async () => {
-    // Validate emails
-    const validation = validateEmails(emails);
+    // Validate invite data
+    const validation = validateInviteData();
     if (!validation.isValid) {
       setEmailError(validation.error);
       return;
@@ -144,7 +204,12 @@ export default function InviteModal({
 
     setIsSubmitting(true);
     try {
-      const inviteData = {
+      const inviteData: InviteFormData = enableUserLookup ? {
+        emails: emailInvites.join(", "), // Convert email invites array to comma-separated string
+        projectIds: selectedProjects.map(p => p.id),
+        selectedUsers: selectedUsers,
+        emailInvites: emailInvites,
+      } : {
         emails: emails.trim(),
         projectIds: selectedProjects.map(p => p.id),
       };
@@ -152,7 +217,13 @@ export default function InviteModal({
       if (onSubmit) {
         await onSubmit(inviteData);
       } else {
-        console.log("Sending invites to:", validation.validEmails);
+        // Fallback logging
+        if (enableUserLookup) {
+          console.log("Sending invites to existing users:", selectedUsers);
+          console.log("Sending email invites to:", emailInvites);
+        } else {
+          console.log("Sending invites to:", emails);
+        }
         console.log("Adding to projects:", selectedProjects.map(p => p.name));
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
@@ -162,6 +233,7 @@ export default function InviteModal({
       onClose();
     } catch (error) {
       console.error("Failed to send invites:", error);
+      setEmailError("Failed to send invites. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -170,6 +242,8 @@ export default function InviteModal({
   const handleClear = () => {
     setEmails("");
     setEmailError("");
+    setSelectedUsers([]);
+    setEmailInvites([]);
     setSelectedProjects([]);
   };
 
@@ -179,7 +253,6 @@ export default function InviteModal({
   };
 
   const selectProject = (project: Project) => {
-    // Check if project is already selected
     if (!selectedProjects.find(p => p.id === project.id)) {
       setSelectedProjects(prev => [...prev, project]);
     }
@@ -190,7 +263,6 @@ export default function InviteModal({
     setSelectedProjects(prev => prev.filter(p => p.id !== projectId));
   };
 
-  // Get available projects (not already selected)
   const availableProjects = projects.filter(
     project => !selectedProjects.find(selected => selected.id === project.id)
   );
@@ -206,6 +278,11 @@ export default function InviteModal({
     return null;
   }
 
+  // Calculate total selected for display
+  const totalSelected = enableUserLookup ?
+    selectedUsers.length + emailInvites.length :
+    emails.split(",").filter(e => e.trim()).length;
+
   return (
     <div 
       className="fixed inset-0 flex items-center justify-center"
@@ -220,8 +297,8 @@ export default function InviteModal({
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg mx-4 rounded-xl shadow-2xl"
-        style={{ 
+        className="relative w-full max-w-4xl mx-4 rounded-xl shadow-2xl max-h-[90vh] overflow-hidden"
+        style={{
           backgroundColor: theme.background.primary,
           zIndex: Z_INDEX.popover
         }}
@@ -234,12 +311,19 @@ export default function InviteModal({
             borderBottomColor: theme.border.default,
           }}
         >
-          <h1 
-            className="text-xl font-semibold"
-            style={{ color: theme.text.primary }}
-          >
-            {modalTitle}
-          </h1>
+          <div>
+            <h1
+              className="text-xl font-semibold"
+              style={{ color: theme.text.primary }}
+            >
+              {modalTitle}
+            </h1>
+            {enableUserLookup && totalSelected > 0 && (
+              <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
+                {totalSelected} {totalSelected === 1 ? 'person' : 'people'} selected
+              </p>
+            )}
+          </div>
           <button
             onClick={handleClose}
             className="p-2 rounded-lg transition-colors"
@@ -256,39 +340,58 @@ export default function InviteModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Email Textarea */}
-          <div>
-            <label 
-              className="block text-sm font-medium mb-2"
-              style={{ color: theme.text.primary }}
-            >
-              Email addresses
-            </label>
-            <textarea
-              value={emails}
-              onChange={handleEmailChange}
-              placeholder={
-                requireSameDomain 
-                  ? `${user?.email}, name@${userDomain || "company.com"}, ...`
-                  : `user@example.com, another@domain.com, ...`
-              }
-              rows={4}
-              className={`w-full px-3 py-2 border rounded-lg resize-none ${
-                emailError ? "border-red-500" : ""
-              }`}
-              style={{
-                backgroundColor: theme.background.secondary,
-                borderColor: emailError ? "#ef4444" : theme.border.default,
-                color: theme.text.primary,
-              }}
-            />
-            {emailError && (
-              <p className="text-red-500 text-sm mt-1">{emailError}</p>
-            )}
-          </div>
+        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          {/* Enhanced User Lookup or Legacy Email Input */}
+          {enableUserLookup ? (
+            <div>
+              <UserLookupPanel
+                mode="invite"
+                onSelectionChange={handleUserLookupChange}
+                title="Add people"
+                allowMultipleSelection={true}
+                allowEmailInvites={!requireSameDomain || !userDomain}
+                maxSelections={maxInvites}
+                showModeSelector={false}
+                className="border rounded-lg"
+              />
+              {emailError && (
+                <p className="text-red-500 text-sm mt-2">{emailError}</p>
+              )}
+            </div>
+          ) : (
+            // Legacy email textarea (fallback)
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: theme.text.primary }}
+              >
+                Email addresses
+              </label>
+              <textarea
+                value={emails}
+                onChange={handleEmailChange}
+                placeholder={
+                  requireSameDomain
+                    ? `${user?.email}, name@${userDomain || "company.com"}, ...`
+                    : `user@example.com, another@domain.com, ...`
+                }
+                rows={4}
+                className={`w-full px-3 py-2 border rounded-lg resize-none ${
+                  emailError ? "border-red-500" : ""
+                }`}
+                style={{
+                  backgroundColor: theme.background.secondary,
+                  borderColor: emailError ? "#ef4444" : theme.border.default,
+                  color: theme.text.primary,
+                }}
+              />
+              {emailError && (
+                <p className="text-red-500 text-sm mt-1">{emailError}</p>
+              )}
+            </div>
+          )}
 
-          {/* Add to projects - Only show if showProjectSelection is true */}
+          {/* Add to projects */}
           {showProjectSelection && (
             <div>
               <label 
@@ -298,105 +401,87 @@ export default function InviteModal({
                 Add to projects
                 <Info className="w-4 h-4 text-gray-400" />
               </label>
-            
-            {/* Selected Projects - Tag Style */}
-            {selectedProjects.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {selectedProjects.map((project) => (
-                  <div 
-                    key={project.id}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm"
-                    style={{
-                      backgroundColor: theme.background.secondary,
-                      borderColor: theme.border.default,
-                      color: theme.text.primary,
-                    }}
-                  >
-                    <span>{project.icon}</span>
-                    <span>{project.name}</span>
-                    <button
-                      onClick={() => removeProject(project.id)}
-                      className="ml-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
 
-            {/* Add Project Button */}
-            {availableProjects.length > 0 && (
-              <Dropdown
-                trigger={
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-dashed rounded-lg text-center transition-colors"
-                    style={{
-                      borderColor: theme.border.default,
-                      color: theme.text.secondary,
-                    }}
-                  >
-                    + Add to project
-                  </button>
-                }
-                isOpen={isProjectDropdownOpen}
-                onOpenChange={setIsProjectDropdownOpen}
-                className="w-full"
-              >
-                <div className="py-1">
+              {/* Selected Projects */}
+              {selectedProjects.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {selectedProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="flex items-center gap-1 px-3 py-1 rounded-full text-sm"
+                      style={{
+                        backgroundColor: theme.background.secondary,
+                        color: theme.text.primary
+                      }}
+                    >
+                      <span>{project.icon}</span>
+                      <span>{project.name}</span>
+                      <button
+                        onClick={() => removeProject(project.id)}
+                        className="ml-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Project Dropdown */}
+              {availableProjects.length > 0 && (
+                <Dropdown
+                  isOpen={isProjectDropdownOpen}
+                  onOpenChange={setIsProjectDropdownOpen}
+                  trigger={
+                    <button
+                      className="w-full text-left px-3 py-2 border rounded-lg"
+                      style={{
+                        backgroundColor: theme.background.secondary,
+                        borderColor: theme.border.default,
+                        color: theme.text.secondary,
+                      }}
+                    >
+                      {selectedProjects.length === 0
+                        ? "Choose projects..."
+                        : "Add more projects..."
+                      }
+                    </button>
+                  }
+                >
                   {availableProjects.map((project) => (
                     <DropdownItem
                       key={project.id}
                       onClick={() => selectProject(project)}
                     >
-                      <div className="flex items-center gap-2">
-                        <span>{project.icon}</span>
-                        {project.name}
-                      </div>
+                      {`${project.icon} ${project.name}`}
                     </DropdownItem>
                   ))}
-                </div>
-              </Dropdown>
-            )}
-
-            {/* All projects selected message */}
-            {availableProjects.length === 0 && selectedProjects.length > 0 && (
-              <div 
-                className="w-full px-3 py-2 border border-dashed rounded-lg text-center text-sm"
-                style={{
-                  borderColor: theme.border.default,
-                  color: theme.text.secondary,
-                }}
-              >
-                All projects added
-              </div>
-            )}
+                </Dropdown>
+              )}
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div 
-          className="flex items-center justify-end gap-3 p-6 border-t"
-          style={{ 
+          className="flex justify-end gap-3 p-6 border-t"
+          style={{
             backgroundColor: theme.background.primary,
             borderTopColor: theme.border.default,
           }}
         >
-          <Button
-            onClick={handleClear}
-            variant="outline"
-            disabled={isSubmitting}
-          >
-            Clear
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
           </Button>
-          
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !emails.trim() || !!emailError}
+            disabled={isSubmitting || totalSelected === 0}
+            loading={isSubmitting}
           >
-            {isSubmitting ? "Sending..." : "Send"}
+            {isSubmitting
+              ? "Sending..."
+              : `Send ${totalSelected > 0 ? `${totalSelected} ` : ""}invite${totalSelected !== 1 ? 's' : ''}`
+            }
           </Button>
         </div>
       </div>

@@ -1,17 +1,28 @@
 import React from "react";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import DashboardCard from "../DashboardCard";
 import { FileText } from "lucide-react";
-import { useTheme } from "@/layouts/hooks/useTheme";
 
 interface Props {
   className?: string;
 }
 
 const StatusCard = (props: Props) => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split(".");
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   return (
-    <DashboardCard title="Status updates">
+    <DashboardCard title={t("statusCard.title")}>
       <div className="flex flex-col items-center justify-center mt-10 text-center">
         <div
           className="w-12 h-12 rounded-md border-2 flex items-center justify-center relative"
@@ -28,8 +39,7 @@ const StatusCard = (props: Props) => {
         </div>
 
         <p className="mt-4 max-w-xs" style={{ color: theme.text.secondary }}>
-          Status updates help you monitor the progress of work. You can request
-          one from any project.{" "}
+          {t("statusCard.description")}
           <a
             href="#"
             className="underline transition"
@@ -41,7 +51,7 @@ const StatusCard = (props: Props) => {
               e.currentTarget.style.color = theme.text.primary;
             }}
           >
-            Learn more
+            {t("statusCard.learnMore")}
           </a>
         </p>
       </div>

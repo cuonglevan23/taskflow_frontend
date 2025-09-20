@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import NoteEditor from './NoteEditor';
 import { NoteResponse, UpdateNoteRequest } from '@/types/note';
 import TableOfContents from './TableOfContents';
@@ -24,6 +25,19 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showTemplates, setShowTemplates] = useState(!note.title && !note.content);
   const [showTableOfContents, setShowTableOfContents] = useState(false);
+
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
   // Create ref for NoteEditor
   const editorRef = useRef<any>(null);
@@ -54,7 +68,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
     try {
       setIsSaving(true);
       await onUpdateNote(note.id, {
-        title: title || 'Untitled',
+        title: title || t('noteDetailLayout.defaultTitle'),
         content
       });
       setLastSaved(new Date());
@@ -63,7 +77,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
     } finally {
       setIsSaving(false);
     }
-  }, [note.id, title, content, onUpdateNote]);
+  }, [note.id, title, content, onUpdateNote, t]);
 
   const handleContentChange = useCallback((newContent: string) => {
     setContent(newContent);
@@ -95,51 +109,51 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
     const diffMs = now.getTime() - lastSaved.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins === 1) return '1 minute ago';
-    if (diffMins < 60) return `${diffMins} minutes ago`;
+    if (diffMins < 1) return t('noteDetailLayout.saveStatus.justNow');
+    if (diffMins === 1) return t('noteDetailLayout.saveStatus.oneMinuteAgo');
+    if (diffMins < 60) return t('noteDetailLayout.saveStatus.minutesAgo', { minutes: diffMins });
 
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours === 1) return '1 hour ago';
-    return `${diffHours} hours ago`;
-  }, [lastSaved]);
+    if (diffHours === 1) return t('noteDetailLayout.saveStatus.oneHourAgo');
+    return t('noteDetailLayout.saveStatus.hoursAgo', { hours: diffHours });
+  }, [lastSaved, t]);
 
   const templateSuggestions = [
-    { icon: '📝', label: 'My scratchpad' },
-    { icon: '📅', label: 'Weekly planning' },
-    { icon: '📋', label: 'My meeting notes' },
-    { icon: '🔗', label: 'Quick links' },
-    { icon: '📄', label: 'Blank note' }
+    { icon: '📝', label: t('noteDetailLayout.templates.scratchpad') },
+    { icon: '📅', label: t('noteDetailLayout.templates.weeklyPlanning') },
+    { icon: '📋', label: t('noteDetailLayout.templates.meetingNotes') },
+    { icon: '🔗', label: t('noteDetailLayout.templates.quickLinks') },
+    { icon: '📄', label: t('noteDetailLayout.templates.blankNote') }
   ];
 
   const handleTemplateSelect = useCallback((template: typeof templateSuggestions[0]) => {
     let templateContent = '';
 
     switch (template.label) {
-      case 'My scratchpad':
+      case t('noteDetailLayout.templates.scratchpad'):
         templateContent = JSON.stringify([
-          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: "📝 My Scratchpad", styles: {} }] },
-          { type: "paragraph", content: [{ type: "text", text: "Quick thoughts and ideas go here...", styles: {} }] }
+          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: `📝 ${t('noteDetailLayout.templateContent.scratchpad.title')}`, styles: {} }] },
+          { type: "paragraph", content: [{ type: "text", text: t('noteDetailLayout.templateContent.scratchpad.content'), styles: {} }] }
         ]);
         break;
-      case 'Weekly planning':
+      case t('noteDetailLayout.templates.weeklyPlanning'):
         templateContent = JSON.stringify([
-          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: "📅 Weekly Planning", styles: {} }] },
-          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: "Goals", styles: {} }] },
-          { type: "bulletListItem", content: [{ type: "text", text: "Goal 1", styles: {} }] },
-          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: "Tasks", styles: {} }] },
-          { type: "bulletListItem", content: [{ type: "text", text: "Task 1", styles: {} }] }
+          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: `📅 ${t('noteDetailLayout.templateContent.weeklyPlanning.title')}`, styles: {} }] },
+          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: t('noteDetailLayout.templateContent.weeklyPlanning.goals'), styles: {} }] },
+          { type: "bulletListItem", content: [{ type: "text", text: t('noteDetailLayout.templateContent.weeklyPlanning.goal1'), styles: {} }] },
+          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: t('noteDetailLayout.templateContent.weeklyPlanning.tasks'), styles: {} }] },
+          { type: "bulletListItem", content: [{ type: "text", text: t('noteDetailLayout.templateContent.weeklyPlanning.task1'), styles: {} }] }
         ]);
         break;
-      case 'My meeting notes':
+      case t('noteDetailLayout.templates.meetingNotes'):
         templateContent = JSON.stringify([
-          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: "📋 Meeting Notes", styles: {} }] },
-          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: "👥 Attendees", styles: {} }] },
-          { type: "bulletListItem", content: [{ type: "text", text: "Who did I meet with?", styles: {} }] },
-          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: "📝 Notes", styles: {} }] },
-          { type: "bulletListItem", content: [{ type: "text", text: "Add notes here", styles: {} }] },
-          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: "🎯 Action items", styles: {} }] },
-          { type: "bulletListItem", content: [{ type: "text", text: "What do I need to get done?", styles: {} }] }
+          { type: "heading", props: { level: 2 }, content: [{ type: "text", text: `📋 ${t('noteDetailLayout.templateContent.meetingNotes.title')}`, styles: {} }] },
+          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: `👥 ${t('noteDetailLayout.templateContent.meetingNotes.attendees')}`, styles: {} }] },
+          { type: "bulletListItem", content: [{ type: "text", text: t('noteDetailLayout.templateContent.meetingNotes.attendeesPlaceholder'), styles: {} }] },
+          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: `📝 ${t('noteDetailLayout.templateContent.meetingNotes.notes')}`, styles: {} }] },
+          { type: "bulletListItem", content: [{ type: "text", text: t('noteDetailLayout.templateContent.meetingNotes.notesPlaceholder'), styles: {} }] },
+          { type: "heading", props: { level: 3 }, content: [{ type: "text", text: `🎯 ${t('noteDetailLayout.templateContent.meetingNotes.actionItems')}`, styles: {} }] },
+          { type: "bulletListItem", content: [{ type: "text", text: t('noteDetailLayout.templateContent.meetingNotes.actionItemsPlaceholder'), styles: {} }] }
         ]);
         break;
       default:
@@ -151,21 +165,21 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
     setContent(templateContent);
     setTitle(template.label);
     setShowTemplates(false);
-  }, []);
+  }, [t]);
 
   const toggleTableOfContents = useCallback(() => {
     setShowTableOfContents(prev => !prev);
   }, []);
 
   return (
-    <div className="h-full w-full" style={{ backgroundColor: DARK_THEME.background.primary }}>
+    <div className="h-full w-full" style={{ backgroundColor: theme.background.primary }}>
       <NoteEditorLayout
         showSidebar={showTableOfContents}
         sidebar={<TableOfContents content={content} />}
         onToggleSidebar={toggleTableOfContents}
         header={
           /* Top Toolbar - giống Notion */
-          <div className="w-full border-b border-opacity-20" style={{ borderColor: DARK_THEME.border.default }}>
+          <div className="w-full border-b border-opacity-20" style={{ borderColor: theme.border.default }}>
             <div className="flex items-center justify-between px-6 py-2">
               {/* Left: Navigation + Formatting tools */}
               <div className="flex items-center space-x-1">
@@ -174,12 +188,12 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                     <button
                       onClick={onBack}
                       className="p-2 rounded transition-colors"
-                      style={{ color: DARK_THEME.text.muted, backgroundColor: 'transparent', border: 'none' }}
-                      title="Back"
+                      style={{ color: theme.text.muted, backgroundColor: 'transparent', border: 'none' }}
+                      title={t('noteDetailLayout.back')}
                     >
                       ←
                     </button>
-                    <div className="w-px h-5 mx-2" style={{ backgroundColor: DARK_THEME.border.default }} />
+                    <div className="w-px h-5 mx-2" style={{ backgroundColor: theme.border.default }} />
                   </>
                 )}
 
@@ -212,17 +226,14 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
               value={title}
               onChange={handleTitleChange}
               onKeyDown={handleTitleKeyDown}
-              placeholder="Add a title"
+              placeholder={t('noteDetailLayout.titlePlaceholder')}
               className="w-full border-none outline-none bg-transparent text-5xl font-bold leading-tight placeholder-opacity-50"
               style={{
-                color: DARK_THEME.text.primary,
+                color: theme.text.primary,
                 fontFamily: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
               }}
             />
           </div>
-
-
-
 
           {/* Note Editor */}
           <div className="w-full notion-editor-container">
@@ -256,7 +267,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 background: transparent !important;
                 font-size: 16px !important;
                 line-height: 1.7 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
                 font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
                 max-width: none !important;
                 width: 100% !important;
@@ -267,7 +278,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 margin: 8px 0 !important;
                 line-height: 1.7 !important;
                 font-size: 16px !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
               }
               
               /* Clean heading styles that work well with outline */
@@ -276,7 +287,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 font-weight: 700 !important;
                 margin: 32px 0 16px 0 !important;
                 line-height: 1.2 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
                 letter-spacing: -0.025em !important;
               }
               
@@ -285,7 +296,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 font-weight: 600 !important;
                 margin: 28px 0 12px 0 !important;
                 line-height: 1.3 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
                 letter-spacing: -0.015em !important;
               }
               
@@ -294,7 +305,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 font-weight: 600 !important;
                 margin: 24px 0 8px 0 !important;
                 line-height: 1.4 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
               }
               
               .notion-editor-container .ProseMirror h4 {
@@ -302,7 +313,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
                 font-weight: 600 !important;
                 margin: 20px 0 6px 0 !important;
                 line-height: 1.5 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
               }
               
               /* Better list styling */
@@ -315,7 +326,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
               .notion-editor-container .ProseMirror li {
                 margin: 4px 0 !important;
                 line-height: 1.6 !important;
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
               }
               
               .notion-editor-container .ProseMirror li p {
@@ -324,8 +335,8 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
               
               /* Seamless placeholder */
               .notion-editor-container .ProseMirror p.is-empty:first-child::before {
-                content: "Start writing your document..." !important;
-                color: ${DARK_THEME.text.muted} !important;
+                content: "${t('noteDetailLayout.editorPlaceholder')}" !important;
+                color: ${theme.text.muted} !important;
                 opacity: 0.5 !important;
                 font-style: italic !important;
                 pointer-events: none !important;
@@ -339,15 +350,15 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
               
               /* Clean suggestion menu */
               .notion-editor-container .bn-suggestion-menu {
-                background: ${DARK_THEME.background.secondary} !important;
-                border: 1px solid ${DARK_THEME.border.default} !important;
+                background: ${theme.background.secondary} !important;
+                border: 1px solid ${theme.border.default} !important;
                 border-radius: 8px !important;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
                 padding: 8px !important;
               }
               
               .notion-editor-container .bn-suggestion-menu-item {
-                color: ${DARK_THEME.text.primary} !important;
+                color: ${theme.text.primary} !important;
                 padding: 8px 12px !important;
                 border-radius: 4px !important;
                 margin: 2px 0 !important;
@@ -355,7 +366,7 @@ export default function NoteDetailLayout(props: NoteDetailLayoutProps) {
               
               .notion-editor-container .bn-suggestion-menu-item:hover,
               .notion-editor-container .bn-suggestion-menu-item[data-selected="true"] {
-                background: ${DARK_THEME.background.weakHover} !important;
+                background: ${theme.background.weakHover} !important;
               }
               
               /* Remove any focus rings or borders */

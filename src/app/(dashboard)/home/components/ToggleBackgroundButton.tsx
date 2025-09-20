@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import ToggleBackgroundPanel from "./ToggleBackgroundPanel";
 
 export default function ToggleBackgroundButton({
@@ -8,6 +10,18 @@ export default function ToggleBackgroundButton({
 }: {
   onColorChange?: (color: string) => void;
 }) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split(".");
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,8 +36,8 @@ export default function ToggleBackgroundButton({
           <div className="w-2 h-2 bg-green-400 rounded-sm" />
           <div className="w-2 h-2 bg-blue-400 rounded-sm" />
         </div>
-        Customize
-      </button>f
+        {t("customize")}
+      </button>
 
       {open && (
         <ToggleBackgroundPanel

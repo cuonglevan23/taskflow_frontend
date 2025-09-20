@@ -1,5 +1,5 @@
 import React from "react";
-import PublicLayout from "@/layouts/public/PublicLayout";
+import { PublicLayout } from "@/layouts";
 import Hero from "@/layouts/public/components/Hero";
 import Features from "@/layouts/public/components/Features";
 import Testimonials from "@/layouts/public/components/Testimonials";

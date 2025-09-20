@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "lucide-react";
 import { GoalTab } from "@/types/goals";
 import { cn } from "@/lib/utils";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface GoalTabsProps {
   activeTab: GoalTab;
@@ -13,6 +14,9 @@ interface GoalTabsProps {
 }
 
 export function GoalTabs({ activeTab, onTabChange }: GoalTabsProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const tabs: { id: GoalTab; label: string }[] = [
     { id: 'strategy-map', label: 'Strategy map' },
     { id: 'team-goals', label: 'Team goals' },
@@ -20,21 +24,28 @@ export function GoalTabs({ activeTab, onTabChange }: GoalTabsProps) {
   ];
 
   return (
-    <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4"
-         style={{ borderColor: DARK_THEME.border.default }}>
+    <div className="flex border-b mb-4"
+         style={{ borderColor: theme.border.default }}>
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
-          className={cn(
-            "px-4 py-2 text-sm font-medium",
-            activeTab === tab.id
-              ? "text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400"
-              : "text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
-          )}
-          style={{ 
-            color: activeTab === tab.id ? DARK_THEME.text.primary : DARK_THEME.text.secondary,
-            borderColor: activeTab === tab.id ? DARK_THEME.border.default : 'transparent'
+          className="px-4 py-2 text-sm font-medium transition-colors border-b-2"
+          style={{
+            color: activeTab === tab.id ? theme.text.primary : theme.text.secondary,
+            borderBottomColor: activeTab === tab.id ? (theme.status?.info || '#3b82f6') : 'transparent'
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== tab.id) {
+              e.currentTarget.style.color = theme.text.primary;
+              e.currentTarget.style.borderBottomColor = theme.border.muted;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== tab.id) {
+              e.currentTarget.style.color = theme.text.secondary;
+              e.currentTarget.style.borderBottomColor = 'transparent';
+            }
           }}
         >
           {tab.label}
@@ -49,12 +60,17 @@ interface CreateGoalButtonProps {
 }
 
 export function CreateGoalButton({ onClick }: CreateGoalButtonProps) {
+  const { theme } = useThemeContext();
+
   return (
     <Button 
       onClick={onClick} 
       size="sm"
       className="flex items-center gap-1"
-      style={{ backgroundColor: DARK_THEME.button.primary, color: DARK_THEME.text.inverse }}
+      style={{
+        backgroundColor: theme.button.primary.background,
+        color: theme.button.primary.text
+      }}
     >
       <PlusIcon size={16} />
       <span>Create goal</span>

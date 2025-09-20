@@ -9,7 +9,11 @@ interface UseTaskActivitiesProps {
 
 interface UseTaskActivitiesReturn {
   activities: TaskActivityResponseDto[];
-  groupedActivities: Record<string, TaskActivityResponseDto[]>;
+  groupedActivities: {
+    TODAY: TaskActivityResponseDto[];
+    YESTERDAY: TaskActivityResponseDto[];
+    EARLIER: TaskActivityResponseDto[];
+  };
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
@@ -27,7 +31,9 @@ export const useTaskActivities = ({
   const [error, setError] = useState<Error | null>(null);
 
   const fetchActivities = useCallback(async () => {
-    if (!enabled || !taskId) return;
+    if (!enabled || !taskId) {
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -35,43 +41,49 @@ export const useTaskActivities = ({
 
       // Fetch activities and count in parallel
       const [activitiesData, countData] = await Promise.all([
-        TaskActivityService.getAllActivities(taskId),
+        TaskActivityService.getActivities(taskId, 0, 100),
         TaskActivityService.getActivitiesCount(taskId)
       ]);
 
-      setActivities(activitiesData);
-      setActivitiesCount(countData);
-    } catch (err) {
-      // Handle API not available gracefully
-      if (err instanceof Error && (err.message.includes('401') || err.message.includes('404'))) {
-        console.info('Task activities API not available - using fallback');
-        setActivities([]);
-        setActivitiesCount(0);
-        setError(new Error('Activity tracking feature is currently not available'));
+      // Handle different response structures
+      let activitiesArray: TaskActivityResponseDto[] = [];
+
+      if (Array.isArray(activitiesData)) {
+        // Direct array response
+        activitiesArray = activitiesData;
+      } else if (activitiesData.content && Array.isArray(activitiesData.content)) {
+        // Paginated response with content property
+        activitiesArray = activitiesData.content;
       } else {
-        setError(err instanceof Error ? err : new Error('Failed to fetch activities'));
-        console.error('Error in useTaskActivities:', err);
+        // Fallback - try to extract array from response
+        activitiesArray = [];
       }
+
+      setActivities(activitiesArray);
+      setActivitiesCount(countData);
+
+    } catch (err) {
+      setError(err as Error);
     } finally {
       setIsLoading(false);
     }
   }, [taskId, enabled]);
+
+  // Computed grouped activities
+  const groupedActivities = groupActivitiesByDate(activities);
 
   // Initial fetch
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
 
-  // Polling setup
+  // Polling effect
   useEffect(() => {
     if (!pollInterval || !enabled) return;
 
     const interval = setInterval(fetchActivities, pollInterval);
     return () => clearInterval(interval);
   }, [fetchActivities, pollInterval, enabled]);
-
-  // Group activities by date
-  const groupedActivities = groupActivitiesByDate(activities);
 
   return {
     activities,
@@ -123,8 +135,9 @@ export const useTaskActivitiesPaginated = ({
       setIsLoading(true);
       setError(null);
 
-      const response = await TaskActivityService.getActivitiesPaginated(taskId, page, pageSize);
-      
+      // Use getActivities instead of getActivitiesPaginated
+      const response = await TaskActivityService.getActivities(taskId, page, pageSize);
+
       setActivities(response.content);
       setCurrentPage(response.number);
       setTotalPages(response.totalPages);
@@ -182,8 +195,9 @@ export const useRecentTaskActivities = (taskId: string | number, enabled: boolea
       setIsLoading(true);
       setError(null);
 
-      const activitiesData = await TaskActivityService.getRecentActivities(taskId);
-      setActivities(activitiesData);
+      // Use getActivities with small page size to get recent activities
+      const activitiesData = await TaskActivityService.getActivities(taskId, 0, 5);
+      setActivities(activitiesData.content);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch recent activities'));
       console.error('Error in useRecentTaskActivities:', err);

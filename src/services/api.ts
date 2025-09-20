@@ -49,17 +49,19 @@ apiClient.interceptors.response.use(
     const statusText = error?.response?.statusText || '';
 
     // Use safe logger to prevent crashes
-    if (status) {
+    if (status === 401) {
+      // Don't log 401 errors as errors - they're expected when not authenticated
+      SafeLogger.info('🔐 Authentication required for:', method, url);
+    } else if (status) {
       SafeLogger.error('❌ API Error:', method, url, '→', status, statusText || '');
     } else {
       SafeLogger.error('❌ Network Error:', method, url, '→ Cannot reach server');
     }
 
-    // Handle authentication errors
-    if (status === 401) {
-      // Redirect to login page for authentication errors
-      window.location.href = '/login';
-    }
+    // Don't auto-redirect on 401 - let components handle authentication
+    // if (status === 401) {
+    //   window.location.href = '/login';
+    // }
 
     return Promise.reject(error);
   }

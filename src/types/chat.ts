@@ -56,10 +56,10 @@ export interface FriendForGroupChat {
   id: number;
   name: string;
   email: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null; // 🔥 FIXED: Allow null explicitly
   isOnline?: boolean;
-  lastSeen?: string;
-  isSelected?: boolean;
+  lastSeen?: string | null; // 🔥 FIXED: Allow null for lastSeen
+  isSelected?: boolean; // UI state for selection
 }
 
 // ==================== CONVERSATION TYPES ====================
@@ -94,6 +94,54 @@ export interface ConversationsResponse {
   totalElements: number;
   number: number;
   size: number;
+}
+
+// ==================== MEMBER MANAGEMENT TYPES ====================
+
+export interface ConversationMember {
+  id: number;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  joinedAt: string;
+  isOnline?: boolean;
+  lastSeen?: string;
+}
+
+export interface ConversationMemberDto {
+  id: number;
+  userId: number;
+  conversationId: number;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  joinedAt: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+    isOnline?: boolean;
+    lastSeen?: string;
+  };
+}
+
+export interface AddMembersRequest {
+  userIds: number[];
+}
+
+export interface AddMembersResponse {
+  members: ConversationMemberDto[];
+  systemMessage?: ChatMessage;
+}
+
+export interface RemoveMemberResponse {
+  success: boolean;
+  systemMessage?: ChatMessage;
+}
+
+export interface LeaveConversationResponse {
+  success: boolean;
+  systemMessage?: ChatMessage;
 }
 
 // ==================== MESSAGE TYPES ====================
@@ -349,6 +397,7 @@ export interface UseChatReturn {
 
   // Actions
   sendMessage: (conversationId: number, content: string, replyToId?: number) => Promise<void>;
+  sendMessageWithAttachments: (conversationId: number, content: string, files: File[], images: File[], replyToId?: number) => Promise<void>;
   createDirectChat: (userId: number) => Promise<ChatConversation>;
   createGroupChat: (name: string, memberIds: number[], description?: string) => Promise<ChatConversation>;
   loadMessages: (conversationId: number) => Promise<void>;

@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 import { useTheme } from '@/layouts/hooks/useTheme';
 import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import type { RouteConfig } from '../configs/routeNavigationConfig';
+import type { RouteConfig } from '../../../config/navigation';
 
 interface NavigationAvatarProps {
   config: NonNullable<RouteConfig['avatarConfig']>;
@@ -29,7 +29,7 @@ const NavigationAvatar = memo(({ config, size = 'md' }: NavigationAvatarProps) =
 
   // Get theme-aware colors
   const getBgColor = (color: string) => {
-    if (theme === 'dark') {
+    if (theme?.mode === 'dark') {
       // Darker variants for dark theme
       return color.replace('500', '600').replace('300', '500');
     }
@@ -37,7 +37,7 @@ const NavigationAvatar = memo(({ config, size = 'md' }: NavigationAvatarProps) =
   };
 
   const getTextColor = () => {
-    if (config.bgColor === 'gray-300' && theme === 'dark') {
+    if (config.bgColor === 'gray-300' && theme?.mode === 'dark') {
       return 'text-gray-800';
     }
     return 'text-white';

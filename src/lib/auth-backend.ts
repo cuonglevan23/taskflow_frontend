@@ -2,6 +2,28 @@
 // Optimized with flow: Authorization Bearer + Auto Refresh + Retry
 import BaseApiClient from './baseApiClient';
 
+// Type definitions for API responses
+interface GoogleAuthUrlResponse {
+  authUrl: string;
+}
+
+interface UserProfileResponse {
+  id?: string;
+  userId?: string;
+  email: string;
+  name?: string;
+  displayName?: string;
+  role?: string;
+  avatar?: string;
+  avatarUrl?: string;
+}
+
+interface LoginResponse {
+  success: boolean;
+  message?: string;
+  user?: UserProfileResponse;
+}
+
 export class AuthService {
   private static readonly BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   private static _isLoggingOut = false;
@@ -12,31 +34,20 @@ export class AuthService {
    */
   static async loginWithGoogle(): Promise<void> {
     try {
-      console.log('🔑 Initiating Google OAuth login...');
-
-      // Use full URL with explicit BASE_URL to avoid relative URL issues
       const fullUrl = `${this.BASE_URL}/api/auth/google/url`;
-      console.log(`Calling Google auth URL endpoint: ${fullUrl}`);
 
-      // Call backend to get Google auth URL - using try/catch with full error logging
       try {
-        const data = await BaseApiClient.get(fullUrl);
-        console.log('Response received:', data);
+        const data = await BaseApiClient.get<GoogleAuthUrlResponse>(fullUrl);
 
         if (!data?.authUrl) {
           throw new Error('Invalid authentication URL received from server');
         }
 
-        console.log('✅ Got Google auth URL, redirecting to:', data.authUrl);
-
-        // Redirect user to Google OAuth consent screen - using direct window.location for reliable redirect
         window.location.href = data.authUrl;
       } catch (fetchError) {
-        console.error('Failed to fetch auth URL:', fetchError);
         throw fetchError;
       }
     } catch (error) {
-      console.error('❌ Google login failed:', error);
       throw error;
     }
   }
@@ -46,10 +57,9 @@ export class AuthService {
    */
   static async checkAuth(): Promise<boolean> {
     try {
-      await BaseApiClient.get('/api/user-profiles/me');
+      await BaseApiClient.get<UserProfileResponse>('/api/user-profiles/me');
       return true;
     } catch (error) {
-      console.error('❌ Auth check failed:', error);
       return false;
     }
   }
@@ -59,7 +69,7 @@ export class AuthService {
    */
   static async getCurrentUser(): Promise<any | null> {
     try {
-      const data = await BaseApiClient.get('/api/user-profiles/me');
+      const data = await BaseApiClient.get<UserProfileResponse>('/api/user-profiles/me');
 
       return {
         id: data.id || data.userId,
@@ -69,8 +79,23 @@ export class AuthService {
         avatar: data.avatar || data.avatarUrl
       };
     } catch (error) {
-      console.error('❌ Get user info failed:', error);
       return null;
+    }
+  }
+
+  /**
+   * Login với credentials (email/password) - sử dụng backend traditional login
+   */
+  static async loginWithCredentials(email: string, password: string): Promise<LoginResponse> {
+    try {
+      const response = await BaseApiClient.post<LoginResponse>('/api/auth/login', {
+        email,
+        password
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -80,43 +105,40 @@ export class AuthService {
   static async logout(): Promise<void> {
     // Prevent multiple simultaneous logout calls
     if (this._isLoggingOut) {
-      console.log('🔄 Logout already in progress, skipping...');
       return;
     }
 
     this._isLoggingOut = true;
 
     try {
-      console.log('🚪 Logging out...');
-
       // Try calling logout API to clear HTTP-only cookies
       try {
         await BaseApiClient.post('/api/auth/logout');
-        console.log('✅ Logout API successful');
       } catch (error) {
-        console.warn('⚠️ Logout API failed, but proceeding', error);
+        // Continue even if logout API fails
       }
 
       // Clear other app data
       if (typeof window !== 'undefined') {
+        // Clear localStorage
         try {
-          const keysToRemove = ['user-temp-data', 'draft-posts', 'ui-state', 'access_token'];
-          keysToRemove.forEach(key => localStorage.removeItem(key));
+          localStorage.clear();
+        } catch (e) {
+          // Continue if localStorage is not available
+        }
+
+        // Clear sessionStorage
+        try {
           sessionStorage.clear();
-          console.log('✅ Client-side cleanup completed');
-        } catch (cleanupError) {
-          console.warn('⚠️ Client-side cleanup failed:', cleanupError);
+        } catch (e) {
+          // Continue if sessionStorage is not available
         }
       }
+
+    } catch (error) {
+      // Log error but don't throw - logout should always succeed on client
     } finally {
       this._isLoggingOut = false;
-
-      // Always redirect to login page
-      console.log('🔄 Redirecting to login page...');
-      if (typeof window !== 'undefined') {
-        // Use replace to prevent adding to browser history
-        window.location.replace('/login');
-      }
     }
   }
 }

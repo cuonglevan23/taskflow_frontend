@@ -4,10 +4,7 @@
  */
 
 import React from 'react';
-import Link from 'next/link';
-import { Crown, Shield, Settings, CreditCard } from 'lucide-react';
-import { RBACGuard } from '@/components/guards/RBACGuard';
-import { UserRole } from '@/constants/auth';
+
 
 interface SidebarFooterProps {
   showLabels: boolean;

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { chatService } from '@/services/chat';
 import { MessageReaction, ReactionType, UseReactionsReturn, ChatMessage, ChatConversation, ChatUser, ChatWindow, TypingIndicator } from '@/types/chat';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useGroupChat } from './useGroupChat';
 
 export function useReactions(): UseReactionsReturn {
   const [reactions, setReactions] = useState<Map<number, MessageReaction['updatedSummary']>>(new Map());
@@ -97,6 +98,7 @@ export function useReactions(): UseReactionsReturn {
 export const useChat = () => {
   const { user } = useAuth();
 
+  // ==================== BASIC CHAT STATES ====================
   const [isConnected, setIsConnected] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [openWindows, setOpenWindows] = useState<Map<string, ChatWindow>>(new Map());
@@ -104,12 +106,72 @@ export const useChat = () => {
   const [typingUsers, setTypingUsers] = useState<Map<number, string[]>>(new Map());
   const [unreadCounts, setUnreadCounts] = useState<Map<number, number>>(new Map());
 
+  // ==================== GROUP CHAT INTEGRATION ====================
+
+  // Integrate useGroupChat hook with callbacks to update local state
+  const groupChat = useGroupChat({
+    onConversationCreated: (conversation) => {
+      // Add new conversation to conversations list
+      setConversations(prev => [conversation, ...prev]);
+    },
+    onMembersAdded: (conversationId, response) => {
+      // Update conversation member count and add system message
+      setConversations(prev => prev.map(conv =>
+        conv.id === conversationId
+          ? { ...conv, memberCount: conv.memberCount + response.members.length }
+          : conv
+      ));
+
+      // Add system message if provided
+      if (response.systemMessage) {
+        setMessages(prev => {
+          const conversationMessages = prev.get(conversationId) || [];
+          return new Map(prev.set(conversationId, [...conversationMessages, response.systemMessage!]));
+        });
+      }
+    },
+    onMemberRemoved: (conversationId, response) => {
+      // Update conversation member count and add system message
+      setConversations(prev => prev.map(conv =>
+        conv.id === conversationId
+          ? { ...conv, memberCount: Math.max(0, conv.memberCount - 1) }
+          : conv
+      ));
+
+      // Add system message if provided
+      if (response.systemMessage) {
+        setMessages(prev => {
+          const conversationMessages = prev.get(conversationId) || [];
+          return new Map(prev.set(conversationId, [...conversationMessages, response.systemMessage!]));
+        });
+      }
+    },
+    onConversationLeft: (conversationId) => {
+      // Remove conversation from local state
+      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+
+      // Remove messages for this conversation
+      setMessages(prev => {
+        const newMessages = new Map(prev);
+        newMessages.delete(conversationId);
+        return newMessages;
+      });
+
+      // Close chat window if open
+      const windowKey = `chat-${conversationId}`;
+      setOpenWindows(prev => {
+        const newWindows = new Map(prev);
+        newWindows.delete(windowKey);
+        return newWindows;
+      });
+    }
+  });
+
+  // ==================== MESSAGE HANDLING ====================
+
   // Add a ref to track processed message IDs to prevent duplicates
   const processedMessageIds = useRef(new Set<number>());
-
-  // New: Track pending optimistic messages by conversation and content for matching with confirmed messages
   const pendingOptimisticMessages = useRef(new Map<string, number>());
-
   const nextZIndex = useRef(1000);
 
   // Define all handlers FIRST before they are used in useEffect
@@ -661,6 +723,60 @@ export const useChat = () => {
     chatService.sendMessage(conversationId, content.trim());
   }, [isConnected, user]);
 
+  // Send message with attachments using ChatService
+  const sendMessageWithAttachments = useCallback(async (conversationId: number, content: string, files: File[], images: File[], replyToId?: number) => {
+    // Check if conversation is valid
+    if (!conversationId || conversationId === 0) {
+      console.warn('Cannot send message with attachments: invalid conversationId', conversationId);
+      return;
+    }
+
+    // Check if chat is connected
+    if (!isConnected) {
+      console.warn('Cannot send message with attachments: chat not connected');
+      return;
+    }
+
+    // Validate that we have at least some content or attachments
+    if (!content.trim() && files.length === 0 && images.length === 0) {
+      console.warn('Cannot send empty message with no attachments');
+      return;
+    }
+
+    try {
+      console.log('Sending message with attachments:', {
+        conversationId,
+        content,
+        files: files.length,
+        images: images.length,
+        replyToId
+      });
+
+      // Use the chatService to send message with attachments
+      const sentMessage = await chatService.sendMessageWithAttachments({
+        conversationId,
+        content: content.trim(),
+        files: files.length > 0 ? files : undefined,
+        images: images.length > 0 ? images : undefined,
+        replyToId
+      });
+
+      console.log('Message with attachments sent successfully:', sentMessage);
+
+      // The message will be added to the UI via WebSocket events
+      // No need to manually add it here as the server will broadcast it back
+
+    } catch (error) {
+      console.error('Failed to send message with attachments:', error);
+
+      // Fallback: send as regular text message if file upload fails
+      if (content.trim()) {
+        console.log('Fallback: sending as text message only');
+        sendMessage(conversationId, content.trim());
+      }
+    }
+  }, [isConnected, user, sendMessage]);
+
   // Set typing using ChatService
   const setTyping = useCallback((conversationId: number, isTyping: boolean) => {
     if (!conversationId || conversationId === 0) return;
@@ -672,6 +788,7 @@ export const useChat = () => {
   }, [user, isConnected]);
 
   return {
+    // Basic chat functionality
     isConnected,
     conversations,
     openWindows: Array.from(openWindows.values()),
@@ -679,13 +796,24 @@ export const useChat = () => {
     typingUsers,
     unreadCounts,
 
-    // Actions
+    // Basic chat actions
     openChatWindow,
     closeChatWindow,
     toggleMinimize,
     sendMessage,
+    sendMessageWithAttachments,
     setTyping,
     loadMessages,
-    loadConversations
+    loadConversations,
+
+    // Group chat functionality (from useGroupChat)
+    groupChat: {
+      ...groupChat,
+      // Expose group chat methods directly for easier access
+      friends: groupChat.friends,
+      loadingFriends: groupChat.loadingFriends,
+      creatingGroup: groupChat.creatingGroup,
+      managingMembers: groupChat.managingMembers,
+    }
   };
 };

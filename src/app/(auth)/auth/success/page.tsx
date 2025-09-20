@@ -3,52 +3,69 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AuthService } from '@/lib/auth-backend';
+import { useThemeContext } from '@/providers/ThemeProvider';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useThemeContext();
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Đang xử lý đăng nhập...');
+  const [message, setMessage] = useState('Processing login...');
+  const [hasProcessed, setHasProcessed] = useState(false);
 
   useEffect(() => {
+    if (hasProcessed) return;
+
     const handleCallback = async () => {
       try {
+        setHasProcessed(true);
+
         // Kiểm tra nếu có error từ backend
         const error = searchParams.get('error');
         const errorMessage = searchParams.get('message');
 
         if (error) {
           setStatus('error');
-          setMessage(errorMessage || 'Đăng nhập thất bại');
+          setMessage(errorMessage || 'Login failed');
           setTimeout(() => {
             router.push('/login');
           }, 3000);
           return;
         }
 
-        // Kiểm tra authentication status bằng endpoint đúng
-        console.log('🔄 Verifying authentication via /api/user-profiles/me');
-        const isAuthenticated = await AuthService.checkAuth();
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/user-profiles/me`, {
+            method: 'GET',
+            credentials: 'include',
+          });
 
-        if (isAuthenticated) {
-          setStatus('success');
-          setMessage('Đăng nhập thành công! Đang chuyển hướng...');
+          if (response.ok) {
+            const userData = await response.json();
 
-          // Redirect to home
-          const returnUrl = localStorage.getItem('returnUrl') || '/home';
-          localStorage.removeItem('returnUrl');
+            setStatus('success');
+            setMessage('Login successful! Redirecting...');
 
+            setTimeout(() => {
+              router.replace('/home');
+            }, 1000);
+          } else {
+            setStatus('error');
+            setMessage('Authentication verification failed');
+            setTimeout(() => {
+              router.push('/login');
+            }, 3000);
+          }
+        } catch (fetchError) {
+          setStatus('error');
+          setMessage('Authentication verification failed');
           setTimeout(() => {
-            router.push(returnUrl);
-          }, 1500);
-        } else {
-          throw new Error('Authentication verification failed - user not authenticated');
+            router.push('/login');
+          }, 3000);
         }
       } catch (error) {
-        console.error('❌ Auth callback error:', error);
         setStatus('error');
-        setMessage('Xác thực thất bại. Vui lòng thử lại.');
+        setMessage('An unexpected error occurred');
         setTimeout(() => {
           router.push('/login');
         }, 3000);
@@ -56,53 +73,120 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [router, searchParams]);
+  }, [hasProcessed, searchParams, router]);
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'loading':
+        return (
+          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+               style={{ borderColor: theme.button?.primary?.background || '#3b82f6', borderTopColor: 'transparent' }}>
+          </div>
+        );
+      case 'success':
+        return (
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+               style={{ backgroundColor: theme.status?.success || '#22c55e' }}>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+               style={{ backgroundColor: theme.status?.error || '#ef4444' }}>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'success':
+        return theme.status?.success || '#22c55e';
+      case 'error':
+        return theme.status?.error || '#ef4444';
+      default:
+        return theme.text?.primary || '#374151';
+    }
+  };
+
+  const getStatusTitle = () => {
+    switch (status) {
+      case 'loading':
+        return 'Processing...';
+      case 'success':
+        return 'Success!';
+      case 'error':
+        return 'Error';
+      default:
+        return '';
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          {status === 'loading' && (
-            <div className="space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Đang xử lý đăng nhập
-              </h2>
-              <p className="text-gray-600">{message}</p>
-            </div>
-          )}
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: theme.background?.primary || '#ffffff' }}
+    >
+      <div
+        className="max-w-md w-full mx-4 p-8 rounded-xl shadow-lg text-center"
+        style={{
+          backgroundColor: theme.background?.secondary || '#f9fafb',
+          borderColor: theme.border?.default || '#e5e7eb'
+        }}
+      >
+        {getStatusIcon()}
 
-          {status === 'success' && (
-            <div className="space-y-4">
-              <div className="rounded-full h-12 w-12 bg-green-100 mx-auto flex items-center justify-center">
-                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-green-900">
-                Đăng nhập thành công!
-              </h2>
-              <p className="text-green-700">{message}</p>
-            </div>
-          )}
+        <h1
+          className="text-2xl font-bold mb-4"
+          style={{ color: theme.text?.primary || '#374151' }}
+        >
+          {getStatusTitle()}
+        </h1>
 
-          {status === 'error' && (
-            <div className="space-y-4">
-              <div className="rounded-full h-12 w-12 bg-red-100 mx-auto flex items-center justify-center">
-                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-red-900">
-                Đăng nhập thất bại
-              </h2>
-              <p className="text-red-700">{message}</p>
-              <p className="text-sm text-gray-500">
-                Đang chuyển hướng về trang đăng nhập...
-              </p>
-            </div>
-          )}
-        </div>
+        <p
+          className="text-lg mb-6"
+          style={{ color: getStatusColor() }}
+        >
+          {message}
+        </p>
+
+        {status === 'error' && (
+          <div className="mt-6">
+            <button
+              onClick={() => router.push('/login')}
+              className="px-6 py-3 rounded-lg font-medium transition-colors"
+              style={{
+                backgroundColor: theme.button?.primary?.background || '#3b82f6',
+                color: theme.button?.primary?.text || '#ffffff'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.button?.primary?.hover || '#2563eb';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.button?.primary?.background || '#3b82f6';
+              }}
+            >
+              Back to Login
+            </button>
+          </div>
+        )}
+
+        {status === 'loading' && (
+          <p
+            className="text-sm mt-4"
+            style={{ color: theme.text?.secondary || '#6b7280' }}
+          >
+            Please wait while we verify your authentication...
+          </p>
+        )}
       </div>
     </div>
   );

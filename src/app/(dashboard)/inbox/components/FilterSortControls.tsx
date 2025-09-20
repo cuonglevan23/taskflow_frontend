@@ -1,246 +1,465 @@
 "use client";
 
-import React from "react";
-import { ListFilter, ArrowUpDown, Check } from "lucide-react";
-import { useTheme } from "@/layouts/hooks/useTheme";
-import { Button } from "@/components/ui";
-import Dropdown, {
-  DropdownItem,
-  DropdownSeparator,
-} from "@/components/ui/Dropdown/Dropdown";
-import { useFilterSort } from "../hooks/useFilterSort";
+import React, { useState } from 'react';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X, Filter, SortAsc } from "lucide-react";
 
 interface FilterSortControlsProps {
-  className?: string;
+  onFilterChange?: (filters: FilterOptions) => void;
+  onSortChange?: (sort: SortOptions) => void;
+  selectedCount?: number;
+  onClearSelection?: () => void;
+  onMarkAsRead?: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
 }
 
-const FilterSortControls = ({
-  className = "",
-}: FilterSortControlsProps) => {
-  const { theme } = useTheme();
-  const {
-    // Filter
-    isFilterOpen,
-    selectedFilters,
-    filterOptions,
-    toggleFilter,
-    closeFilter,
-    toggleFilterOption,
-    clearFilters,
+interface FilterOptions {
+  readStatus: 'all' | 'read' | 'unread';
+  type: 'allTypes' | 'tasks' | 'posts' | 'meetings' | 'system';
+}
 
-    // Sort
-    isSortOpen,
-    selectedSort,
-    sortOptions,
-    toggleSort,
-    closeSort,
-    selectSort,
-  } = useFilterSort();
+interface SortOptions {
+  field: 'dateCreated' | 'dateRead' | 'priority';
+  order: 'newest' | 'oldest';
+}
 
-  // Get current sort label
-  const currentSortLabel =
-    sortOptions.find((option) => option.id === selectedSort)?.label || "Newest";
+export default function FilterSortControls({
+  onFilterChange,
+  onSortChange,
+  selectedCount = 0,
+  onClearSelection,
+  onMarkAsRead,
+  onArchive,
+  onDelete
+}: FilterSortControlsProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const [filters, setFilters] = useState<FilterOptions>({
+    readStatus: 'all',
+    type: 'allTypes'
+  });
+
+  const [sort, setSort] = useState<SortOptions>({
+    field: 'dateCreated',
+    order: 'newest'
+  });
+
+  const handleFilterChange = (key: keyof FilterOptions, value: string) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    onFilterChange?.(newFilters);
+  };
+
+  const handleSortChange = (field: string, order?: string) => {
+    const newSort = {
+      field: field as SortOptions['field'],
+      order: order || sort.order
+    } as SortOptions;
+    setSort(newSort);
+    onSortChange?.(newSort);
+  };
+
+  const clearAllFilters = () => {
+    const defaultFilters = { readStatus: 'all' as const, type: 'allTypes' as const };
+    setFilters(defaultFilters);
+    onFilterChange?.(defaultFilters);
+  };
+
+  const hasActiveFilters = filters.readStatus !== 'all' || filters.type !== 'allTypes';
+
+  // Get translated messages
+  const filterMessages = messages?.filters || {};
+  const bulkMessages = messages?.bulkActions || {};
 
   return (
     <div
-      className={`flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end ${className}`}
+      className="flex flex-col gap-4 p-4 border-b"
+      style={{
+        borderColor: theme.border.default,
+        backgroundColor: theme.background.primary
+      }}
     >
-      {/* Filter Dropdown */}
-      <Dropdown
-        isOpen={isFilterOpen}
-        onOpenChange={(open) => (open ? toggleFilter() : closeFilter())}
-        placement="bottom-left"
-        contentClassName="min-w-80 !border-0 !bg-transparent !shadow-2xl"
-        trigger={
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<ListFilter className="w-4 h-4" />}
-            className="!p-2 relative"
-          >
-            <span className="hidden xs:inline">Filter</span>
-            {selectedFilters.length > 0 && (
-              <span
-                className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                style={{ backgroundColor: theme.button.primary.background }}
-              >
-                {selectedFilters.length}
-              </span>
-            )}
-          </Button>
-        }
-      >
+      {/* Bulk Actions Bar */}
+      {selectedCount > 0 && (
         <div
-          className="p-4 rounded-xl shadow-2xl border"
+          className="flex items-center gap-2 p-3 rounded-lg"
           style={{
-            backgroundColor: theme.background.primary,
-            color: theme.text.primary,
-            borderColor: theme.border.default,
+            backgroundColor: theme.status.info + '20',
+            border: `1px solid ${theme.status.info + '40'}`
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3
-              className="text-lg font-semibold"
-              style={{ color: theme.text.primary }}
-            >
-              Filters
-            </h3>
-            {selectedFilters.length > 0 && (
-              <button
-                onClick={clearFilters}
-                className="text-sm transition-colors hover:opacity-80"
-                style={{ color: theme.text.secondary }}
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* Quick filters section */}
-          <div className="mb-4">
-            <h4
-              className="text-sm font-medium mb-3"
-              style={{ color: theme.text.secondary }}
-            >
-              Quick filters
-            </h4>
-            <div className="space-y-1">
-              {filterOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => toggleFilterOption(option.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-150 hover:opacity-80 ${
-                    option.active ? "opacity-100" : "opacity-70"
-                  }`}
-                  style={{
-                    backgroundColor: option.active
-                      ? theme.button.primary.background + "20"
-                      : "transparent",
-                    color: option.active
-                      ? theme.button.primary.background
-                      : theme.text.primary,
-                    border: `1px solid ${
-                      option.active
-                        ? theme.button.primary.background
-                        : theme.border.default
-                    }`,
-                  }}
-                >
-                  <span>{option.label}</span>
-                  {option.active && (
-                    <Check
-                      className="w-4 h-4"
-                      style={{ color: theme.button.primary.background }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className="my-2 border-t"
-            style={{ borderColor: theme.border.default }}
-          />
-
-          {/* Add filter button */}
-          <button
-            onClick={() => {
-              console.log("Add custom filter");
-            }}
-            className="w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors hover:opacity-80"
-            style={{
-              color: theme.text.secondary,
-              backgroundColor: "transparent",
-            }}
+          <span
+            className="text-sm font-medium"
+            style={{ color: theme.text.primary }}
           >
-            <span className="mr-3">+</span>
-            Add filter
-          </button>
+            {bulkMessages.selected?.replace('{count}', selectedCount.toString()) || `${selectedCount} selected`}
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearSelection}
+              className="text-xs"
+              style={{
+                borderColor: theme.border.default,
+                color: theme.text.secondary,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.secondary;
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = theme.text.secondary;
+              }}
+            >
+              {bulkMessages.clearSelection || 'Clear Selection'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onMarkAsRead}
+              className="text-xs"
+              style={{
+                borderColor: theme.border.default,
+                color: theme.text.secondary,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.secondary;
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = theme.text.secondary;
+              }}
+            >
+              {bulkMessages.markAsRead || 'Mark as Read'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onArchive}
+              className="text-xs"
+              style={{
+                borderColor: theme.border.default,
+                color: theme.text.secondary,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.secondary;
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = theme.text.secondary;
+              }}
+            >
+              {bulkMessages.archive || 'Archive'}
+            </Button>
+            <Button
+              size="sm"
+              onClick={onDelete}
+              className="text-xs"
+              style={{
+                backgroundColor: theme.status.error,
+                color: 'white',
+                border: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.status.error + 'dd';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.status.error;
+              }}
+            >
+              {bulkMessages.delete || 'Delete'}
+            </Button>
+          </div>
         </div>
-      </Dropdown>
+      )}
 
-      {/* Sort Dropdown */}
-      <Dropdown
-        isOpen={isSortOpen}
-        onOpenChange={(open) => (open ? toggleSort() : closeSort())}
-        placement="bottom-right"
-        contentClassName="min-w-64 !border-0 !bg-transparent !shadow-2xl"
-        trigger={
+      {/* Filter and Sort Controls */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Filter Section */}
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4" style={{ color: theme.text.muted }} />
+          <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+            {filterMessages.filter || 'Filter'}:
+          </span>
+
+          {/* Read Status Filter */}
+          <Select
+            value={filters.readStatus}
+            onValueChange={(value) => handleFilterChange('readStatus', value)}
+          >
+            <SelectTrigger
+              className="w-32"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.primary
+              }}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              style={{
+                backgroundColor: theme.background.primary,
+                borderColor: theme.border.default
+              }}
+            >
+              <SelectItem
+                value="all"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.all || 'All'}
+              </SelectItem>
+              <SelectItem
+                value="unread"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.unread || 'Unread'}
+              </SelectItem>
+              <SelectItem
+                value="read"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.read || 'Read'}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Type Filter */}
+          <Select
+            value={filters.type}
+            onValueChange={(value) => handleFilterChange('type', value)}
+          >
+            <SelectTrigger
+              className="w-36"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.primary
+              }}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              style={{
+                backgroundColor: theme.background.primary,
+                borderColor: theme.border.default
+              }}
+            >
+              <SelectItem
+                value="allTypes"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.allTypes || 'All Types'}
+              </SelectItem>
+              <SelectItem
+                value="tasks"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.tasks || 'Tasks'}
+              </SelectItem>
+              <SelectItem
+                value="posts"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.posts || 'Posts'}
+              </SelectItem>
+              <SelectItem
+                value="meetings"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.meetings || 'Meetings'}
+              </SelectItem>
+              <SelectItem
+                value="system"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.system || 'System'}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Sort Section */}
+        <div className="flex items-center gap-2">
+          <SortAsc className="h-4 w-4" style={{ color: theme.text.muted }} />
+          <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+            {filterMessages.sort || 'Sort'}:
+          </span>
+
+          {/* Sort Field */}
+          <Select
+            value={sort.field}
+            onValueChange={(value) => handleSortChange(value)}
+          >
+            <SelectTrigger
+              className="w-32"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.primary
+              }}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              style={{
+                backgroundColor: theme.background.primary,
+                borderColor: theme.border.default
+              }}
+            >
+              <SelectItem
+                value="dateCreated"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.dateCreated || 'Date Created'}
+              </SelectItem>
+              <SelectItem
+                value="dateRead"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.dateRead || 'Date Read'}
+              </SelectItem>
+              <SelectItem
+                value="priority"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.priority || 'Priority'}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort Order */}
+          <Select
+            value={sort.order}
+            onValueChange={(value) => handleSortChange(sort.field, value)}
+          >
+            <SelectTrigger
+              className="w-28"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.primary
+              }}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              style={{
+                backgroundColor: theme.background.primary,
+                borderColor: theme.border.default
+              }}
+            >
+              <SelectItem
+                value="newest"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.newest || 'Newest'}
+              </SelectItem>
+              <SelectItem
+                value="oldest"
+                style={{ color: theme.text.primary }}
+              >
+                {filterMessages.oldest || 'Oldest'}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filters */}
+        {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
-            icon={<ArrowUpDown className="w-4 h-4" />}
-            className="!p-2"
-          >
-            <span className="hidden xs:inline">Sort: {currentSortLabel}</span>
-          </Button>
-        }
-      >
-        <div
-          className="p-3 rounded-xl shadow-2xl border"
-          style={{
-            backgroundColor: theme.background.primary,
-            color: theme.text.primary,
-            borderColor: theme.border.default,
-          }}
-        >
-          {/* Header */}
-          <div
-            className="px-2 py-2 mb-2"
+            onClick={clearAllFilters}
+            className="text-xs"
             style={{
-              borderBottom: `1px solid ${theme.border.default}`,
+              color: theme.text.muted,
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.background.secondary;
+              e.currentTarget.style.color = theme.text.primary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = theme.text.muted;
             }}
           >
-            <h3
-              className="text-sm font-medium"
-              style={{ color: theme.text.primary }}
-            >
-              Sort: {currentSortLabel}
-            </h3>
-          </div>
+            <X className="h-3 w-3 mr-1" />
+            {filterMessages.clearAllFilters || 'Clear All Filters'}
+          </Button>
+        )}
+      </div>
 
-          {/* Sort options */}
-          <div className="space-y-1">
-            {sortOptions.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => selectSort(option.id)}
-                className="w-full flex items-start px-2 py-3 text-left rounded-lg transition-all duration-150 hover:opacity-80"
-                style={{
-                  backgroundColor: option.active
-                    ? theme.button.primary.background + "15"
-                    : "transparent",
-                  color: option.active
-                    ? theme.button.primary.background
-                    : theme.text.primary,
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs" style={{ color: theme.text.muted }}>
+            Active filters:
+          </span>
+          {filters.readStatus !== 'all' && (
+            <Badge
+              variant="secondary"
+              className="text-xs"
+              style={{
+                backgroundColor: theme.background.tertiary,
+                color: theme.text.secondary,
+                border: `1px solid ${theme.border.muted}`
+              }}
+            >
+              {filterMessages[filters.readStatus] || filters.readStatus}
+              <X
+                className="h-3 w-3 ml-1 cursor-pointer"
+                onClick={() => handleFilterChange('readStatus', 'all')}
+                style={{ color: theme.text.muted }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = theme.text.primary;
                 }}
-              >
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{option.label}</div>
-                  {option.description && (
-                    <div
-                      className="text-xs mt-1"
-                      style={{ color: theme.text.secondary }}
-                    >
-                      {option.description}
-                    </div>
-                  )}
-                </div>
-                {option.active && (
-                  <Check
-                    className="w-4 h-4 mt-0.5 ml-2"
-                    style={{ color: theme.button.primary.background }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = theme.text.muted;
+                }}
+              />
+            </Badge>
+          )}
+          {filters.type !== 'allTypes' && (
+            <Badge
+              variant="secondary"
+              className="text-xs"
+              style={{
+                backgroundColor: theme.background.tertiary,
+                color: theme.text.secondary,
+                border: `1px solid ${theme.border.muted}`
+              }}
+            >
+              {filterMessages[filters.type] || filters.type}
+              <X
+                className="h-3 w-3 ml-1 cursor-pointer"
+                onClick={() => handleFilterChange('type', 'allTypes')}
+                style={{ color: theme.text.muted }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = theme.text.muted;
+                }}
+              />
+            </Badge>
+          )}
         </div>
-      </Dropdown>
+      )}
     </div>
   );
-};
-
-export default FilterSortControls;
+}

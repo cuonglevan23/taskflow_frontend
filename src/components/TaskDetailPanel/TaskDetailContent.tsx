@@ -1,24 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Calendar, Plus, CheckCircle, Paperclip, AlertTriangle, Edit, Type, FileText, MessageSquare, UserPlus, UserMinus, CheckCircle2, RotateCcw, ListPlus, ListMinus, CheckSquare, Users, FolderOpen, Circle, Video } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
-import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
+import React from 'react';
 import { TaskListItem } from '@/components/TaskList/types';
-import { DARK_THEME } from '@/constants/theme';
-import CommentsList from './CommentsList';
-import TaskAttachments from './TaskAttachments';
-import { FileDisplayGrid } from '@/components/FileDisplayGrid'; // Change to display-only component
-import { useTaskActivities } from '@/hooks/useTaskActivities';
-import { TaskActivityResponseDto, getActivityConfig, TaskActivityType } from '@/services/taskActivityService';
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import GoogleMeetIcon from '@/components/icons/GoogleMeetIcon';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import TaskTitle from './TaskTitle';
+import TaskAssignees, { TaskDates, TaskProject } from './TaskFields';
+import { TaskPriority, TaskStatus } from './TaskPriorityStatus';
+import TaskDescriptionEditor from './TaskDescriptionEditor';
+import GoogleCalendarIntegration from './GoogleCalendarIntegration';
+import TaskFiles from './TaskFiles';
+import TaskCommentsActivity from './TaskCommentsActivity';
 
 interface TaskDetailContentProps {
   task: TaskListItem | null;
@@ -30,860 +18,188 @@ interface TaskDetailContentProps {
   onSaveDescription?: (newDescription: string) => void;
   onTaskStatusChange?: (taskId: string, status: string) => void;
   onTaskPriorityChange?: (taskId: string, priority: string) => void;
+  onDueDateChange?: (taskId: string, dueDate: string) => void;
+  onStartDateChange?: (taskId: string, startDate: string) => void;
+  onAssigneeChange?: (taskId: string, assigneeData: { id: string; name: string; email: string }) => void;
+  onProjectChange?: (taskId: string, projectId: string) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
-  fileRefreshTrigger?: number; // Add refresh trigger prop
-  onTaskRefresh?: () => void; // Add callback để refresh task data
+  fileRefreshTrigger?: number;
+  onTaskRefresh?: () => void;
+
+  // NEW: Add taskType prop to determine which API to use
+  taskType?: 'mytask' | 'project';
+
+  // Computed assignees from ProjectTaskAssignees - replaces old calculations
+  computedAssignees?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  }>;
+
+  // Project-specific comment override props
+  overrideComments?: boolean;
+  projectComments?: Array<{
+    id: string;
+    content: string;
+    author: {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string | null;
+    };
+    createdAt: string;
+    updatedAt: string;
+    isEdited?: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+  }>;
+  projectActivities?: Array<{
+    id: string;
+    description: string;
+    author: {
+      name: string;
+      avatar?: string | null;
+    };
+    createdAt: string;
+    timeAgo: string;
+    activityType: string;
+  }>;
+  commentsLoading?: boolean;
+  activitiesLoading?: boolean;
+
+  // Edit comment props - ADDED FOR COMMENT EDITING
+  editingCommentId?: string | null;
+  editingCommentContent?: string;
+  onEditComment?: (commentId: string, currentContent: string) => void;
+  onEditCommentChange?: (value: string) => void;
+  onEditCommentSubmit?: () => void;
+  onEditCommentCancel?: () => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
-type TabType = 'comments' | 'activity';
-
-const TaskDetailContent = ({
+const TaskDetailContent: React.FC<TaskDetailContentProps> = ({
   task,
   title,
   setTitle,
   description,
   setDescription,
   onSave,
-  onSaveDescription, // Keep for future use but don't use it to prevent closing
+  onSaveDescription,
   onTaskStatusChange,
   onTaskPriorityChange,
+  onDueDateChange,
+  onStartDateChange,
+  onAssigneeChange,
+  onProjectChange,
   onRemoveAttachment,
-  fileRefreshTrigger, // Add this prop to the destructuring
-  onTaskRefresh // Thêm prop này vào destructuring
-}: TaskDetailContentProps) => {
-  // Use the custom hook to get and update task description
+  fileRefreshTrigger,
+  onTaskRefresh,
+  taskType = 'project',
+  computedAssignees = [],
+  overrideComments,
+  projectComments,
+  projectActivities,
+  commentsLoading,
+  activitiesLoading,
+  editingCommentId,
+  editingCommentContent,
+  onEditComment,
+  onEditCommentChange,
+  onEditCommentSubmit,
+  onEditCommentCancel,
+  onDeleteComment
+}) => {
   const taskId = task?.id ? String(task.id) : null;
-  const [activeTab, setActiveTab] = useState<TabType>('comments');
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [tempDescription, setTempDescription] = useState(description);
-  const [isEditingPriority, setIsEditingPriority] = useState(false);
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const editorRef = useRef<HTMLDivElement>(null);
-
-  // Google Calendar Integration Hook
-  const {
-    isLoading: calendarLoading,
-    error: calendarError,
-    createQuickMeeting,
-    createDefaultEvent,
-    clearError: clearCalendarError
-  } = useGoogleCalendar();
-
-  // Fetch task activities using the custom hook
-  const {
-    activities,
-    groupedActivities,
-    isLoading: activitiesLoading,
-    error: activitiesError,
-    refetch: refetchActivities
-  } = useTaskActivities({
-    taskId: taskId || '',
-    enabled: !!taskId && activeTab === 'activity',
-    pollInterval: 30000 // Refresh every 30 seconds when tab is active
-  });
-
-  // Helper function to render activity icon
-  const renderActivityIcon = (activityType: string) => {
-    const config = getActivityConfig(activityType as Parameters<typeof getActivityConfig>[0]);
-    const iconProps = { className: `w-3 h-3 ${config.color}` };
-    
-    switch (config.icon) {
-      case 'Plus': return <Plus {...iconProps} />;
-      case 'CheckCircle': return <CheckCircle {...iconProps} />;
-      case 'AlertTriangle': return <AlertTriangle {...iconProps} />;
-      case 'Calendar': return <Calendar {...iconProps} />;
-      case 'Edit': return <Edit {...iconProps} />;
-      case 'Type': return <Type {...iconProps} />;
-      case 'FileText': return <FileText {...iconProps} />;
-      case 'MessageSquare': return <MessageSquare {...iconProps} />;
-      case 'Paperclip': return <Paperclip {...iconProps} />;
-      case 'UserPlus': return <UserPlus {...iconProps} />;
-      case 'UserMinus': return <UserMinus {...iconProps} />;
-      case 'CheckCircle2': return <CheckCircle2 {...iconProps} />;
-      case 'RotateCcw': return <RotateCcw {...iconProps} />;
-      case 'ListPlus': return <ListPlus {...iconProps} />;
-      case 'ListMinus': return <ListMinus {...iconProps} />;
-      case 'CheckSquare': return <CheckSquare {...iconProps} />;
-      case 'Users': return <Users {...iconProps} />;
-      case 'FolderOpen': return <FolderOpen {...iconProps} />;
-      default: return <Circle {...iconProps} />;
-    }
-  };
-
-  // Helper function to render activity item
-  const renderActivityItem = (activity: TaskActivityResponseDto) => {
-    const config = getActivityConfig(activity.activityType as TaskActivityType);
-    
-    return (
-      <div key={activity.id} className="flex items-start gap-3">
-        <div className={`flex-shrink-0 w-6 h-6 ${config.bgColor} rounded-full flex items-center justify-center mt-0.5`}>
-          {renderActivityIcon(activity.activityType)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <UserAvatar 
-              name={activity.user.displayName}
-              avatar={activity.user.avatarUrl}
-              size="sm"
-              className="w-5 h-5"
-            />
-            <span className="text-sm text-white font-medium">{activity.user.displayName}</span>
-            <span className="text-xs text-gray-400">{activity.description}</span>
-            {activity.newValue && (
-              <span className="text-xs text-blue-400">{activity.newValue}</span>
-            )}
-          </div>
-          <div className="text-xs text-gray-500">{activity.timeAgo}</div>
-        </div>
-      </div>
-    );
-  };
-
-  // Update tempDescription when description prop changes
-  useEffect(() => {
-    if (!isEditingDescription) {
-      setTempDescription(description);
-    }
-  }, [description, isEditingDescription]);
-
-  const handleSave = () => {
-    onSave();
-  };
-
-  const handleDescriptionClick = () => {
-    setIsEditingDescription(true);
-    setTempDescription(description);
-  };
-
-  const handleDescriptionSave = useCallback(() => {
-    // Update description locally first
-    setDescription(tempDescription);
-    setIsEditingDescription(false);
-    
-    // Delayed save to backend without closing panel
-    if (onSaveDescription) {
-      // Use setTimeout to prevent immediate callback execution that might close panel
-      setTimeout(() => {
-        onSaveDescription(tempDescription);
-      }, 100);
-    }
-  }, [tempDescription, setDescription, onSaveDescription]);
-
-  const handlePriorityChange = (newPriority: string) => {
-    if (task && onTaskPriorityChange) {
-      onTaskPriorityChange(task.id, newPriority);
-    }
-    setIsEditingPriority(false);
-  };
-
-  const handleStatusChange = (newStatus: string) => {
-    if (task && onTaskStatusChange) {
-      onTaskStatusChange(task.id, newStatus);
-    }
-    setIsEditingStatus(false);
-  };
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isEditingDescription) {
-        if (event.key === 'Escape') {
-          setIsEditingDescription(false);
-          setTempDescription(description);
-        }
-        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-          handleDescriptionSave();
-        }
-      }
-    };
-
-    if (isEditingDescription) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isEditingDescription, handleDescriptionSave, description]);
-
-  // Google Calendar handlers - Updated cho backend mới
-  const handleCreateQuickMeeting = async () => {
-    if (!taskId) {
-      alert('Task ID không hợp lệ');
-      return;
-    }
-
-    try {
-      const result = await createQuickMeeting(taskId, {
-        title: `Quick Meeting: ${title}`,
-        description: `Cuộc họp nhanh về task: ${title}`,
-        startTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 phút từ bây giờ
-        durationMinutes: 30
-      });
-
-      if (result) {
-        alert(`✅ Cuộc họp đã được tạo!\nGoogle Meet: ${result.meetLink}`);
-        // Tự động mở Google Meet
-        window.open(result.meetLink, '_blank');
-      }
-    } catch (error) {
-      console.error('Error creating quick meeting:', error);
-    }
-  };
-
-  const handleAddToCalendar = async () => {
-    if (!taskId) {
-      alert('Task ID không hợp lệ');
-      return;
-    }
-
-    try {
-      // Backend tự động lấy Google OAuth2 token từ user đã đăng nhập
-      // Không cần kiểm tra hoặc yêu cầu accessToken nữa!
-      const result = await createDefaultEvent(taskId, title);
-
-      if (result) {
-        alert(`✅ Sự kiện Calendar đã được tạo!\nEvent ID: ${result.eventId}`);
-        if (result.meetLink) {
-          const openMeet = confirm('Có muốn mở Google Meet không?');
-          if (openMeet) {
-            window.open(result.meetLink, '_blank');
-          }
-        }
-
-        // Gọi callback để refresh task data sau khi tạo sự kiện
-        if (onTaskRefresh) {
-          onTaskRefresh();
-        }
-      }
-    } catch (error) {
-      console.error('Error adding to calendar:', error);
-
-      // Xử lý các lỗi có thể xảy ra
-      if (error instanceof Error) {
-        if (error.message.includes('No Google authorization')) {
-          // User chưa authorize Google Calendar
-          const shouldAuth = confirm(
-            'Bạn chưa kết nối với Google Calendar.\n' +
-            'Bạn có muốn kết nối để tiếp tục không?'
-          );
-
-          if (shouldAuth) {
-            // Redirect đến Google OAuth2
-            const googleAuthUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/oauth2/authorization/google`;
-            window.open(googleAuthUrl, '_blank');
-          }
-        } else if (error.message.includes('expired')) {
-          // Token đã hết hạn
-          const shouldReauth = confirm(
-            'Quyền truy cập Google Calendar đã hết hạn.\n' +
-            'Bạn có muốn kết nối lại không?'
-          );
-
-          if (shouldReauth) {
-            const googleAuthUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/oauth2/authorization/google`;
-            window.open(googleAuthUrl, '_blank');
-          }
-        }
-      }
-    }
-  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 task-detail-content">
       {/* Task Title */}
-      <div>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleSave}
-          className="w-full text-2xl font-bold border border-transparent outline-none resize-none placeholder:text-gray-400 text-white rounded-lg p-3 transition-all duration-200 focus:border-solid focus:border-gray-400"
-          style={{
-            backgroundColor: DARK_THEME.background.primary,
-            borderWidth: '1px'
-          }}
-          placeholder={task ? task.name : "Task name"}
-        />
-      </div>
+      <TaskTitle
+        task={task}
+        title={title}
+        setTitle={setTitle}
+        onSave={onSave}
+      />
 
       {/* Form Fields */}
       <div className="space-y-4">
         {/* Assignee */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Assignee</span>
-          <div className="flex items-center gap-2 flex-1">
-            {((task?.assignees?.length || 0) > 0 || (task?.assignedEmails?.length || 0) > 0) ? (
-              <div className="flex items-center gap-3 ml-12">
-                {/* Avatar Group for all assignees */}
-                <div className="flex items-center -space-x-2">
-                  {/* Show user assignees */}
-                  {task?.assignees?.slice(0, 3).map((assignee, index) => (
-                    <UserAvatar
-                      key={assignee.id || index}
-                      name={assignee.name}
-                      avatar={assignee.avatar}
-                      size="sm"
-                      className="w-8 h-8 border-2 border-gray-700"
-                    />
-                  ))}
-                  
-                
-                  
-                  {/* Show count if more than 3 total */}
-                  {((task?.assignees?.length || 0) + (task?.assignedEmails?.length || 0)) > 3 && (
-                    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white border-2 border-gray-700">
-                      +{((task?.assignees?.length || 0) + (task?.assignedEmails?.length || 0)) - 3}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Names list */}
-                <div className="flex flex-col gap-1">
-                  {task?.assignees?.slice(0, 2).map((assignee, index) => (
-                    <span key={assignee.id || index} className="text-sm text-gray-300">
-                      {assignee.name}
-                    </span>
-                  ))}
-                  {task?.assignedEmails?.slice(0, Math.max(0, 2 - (task?.assignees?.length || 0))).map((email: string) => (
-                    <span key={email} className="text-sm text-gray-300">
-                      {email}
-                    </span>
-                  ))}
-                  {((task?.assignees?.length || 0) + (task?.assignedEmails?.length || 0)) > 2 && (
-                    <span className="text-xs text-gray-400">
-                      +{((task?.assignees?.length || 0) + (task?.assignedEmails?.length || 0)) - 2} more...
-                    </span>
-                  )}
-                </div>
-                
-                <Button variant="ghost" size="sm" className="p-0 h-auto text-gray-400 ml-auto">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-200 text-sm ml-12">
-                <Plus className="w-4 h-4 mr-2" />
-                Assign
-              </Button>
-            )}
+        <TaskAssignees
+          assignees={computedAssignees}
+          onAssigneeChange={onAssigneeChange}
+          taskId={taskId}
+        />
 
-          </div>
-        </div>
-
-        {/* Due date */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Due date</span>
-          <div className="flex items-center gap-2 flex-1">
-            <Calendar className="ml-12 w-4 h-4 text-gray-400" />
-            {task?.deadline || task?.dueDate ? (
-              <span className="text-sm text-gray-300">
-                {new Date(task.deadline || task.dueDate || '').toLocaleDateString('vi-VN', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">No due date</span>
-            )}
-          </div>
-        </div>
-
-        {/* Start date - Added for calendar tasks */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Start date</span>
-          <div className="flex items-center gap-2 flex-1">
-            <Calendar className="ml-12 w-4 h-4 text-gray-400" />
-            {task?.startDate ? (
-              <span className="text-sm text-gray-300">
-                {new Date(task.startDate || '').toLocaleDateString('vi-VN', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">No start date</span>
-            )}
-          </div>
-        </div>
+        {/* Dates */}
+        <TaskDates
+          task={task}
+          onDueDateChange={onDueDateChange}
+          onStartDateChange={onStartDateChange}
+        />
 
         {/* Projects */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Projects</span>
-          <div className="flex items-center gap-2 flex-1">
-            {task?.project || task?.projectName ? (
-              <div className="flex items-center gap-2 ml-12">
-                <span className="text-sm text-gray-300">{task.project || task.projectName}</span>
-              </div>
-            ) : (
-              <Button variant="ghost" size="sm" className="ml-10 text-gray-400 hover:text-gray-200 text-sm">
-                Add to projects
-              </Button>
-            )}
-          </div>
-        </div>
-
+        <TaskProject
+          task={task}
+          onProjectChange={onProjectChange}
+        />
       </div>
 
-      {/* Fields Section */}
-      <div className="space-y-4">    
-        {/* Priority */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Priority</span>
-          <div className="flex items-center gap-2 flex-1">
-            <div className="ml-12">
-              {isEditingPriority ? (
-                <Select
-                  value={task?.priority || 'MEDIUM'}
-                  onValueChange={(value) => {
-                    handlePriorityChange(value);
-                    setIsEditingPriority(false);
-                  }}
-                  open={true}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setIsEditingPriority(false);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-32 bg-gray-700 text-white text-sm border-gray-600 focus:border-blue-500">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent 
-                    className="z-[9999] bg-gray-700 border-gray-600 text-white shadow-xl"
-                    position="popper"
-                    sideOffset={5}
-                  >
-                    <SelectItem value="LOW" className="text-white hover:bg-gray-600 focus:bg-gray-600">Low</SelectItem>
-                    <SelectItem value="MEDIUM" className="text-white hover:bg-gray-600 focus:bg-gray-600">Medium</SelectItem>
-                    <SelectItem value="HIGH" className="text-white hover:bg-gray-600 focus:bg-gray-600">High</SelectItem>
-                    <SelectItem value="URGENT" className="text-white hover:bg-gray-600 focus:bg-gray-600">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div 
-                  onClick={() => setIsEditingPriority(true)}
-                  className="cursor-pointer"
-                >
-                  {task?.priority ? (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      task.priority === 'LOW' ? 'bg-green-100 text-green-800' :
-                      task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
-                      task.priority === 'HIGH' ? 'bg-orange-100 text-orange-800' :
-                      task.priority === 'URGENT' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {task.priority === 'LOW' ? 'Low' :
-                       task.priority === 'MEDIUM' ? 'Medium' :
-                       task.priority === 'HIGH' ? 'High' :
-                       task.priority === 'URGENT' ? 'Urgent' : task.priority}
-                    </span>
-                  ) : (
-                    <span className="text-sm text-gray-400 hover:text-gray-300">Click to set priority</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Priority & Status Section */}
+      <div className="space-y-4">
+        <TaskPriority
+          task={task}
+          onTaskPriorityChange={onTaskPriorityChange}
+        />
 
-        {/* Status */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-300 w-20">Status</span>
-          <div className="flex items-center gap-2 flex-1">
-            <div className="ml-12">
-              {isEditingStatus ? (
-                <Select
-                  value={task?.status || 'TODO'}
-                  onValueChange={(value) => {
-                    handleStatusChange(value);
-                    setIsEditingStatus(false);
-                  }}
-                  open={true}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setIsEditingStatus(false);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-40 bg-gray-700 text-white text-sm border-gray-600 focus:border-blue-500">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent 
-                    className="z-[9999] bg-gray-700 border-gray-600 text-white shadow-xl"
-                    position="popper"
-                    sideOffset={5}
-                  >
-                    <SelectItem value="TODO" className="text-white hover:bg-gray-600 focus:bg-gray-600">To Do</SelectItem>
-                    <SelectItem value="IN_PROGRESS" className="text-white hover:bg-gray-600 focus:bg-gray-600">In Progress</SelectItem>
-                  
-               
-        
-                    <SelectItem value="DONE" className="text-white hover:bg-gray-600 focus:bg-gray-600">Done</SelectItem>
-                 
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div 
-                  onClick={() => setIsEditingStatus(true)}
-                  className="cursor-pointer"
-                >
-                  {task?.status ? (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      task.status === 'TODO' ? 'bg-gray-100 text-gray-800' :
-                      task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                      task.status === 'DONE' ? 'bg-green-100 text-green-800' : task.status
-                  
-                     
-                    }`}>
-                      {task.status === 'TODO' ? 'To Do' :
-                       task.status === 'IN_PROGRESS' ? 'In Progress' :
-                       task.status === 'DONE' ? 'Done' : task.status
-                     }
-                    </span>
-                  ) : (
-                    <span className="text-sm text-gray-400 hover:text-gray-300">Click to set status</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
+        <TaskStatus
+          task={task}
+          onTaskStatusChange={onTaskStatusChange}
+        />
       </div>
 
       {/* Task Description */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-300">Description</h3>
-        {isEditingDescription ? (
-          <div className="space-y-3">
-            <div 
-              ref={editorRef}
-              className="min-h-[120px] border rounded-lg overflow-hidden" 
-              style={{ borderColor: DARK_THEME.border.default }}
-            >
-              <MinimalTiptap 
-                content={tempDescription} 
-                onChange={setTempDescription}
-                placeholder="Add a description..."
-              />
-            </div>
-            {/* Save/Cancel buttons */}
-            <div className="flex items-center gap-2">
-              <Button 
-                size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDescriptionSave();
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Save
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsEditingDescription(false);
-                  setTempDescription(description);
-                }}
-                className="text-gray-400 hover:text-gray-200"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div 
-            className="min-h-[120px] border rounded-lg p-4 cursor-pointer hover:bg-gray-800/30 transition-colors duration-200"
-            style={{ borderColor: DARK_THEME.border.default }}
-            onClick={handleDescriptionClick}
-          >
-            {description ? (
-              <div 
-                className="text-gray-300 prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: description }}
-              />
-            ) : (
-              <p className="text-gray-400 italic">Click to add a description...</p>
-            )}
-          </div>
-        )}
-      </div>
+      <TaskDescriptionEditor
+        description={description}
+        setDescription={setDescription}
+        onSaveDescription={onSaveDescription}
+      />
 
       {/* Google Calendar Integration Section */}
       {task && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Google Calendar Integration
-          </h3>
-
-
-          <div className="border rounded-lg p-4" style={{ borderColor: DARK_THEME.border.default }}>
-            {task.isSyncedToCalendar ? (
-              // Task đã sync với Google Calendar
-              <div className="space-y-3">
-                {/* Sync Status Badge */}
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-green-600/20 text-green-400 text-xs rounded-full flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    Synced to Calendar
-                  </span>
-                  {task.calendarSyncedAt && (
-                    <span className="text-xs text-gray-400">
-                      Last synced: {new Date(task.calendarSyncedAt).toLocaleString('vi-VN')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Calendar Actions */}
-                <div className="flex flex-wrap gap-2">
-                  {task.googleCalendarEventUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(task.googleCalendarEventUrl, '_blank')}
-                      className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10 flex items-center gap-1.5"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span className="text-xs">View in Google Calendar</span>
-                    </Button>
-                  )}
-
-                  {task.googleMeetLink && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(task.googleMeetLink, '_blank')}
-                      className="text-green-400 border-green-400/30 hover:bg-green-400/10 flex items-center gap-1.5"
-                    >
-                      <GoogleMeetIcon className="text-green-400" size={14} />
-                      <span className="text-xs">Join Google Meet</span>
-                    </Button>
-                  )}
-                </div>
-
-                {/* Event Details */}
-                {task.googleCalendarEventId && (
-                  <div className="text-xs text-gray-400 space-y-1">
-                    <div>Event ID: <span className="font-mono">{task.googleCalendarEventId}</span></div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Task chưa sync với Google Calendar
-              <div className="space-y-3 text-center">
-                <div className="flex items-center justify-center gap-2 text-gray-400">
-                  <Circle className="w-4 h-4" />
-                  <span className="text-sm">Not synced to Google Calendar</span>
-                </div>
-
-                <div className="flex justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddToCalendar}
-                    disabled={calendarLoading || !taskId}
-                    className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10 flex items-center gap-1.5"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span className="text-xs">Add to Calendar</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreateQuickMeeting}
-                    disabled={calendarLoading || !taskId}
-                    className="text-green-400 border-green-400/30 hover:bg-green-400/10 flex items-center gap-1.5"
-                  >
-                    <GoogleMeetIcon className="text-green-400" size={14} />
-                    <span className="text-xs">Quick Meeting</span>
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Calendar Error Display */}
-            {calendarError && (
-              <div className="mt-3 p-2 bg-red-900/20 border border-red-700/30 rounded text-red-400 text-xs flex items-center justify-between">
-                <span>❌ {calendarError}</span>
-                <button
-                  onClick={clearCalendarError}
-                  className="text-red-300 hover:text-red-200 ml-2"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* Loading State for Calendar */}
-            {calendarLoading && (
-              <div className="mt-3 p-2 bg-blue-900/20 border border-blue-700/30 rounded text-blue-400 text-xs">
-                ⏳ Đang xử lý Google Calendar...
-              </div>
-            )}
-          </div>
-        </div>
+        <GoogleCalendarIntegration
+          task={task}
+          title={title}
+          description={description}
+          computedAssignees={computedAssignees}
+          onTaskRefresh={onTaskRefresh}
+          taskType={taskType} // 🔥 Use taskType from props instead of hardcoded
+        />
       )}
 
-      {/* Task Files Section - Updated */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-            <Paperclip className="w-4 h-4" />
-            Files
-          </h3>
-
-          {/* Move Google Calendar Actions to separate section above */}
-        </div>
-
-        {task?.id ? (
-          <FileDisplayGrid
-            taskId={parseInt(task.id)}
-            refreshTrigger={fileRefreshTrigger}
-          />
-        ) : (
-          <div className="text-sm text-gray-400 italic border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
-            Task not loaded
-          </div>
-        )}
-      </div>
-
-      {/* Legacy Task Attachments - Keep for backward compatibility */}
-      {task?.attachments && task.attachments.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-            <Paperclip className="w-4 h-4" />
-            Legacy Attachments ({task.attachments.length})
-          </h3>
-
-          <TaskAttachments
-            attachments={task.attachments}
-            onRemoveAttachment={onRemoveAttachment}
-          />
-        </div>
-      )}
+      {/* Task Files Section */}
+      <TaskFiles
+        task={task}
+        fileRefreshTrigger={fileRefreshTrigger}
+        onRemoveAttachment={onRemoveAttachment}
+      />
 
       {/* Comments & Activity Section */}
-      <div 
-        className="space-y-6 border-t pt-6"
-        style={{ borderColor: DARK_THEME.border.default }}
-      >
-        {/* Tabs */}
-        <div className="flex gap-6">
-          <button 
-            className={`pb-3 text-sm font-medium transition-colors ${
-              activeTab === 'comments' 
-                ? 'text-white border-b-2 border-white' 
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-            onClick={() => setActiveTab('comments')}
-          >
-            Comments
-          </button>
-          
-          <button 
-            className={`pb-3 text-sm font-medium transition-colors ${
-              activeTab === 'activity' 
-                ? 'text-white border-b-2 border-white' 
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-            onClick={() => setActiveTab('activity')}
-          >
-            All activity
-            {activities.length > 0 && (
-              <span className="ml-1 text-xs bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded-full">
-                {activities.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="space-y-4">
-          {activeTab === 'comments' ? (
-            /* Comments Content */
-            <CommentsList taskId={taskId} />
-          ) : (
-            /* Activity Content */
-            <div className="p-2 space-y-6">
-              {/* Activity Header with Refresh Button */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-400">
-                  {activities.length > 0 && `${activities.length} activities`}
-                </div>
-                <button
-                  onClick={refetchActivities}
-                  disabled={activitiesLoading}
-                  className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
-                >
-                  {activitiesLoading ? 'Refreshing...' : 'Refresh'}
-                </button>
-              </div>
-
-              {activitiesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-sm text-gray-400">Loading activities...</div>
-                </div>
-              ) : activitiesError ? (
-                <div className="flex flex-col items-center justify-center py-8 space-y-3">
-                  <div className="text-sm text-yellow-400">
-                    {activitiesError.message.includes('401') || activitiesError.message.includes('404') 
-                      ? 'Activity tracking feature is not available yet'
-                      : `Error loading activities: ${activitiesError.message}`
-                    }
-                  </div>
-                  {!activitiesError.message.includes('401') && !activitiesError.message.includes('404') && (
-                    <button
-                      onClick={refetchActivities}
-                      className="text-xs text-blue-400 hover:text-blue-300 px-3 py-1 border border-blue-400/30 rounded"
-                    >
-                      Try Again
-                    </button>
-                  )}
-                </div>
-              ) : activities.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-sm text-gray-400">No activities yet</div>
-                </div>
-              ) : (
-                <>
-                  {/* Today's Activities */}
-                  {groupedActivities.TODAY && groupedActivities.TODAY.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">TODAY</div>
-                      {groupedActivities.TODAY.map(renderActivityItem)}
-                    </div>
-                  )}
-
-                  {/* Yesterday's Activities */}
-                  {groupedActivities.YESTERDAY && groupedActivities.YESTERDAY.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">YESTERDAY</div>
-                      {groupedActivities.YESTERDAY.map(renderActivityItem)}
-                    </div>
-                  )}
-
-                  {/* Earlier Activities */}
-                  {groupedActivities.EARLIER && groupedActivities.EARLIER.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">EARLIER</div>
-                      {groupedActivities.EARLIER.map(renderActivityItem)}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <TaskCommentsActivity
+        taskId={taskId}
+        overrideComments={overrideComments}
+        projectComments={projectComments}
+        projectActivities={projectActivities}
+        commentsLoading={commentsLoading}
+        activitiesLoading={activitiesLoading}
+        editingCommentId={editingCommentId}
+        editingCommentContent={editingCommentContent}
+        onEditComment={onEditComment}
+        onEditCommentChange={onEditCommentChange}
+        onEditCommentSubmit={onEditCommentSubmit}
+        onEditCommentCancel={onEditCommentCancel}
+        onDeleteComment={onDeleteComment}
+      />
     </div>
   );
 };

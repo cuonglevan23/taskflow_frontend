@@ -1,7 +1,8 @@
 "use client";
 
 import { ReactNode } from 'react';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface NoteEditorLayoutProps {
   children: ReactNode;
@@ -18,8 +19,21 @@ export default function NoteEditorLayout({
   header,
   onToggleSidebar
 }: NoteEditorLayoutProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
   return (
-    <div className="h-full w-full flex flex-col" style={{ backgroundColor: DARK_THEME.background.primary }}>
+    <div className="h-full w-full flex flex-col" style={{ backgroundColor: theme.background.primary }}>
       {/* Header/Toolbar area - always at top */}
       {header && (
         <div className="flex-shrink-0">
@@ -35,8 +49,8 @@ export default function NoteEditorLayout({
             <button
               onClick={onToggleSidebar}
               className="m-2 mt-12 ml-6"
-              style={{ color: DARK_THEME.text.muted }}
-              title="Show Table of Contents"
+              style={{ color: theme.text.muted }}
+              title={t('noteEditorLayout.showTableOfContents')}
             >
               <svg
                 className="h-5 w-5"
@@ -60,20 +74,20 @@ export default function NoteEditorLayout({
           <div
             className="w-64  border-opacity-20 flex-shrink-0 overflow-hidden flex flex-col"
             style={{
-              backgroundColor: DARK_THEME.background.primary,
-              borderColor: DARK_THEME.border.default
+              backgroundColor: theme.background.primary,
+              borderColor: theme.border.default
             }}
           >
             {/* Sidebar header with close button */}
-            <div className="flex items-center justify-between p-3 " style={{ borderColor: DARK_THEME.border.default }}>
-              <span className="text-sm font-medium" style={{ color: DARK_THEME.text.primary }}>
-                Table of Contents
+            <div className="flex items-center justify-between p-3 " style={{ borderColor: theme.border.default }}>
+              <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                {t('noteEditorLayout.tableOfContents')}
               </span>
               <button
                 onClick={onToggleSidebar}
                 className="p-1 rounded "
-                style={{ color: DARK_THEME.text.muted }}
-                title="Hide Table of Contents"
+                style={{ color: theme.text.muted }}
+                title={t('noteEditorLayout.hideTableOfContents')}
               >
                 <svg
                   className="h-4 w-4"

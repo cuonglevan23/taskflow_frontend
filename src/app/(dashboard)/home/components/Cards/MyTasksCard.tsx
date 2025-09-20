@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { useAuth } from '@/components/auth/AuthProvider'; // Thay thế useUser
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
@@ -14,8 +15,18 @@ import { useCreateTask, useUpdateTask } from "@/hooks/tasks/useTasksActions";
 
 // Professional MyTasksCard using BaseCard & useTasks Hook - Senior Product Code
 const MyTasksCard = () => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
   const { user } = useAuth(); // Sử dụng useAuth thay vì useUser
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   // Get UI state from context
   const { optimisticTaskStates, setOptimisticTaskState, clearOptimisticTaskState } = useTasksContext();

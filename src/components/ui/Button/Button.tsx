@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'button_text';
@@ -23,20 +25,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     rightIcon,
     className,
     children,
-    ...props
+    ...rest
   }, ref) => {
-    
+    const { theme } = useThemeContext();
+    const { messages } = useLanguageContext();
+
     const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-    
-    const variantStyles = {
-      default: "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600 focus:ring-gray-500",
-      primary: "bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500 shadow-sm hover:shadow-md",
-      secondary: "bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-500 shadow-sm",
-      danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500 shadow-sm hover:shadow-md",
-      outline: "border border-gray-300 dark:border-gray-600 bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:ring-gray-500",
-      ghost: "bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-500",
-      button_text: "border border-[#4573d2] hover:border-[#3462c1] focus:ring-[#4573d2]"
-    };
     
     const sizeStyles = {
       sm: "h-8 px-3 text-sm",
@@ -44,41 +38,131 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "h-10 px-6 text-base"
     };
 
-    // Custom style cho button_text variant
-    const buttonTextStyle = variant === 'button_text' ? {
-      height: '28px',
-      padding: '0 12px',
-      fontSize: '12px',
-      lineHeight: '28px',
-      background: '#4573d2',
-      borderColor: '#4573d2',
-      color: '#2a2b2d',
-      marginTop: '12px',
-      border: '1px solid #4573d2',
-      borderRadius: '6px'
-    } : {};
+    // Get variant styles from theme
+    const getVariantStyle = (variant: string) => {
+      switch (variant) {
+        case 'default':
+          return {
+            backgroundColor: theme.button.secondary.background,
+            color: theme.button.secondary.text,
+            borderColor: theme.button.secondary.border,
+          };
+        case 'primary':
+          return {
+            backgroundColor: theme.button.primary.background,
+            color: theme.button.primary.text,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          };
+        case 'secondary':
+          return {
+            backgroundColor: theme.background.muted,
+            color: theme.text.primary,
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          };
+        case 'danger':
+          return {
+            backgroundColor: theme.status.error,
+            color: '#ffffff',
+            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          };
+        case 'outline':
+          return {
+            backgroundColor: 'transparent',
+            color: theme.text.primary,
+            borderColor: theme.border.default,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+          };
+        case 'ghost':
+          return {
+            backgroundColor: 'transparent',
+            color: theme.text.primary,
+          };
+        case 'button_text':
+          return {
+            height: '28px',
+            padding: '0 12px',
+            fontSize: '12px',
+            lineHeight: '28px',
+            backgroundColor: theme.status.info || '#4573d2',
+            borderColor: theme.status.info || '#4573d2',
+            color: theme.text.inverse,
+            marginTop: '12px',
+            border: `1px solid ${theme.status.info || '#4573d2'}`,
+            borderRadius: '6px'
+          };
+        default:
+          return {};
+      }
+    };
+
+    // Get hover styles
+    const getHoverHandlers = (variant: string) => {
+      return {
+        onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+          if (disabled || loading) return;
+
+          switch (variant) {
+            case 'default':
+              e.currentTarget.style.backgroundColor = theme.button.secondary.hover;
+              break;
+            case 'primary':
+              e.currentTarget.style.backgroundColor = theme.button.primary.hover;
+              break;
+            case 'secondary':
+              e.currentTarget.style.backgroundColor = theme.background.secondary;
+              break;
+            case 'danger':
+              e.currentTarget.style.backgroundColor = theme.status.error;
+              e.currentTarget.style.filter = 'brightness(0.9)';
+              break;
+            case 'outline':
+              e.currentTarget.style.backgroundColor = theme.background.muted;
+              break;
+            case 'ghost':
+              e.currentTarget.style.backgroundColor = theme.background.muted;
+              break;
+            case 'button_text':
+              e.currentTarget.style.backgroundColor = theme.status.info || '#3462c1';
+              break;
+          }
+        },
+        onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+          if (disabled || loading) return;
+
+          const originalStyle = getVariantStyle(variant);
+          Object.assign(e.currentTarget.style, originalStyle);
+          if (variant !== 'danger') {
+            e.currentTarget.style.filter = '';
+          }
+        }
+      };
+    };
+
+    const variantStyle = getVariantStyle(variant);
+    const hoverHandlers = getHoverHandlers(variant);
 
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          variant === 'button_text' ? "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed border" : baseStyles,
-          variant !== 'button_text' && variantStyles[variant],
+          baseStyles,
           variant !== 'button_text' && sizeStyles[size],
-          variant === 'button_text' && variantStyles[variant],
+          variant === 'outline' && 'border',
           className
         )}
         style={{
-          ...buttonTextStyle,
-          ...props.style
+          ...variantStyle,
+          ...rest.style
         }}
-        {...props}
+        {...hoverHandlers}
+        {...rest}
       >
         {loading && (
           <div className={cn(
             "h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent",
-            children && "mr-2"
+            children ? "mr-2" : ""
           )} />
         )}
         {!loading && leftIcon && (

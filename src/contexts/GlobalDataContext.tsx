@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
@@ -40,7 +40,7 @@ interface GlobalDataProviderProps {
 }
 
 export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [globalData, setGlobalData] = React.useState<GlobalData>({
     user: null,
     teams: [],
@@ -55,7 +55,22 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
   // Prefetch all critical data once on login
   const prefetchAllData = async () => {
-    if (!user) return;
+    // ✅ ADD: Skip if not authenticated
+    if (!user || !isAuthenticated) {
+      setGlobalData(prev => ({
+        ...prev,
+        isLoading: false,
+        isLoaded: false,
+        error: null,
+        user: null,
+        teams: [],
+        projects: [],
+        taskStats: null,
+        tasksSummary: [],
+        posts: []
+      }));
+      return;
+    }
 
     setGlobalData(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -71,7 +86,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
           sortBy: 'startDate',
           sortDir: 'desc'
         }),
-        PostsService.getNewsfeed(0, 20) // Load recent posts
+        PostsService.getNewsfeed(0, 20)
       ]);
 
       const newGlobalData = {
@@ -88,18 +103,16 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
       setGlobalData(newGlobalData);
 
-      // Populate SWR cache with prefetched data using proper URL-based keys
+      // Populate SWR cache with prefetched data
       await Promise.all([
         mutate('/api/teams/my-teams', teamsResponse),
         mutate('/api/projects/my-projects', projectsResponse),
         mutate('/api/tasks/my-tasks/stats', taskStatsResponse),
         mutate('/api/tasks/my-tasks/summary?page=0&size=1000&sortBy=startDate&sortDir=desc', tasksSummaryResponse),
         mutate('/api/posts/feed?page=0&size=20', postsResponse),
-        mutate(`/api/posts/user/${user.id}?page=0&size=20`, await PostsService.getUserPosts(user.id, 0, 20))
+        mutate(`/api/posts/user/${user.id}?page=0&size=20`, await PostsService.getUserPosts(Number(user.id), 0, 20))
       ]);
-
     } catch (error) {
-      console.error('Failed to prefetch global data:', error);
       setGlobalData(prev => ({
         ...prev,
         isLoading: false,
@@ -108,12 +121,39 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     }
   };
 
+  // ✅ ADD: Effect to handle authentication state changes
+  useEffect(() => {
+    if (!authLoading) {
+      if (isAuthenticated && user && !globalData.isLoaded) {
+        // Only prefetch if data hasn't been loaded yet
+        prefetchAllData();
+      } else if (!isAuthenticated) {
+        // User logged out - clear data
+        setGlobalData({
+          user: null,
+          teams: [],
+          projects: [],
+          taskStats: null,
+          tasksSummary: [],
+          posts: [],
+          isLoaded: false,
+          isLoading: false,
+          error: null,
+        });
+      }
+    }
+  }, [isAuthenticated, user?.id, authLoading, globalData.isLoaded]); // Use user.id instead of entire user object
+
   const refetchAll = async () => {
+    if (!isAuthenticated || !user) {
+      return;
+    }
     await prefetchAllData();
   };
 
   // Optimistic updates for mutations
   const addTeam = (newTeam: any) => {
+    if (!isAuthenticated) return;
     setGlobalData(prev => ({
       ...prev,
       teams: [...prev.teams, newTeam]
@@ -121,6 +161,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   const addProject = (newProject: any) => {
+    if (!isAuthenticated) return;
     setGlobalData(prev => ({
       ...prev,
       projects: [...prev.projects, newProject]
@@ -128,6 +169,7 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   const addTask = (newTask: any) => {
+    if (!isAuthenticated) return;
     setGlobalData(prev => ({
       ...prev,
       tasksSummary: [newTask, ...prev.tasksSummary]
@@ -135,9 +177,37 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   const addPost = async (newPost: any) => {
+    if (!isAuthenticated || !user) {
+      throw new Error('User not authenticated');
+    }
+
     try {
+      // 🔍 DEBUG: Log the exact data being sent to the API
+      console.log('🚀 [GlobalDataContext] addPost called with:', {
+        content: newPost.content,
+        hasImages: !!newPost.images,
+        imageCount: newPost.images?.length || 0,
+        hasImage: !!newPost.image,
+        privacy: newPost.privacy,
+        imageFiles: newPost.images?.map(img => ({
+          name: img.name,
+          size: img.size,
+          type: img.type
+        })) || []
+      });
+
       // Create post via API first
       const response = await PostsService.createPost(newPost);
+
+      // 🔍 DEBUG: Log the API response
+      console.log('📥 [GlobalDataContext] API response received:', {
+        success: response.success,
+        hasData: !!response.data,
+        postId: response.data?.id,
+        imageUrl: response.data?.imageUrl,
+        imageUrls: response.data?.imageUrls,
+        imageUrlsCount: response.data?.imageUrls?.length || 0
+      });
 
       if (response.success && response.data) {
         // Add to local state immediately for optimistic update
@@ -146,18 +216,34 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
           posts: [response.data, ...prev.posts]
         }));
 
-        // Simple cache invalidation - back to original approach
-        await mutate(
-          key => Array.isArray(key) && key[0] === 'posts',
-          undefined,
-          { revalidate: true }
-        );
+        // Invalidate all posts-related SWR caches with correct keys
+        await Promise.all([
+          // Invalidate newsfeed
+          mutate(
+            key => typeof key === 'string' && key.includes('/api/posts/feed'),
+            undefined,
+            { revalidate: true }
+          ),
+          // Invalidate user posts
+          mutate(
+            key => typeof key === 'string' && key.includes(`/api/posts/user/${user.id}`),
+            undefined,
+            { revalidate: true }
+          ),
+          // Invalidate posts array keys (for profile components)
+          mutate(
+            key => Array.isArray(key) && key[0] === 'posts',
+            undefined,
+            { revalidate: true }
+          )
+        ]);
 
         return response.data;
       }
-      throw new Error('Failed to create post');
+
+      throw new Error('Failed to create post - no data returned');
     } catch (error) {
-      console.error('Error creating post in GlobalData:', error);
+      console.error('❌ [GlobalDataContext] addPost error:', error);
       throw error;
     }
   };
@@ -199,8 +285,6 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   const invalidatePostsCache = () => {
-    console.log('🔄 Invalidating all posts cache from GlobalDataContext...');
-
     // Force revalidate all posts-related SWR caches using proper URL-based keys
     Promise.all([
       mutate(
@@ -221,20 +305,32 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     ]);
   };
 
-  // Effect to sync user changes and prefetch data
-  React.useEffect(() => {
-    if (isAuthenticated && user && !globalData.isLoaded) {
-      prefetchAllData();
-    }
-  }, [isAuthenticated, user, globalData.isLoaded]);
+  // SWR Configuration with authentication-aware error handling
+  const swrConfig = {
+    onError: (error: any, key: string) => {
+      console.log('SWR Error:', error, 'Key:', key);
 
-  const value: GlobalDataContextType = {
+      // Don't log authentication errors as they are expected when not logged in
+      if (!error.message?.includes('Unauthorized') && !error.message?.includes('401')) {
+        console.error('SWR Error:', error, 'Key:', key);
+      }
+    },
+    // Only revalidate if user is authenticated
+    revalidateOnFocus: isAuthenticated,
+    revalidateOnReconnect: isAuthenticated,
+    shouldRetryOnError: (error: any) => {
+      // Don't retry on authentication errors
+      return !error.message?.includes('Unauthorized') && !error.message?.includes('401');
+    }
+  };
+
+  const contextValue: GlobalDataContextType = {
     ...globalData,
     refetchAll,
     addTeam,
     addProject,
     addTask,
-    addPost,
+    addPost, // Use the actual function, not a stub
     updateTeam,
     updateProject,
     updateTask,
@@ -243,25 +339,8 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   };
 
   return (
-    <GlobalDataContext.Provider value={value}>
-      <SWRConfig
-        value={{
-          revalidateOnFocus: false,
-          revalidateOnReconnect: true,
-          refreshInterval: 0,
-          dedupingInterval: 2000,
-          errorRetryCount: 3,
-          errorRetryInterval: 5000,
-          revalidateIfStale: true,
-          focusThrottleInterval: 5000,
-          onError: (error, key) => {
-            console.error('SWR Error:', error, 'Key:', key);
-          },
-          onSuccess: (data, key) => {
-            console.log('🔄 SWR Cache Updated:', key);
-          }
-        }}
-      >
+    <GlobalDataContext.Provider value={contextValue}>
+      <SWRConfig value={swrConfig}>
         {children}
       </SWRConfig>
     </GlobalDataContext.Provider>

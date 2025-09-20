@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import NewChatModal from './NewChatModal';
 
 interface Contact {
@@ -27,6 +28,10 @@ export const MessagesSidebar = ({
   searchQuery = '',
   onCreateChat
 }: MessagesSidebarProps) => {
+  // Theme and Language Context
+  const { theme, themeMode } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const [localSearchQuery, setLocalSearchQuery] = React.useState<string>(searchQuery);
   const [isNewChatModalOpen, setIsNewChatModalOpen] = React.useState(false);
 
@@ -58,40 +63,40 @@ export const MessagesSidebar = ({
   };
 
   const filterOptions = [
-    { key: 'all' as const, label: 'All' },
-    { key: 'unread' as const, label: 'Unread' },
-    { key: 'teams' as const, label: 'Teams' },
-    { key: 'direct' as const, label: 'Direct' }
+    { key: 'all' as const, label: messages?.chat?.sidebar?.filters?.all || 'All' },
+    { key: 'unread' as const, label: messages?.chat?.sidebar?.filters?.unread || 'Unread' },
+    { key: 'teams' as const, label: messages?.chat?.sidebar?.filters?.teams || 'Teams' },
+    { key: 'direct' as const, label: messages?.chat?.sidebar?.filters?.direct || 'Direct' }
   ];
 
   return (
     <>
       <div className="w-80 border-r flex flex-col" style={{
-        backgroundColor: DARK_THEME.background.secondary,
-        borderColor: DARK_THEME.border.default
+        backgroundColor: theme.background.secondary,
+        borderColor: theme.border.default
       }}>
         {/* Sidebar Header */}
-        <div className="p-4 border-b" style={{ borderColor: DARK_THEME.border.default }}>
+        <div className="p-4 border-b" style={{ borderColor: theme.border.default }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium" style={{ color: DARK_THEME.text.primary }}>
-              Conversations
+            <h2 className="text-lg font-medium" style={{ color: theme.text.primary }}>
+              {messages?.chat?.sidebar?.conversations || 'Conversations'}
             </h2>
             <button
               onClick={handleCreateChat}
               className="p-1 rounded transition-colors"
               style={{
-                color: DARK_THEME.text.muted,
+                color: theme.text.muted,
                 backgroundColor: 'transparent'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = DARK_THEME.sidebar.hover;
-                e.currentTarget.style.color = DARK_THEME.text.secondary;
+                e.currentTarget.style.backgroundColor = theme.sidebar.hover;
+                e.currentTarget.style.color = theme.text.secondary;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = DARK_THEME.text.muted;
+                e.currentTarget.style.color = theme.text.muted;
               }}
-              title="Create new chat"
+              title={messages?.chat?.sidebar?.createNewChat || 'Create new chat'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -103,28 +108,28 @@ export const MessagesSidebar = ({
           <div className="relative">
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder={messages?.chat?.sidebar?.searchPlaceholder || 'Search conversations...'}
               value={localSearchQuery}
               onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 text-sm rounded-lg focus:ring-2 focus:border-transparent transition-colors"
               style={{
-                backgroundColor: DARK_THEME.search.background,
-                color: DARK_THEME.search.text,
-                borderColor: DARK_THEME.border.default,
+                backgroundColor: theme.search.background,
+                color: theme.search.text,
+                borderColor: theme.border.default,
                 borderWidth: '1px',
                 borderStyle: 'solid'
               }}
               onFocus={(e) => {
-                e.currentTarget.style.backgroundColor = DARK_THEME.search.backgroundActive;
-                e.currentTarget.style.borderColor = THEME_COLORS.primary[500];
+                e.currentTarget.style.backgroundColor = theme.search.backgroundActive;
+                e.currentTarget.style.borderColor = theme.border.focus;
               }}
               onBlur={(e) => {
-                e.currentTarget.style.backgroundColor = DARK_THEME.search.background;
-                e.currentTarget.style.borderColor = DARK_THEME.border.default;
+                e.currentTarget.style.backgroundColor = theme.search.background;
+                e.currentTarget.style.borderColor = theme.border.default;
               }}
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4" style={{ color: DARK_THEME.text.muted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" style={{ color: theme.text.muted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -132,7 +137,7 @@ export const MessagesSidebar = ({
         </div>
 
         {/* Conversation Filters */}
-        <div className="px-4 py-3 border-b" style={{ borderColor: DARK_THEME.border.default }}>
+        <div className="px-4 py-3 border-b" style={{ borderColor: theme.border.default }}>
           <div className="flex space-x-2">
             {filterOptions.map((option) => (
               <button
@@ -140,19 +145,19 @@ export const MessagesSidebar = ({
                 onClick={() => onFilterChange(option.key)}
                 className="px-3 py-1 text-xs font-medium rounded-full transition-colors"
                 style={{
-                  backgroundColor: activeFilter === option.key ? THEME_COLORS.primary[500] : 'transparent',
-                  color: activeFilter === option.key ? '#ffffff' : DARK_THEME.text.muted
+                  backgroundColor: activeFilter === option.key ? theme.status.info : 'transparent',
+                  color: activeFilter === option.key ? '#ffffff' : theme.text.muted
                 }}
                 onMouseEnter={(e) => {
                   if (activeFilter !== option.key) {
-                    e.currentTarget.style.backgroundColor = DARK_THEME.sidebar.hover;
-                    e.currentTarget.style.color = DARK_THEME.text.secondary;
+                    e.currentTarget.style.backgroundColor = theme.sidebar.hover;
+                    e.currentTarget.style.color = theme.text.secondary;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (activeFilter !== option.key) {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = DARK_THEME.text.muted;
+                    e.currentTarget.style.color = theme.text.muted;
                   }
                 }}
               >

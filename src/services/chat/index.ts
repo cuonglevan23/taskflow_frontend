@@ -15,8 +15,12 @@ import {
   MessageReaction,
   ReactionType,
   FileUploadResponse,
-  MessageReadStatus,
-  BulkReactionResponse
+  BulkReactionResponse,
+  AddMembersRequest,
+  AddMembersResponse,
+  RemoveMemberResponse,
+  LeaveConversationResponse,
+  ConversationMemberDto
 } from '@/types/chat';
 
 export class ChatService {
@@ -44,13 +48,9 @@ export class ChatService {
   private reconnectAttempts = 0;
   private readonly MAX_RECONNECT_ATTEMPTS = 5;
   private reconnectTimeout: NodeJS.Timeout | null = null;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
-  private lastHeartbeat: number = 0;
-  private readonly HEARTBEAT_INTERVAL = 30000;
   private readonly CONNECTION_TIMEOUT = 60000;
 
   private constructor() {
-    this.setupHeartbeat();
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', () => {
         this.disconnect();
@@ -59,15 +59,6 @@ export class ChatService {
   }
 
   // ==================== PRIVATE UTILITY METHODS ====================
-
-  private setupHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
-      if (this.connected && this.client) {
-        this.client.send('/app/chat/heartbeat', {}, {});
-        this.lastHeartbeat = Date.now();
-      }
-    }, this.HEARTBEAT_INTERVAL);
-  }
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
@@ -100,246 +91,95 @@ export class ChatService {
     }
   }
 
-  // ==================== CONVERSATION MANAGEMENT ====================
-
-  async getConversations(params?: ConversationsParams): Promise<ConversationsResponse> {
-    const queryParams = new URLSearchParams();
-    if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.append('size', params.size.toString());
-
-    const url = queryParams.toString() ? `/api/chat/conversations?${queryParams}` : '/api/chat/conversations';
-    return BaseApiClient.get<ConversationsResponse>(url);
-  }
-
-  async createDirectConversation(request: CreateDirectConversationRequest): Promise<ChatConversation> {
-    return BaseApiClient.post<ChatConversation>('/api/chat/conversations/direct', request);
-  }
-
-  async createGroupConversation(request: CreateGroupConversationRequest): Promise<ChatConversation> {
-    return BaseApiClient.post<ChatConversation>('/api/chat/conversations/group', request);
-  }
-
-  async createGroupFromFriends(request: CreateGroupFromFriendsRequest): Promise<ChatConversation> {
-    return BaseApiClient.postToNextApi<ChatConversation>('/api/chat/conversations/group/from-friends', request);
-  }
-
-  async getFriendsForGroupChat(): Promise<FriendForGroupChat[]> {
-    return BaseApiClient.getFromNextApi<FriendForGroupChat[]>('/api/chat/friends/for-group-chat');
-  }
-
-  // ==================== MESSAGE MANAGEMENT ====================
-
-  async getConversationMessages(
-    conversationId: number,
-    page: number = 0,
-    size: number = 50
-  ): Promise<ChatHistoryResponse> {
-    return BaseApiClient.get<ChatHistoryResponse>(
-      `/api/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`
-    );
-  }
-
-  async getAllMessages(conversationId: number): Promise<ChatHistoryResponse> {
-    return BaseApiClient.get<ChatHistoryResponse>(`/api/chat/conversations/${conversationId}/messages/all`);
-  }
-
-  async sendMessage(request: SendMessageRequest): Promise<ChatMessage> {
-    return BaseApiClient.post<ChatMessage>('/api/chat/messages', request);
-  }
-
-  async replyToMessage(messageId: number, request: SendMessageRequest): Promise<ChatMessage> {
-    return BaseApiClient.post<ChatMessage>(`/api/chat/messages/${messageId}/reply`, request);
-  }
-
-  async getMessageDetails(messageId: number): Promise<ChatMessage> {
-    return BaseApiClient.get<ChatMessage>(`/api/chat/messages/${messageId}`);
-  }
-
-  async markMessageAsRead(messageId: number): Promise<void> {
-    return BaseApiClient.put(`/api/chat/messages/${messageId}/read`);
-  }
-
-  // ==================== REACTIONS ====================
-
-  async toggleReaction(messageId: number, reactionType: ReactionType): Promise<MessageReaction> {
-    return BaseApiClient.post(`/api/chat/messages/${messageId}/reactions/${reactionType}/toggle`);
-  }
-
-  async getMessageReactions(messageId: number): Promise<any> {
-    return BaseApiClient.get(`/api/chat/messages/${messageId}/reactions`);
-  }
-
-  async getBulkReactionSummaries(conversationId: number, messageIds: number[]): Promise<BulkReactionResponse> {
-    return BaseApiClient.post(`/api/chat/conversations/${conversationId}/messages/reactions/bulk`, messageIds);
-  }
-
-  // ==================== FILE UPLOAD METHODS ====================
-
-  async uploadFiles(conversationId: number, files: File[]): Promise<FileUploadResponse[]> {
-    const results: FileUploadResponse[] = [];
-
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('conversationId', conversationId.toString());
-
-      const response = await BaseApiClient.postFormData<FileUploadResponse>(`/api/chat/files/upload`, formData);
-      results.push(response);
-    }
-
-    return results;
-  }
-
-  async uploadImages(conversationId: number, images: File[]): Promise<FileUploadResponse[]> {
-    // Images are also uploaded using the same files/upload endpoint
-    return this.uploadFiles(conversationId, images);
-  }
-
-  async sendMessageWithFile(request: {
-    conversationId: number;
-    content?: string;
-    file: File;
-    replyToId?: number;
-  }): Promise<ChatMessage> {
-    const formData = new FormData();
-    formData.append('file', request.file);
-    formData.append('conversationId', request.conversationId.toString());
-
-    if (request.content) {
-      formData.append('content', request.content);
-    }
-
-    if (request.replyToId) {
-      formData.append('replyToId', request.replyToId.toString());
-    }
-
-    return BaseApiClient.postFormData<ChatMessage>('/api/chat/messages/with-file', formData);
-  }
-
-  async sendMessageWithAttachments(request: {
-    conversationId: number;
-    content: string;
-    files?: File[];
-    images?: File[];
-    replyToId?: number;
-  }): Promise<ChatMessage> {
-    try {
-      // If only one file/image, use the direct with-file endpoint
-      const totalFiles = (request.files?.length || 0) + (request.images?.length || 0);
-
-      if (totalFiles === 1) {
-        const singleFile = request.files?.[0] || request.images?.[0];
-        if (singleFile) {
-          return this.sendMessageWithFile({
-            conversationId: request.conversationId,
-            content: request.content,
-            file: singleFile,
-            replyToId: request.replyToId
-          });
-        }
-      }
-
-      // For multiple files, upload them first then send message with URLs
-      const fileUploads: FileUploadResponse[] = [];
-
-      if (request.files && request.files.length > 0) {
-        const uploads = await this.uploadFiles(request.conversationId, request.files);
-        fileUploads.push(...uploads);
-      }
-
-      if (request.images && request.images.length > 0) {
-        const uploads = await this.uploadImages(request.conversationId, request.images);
-        fileUploads.push(...uploads);
-      }
-
-      // Send message with file URLs
-      const messageRequest: SendMessageRequest & {
-        fileName?: string;
-        fileUrl?: string;
-        fileSize?: number;
-      } = {
-        conversationId: request.conversationId,
-        content: request.content || 'Shared files',
-        type: 'FILE',
-        replyToId: request.replyToId
-      };
-
-      // For multiple files, we might need to send multiple messages or use a different approach
-      // For now, we'll use the first file as the main attachment
-      if (fileUploads.length > 0) {
-        const firstFile = fileUploads[0];
-        messageRequest.fileName = firstFile.fileName;
-        messageRequest.fileUrl = firstFile.fileUrl;
-        messageRequest.fileSize = firstFile.fileSize;
-
-        // Determine message type based on content type
-        if (firstFile.contentType?.startsWith('image/')) {
-          messageRequest.type = 'IMAGE';
-        } else if (firstFile.contentType?.startsWith('video/')) {
-          messageRequest.type = 'VIDEO';
-        } else {
-          messageRequest.type = 'FILE';
-        }
-      }
-
-      return this.sendMessage(messageRequest);
-    } catch (error) {
-      console.error('Failed to send message with attachments:', error);
-      throw error;
-    }
-  }
-
-  sendMessageWithAttachmentsViaWebSocket(message: {
-    conversationId: number;
-    content: string;
-    type: string;
-    replyToId?: number;
-    fileAttachments?: string[];
-    imageAttachments?: string[];
-  }): void {
-    if (this.connected && this.client) {
-      this.client.send('/app/chat/send', {}, JSON.stringify(message));
-    } else {
-      // Add to queue with attachments
-      this.messageQueue.push({
-        id: Date.now().toString(),
-        ...message,
-        timestamp: new Date().toISOString(),
-        retryCount: 0
-      } as any);
-    }
-  }
-
   // ==================== WEBSOCKET METHODS ====================
 
   connect(userId: number): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (this.connected) {
         resolve();
         return;
       }
 
-      this.userId = userId;
-      const socket = new SockJS('/ws/chat');
-      this.client = Stomp.over(socket);
+      try {
+        this.userId = userId;
 
-      this.client.connect(
-        {},
-        () => {
-          this.connected = true;
-          this.reconnectAttempts = 0;
-          this.setupSubscriptions();
-          this.processMessageQueue();
-          this.emit('connected');
-          resolve();
-        },
-        (error: any) => {
-          console.error('WebSocket connection failed:', error);
-          this.connected = false;
-          this.scheduleReconnect();
-          reject(error);
+        console.log('=== CHAT SERVICE DEBUG ===');
+        console.log('User ID:', userId);
+        console.log('App uses HTTP-only cookie authentication, connecting directly to backend WebSocket...');
+
+        // Since the WebSocket token endpoint doesn't exist, connect directly to backend
+        // using session-based authentication
+        console.log('Attempting to connect to WebSocket...');
+
+        // Get backend URL from environment
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+        // SockJS expects HTTP URL, not WebSocket URL - it handles the upgrade internally
+        const sockJsUrl = backendUrl + '/ws/chat';
+
+        console.log('SockJS URL:', sockJsUrl);
+
+        // Create SockJS connection to backend server
+        // SockJS will automatically upgrade to WebSocket connection
+        const socket = new SockJS(sockJsUrl);
+        this.client = Stomp.over(socket);
+
+        // Configure debug logging for development
+        if (process.env.NODE_ENV === 'development') {
+          this.client.debug = (str: string) => {
+            console.log('STOMP: ' + str);
+          };
+        } else {
+          this.client.debug = () => {}; // Disable in production
         }
-      );
+
+        // Set connection timeout
+        this.client.heartbeat.outgoing = 20000;
+        this.client.heartbeat.incoming = 20000;
+
+        // Prepare connection headers - backend should authenticate via session
+        const connectHeaders: any = {
+          'X-User-ID': userId.toString()
+        };
+
+
+        console.log('Connecting with headers:', Object.keys(connectHeaders));
+
+        // Connect with authentication headers
+        this.client.connect(
+          connectHeaders,
+          () => {
+            console.log('WebSocket connected successfully');
+            this.connected = true;
+            this.reconnectAttempts = 0;
+            this.setupSubscriptions();
+            this.processMessageQueue();
+            this.emit('connected');
+            resolve();
+          },
+          (error: any) => {
+            console.error('WebSocket connection failed:', error);
+            this.connected = false;
+
+            // Handle specific error cases
+            if (error.headers && error.headers.message) {
+              console.error('Server error message:', error.headers.message);
+            }
+
+            // Only schedule reconnect if it's not an auth error
+            if (!error.toString().includes('401') && !error.toString().includes('Unauthorized')) {
+              this.scheduleReconnect();
+            } else {
+              console.error('Authentication failed. User may need to log in again.');
+              this.emit('auth-error');
+            }
+
+            reject(error);
+          }
+        );
+      } catch (error) {
+        console.error('Error creating WebSocket connection:', error);
+        reject(error);
+      }
     });
   }
 
@@ -355,11 +195,6 @@ export class ChatService {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
     }
   }
 
@@ -574,7 +409,394 @@ export class ChatService {
     return this.userId;
   }
 
-  // ==================== SINGLETON PATTERN ====================
+  // ==================== MEMBER MANAGEMENT ====================
+
+  /**
+   * Get friends list for adding to group chat
+   * Uses the endpoint /api/chat/friends/for-group-chat
+   */
+  async getFriendsForGroupChat(): Promise<FriendForGroupChat[]> {
+    try {
+      return await BaseApiClient.get<FriendForGroupChat[]>('/api/chat/friends/for-group-chat');
+    } catch (error) {
+      console.error('Failed to get friends for group chat:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add multiple members to a group conversation
+   * Only admins/owners can add members
+   * Automatically sends system notification messages
+   */
+  async addMembersToConversation(
+    conversationId: number,
+    request: AddMembersRequest
+  ): Promise<AddMembersResponse> {
+    try {
+      // Validate input
+      if (!request.userIds || request.userIds.length === 0) {
+        throw new Error('At least one user ID is required');
+      }
+
+      // Remove duplicates
+      const uniqueUserIds = [...new Set(request.userIds)];
+
+      const response = await BaseApiClient.post<AddMembersResponse>(
+        `/api/chat/conversations/${conversationId}/members`,
+        { userIds: uniqueUserIds }
+      );
+
+      // Emit event for real-time UI updates
+      this.emit('members-added', {
+        conversationId,
+        members: response.members,
+        systemMessage: response.systemMessage
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Failed to add members to conversation:', error);
+
+      // Handle specific error cases
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = error.message as string;
+        if (errorMessage.includes('permission denied') || errorMessage.includes('not authorized')) {
+          throw new Error('You do not have permission to add members to this conversation. Only admins and owners can add members.');
+        }
+        if (errorMessage.includes('already a member')) {
+          throw new Error('One or more users are already members of this conversation.');
+        }
+        if (errorMessage.includes('user not found')) {
+          throw new Error('One or more users could not be found.');
+        }
+        if (errorMessage.includes('direct conversation')) {
+          throw new Error('Cannot add members to a direct conversation.');
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a member from group conversation
+   * Only admins/owners can remove members (except themselves)
+   * Automatically sends system notification messages
+   */
+  async removeMemberFromConversation(
+    conversationId: number,
+    memberId: number
+  ): Promise<RemoveMemberResponse> {
+    try {
+      const response = await BaseApiClient.delete<RemoveMemberResponse>(
+        `/api/chat/conversations/${conversationId}/members/${memberId}`
+      );
+
+      // Emit event for real-time UI updates
+      this.emit('member-removed', {
+        conversationId,
+        memberId,
+        systemMessage: response.systemMessage
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Failed to remove member from conversation:', error);
+
+      // Handle specific error cases
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = error.message as string;
+        if (errorMessage.includes('permission denied') || errorMessage.includes('not authorized')) {
+          throw new Error('You do not have permission to remove members from this conversation. Only admins and owners can remove members.');
+        }
+        if (errorMessage.includes('cannot remove owner')) {
+          throw new Error('Cannot remove the conversation owner. Transfer ownership first.');
+        }
+        if (errorMessage.includes('member not found')) {
+          throw new Error('The specified member is not part of this conversation.');
+        }
+        if (errorMessage.includes('direct conversation')) {
+          throw new Error('Cannot remove members from a direct conversation.');
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Leave a group conversation
+   * Any member can leave (except the last owner)
+   * Automatically sends system notification message
+   */
+  async leaveConversation(conversationId: number): Promise<LeaveConversationResponse> {
+    try {
+      const response = await BaseApiClient.post<LeaveConversationResponse>(
+        `/api/chat/conversations/${conversationId}/leave`
+      );
+
+      // Emit event for real-time UI updates
+      this.emit('conversation-left', {
+        conversationId,
+        systemMessage: response.systemMessage
+      });
+
+      // Remove conversation from local state if needed
+      this.emit('conversation-removed', { conversationId });
+
+      return response;
+    } catch (error) {
+      console.error('Failed to leave conversation:', error);
+
+      // Handle specific error cases
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = error.message as string;
+        if (errorMessage.includes('cannot leave as owner')) {
+          throw new Error('As the conversation owner, you cannot leave. Transfer ownership to another member first or delete the conversation.');
+        }
+        if (errorMessage.includes('not a member')) {
+          throw new Error('You are not a member of this conversation.');
+        }
+        if (errorMessage.includes('direct conversation')) {
+          throw new Error('Cannot leave a direct conversation.');
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Get conversation members
+   * Returns list of all members with their roles and details
+   */
+  async getConversationMembers(conversationId: number): Promise<ConversationMemberDto[]> {
+    try {
+      return await BaseApiClient.get<ConversationMemberDto[]>(
+        `/api/chat/conversations/${conversationId}/members`
+      );
+    } catch (error) {
+      console.error('Failed to get conversation members:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update member role in conversation
+   * Only owners can change roles
+   */
+  async updateMemberRole(
+    conversationId: number,
+    memberId: number,
+    role: 'ADMIN' | 'MEMBER'
+  ): Promise<ConversationMemberDto> {
+    try {
+      const response = await BaseApiClient.put<ConversationMemberDto>(
+        `/api/chat/conversations/${conversationId}/members/${memberId}/role`,
+        { role }
+      );
+
+      // Emit event for real-time UI updates
+      this.emit('member-role-updated', {
+        conversationId,
+        memberId,
+        newRole: role,
+        member: response
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Failed to update member role:', error);
+
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = error.message as string;
+        if (errorMessage.includes('permission denied') || errorMessage.includes('not authorized')) {
+          throw new Error('Only conversation owners can change member roles.');
+        }
+        if (errorMessage.includes('cannot change owner role')) {
+          throw new Error('Cannot change the role of the conversation owner.');
+        }
+      }
+
+
+      throw error;
+    }
+  }
+
+  // ==================== CONVERSATION MANAGEMENT ====================
+
+  async getConversations(params?: ConversationsParams): Promise<ConversationsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.append('page', params.page.toString());
+    if (params?.size !== undefined) queryParams.append('size', params.size.toString());
+
+    const url = queryParams.toString() ? `/api/chat/conversations?${queryParams}` : '/api/chat/conversations';
+    return BaseApiClient.get<ConversationsResponse>(url);
+  }
+
+  async createDirectConversation(request: CreateDirectConversationRequest): Promise<ChatConversation> {
+    return BaseApiClient.post<ChatConversation>('/api/chat/conversations/direct', request);
+  }
+
+  async createGroupConversation(request: CreateGroupConversationRequest): Promise<ChatConversation> {
+    return BaseApiClient.post<ChatConversation>('/api/chat/conversations/group', request);
+  }
+
+  async createGroupFromFriends(request: CreateGroupFromFriendsRequest): Promise<ChatConversation> {
+    return BaseApiClient.post<ChatConversation>('/api/chat/conversations/group/from-friends', request);
+  }
+
+  // ==================== MESSAGE MANAGEMENT ====================
+
+  async getConversationMessages(
+    conversationId: number,
+    page: number = 0,
+    size: number = 50
+  ): Promise<ChatHistoryResponse> {
+    return BaseApiClient.get<ChatHistoryResponse>(
+      `/api/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`
+    );
+  }
+
+  async getAllMessages(conversationId: number): Promise<ChatHistoryResponse> {
+    return BaseApiClient.get<ChatHistoryResponse>(`/api/chat/conversations/${conversationId}/messages/all`);
+  }
+
+  async sendMessage(request: SendMessageRequest): Promise<ChatMessage> {
+    return BaseApiClient.post<ChatMessage>('/api/chat/messages', request);
+  }
+
+  async markMessageAsRead(messageId: number): Promise<void> {
+    return BaseApiClient.put(`/api/chat/messages/${messageId}/read`);
+  }
+
+  // ==================== REACTIONS ====================
+
+  async toggleReaction(messageId: number, reactionType: ReactionType): Promise<MessageReaction> {
+    return BaseApiClient.post(`/api/chat/messages/${messageId}/reactions/${reactionType}/toggle`);
+  }
+
+  async getMessageReactions(messageId: number): Promise<any> {
+    return BaseApiClient.get(`/api/chat/messages/${messageId}/reactions`);
+  }
+
+  async getBulkReactionSummaries(conversationId: number, messageIds: number[]): Promise<BulkReactionResponse> {
+    return BaseApiClient.post(`/api/chat/conversations/${conversationId}/messages/reactions/bulk`, messageIds);
+  }
+
+  // ==================== FILE UPLOAD METHODS ====================
+
+  async uploadFiles(conversationId: number, files: File[]): Promise<FileUploadResponse[]> {
+    const results: FileUploadResponse[] = [];
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', conversationId.toString());
+
+      const response = await BaseApiClient.postFormData<FileUploadResponse>(`/api/chat/files/upload`, formData);
+      results.push(response);
+    }
+
+    return results;
+  }
+
+  async sendMessageWithAttachments(request: {
+    conversationId: number;
+    content: string;
+    files?: File[];
+    images?: File[];
+    replyToId?: number;
+  }): Promise<ChatMessage> {
+    try {
+      // If only one file/image, use the direct with-file endpoint
+      const totalFiles = (request.files?.length || 0) + (request.images?.length || 0);
+
+      if (totalFiles === 1) {
+        const singleFile = request.files?.[0] || request.images?.[0];
+        if (singleFile) {
+          return this.sendMessageWithFile({
+            conversationId: request.conversationId,
+            content: request.content,
+            file: singleFile,
+            replyToId: request.replyToId
+          });
+        }
+      }
+
+      // For multiple files, upload them first then send message with URLs
+      const fileUploads: FileUploadResponse[] = [];
+
+      if (request.files && request.files.length > 0) {
+        const uploads = await this.uploadFiles(request.conversationId, request.files);
+        fileUploads.push(...uploads);
+      }
+
+      if (request.images && request.images.length > 0) {
+        const uploads = await this.uploadFiles(request.conversationId, request.images);
+        fileUploads.push(...uploads);
+      }
+
+      // Send message with file URLs
+      const messageRequest: SendMessageRequest & {
+        fileName?: string;
+        fileUrl?: string;
+        fileSize?: number;
+      } = {
+        conversationId: request.conversationId,
+        content: request.content || 'Shared files',
+        type: 'FILE',
+        replyToId: request.replyToId
+      };
+
+      // For multiple files, we might need to send multiple messages or use a different approach
+      // For now, we'll use the first file as the main attachment
+      if (fileUploads.length > 0) {
+        const firstFile = fileUploads[0];
+        messageRequest.fileName = firstFile.fileName;
+        messageRequest.fileUrl = firstFile.fileUrl;
+        messageRequest.fileSize = firstFile.fileSize;
+
+        // Determine message type based on content type
+        if (firstFile.contentType?.startsWith('image/')) {
+          messageRequest.type = 'IMAGE';
+        } else if (firstFile.contentType?.startsWith('video/')) {
+          messageRequest.type = 'VIDEO';
+        } else {
+          messageRequest.type = 'FILE';
+        }
+      }
+
+      return this.sendMessage(messageRequest);
+    } catch (error) {
+      console.error('Failed to send message with attachments:', error);
+      throw error;
+    }
+  }
+
+  async sendMessageWithFile(request: {
+    conversationId: number;
+    content?: string;
+    file: File;
+    replyToId?: number;
+  }): Promise<ChatMessage> {
+    const formData = new FormData();
+    formData.append('file', request.file);
+    formData.append('conversationId', request.conversationId.toString());
+
+    if (request.content) {
+      formData.append('content', request.content);
+    }
+
+    if (request.replyToId) {
+      formData.append('replyToId', request.replyToId.toString());
+    }
+
+    return BaseApiClient.postFormData<ChatMessage>('/api/chat/messages/with-file', formData);
+  }
+
+  // ==================== STATIC METHODS ====================
 
   static getInstance(): ChatService {
     if (!ChatService.instance) {

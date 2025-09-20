@@ -8,7 +8,7 @@ export const Z_INDEX = {
   base: 1,
   
   // Content layers
-  dropdown: 1000,
+  dropdown: 1150, // 🔥 FIXED: Increased from 1000 to 1150 to be above sticky header
   sticky: 1100,
   modal: 1200,
   overlay: 1300,

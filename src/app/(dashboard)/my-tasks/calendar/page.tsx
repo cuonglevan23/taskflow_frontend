@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useTasksContext } from "@/contexts/TasksContext";
 import { FullCalendarView } from "@/components/Calendar";
-import { TaskDetailPanel } from "@/components/TaskDetailPanel";
+import { MyTaskDetailPanel } from "@/components/TaskDetailPanel"; // 🔥 Changed to MyTaskDetailPanel
 import { useTheme } from "@/layouts/hooks/useTheme";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import type { Task } from "@/types";
@@ -284,13 +284,13 @@ const MyTaskCalendarPage = ({
       </div>
 
       {/* Task Detail Panel */}
-      <TaskDetailPanel
+      {/* 🔥 Use MyTaskDetailPanel with correct props */}
+      <MyTaskDetailPanel
         task={calendarState.selectedTask}
         isOpen={calendarState.isPanelOpen}
         onClose={handleClosePanel}
-        onSave={handleTaskSave}
-        onDelete={handleTaskDelete}
-        onStatusChange={handleTaskStatusChange}
+        myTasksActions={actions} // 🔥 Pass actions as myTasksActions
+        onRevalidate={revalidate} // 🔥 Pass revalidate as onRevalidate
       />
     </>
   );

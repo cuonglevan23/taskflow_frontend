@@ -1,5 +1,31 @@
+// Project Service - Centralized project operations using BaseApiClient
+import { BaseApiClient } from '@/lib/baseApiClient';
+import {
+  safeParseDate,
+  formatDateString,
+  calculateDaysBetween,
+  isDateOverdue
+} from '@/lib/transforms';
+import type {
+  Project,
+  BackendProject,
+  ProjectStatus,
+  ProjectPriority,
+  CreateProjectDTO,
+  UpdateProjectDTO,
+  ProjectFormData,
+  ProjectSummary,
+  ProjectQueryParams,
+  ProjectStats,
+  ProjectProgress,
+  ProjectTasksResponse,
+  PaginatedProjectsResponse,
+  UserProjectsResponse,
+  TeamProjectsResponse
+} from '@/types/project';
+
 // Project status color mappings
-const PROJECT_STATUS_COLORS = {
+const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
   PLANNED: 'blue',
   IN_PROGRESS: 'orange',
   COMPLETED: 'green',
@@ -8,24 +34,12 @@ const PROJECT_STATUS_COLORS = {
 } as const;
 
 // Project priority color mappings
-const PROJECT_PRIORITY_COLORS = {
+const PROJECT_PRIORITY_COLORS: Record<ProjectPriority, string> = {
   LOW: 'green',
   MEDIUM: 'blue',
   HIGH: 'orange',
   URGENT: 'red',
 } as const;
-
-// Type definitions for better type safety
-type ProjectStatus = keyof typeof PROJECT_STATUS_COLORS;
-type ProjectPriority = keyof typeof PROJECT_PRIORITY_COLORS;
-// Project Service - Centralized project operations using lib/api.ts
-import { api } from '@/lib/api';
-import { 
-  safeParseDate, 
-  formatDateString,
-  calculateDaysBetween,
-  isDateOverdue 
-} from '@/lib/transforms';
 
 
 // Transform backend project to frontend format
@@ -45,7 +59,7 @@ export const transformBackendProject = (backendProject: BackendProject): Project
     ? Math.round(((backendProject.completedTaskCount || 0) / backendProject.taskCount) * 100)
     : 0;
 
-  // Status and priority colors
+  // Status and priority colors with proper type safety
   const statusColor = PROJECT_STATUS_COLORS[backendProject.status] || 'gray';
   const priorityColor = PROJECT_PRIORITY_COLORS[backendProject.priority || 'MEDIUM'] || 'blue';
   
@@ -63,16 +77,16 @@ export const transformBackendProject = (backendProject: BackendProject): Project
     startDateString: formatDateString(backendProject.startDate),
     endDateString: formatDateString(backendProject.endDate),
     ownerId: backendProject.ownerId,
-    createdById: backendProject.createdById,
-    emailPm: backendProject.emailPm || undefined,
-    organizationId: backendProject.organizationId,
+    createdById: backendProject.createdById, // Now properly typed as optional
+    emailPm: backendProject.emailPm, // Now properly typed as optional
+    organizationId: backendProject.organizationId || undefined, // Handle null/undefined properly
     createdAt,
     updatedAt,
     
-    // User role and permissions
+    // User role and permissions - now properly typed as optional
     currentUserRole: backendProject.currentUserRole,
     isCurrentUserMember: backendProject.isCurrentUserMember,
-    
+
     // Computed fields
     duration,
     isOverdue,
@@ -120,7 +134,7 @@ export const transformFormToCreateDTO = (formData: ProjectFormData): CreateProje
     priority: 'MEDIUM', // Default priority
     emailPm: '', // No emailPm in backend JWT auth
     ownerId: 0, // Will be set by backend
-    organizationId: formData.isPersonal ? null : (1), // Default to org ID 1 for now
+    organizationId: formData.isPersonal ? null : 1, // Use null for personal projects, 1 for org projects
     budget: undefined,
     teamIds: formData.isPersonal ? [] : (formData.teamId ? [formData.teamId] : []),
     isPersonal: formData.isPersonal,
@@ -162,10 +176,7 @@ const projectsService = {
   // Get project by ID
   getProject: async (id: number): Promise<Project> => {
     try {
-  
-      const response = await api.get<BackendProject>(`/api/projects/${id}`);
-      const backendProject = response.data;
-
+      const backendProject = await BaseApiClient.get<BackendProject>(`/api/projects/${id}`);
       return transformBackendProject(backendProject);
     } catch (error) {
       console.error('❌ Failed to fetch project:', error);
@@ -188,26 +199,22 @@ const projectsService = {
         search
       } = params || {};
 
-
-      
       // Use the correct endpoint from API integration guide: /api/users/me/projects
-      const response = await api.get('/api/users/me/projects', {
+      const responseData = await BaseApiClient.get<UserProjectsResponse>('/api/users/me/projects', {
         params: { page, size, q: search }
       });
 
       // Handle response data - could be paginated or simple array
-      const responseData = response.data;
-      
-      if (responseData.content && Array.isArray(responseData.content)) {
+      if ('content' in responseData && Array.isArray(responseData.content)) {
         // Paginated response
         const projects = responseData.content.map(transformBackendProject);
 
         return {
           projects,
-          totalElements: responseData.totalElements,
-          totalPages: responseData.totalPages,
-          currentPage: responseData.number,
-          pageSize: responseData.size,
+          totalElements: responseData.totalElements || 0,
+          totalPages: responseData.totalPages || 0,
+          currentPage: responseData.number || 0,
+          pageSize: responseData.size || size,
         };
       } else if (Array.isArray(responseData)) {
         // Simple array response
@@ -240,8 +247,6 @@ const projectsService = {
   // Create new project
   createProject: async (data: CreateProjectDTO): Promise<Project> => {
     try {
-
-      
       // Validate data
       const validationErrors = validateProjectData(data);
       if (validationErrors.length > 0) {
@@ -250,13 +255,9 @@ const projectsService = {
 
       console.log('📤 ProjectService: Sending to backend:', JSON.stringify(data, null, 2));
       
-      const response = await api.post<BackendProject>('/api/projects', data);
+      const backendProject = await BaseApiClient.post<BackendProject>('/api/projects', data);
 
-      
-      const transformedProject = transformBackendProject(response.data);
-
-      
-      return transformedProject;
+      return transformBackendProject(backendProject);
     } catch (error: unknown) {
       console.error('❌ Failed to create project:', error);
       throw error;
@@ -266,8 +267,6 @@ const projectsService = {
   // Update existing project
   updateProject: async (id: number, data: UpdateProjectDTO): Promise<Project> => {
     try {
-
-      
       // Validate data
       const validationErrors = validateProjectData(data);
       if (validationErrors.length > 0) {
@@ -281,26 +280,61 @@ const projectsService = {
 
       console.log('📤 ProjectService: Sending update to backend:', cleanData);
       
-      const response = await api.put<BackendProject>(`/api/projects/${id}`, cleanData);
+      const backendProject = await BaseApiClient.put<BackendProject>(`/api/projects/${id}`, cleanData);
 
-      
-      return transformBackendProject(response.data);
+      return transformBackendProject(backendProject);
     } catch (error) {
       console.error('❌ Failed to update project:', error);
       throw error;
     }
   },
 
-  // Delete project
+  // Delete project with enhanced error handling
   deleteProject: async (id: number): Promise<void> => {
     try {
+      console.log(`🗑️ ProjectService: Deleting project with ID: ${id}`);
 
-      await api.delete(`/api/projects/${id}`);
+      await BaseApiClient.delete(`/api/projects/${id}`);
 
-    } catch (error) {
+      console.log(`✅ ProjectService: Successfully deleted project ${id}`);
+    } catch (error: any) {
       console.error('❌ Failed to delete project:', error);
-      throw error;
+
+      // Enhanced error handling with specific messages in English
+      const status = error?.response?.status || error?.status;
+      const message = error?.response?.data?.message || error?.message;
+
+      if (status === 403) {
+        throw new Error('You do not have permission to delete this project');
+      } else if (status === 404) {
+        throw new Error('Project not found or already deleted');
+      } else if (status === 409) {
+        throw new Error('Cannot delete project with active tasks');
+      } else if (status >= 500) {
+        throw new Error('Server error. Please try again later');
+      } else {
+        throw new Error(message || 'Failed to delete project. Please try again');
+      }
     }
+  },
+
+  // Bulk delete projects
+  deleteProjects: async (ids: number[]): Promise<{ success: number[]; failed: { id: number; error: string }[] }> => {
+    const results = { success: [], failed: [] };
+
+    for (const id of ids) {
+      try {
+        await projectsService.deleteProject(id);
+        results.success.push(id);
+      } catch (error: any) {
+        results.failed.push({
+          id,
+          error: error.message || 'Delete failed'
+        });
+      }
+    }
+
+    return results;
   },
 
   // ===== API INTEGRATION GUIDE METHODS =====
@@ -308,12 +342,10 @@ const projectsService = {
   // Get other user's projects (Admin/Owner only)
   getUserProjects: async (userId: number): Promise<BackendProject[]> => {
     try {
-
-      const response = await api.get(`/api/users/${userId}/projects`);
-
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 403) {
+      return await BaseApiClient.get<BackendProject[]>(`/api/users/${userId}/projects`);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 403) {
         throw new Error('Access denied: You can only view your own projects or need OWNER/ADMIN role');
       }
       console.error('❌ Failed to fetch user projects:', error);
@@ -324,12 +356,10 @@ const projectsService = {
   // Get projects created by specific user (Admin/Owner only)
   getUserCreatedProjects: async (userId: number): Promise<BackendProject[]> => {
     try {
-
-      const response = await api.get(`/api/users/${userId}/projects/created`);
-
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 403) {
+      return await BaseApiClient.get<BackendProject[]>(`/api/users/${userId}/projects/created`);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 403) {
         throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
       }
       console.error('❌ Failed to fetch user created projects:', error);
@@ -340,12 +370,10 @@ const projectsService = {
   // Get projects owned by specific user (Admin/Owner only)
   getUserOwnedProjects: async (userId: number): Promise<BackendProject[]> => {
     try {
-
-      const response = await api.get(`/api/users/${userId}/projects/owned`);
-
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 403) {
+      return await BaseApiClient.get<BackendProject[]>(`/api/users/${userId}/projects/owned`);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 403) {
         throw new Error('Access denied: You can only view your own data or need OWNER/ADMIN role');
       }
       console.error('❌ Failed to fetch user owned projects:', error);
@@ -367,10 +395,7 @@ const projectsService = {
   // Get project tasks
   getProjectTasks: async (id: number): Promise<ProjectTasksResponse> => {
     try {
-
-      const response = await api.get<ProjectTasksResponse>(`/api/projects/${id}/tasks`);
-
-      return response.data;
+      return await BaseApiClient.get<ProjectTasksResponse>(`/api/projects/${id}/tasks`);
     } catch (error) {
       console.error('❌ Failed to fetch project tasks:', error);
       throw error;
@@ -380,10 +405,7 @@ const projectsService = {
   // Get project progress details
   getProjectProgress: async (id: number): Promise<ProjectProgress> => {
     try {
-
-      const response = await api.get<ProjectProgress>(`/api/projects/${id}/progress`);
-
-      return response.data;
+      return await BaseApiClient.get<ProjectProgress>(`/api/projects/${id}/progress`);
     } catch (error: unknown) {
       const status = (error as { status?: number })?.status;
       console.error(`❌ Project Progress API failed with status ${status}:`, (error as { message?: string })?.message);
@@ -395,7 +417,7 @@ const projectsService = {
       }
       
       // Return mock data if API fails (for development)
-      const mockProgress: ProjectProgress = {
+      return {
         projectId: id,
         projectName: 'Loading...',
         totalTasks: 0,
@@ -426,8 +448,6 @@ const projectsService = {
         recentActivity: [],
         progressTrend: [],
       };
-      
-      return mockProgress;
     }
   },
 
@@ -445,33 +465,26 @@ const projectsService = {
     pageSize: number;
   }> => {
     try {
-      const {
-        page = 0,
-        size = 20,
-        status,
-        priority,
-      } = params || {};
-
       // Call team projects endpoint as documented in TEAM_API_DOCUMENTATION.md
-      const response = await api.get(`/api/teams/${teamId}/projects`);
+      const responseData = await BaseApiClient.get<TeamProjectsResponse>(`/api/teams/${teamId}/projects`);
 
       // Handle both paginated and simple array responses
-      if (response.data?.content && Array.isArray(response.data.content)) {
+      if ('content' in responseData && Array.isArray(responseData.content)) {
         // Paginated response
-        const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+        const { content, totalElements, totalPages, number, size: pageSize } = responseData;
         const projects = content.map(transformBackendProject);
         
         return {
           projects,
-          totalElements,
-          totalPages,
-          currentPage: number,
-          pageSize,
+          totalElements: totalElements || 0,
+          totalPages: totalPages || 0,
+          currentPage: number || 0,
+          pageSize: pageSize || 20,
         };
-      } else if (Array.isArray(response.data)) {
+      } else if (Array.isArray(responseData)) {
         // Simple array response
-        const projects = response.data.map(transformBackendProject);
-        
+        const projects = responseData.map(transformBackendProject);
+
         return {
           projects,
           totalElements: projects.length,
@@ -496,13 +509,13 @@ const projectsService = {
   },
 
   // Get all tasks from all projects of a team
-  getTeamAllTasks: async (teamId: number): Promise<any[]> => {
+  getTeamAllTasks: async (teamId: number): Promise<unknown[]> => {
     try {
       // Call team all-tasks endpoint as documented in TEAM_API_DOCUMENTATION.md
-      const response = await api.get(`/api/teams/${teamId}/all-tasks`);
+      const responseData = await BaseApiClient.get<unknown[]>(`/api/teams/${teamId}/all-tasks`);
 
       // Return tasks array directly as documented
-      return Array.isArray(response.data) ? response.data : [];
+      return Array.isArray(responseData) ? responseData : [];
     } catch (error) {
       console.error('❌ Failed to fetch team all tasks:', error);
       throw error;
@@ -530,11 +543,9 @@ const projectsService = {
         priority,
       } = params || {};
 
-
-      
       // Call user-specific projects endpoint
-      const response = await api.get('/api/users/me/projects', {
-        params: { 
+      const responseData = await BaseApiClient.get<UserProjectsResponse>('/api/users/me/projects', {
+        params: {
           page, 
           size,
           status: status?.join(','),
@@ -542,29 +553,23 @@ const projectsService = {
         }
       });
 
-
-
       // Handle both paginated and simple array responses
-      if (response.data?.content && Array.isArray(response.data.content)) {
+      if ('content' in responseData && Array.isArray(responseData.content)) {
         // Paginated response
-        const { content, totalElements, totalPages, number, size: pageSize } = response.data;
+        const { content, totalElements, totalPages, number, size: pageSize } = responseData;
         const projects = content.map(transformBackendProject);
-        
-
         
         return {
           projects,
-          totalElements,
-          totalPages,
-          currentPage: number,
-          pageSize,
+          totalElements: totalElements || 0,
+          totalPages: totalPages || 0,
+          currentPage: number || 0,
+          pageSize: pageSize || size,
         };
-      } else if (Array.isArray(response.data)) {
+      } else if (Array.isArray(responseData)) {
         // Simple array response
-        const projects = response.data.map(transformBackendProject);
-        
+        const projects = responseData.map(transformBackendProject);
 
-        
         return {
           projects,
           totalElements: projects.length,
@@ -574,8 +579,8 @@ const projectsService = {
         };
       } else {
         // Empty or unexpected response
-        console.warn('⚠️ Unexpected response format:', response.data);
-        
+        console.warn('⚠️ Unexpected response format:', responseData);
+
         return {
           projects: [],
           totalElements: 0,
@@ -593,13 +598,8 @@ const projectsService = {
   // Get project statistics
   getProjectStats: async (organizationId?: number): Promise<ProjectStats> => {
     try {
-
-      
       const params = organizationId ? { organizationId } : {};
-      const response = await api.get<ProjectStats>('/api/projects/stats', { params });
-      
-
-      return response.data;
+      return await BaseApiClient.get<ProjectStats>('/api/projects/stats', { params });
     } catch (error: unknown) {
       const status = (error as { status?: number })?.status;
       console.error(`❌ Project Stats API failed with status ${status}:`, (error as { message?: string })?.message);

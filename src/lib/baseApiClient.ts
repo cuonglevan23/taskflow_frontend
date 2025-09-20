@@ -1,104 +1,76 @@
-// Base API Client - Following BLOCKNOTE_NOTE_API_INTEGRATION_GUIDE.md examples
-// Uses axios with withCredentials for HTTP-only cookies authentication
+// Base API Client - Simplified version following RESTful principles
+// Backend handles token refresh, frontend just makes clean API calls
 
 import axios, { AxiosResponse, AxiosError } from 'axios';
 
 // Configure axios instance with proper baseURL
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080', // Set to backend API URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important: Send HTTP-only cookies with requests
+  withCredentials: true, // HTTP-only cookies for authentication
 });
 
 // For Next.js API routes
 const nextApiClient = axios.create({
-  baseURL: '', // Use relative URLs for Next.js API routes
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
 });
 
-// Extract meaningful error message from response
-const getErrorMessage = (error: AxiosError): string => {
-  try {
-    // Handle network errors
-    if (!error.response) {
-      return error.code === 'NETWORK_ERROR'
-        ? 'Network connection failed. Please check your internet connection.'
-        : error.message || 'Network error occurred';
+// Simple error handling without complex retry logic
+const handleApiError = async (error: any) => {
+  // Log error for debugging
+  console.log('🔍 API Error:', {
+    status: error?.response?.status,
+    url: error?.config?.url,
+    method: error?.config?.method,
+  });
+
+  // Extract meaningful error message
+  let errorMessage = 'Unknown error occurred';
+
+  if (error.response?.data) {
+    const data = error.response.data;
+    if (typeof data === 'string') {
+      errorMessage = data;
+    } else if (data && typeof data === 'object') {
+      errorMessage = data.message || data.error || data.detail || errorMessage;
     }
+  } else if (error.message) {
+    errorMessage = error.message;
+  }
 
-    if (error.response?.data) {
-      const data = error.response.data as any;
-
-      // Try different error message fields from backend
-      if (data.message && typeof data.message === 'string') return data.message;
-      if (data.error && typeof data.error === 'string') return data.error;
-      if (data.detail && typeof data.detail === 'string') return data.detail;
-      if (typeof data === 'string') return data;
-    }
-
-    // Fallback to HTTP status messages
+  // Simple status-based messages
+  if (errorMessage === 'Unknown error occurred') {
     switch (error.response?.status) {
       case 400:
-        return 'Invalid request data. Please check your input.';
+        errorMessage = 'Bad request';
+        break;
       case 401:
-        return 'Authentication required. Please log in.';
+        errorMessage = 'Unauthorized';
+        break;
       case 403:
-        return 'Access denied. You do not have permission to perform this action.';
+        errorMessage = 'Forbidden';
+        break;
       case 404:
-        return 'Resource not found.';
-      case 409:
-        return 'Conflict with existing data.';
-      case 422:
-        return 'Validation error. Please check your input.';
+        errorMessage = 'Not found';
+        break;
       case 500:
-        return 'Internal server error. Please try again later.';
+        errorMessage = 'Server error';
+        break;
       default:
-        return error.message || `HTTP ${error.response?.status || 'Unknown'} error occurred`;
+        errorMessage = `Request failed with status ${error.response?.status || 'unknown'}`;
     }
-  } catch (err) {
-    // If anything goes wrong in error processing, return a safe fallback
-    console.error('Error in getErrorMessage:', err);
-    return 'An unexpected error occurred';
   }
+
+  return Promise.reject(new Error(errorMessage));
 };
 
-// Enhanced error handling function
-const handleApiError = (error: AxiosError) => {
-  try {
-    // Only redirect on 401 errors from main API calls, not Next.js API routes
-    if (error.response?.status === 401 && !error.config?.url?.startsWith('/api/')) {
-      // Check if we're already on the login page to prevent redirect loops
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        console.log('Authentication required. Redirecting to login...');
-        window.location.replace('/login');
-      }
-      return Promise.reject(new Error('Authentication required'));
-    }
-
-    // Extract error message from backend response with safe fallback
-    let errorMessage = 'An unexpected error occurred';
-    try {
-      const extractedMessage = getErrorMessage(error);
-      if (extractedMessage && typeof extractedMessage === 'string') {
-        errorMessage = extractedMessage;
-      }
-    } catch (err) {
-      console.error('Failed to get error message:', err);
-    }
-
-    return Promise.reject(new Error(errorMessage));
-  } catch (err) {
-    console.error('Error in handleApiError:', err);
-    return Promise.reject(new Error('An unexpected error occurred'));
-  }
-};
-
-// Add response interceptor for handling auth errors
+// Add response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   handleApiError

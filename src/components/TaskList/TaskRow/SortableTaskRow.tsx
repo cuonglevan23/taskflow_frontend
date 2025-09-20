@@ -11,6 +11,7 @@ interface SortableTaskRowProps {
   onTaskEdit?: (task: TaskListItem) => void;
   onTaskDelete?: (taskId: string) => void;
   onTaskStatusChange?: (taskId: string, status: string) => void;
+  onTaskPriorityChange?: (taskId: string, priority: string) => void;
   onTaskAssign?: (taskId: string, assigneeData: {
     id: string;
     name: string;
@@ -25,6 +26,7 @@ export const SortableTaskRow = ({
   onTaskEdit,
   onTaskDelete,
   onTaskStatusChange,
+  onTaskPriorityChange,
   onTaskAssign
 }: SortableTaskRowProps) => {
   const {
@@ -43,30 +45,35 @@ export const SortableTaskRow = ({
   };
 
   // Convert object format to string format for TaskRow
-  const handleTaskAssign = (taskId: string, assigneeIdOrEmail: string) => {
+  const handleTaskAssign = (taskId: string, assigneeData: { id: string; name: string; email: string } | string) => {
     if (onTaskAssign) {
-      // Convert string to object format expected by parent
-      const assigneeData = {
-        id: assigneeIdOrEmail,
-        name: assigneeIdOrEmail,
-        email: assigneeIdOrEmail
-      };
-      onTaskAssign(taskId, assigneeData);
+      // Handle both string and object formats
+      if (typeof assigneeData === 'string') {
+        const assigneeObj = {
+          id: assigneeData,
+          name: assigneeData,
+          email: assigneeData
+        };
+        onTaskAssign(taskId, assigneeObj);
+      } else {
+        onTaskAssign(taskId, assigneeData);
+      }
     }
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="select-none">
-      <TaskRow 
-        task={task} 
-        onTaskClick={onTaskClick} 
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <TaskRow
+        task={task}
+        onTaskClick={onTaskClick}
         onMoveTask={onMoveTask}
         onTaskEdit={onTaskEdit}
         onTaskDelete={onTaskDelete}
         onTaskStatusChange={onTaskStatusChange}
+        onTaskPriorityChange={onTaskPriorityChange}
         onTaskAssign={handleTaskAssign}
         isDragging={isDragging}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={listeners}
       />
     </div>
   );

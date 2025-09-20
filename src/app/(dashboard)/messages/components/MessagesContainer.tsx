@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { useChatContext } from '@/contexts/ChatContext';
 import { useAuth } from '@/components/auth/AuthProvider';
 import MessagesHeader from './MessagesHeader';
@@ -29,7 +30,12 @@ interface MessagesContainerProps {
 export const MessagesContainer = ({
                                     showWelcome = true
                                   }: MessagesContainerProps) => {
-  const { user } = useAuth(); // Get current user from auth
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+  const { messages: t } = useLanguageContext();
+
+  const { user } = useAuth(); // Add this line to get user from auth context
+
   const {
     conversations,
     isConnected,
@@ -117,7 +123,7 @@ export const MessagesContainer = ({
         text: conv.lastMessage.content,
         timestamp: new Date(conv.lastMessage.createdAt),
         sender: {
-          id: conv.lastMessage.senderId?.toString() || 'unknown',
+          id: 'unknown', // Remove senderId access since it doesn't exist in the type
           name: conv.lastMessage.senderName,
           avatar: conv.lastMessage.senderAvatar
         }
@@ -131,26 +137,8 @@ export const MessagesContainer = ({
   const handleNewMessage = React.useCallback(async () => {
     setLoadingUsers(true);
     try {
-      // TODO: Replace with actual API call to get available users
-      // For now, we'll use mock data - you should replace this with your actual user service
-      const mockUsers: ChatUser[] = [
-        {
-          id: 1,
-          name: "John Doe",
-          email: "john@example.com",
-          isOnline: true,
-          avatarUrl: "/images/avatar1.jpg"
-        },
-        {
-          id: 2,
-          name: "Jane Smith",
-          email: "jane@example.com",
-          isOnline: false,
-          avatarUrl: "/images/avatar2.jpg"
-        }
-      ];
 
-      setAvailableUsers(mockUsers);
+
       setShowUserSelection(true);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -186,16 +174,22 @@ export const MessagesContainer = ({
     }
   }, [openChatWindow]);
 
+  // Handle group chat creation
+  const handleGroupCreated = React.useCallback((conversation: ChatConversation) => {
+    console.log('Group chat created:', conversation);
+    // The conversation will be automatically added to the list via ChatContext
+    // Select the new conversation
+    setSelectedConversationId(conversation.id);
+    // Close the modal
+    setShowUserSelection(false);
+  }, []);
+
   const handleUserSelect = React.useCallback((user: ChatUser) => {
     console.log('Starting conversation with user:', user);
     // Open chat window with selected user
     openChatWindow(user);
+    setShowUserSelection(false);
   }, [openChatWindow]);
-
-  const handleSearchMessages = React.useCallback(() => {
-    console.log('Opening global message search...');
-    // TODO: Implement global search functionality
-  }, []);
 
   const handleSearchConversations = React.useCallback((query: string) => {
     setSearchQuery(query);
@@ -204,6 +198,18 @@ export const MessagesContainer = ({
   const handleFilterChange = React.useCallback((filter: FilterType) => {
     setActiveFilter(filter);
   }, []);
+
+  // Convert auth user to ChatUser format
+  const currentChatUser = React.useMemo((): ChatUser | undefined => {
+    if (!user) return undefined;
+    return {
+      id: parseInt(user.id),
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatar,
+      isOnline: true // Assume current user is online
+    };
+  }, [user]);
 
   // Get selected conversation details
   const selectedConversation = React.useMemo(() => {
@@ -217,10 +223,11 @@ export const MessagesContainer = ({
     return messages.get(selectedConversationId) || [];
   }, [selectedConversationId, messages]);
 
-  // Get typing users for selected conversation
+  // Get typing users for selected conversation - convert to string array
   const selectedTypingUsers = React.useMemo(() => {
     if (!selectedConversationId) return [];
-    return typingUsers.get(selectedConversationId) || [];
+    const typingIndicators = typingUsers.get(selectedConversationId) || [];
+    return typingIndicators.map(indicator => indicator.userName); // Convert TypingIndicator[] to string[]
   }, [selectedConversationId, typingUsers]);
 
   const handleConversationSelect = React.useCallback((conversationId: string) => {
@@ -295,8 +302,8 @@ export const MessagesContainer = ({
         <div className="flex-1 flex min-h-0">
           {/* Sidebar with Conversations */}
           <div className="flex flex-col w-80 border-r" style={{
-            backgroundColor: DARK_THEME.background.secondary,
-            borderColor: DARK_THEME.border.default
+            backgroundColor: theme.background.secondary,
+            borderColor: theme.border.default
           }}>
             <MessagesSidebar
                 onSearchConversations={handleSearchConversations}
@@ -331,12 +338,13 @@ export const MessagesContainer = ({
                       name: selectedConversation.name,
                       type: selectedConversation.type,
                       participants: selectedConversation.participants || [],
-                      avatarUrl: selectedConversation.avatarUrl, // Add missing avatarUrl
-                      isOnline: selectedConversation.isOnline   // Add missing isOnline
+                      avatarUrl: selectedConversation.avatarUrl,
+                      isOnline: selectedConversation.isOnline,
+                      memberCount: selectedConversation.memberCount // Add memberCount from API
                     }}
                     messages={selectedConversationMessages}
                     typingUsers={selectedTypingUsers}
-                    currentUser={user}
+                    currentUser={currentChatUser}
                     isConnected={isConnected}
                     onSendMessage={handleSendMessage}
                     onSendWithAttachments={handleSendWithAttachments}
@@ -345,13 +353,13 @@ export const MessagesContainer = ({
             ) : (
                 <div
                     className="flex-1 flex items-center justify-center"
-                    style={{ backgroundColor: DARK_THEME.background.primary }}
+                    style={{ backgroundColor: theme.background.primary }}
                 >
-                  <div style={{ color: DARK_THEME.text.muted }} className="text-center">
+                  <div style={{ color: theme.text.muted }} className="text-center">
                     <div className="mb-4">
                       <svg
                           className="w-16 h-16 mx-auto mb-4"
-                          style={{ color: DARK_THEME.text.muted }}
+                          style={{ color: theme.text.muted }}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -359,11 +367,11 @@ export const MessagesContainer = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-medium mb-2" style={{ color: DARK_THEME.text.secondary }}>
-                      Select a conversation to start messaging
+                    <h3 className="text-lg font-medium mb-2" style={{ color: theme.text.secondary }}>
+                      {t.selectConversation}
                     </h3>
                     <p className="text-sm">
-                      Choose a conversation from the sidebar or start a new one
+                      {t.chooseConversation}
                     </p>
                   </div>
                 </div>
@@ -376,6 +384,7 @@ export const MessagesContainer = ({
             isOpen={showUserSelection}
             onClose={() => setShowUserSelection(false)}
             onSelectUser={handleUserSelect}
+            onCreateGroup={handleGroupCreated}
             users={availableUsers}
             isLoading={loadingUsers}
         />

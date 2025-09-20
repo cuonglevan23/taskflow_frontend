@@ -4,9 +4,12 @@ import React, { useState, useCallback } from "react";
 import { CommentData } from "@/types/post";
 import { PostsService } from "@/services/post";
 import UserAvatar from "@/components/ui/UserAvatar/UserAvatar";
-import { Button } from "@/components/ui/Button";
-import { formatTimeAgo, formatLikeText, getUserDisplayName, getAvatarUrl } from "@/utils/commentUtils";
+import { Button } from "@/components/ui/button";
+import { formatTimeAgo, formatLikeText, getUserDisplayName } from "@/utils/commentUtils";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+
 
 interface CommentProps {
   comment: CommentData;
@@ -33,14 +36,26 @@ interface ReplyFormProps {
   isSubmitting: boolean;
 }
 
-const ReplyForm: React.FC<ReplyFormProps> = ({
+const ReplyForm = ({
   onSubmit,
   onCancel,
-  placeholder = "Viết phản hồi...",
+  placeholder,
   isSubmitting
-}) => {
+}: ReplyFormProps) => {
   const [content, setContent] = useState("");
   const { user } = useAuth();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +69,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({
     <form onSubmit={handleSubmit} className="mt-2 ml-12">
       <div className="flex space-x-2">
         <UserAvatar
-          name={user?.name || "Bạn"}
+          name={user?.name || t('you')}
           avatar={user?.avatar}
           size="sm"
           className="flex-shrink-0 mt-1"
@@ -63,8 +78,14 @@ const ReplyForm: React.FC<ReplyFormProps> = ({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-gray-100 dark:bg-gray-800 border-0 rounded-2xl px-4 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100"
+            placeholder={placeholder || t('comments.write_reply')}
+            className="w-full border-0 rounded-2xl px-4 py-2 text-sm resize-none focus:outline-none focus:ring-2 transition-all"
+            style={{
+              backgroundColor: theme.background.secondary,
+              color: theme.text.primary,
+              borderColor: theme.border.default,
+              '--tw-ring-color': '#3b82f6',
+            } as React.CSSProperties & { '--tw-ring-color': string }}
             rows={2}
             disabled={isSubmitting}
           />
@@ -75,15 +96,16 @@ const ReplyForm: React.FC<ReplyFormProps> = ({
               size="sm"
               onClick={onCancel}
               disabled={isSubmitting}
+              style={{ color: theme.text.muted }}
             >
-              Hủy
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               disabled={!content.trim() || isSubmitting}
               size="sm"
             >
-              {isSubmitting ? "Đang gửi..." : "Gửi"}
+              {isSubmitting ? t('sending') : t('send')}
             </Button>
           </div>
         </div>
@@ -92,75 +114,120 @@ const ReplyForm: React.FC<ReplyFormProps> = ({
   );
 };
 
-const CommentActions: React.FC<CommentActionsProps> = ({
+const CommentActions = ({
   comment,
   onLike,
   onReply,
   onEdit,
   onDelete,
   isLiking
-}) => (
-  <div className="flex items-center space-x-4 mt-1 px-3 text-xs font-medium">
-    <span className="text-gray-500 dark:text-gray-400">
-      {formatTimeAgo(comment.createdAt)}
-    </span>
+}: CommentActionsProps) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
 
-    <Button
-      variant="ghost"
-      size="sm"
-      className={`h-auto p-0 text-xs transition-colors ${
-        comment.isLikedByCurrentUser 
-          ? 'text-blue-600 dark:text-blue-400' 
-          : 'text-gray-600 dark:text-gray-400 hover:text-blue-600'
-      }`}
-      onClick={onLike}
-      disabled={isLiking}
-    >
-      {comment.isLikedByCurrentUser ? 'Đã thích' : 'Thích'}
-      {comment.likeCount > 0 && ` (${comment.likeCount})`}
-    </Button>
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-auto p-0 text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600"
-      onClick={onReply}
-    >
-      Phản hồi
-    </Button>
+  return (
+    <div className="flex items-center space-x-4 mt-1 px-3 text-xs font-medium">
+      <span style={{ color: theme.text.muted }}>
+        {formatTimeAgo(comment.createdAt)}
+      </span>
 
-    {comment.canEdit && (
       <Button
         variant="ghost"
         size="sm"
-        className="h-auto p-0 text-xs text-gray-600 dark:text-gray-400 hover:text-yellow-600"
-        onClick={onEdit}
+        className="h-auto p-0 text-xs transition-colors"
+        style={{
+          color: comment.isLikedByCurrentUser ? '#3b82f6' : theme.text.muted
+        }}
+        onClick={onLike}
+        disabled={isLiking}
+        onMouseEnter={(e) => {
+          if (!comment.isLikedByCurrentUser) {
+            e.currentTarget.style.color = '#3b82f6';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!comment.isLikedByCurrentUser) {
+            e.currentTarget.style.color = theme.text.muted;
+          }
+        }}
       >
-        Sửa
+        {comment.isLikedByCurrentUser ? t('comments.liked') : t('comments.like')}
+        {comment.likeCount > 0 && ` (${comment.likeCount})`}
       </Button>
-    )}
 
-    {comment.canDelete && (
       <Button
         variant="ghost"
         size="sm"
-        className="h-auto p-0 text-xs text-gray-600 dark:text-gray-400 hover:text-red-600"
-        onClick={onDelete}
+        className="h-auto p-0 text-xs transition-colors"
+        style={{ color: theme.text.muted }}
+        onClick={onReply}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = '#3b82f6';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = theme.text.muted;
+        }}
       >
-        Xóa
+        {t('comments.reply')}
       </Button>
-    )}
-  </div>
-);
 
-const Comment: React.FC<CommentProps> = ({
+      {comment.canEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto p-0 text-xs transition-colors"
+          style={{ color: theme.text.muted }}
+          onClick={onEdit}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#eab308';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = theme.text.muted;
+          }}
+        >
+          {t('comments.edit')}
+        </Button>
+      )}
+
+      {comment.canDelete && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto p-0 text-xs transition-colors"
+          style={{ color: theme.text.muted }}
+          onClick={onDelete}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#ef4444';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = theme.text.muted;
+          }}
+        >
+          {t('comments.delete')}
+        </Button>
+      )}
+    </div>
+  );
+};
+
+const Comment = ({
   comment,
   onReply,
   onUpdate,
   onDelete,
   level = 0,
   maxLevel = 3
-}) => {
+}: CommentProps) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -169,6 +236,20 @@ const Comment: React.FC<CommentProps> = ({
   const [isLiking, setIsLiking] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  const { user } = useAuth();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
 
   const isNested = level > 0;
   const canNestDeeper = level < maxLevel;
@@ -221,7 +302,7 @@ const Comment: React.FC<CommentProps> = ({
   }, [comment.id, editContent, isSubmittingEdit, onUpdate]);
 
   const handleDelete = useCallback(async () => {
-    if (!window.confirm('Bạn có chắc muốn xóa bình luận này?')) return;
+    if (!window.confirm(t('comments.delete_confirmation'))) return;
 
     try {
       const response = await PostsService.deleteComment(comment.id);
@@ -231,10 +312,10 @@ const Comment: React.FC<CommentProps> = ({
     } catch (error) {
       console.error('Error deleting comment:', error);
     }
-  }, [comment.id, onDelete]);
+  }, [comment.id, onDelete, t]);
 
   const loadMoreReplies = useCallback(async () => {
-    if (loadingReplies || comment.replyCount <= comment.replies.length) return;
+    if (loadingReplies || comment.replyCount <= (comment.replies?.length || 0)) return;
 
     try {
       setLoadingReplies(true);
@@ -242,7 +323,7 @@ const Comment: React.FC<CommentProps> = ({
       if (response.success && onUpdate) {
         const updatedComment = {
           ...comment,
-          replies: [...comment.replies, ...response.data]
+          replies: [...(comment.replies || []), ...response.data]
         };
         onUpdate(comment.id, updatedComment);
       }
@@ -253,32 +334,61 @@ const Comment: React.FC<CommentProps> = ({
     }
   }, [comment, loadingReplies, onUpdate]);
 
-  const { user } = useAuth();
-
   return (
-    <div className={`comment-item ${isNested ? 'ml-6 pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''}`}>
-      <div className="flex space-x-3 mb-3 hover:bg-gray-50/5 dark:hover:bg-gray-800/50 -mx-2 px-2 py-2 rounded-lg transition-colors">
+    <div
+      className={`comment-item ${isNested ? 'ml-6 pl-4 border-l-2' : ''}`}
+      style={{
+        borderColor: isNested ? theme.border.default : 'transparent'
+      }}
+    >
+      <div
+        className="flex space-x-3 mb-3 -mx-2 px-2 py-2 rounded-lg transition-colors"
+        style={{
+          backgroundColor: 'transparent'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.background.weakHover;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
         <div className="relative flex-shrink-0">
           <UserAvatar
-            name={getUserDisplayName(comment.user.firstName, comment.user.lastName)}
-            avatar={comment.user.avatarUrl}
+            name={comment.user?.firstName && comment.user?.lastName
+              ? getUserDisplayName(comment.user.firstName, comment.user.lastName)
+              : comment.user?.username || t('unknown_user')
+            }
+            avatar={comment.user?.avatarUrl}
             size="sm"
           />
-          {comment.user.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
+          {comment.user?.isOnline && (
+            <div
+              className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 rounded-full"
+              style={{ borderColor: theme.background.primary }}
+            />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3 relative group">
+          <div
+            className="rounded-2xl px-4 py-3 relative group"
+            style={{ backgroundColor: theme.background.secondary }}
+          >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                  {getUserDisplayName(comment.user.firstName, comment.user.lastName)}
+                <span
+                  className="font-semibold text-sm"
+                  style={{ color: theme.text.primary }}
+                >
+                  {comment.user?.firstName && comment.user?.lastName
+                    ? getUserDisplayName(comment.user.firstName, comment.user.lastName)
+                    : comment.user?.username || t('unknown_user')
+                  }
                 </span>
-                {comment.user.premiumBadgeUrl && (
+                {comment.user?.premiumBadgeUrl && (
                   <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-2 py-0.5 rounded-full text-xs font-medium">
-                    Premium
+                    {t('premium')}
                   </span>
                 )}
               </div>
@@ -289,7 +399,8 @@ const Comment: React.FC<CommentProps> = ({
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full bg-transparent border-0 text-sm resize-none focus:outline-none text-gray-700 dark:text-gray-300"
+                  className="w-full bg-transparent border-0 text-sm resize-none focus:outline-none"
+                  style={{ color: theme.text.secondary }}
                   rows={2}
                   disabled={isSubmittingEdit}
                 />
@@ -302,20 +413,24 @@ const Comment: React.FC<CommentProps> = ({
                       setEditContent(comment.content);
                     }}
                     disabled={isSubmittingEdit}
+                    style={{ color: theme.text.muted }}
                   >
-                    Hủy
+                    {t('cancel')}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleEdit}
                     disabled={!editContent.trim() || isSubmittingEdit}
                   >
-                    {isSubmittingEdit ? "Đang lưu..." : "Lưu"}
+                    {isSubmittingEdit ? t('saving') : t('save')}
                   </Button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: theme.text.secondary }}
+              >
                 {comment.content}
               </p>
             )}
@@ -340,11 +455,15 @@ const Comment: React.FC<CommentProps> = ({
                     name={getUserDisplayName(like.firstName, like.lastName)}
                     avatar={like.avatarUrl}
                     size="xs"
-                    className="border-2 border-white dark:border-gray-900"
+                    className="border-2"
+                    style={{ borderColor: theme.background.primary }}
                   />
                 ))}
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span
+                className="text-xs"
+                style={{ color: theme.text.muted }}
+              >
                 {formatLikeText(comment.recentLikes, comment.likeCount)}
               </span>
             </div>
@@ -355,13 +474,13 @@ const Comment: React.FC<CommentProps> = ({
             <ReplyForm
               onSubmit={handleReply}
               onCancel={() => setShowReplyForm(false)}
-              placeholder={`Phản hồi ${comment.user.firstName}...`}
+              placeholder={t('comments.reply_to').replace('{{name}}', comment.user?.firstName || comment.user?.username || t('user'))}
               isSubmitting={isSubmittingReply}
             />
           )}
 
           {/* Replies */}
-          {comment.replies.length > 0 && showReplies && (
+          {comment.replies && comment.replies.length > 0 && showReplies && (
             <div className="mt-3 space-y-3">
               {comment.replies.map((reply) => (
                 <Comment
@@ -378,30 +497,44 @@ const Comment: React.FC<CommentProps> = ({
           )}
 
           {/* Load More Replies */}
-          {comment.replyCount > comment.replies.length && (
+          {comment.replyCount > (comment.replies?.length || 0) && (
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              className="mt-2 font-medium transition-colors"
+              style={{ color: '#3b82f6' }}
               onClick={loadMoreReplies}
               disabled={loadingReplies}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#2563eb';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#3b82f6';
+              }}
             >
               {loadingReplies
-                ? "Đang tải..."
-                : `Xem thêm ${comment.replyCount - comment.replies.length} phản hồi`
+                ? t('loading')
+                : t('comments.view_more_replies').replace('{{count}}', String(comment.replyCount - (comment.replies?.length || 0)))
               }
             </Button>
           )}
 
           {/* Toggle Replies */}
-          {comment.replies.length > 0 && (
+          {comment.replies && comment.replies.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="mt-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-xs"
+              className="mt-1 text-xs transition-colors"
+              style={{ color: theme.text.muted }}
               onClick={() => setShowReplies(!showReplies)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = theme.text.secondary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = theme.text.muted;
+              }}
             >
-              {showReplies ? 'Ẩn phản hồi' : `Hiện ${comment.replies.length} phản hồi`}
+              {showReplies ? t('comments.hide_replies') : t('comments.show_replies').replace('{{count}}', String(comment.replies.length))}
             </Button>
           )}
         </div>

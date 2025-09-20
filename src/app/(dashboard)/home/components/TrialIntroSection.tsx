@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 type TrialCardProps = {
   title: string;
   description: string;
   bgColor: string;
   icon: React.ReactNode;
+  buttonText: string;
 };
-const TrialCard = ({ title, description, bgColor, icon }: TrialCardProps) => {
-  const { theme } = useTheme();
+
+const TrialCard = ({ title, description, bgColor, icon, buttonText }: TrialCardProps) => {
+  const { theme } = useThemeContext();
 
   return (
     <div className={`rounded-lg p-5 ${bgColor} flex flex-col h-full`}>
@@ -31,15 +34,13 @@ const TrialCard = ({ title, description, bgColor, icon }: TrialCardProps) => {
             border: `1px solid ${theme.border.default}`,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor =
-              theme.button.secondary.hover;
+            e.currentTarget.style.backgroundColor = theme.background.secondary;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor =
-              theme.button.secondary.background;
+            e.currentTarget.style.backgroundColor = theme.button.secondary.background;
           }}
         >
-          Get started
+          {buttonText}
         </button>
       </div>
     </div>
@@ -47,9 +48,56 @@ const TrialCard = ({ title, description, bgColor, icon }: TrialCardProps) => {
 };
 
 export default function TrialIntroSection() {
-  const [tab, setTab] = useState<"Explore" | "Manage">("Explore");
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
 
-  const { theme } = useTheme();
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [tab, setTab] = useState("Explore");
+
+  const trialCards = [
+    {
+      title: t('trial.cards.inviteTeam.title'),
+      description: t('trial.cards.inviteTeam.description'),
+      bgColor: "bg-blue-50",
+      buttonText: t('trial.cards.inviteTeam.button'),
+      icon: (
+        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm">👥</span>
+        </div>
+      ),
+    },
+    {
+      title: t('trial.cards.createProject.title'),
+      description: t('trial.cards.createProject.description'),
+      bgColor: "bg-green-50",
+      buttonText: t('trial.cards.createProject.button'),
+      icon: (
+        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm">📁</span>
+        </div>
+      ),
+    },
+    {
+      title: t('trial.cards.moveToProduction.title'),
+      description: t('trial.cards.moveToProduction.description'),
+      bgColor: "bg-purple-50",
+      buttonText: t('trial.cards.moveToProduction.button'),
+      icon: (
+        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm">🚀</span>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div
@@ -62,8 +110,8 @@ export default function TrialIntroSection() {
           className="text-lg font-semibold"
           style={{ color: theme.text.primary }}
         >
-          Advanced trial{" "}
-          <span className="text-sm text-green-600 ml-2">12 days left</span>
+          {t('trial.title')}{" "}
+          <span className="text-sm text-green-600 ml-2">{t('trial.daysLeft')}</span>
         </h2>
       </div>
 
@@ -82,7 +130,7 @@ export default function TrialIntroSection() {
           }}
           onClick={() => setTab("Explore")}
         >
-          Explore
+          {t('trial.tabs.explore')}
         </button>
         <button
           className="pb-1 transition-colors"
@@ -93,7 +141,7 @@ export default function TrialIntroSection() {
           }}
           onClick={() => setTab("Manage")}
         >
-          Manage
+          {t('trial.tabs.manage')}
         </button>
       </div>
 
@@ -101,36 +149,28 @@ export default function TrialIntroSection() {
       {tab === "Explore" && (
         <>
           <p className="text-sm" style={{ color: theme.text.secondary }}>
-            Discover popular ways that teams use ManaKai during their trial.
+            {t('trial.description')}
           </p>
 
           {/* 3 Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <TrialCard
-              title="Work intake"
-              description="Standardize intake, assess resourcing needs, and manage approvals, all in one place."
-              bgColor="bg-blue-50"
-              icon={<span className="text-blue-600 text-xl">📋</span>}
-            />
-            <TrialCard
-              title="Goal management"
-              description="Connect your company objectives and the work that supports them, so teams can get the right things done."
-              bgColor="bg-green-50"
-              icon={<span className="text-green-600 text-xl">🎯</span>}
-            />
-            <TrialCard
-              title="Project management"
-              description="Track projects from start to finish to keep your team in sync and hitting goals on schedule."
-              bgColor="bg-red-50"
-              icon={<span className="text-red-600 text-xl">📅</span>}
-            />
+            {trialCards.map((card, index) => (
+              <TrialCard
+                key={index}
+                title={card.title}
+                description={card.description}
+                bgColor={card.bgColor}
+                buttonText={card.buttonText}
+                icon={card.icon}
+              />
+            ))}
           </div>
         </>
       )}
 
       {tab === "Manage" && (
         <p className="text-sm italic" style={{ color: theme.text.secondary }}>
-          Manage tab content coming soon...
+          {t('trial.manageContent')}
         </p>
       )}
     </div>

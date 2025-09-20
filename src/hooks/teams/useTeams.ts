@@ -30,18 +30,18 @@ const fetchMyTeams = async (): Promise<Team[]> => {
 
 // Mutation functions
 const createTeamMutation = async (
-  url: string, 
+  url: string,
   { arg }: { arg: { formData: CreateTeamFormData; userSession?: any } }
 ): Promise<Team> => {
   const newTeam = await teamsService.createTeam(arg.formData, arg.userSession);
-  
+
   // Invalidate related caches after successful creation
   await Promise.all([
     mutate(TEAMS_KEYS.lists()),
     mutate(TEAMS_KEYS.myTeams()),
     mutate(TEAMS_KEYS.all()),
   ]);
-  
+
   return newTeam;
 };
 
@@ -50,14 +50,14 @@ const updateTeamMutation = async (
   { arg }: { arg: { id: number; data: any } }
 ): Promise<Team> => {
   const updatedTeam = await teamsService.updateTeam(arg.id, arg.data);
-  
+
   // Invalidate related caches
   await Promise.all([
     mutate(TEAMS_KEYS.detail(arg.id)),
     mutate(TEAMS_KEYS.lists()),
     mutate(TEAMS_KEYS.myTeams()),
   ]);
-  
+
   return updatedTeam;
 };
 
@@ -66,7 +66,7 @@ const deleteTeamMutation = async (
   { arg }: { arg: { id: number } }
 ): Promise<void> => {
   await teamsService.deleteTeam(arg.id);
-  
+
   // Invalidate all team-related caches
   await Promise.all([
     mutate(TEAMS_KEYS.all()),

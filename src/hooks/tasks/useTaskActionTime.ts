@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { TaskActionTime, TaskListItem } from '@/components/TaskList/types';
 import { useUpdateTask } from './useTasksActions';
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
 
 /**
  * Hook for managing personal action time buckets
@@ -116,30 +118,30 @@ export const useTaskActionTime = () => {
 /**
  * Helper function to get action time display info
  */
-export const getActionTimeInfo = (actionTime: TaskActionTime) => {
+export const getActionTimeInfo = (actionTime: TaskActionTime, theme?: any, t?: (key: string) => string) => {
   const configs = {
     'recently-assigned': {
-      label: 'Recently assigned',
-      description: 'Inbox, mới giao cho bạn',
-      color: '#6B7280',
+      label: t ? t('taskSections.recentlyAssigned.title') : 'Recently assigned',
+      description: t ? t('taskSections.recentlyAssigned.description') : 'Tasks recently assigned to you',
+      color: theme?.status?.info || '#6B7280',
       icon: '📥',
     },
     'do-today': {
-      label: 'Do today',
-      description: 'Việc bạn muốn xử lý ngay hôm nay',
-      color: '#DC2626',
+      label: t ? t('taskSections.doToday.title') : 'Do today',
+      description: t ? t('taskSections.doToday.description') : 'Tasks you want to handle today',
+      color: theme?.status?.error || '#DC2626',
       icon: '🔴',
     },
     'do-next-week': {
-      label: 'Do next week',
-      description: 'Việc có thể để tuần sau',
-      color: '#F59E0B',
+      label: t ? t('taskSections.doNextWeek.title') : 'Do next week',
+      description: t ? t('taskSections.doNextWeek.description') : 'Tasks for next week',
+      color: theme?.status?.warning || '#F59E0B',
       icon: '🟡',
     },
     'do-later': {
-      label: 'Do later',
-      description: 'Việc để đó, chưa cần động vào',
-      color: '#10B981',
+      label: t ? t('taskSections.doLater.title') : 'Do later',
+      description: t ? t('taskSections.doLater.description') : 'Tasks for later',
+      color: theme?.status?.success || '#10B981',
       icon: '🟢',
     },
   };

@@ -138,7 +138,10 @@ export function usePostCard(post: PostData) {
       // Apply optimistic updates to all relevant caches and trigger UI updates
       await Promise.all([
         // Update individual post cache with revalidation
-        globalMutate(`/api/posts/${post.id}`, optimisticPost, false), // ✅ SỬA: URL string
+        globalMutate(`/api/posts/${post.id}`, optimisticPost, false), // API URL format
+
+        // FIXED: Also update the post-cache format used by useSyncedPost
+        globalMutate(`post-cache-${post.id}`, optimisticPost, false),
 
         // Update all feed caches with revalidation
         globalMutate(
@@ -181,7 +184,11 @@ export function usePostCard(post: PostData) {
 
         // Update caches with real API data and trigger re-renders
         await Promise.all([
-          globalMutate(`/api/posts/${post.id}`, realUpdatedPost, false), // ✅ SỬA: URL string
+          globalMutate(`/api/posts/${post.id}`, realUpdatedPost, false),
+
+          // FIXED: Also update the post-cache format used by useSyncedPost
+          globalMutate(`post-cache-${post.id}`, realUpdatedPost, false),
+
           globalMutate(
             key => typeof key === 'string' && key.includes('/api/posts/feed'),
             (pages: PaginatedPostData[] | undefined) => {

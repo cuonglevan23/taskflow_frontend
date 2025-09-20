@@ -2,15 +2,18 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { DARK_THEME } from "@/constants/theme";
-import { ProjectsList, TemplatesSection } from "@/components/teams/AllWork";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { ProjectsList} from "@/components/teams/AllWork";
 import { useTeamProjects } from "@/hooks/projects/useProjects";
 import CreateProjectModal from "@/components/modals/CreateProjectModal";
 
 const AllWorkPage = React.memo(() => {
   const params = useParams();
   const router = useRouter();
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   // Memoized teamId parsing for Next.js 15 optimization
   const teamId = useMemo(() => {
     const id = params.id as string;
@@ -30,8 +33,13 @@ const AllWorkPage = React.memo(() => {
 
   // Memoized projects data following service response structure
   const projects = useMemo(() => {
-    return projectsData?.projects || [];
-  }, [projectsData?.projects]);
+    return (projectsData?.projects || []).map(project => ({
+      ...project,
+      id: project.id.toString(), // Convert number id to string
+      color: theme.status.info, // Add default color for ProjectsList component
+      status: project.status === 'COMPLETED' ? 'Complete' : 'Joined' // Map API status to component expected status
+    }));
+  }, [projectsData?.projects, theme.status.info]);
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -69,15 +77,21 @@ const AllWorkPage = React.memo(() => {
     return (
       <div 
         className="min-h-screen p-6 flex items-center justify-center"
-        style={{ backgroundColor: DARK_THEME.background.primary }}
+        style={{ backgroundColor: theme.background.primary }}
       >
         <div className="text-center">
-          <p className="text-red-400 mb-4">Failed to load team projects: {projectsError.message}</p>
-          <button 
+          <p style={{ color: theme.status.error }} className="mb-4">
+            {messages.errors?.failedToLoadTeamProjects || 'Failed to load team projects'}: {projectsError.message}
+          </p>
+          <button
             onClick={() => refetchProjects()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
+            style={{
+              backgroundColor: theme.status.info,
+              color: theme.text.inverse
+            }}
           >
-            Retry
+            {messages.common?.retry || 'Retry'}
           </button>
         </div>
       </div>
@@ -87,7 +101,7 @@ const AllWorkPage = React.memo(() => {
   return (
     <div 
       className="min-h-screen p-6"
-      style={{ backgroundColor: DARK_THEME.background.primary }}
+      style={{ backgroundColor: theme.background.primary }}
     >
       {/* Two Column Layout */}
       <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
@@ -102,14 +116,7 @@ const AllWorkPage = React.memo(() => {
           />
         </div>
 
-        {/* Right Column - Templates */}
-        <div className="w-full lg:w-96">
-          <TemplatesSection
-            onNewTemplate={handleNewTemplate}
-            onExploreTemplates={handleExploreTemplates}
-            onTemplateClick={handleTemplateClick}
-          />
-        </div>
+
       </div>
 
       {/* Create Project Modal */}

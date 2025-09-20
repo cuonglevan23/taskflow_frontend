@@ -5,33 +5,36 @@ import React from "react";
 import { GoalsProvider, useGoals } from "@/contexts/GoalsContext";
 import { CreateGoalButton } from "@/components/goals/GoalNavigation";
 import { GoalTable } from "@/components/goals/GoalTable";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 function MyGoalsContent() {
   const { filteredGoals, toggleGoalExpanded, loading, error } = useGoals();
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   return (
     <div
       className="flex-1 min-h-0 flex flex-col"
-      style={{ backgroundColor: DARK_THEME.background.secondary }}
+      style={{ backgroundColor: theme.background.secondary }}
     >
       <div
         className="flex-1 min-h-0 flex flex-col"
         style={{
-          backgroundColor: DARK_THEME.background.primary,
-          borderColor: DARK_THEME.border?.default || "#424244",
+          backgroundColor: theme.background.primary,
+          borderColor: theme.border?.default || "#424244",
         }}
       >
         {/* Header */}
         <div
           className="flex justify-between items-center px-6 py-4 border-b border-gray-700 sticky top-0 z-30"
-          style={{ backgroundColor: DARK_THEME.background.primary }}
+          style={{ backgroundColor: theme.background.primary }}
         >
           <h1
             className="text-xl font-semibold"
-            style={{ color: DARK_THEME.text.primary }}
+            style={{ color: theme.text.primary }}
           >
-            My Goals
+            {messages?.navigation?.goals?.myGoals || "My Goals"}
           </h1>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -45,27 +48,36 @@ function MyGoalsContent() {
             <div className="flex justify-center items-center h-full">
               <div className="flex flex-col items-center">
                 <div className="animate-pulse flex space-x-4 mb-4">
-                  <div className="rounded-full bg-slate-700 h-12 w-12"></div>
+                  <div
+                    className="rounded-full h-12 w-12"
+                    style={{ backgroundColor: theme.background.muted }}
+                  ></div>
                   <div className="flex-1 space-y-4 py-1">
-                    <div className="h-4 bg-slate-700 rounded w-40"></div>
-                    <div className="h-4 bg-slate-700 rounded w-24"></div>
+                    <div
+                      className="h-4 rounded w-40"
+                      style={{ backgroundColor: theme.background.muted }}
+                    ></div>
+                    <div
+                      className="h-4 rounded w-24"
+                      style={{ backgroundColor: theme.background.muted }}
+                    ></div>
                   </div>
                 </div>
                 <div 
                   className="text-xl mt-2"
-                  style={{ color: DARK_THEME.text.secondary }}
+                  style={{ color: theme.text.secondary }}
                 >
-                  Loading goals...
+                  {messages?.common?.loading || "Loading goals..."}
                 </div>
               </div>
             </div>
           ) : error ? (
             <div className="flex justify-center items-center h-full">
               <div 
-                className="text-xl text-red-500"
-                style={{ color: "#ef4444" }}
+                className="text-xl"
+                style={{ color: theme.status.error }}
               >
-                Error loading goals: {error}
+                {messages?.common?.error || "Error loading goals"}: {error}
               </div>
             </div>
           ) : filteredGoals.length > 0 ? (
@@ -75,15 +87,15 @@ function MyGoalsContent() {
               <div className="text-6xl mb-4">🎯</div>
               <h2
                 className="text-2xl font-semibold mb-2"
-                style={{ color: DARK_THEME.text.primary }}
+                style={{ color: theme.text.primary }}
               >
-                No goals yet
+                {messages?.cards?.goals?.noGoals || "No goals yet"}
               </h2>
               <p
                 className="text-lg mb-4"
-                style={{ color: DARK_THEME.text.primary }}
+                style={{ color: theme.text.primary }}
               >
-                Create your first goal to track your progress
+                {messages?.cards?.goals?.createGoal || "Create your first goal to track your progress"}
               </p>
             </div>
           )}

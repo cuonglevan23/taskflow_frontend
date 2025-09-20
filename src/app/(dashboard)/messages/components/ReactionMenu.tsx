@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { ReactionType, REACTION_EMOJIS } from '@/types/chat';
 
 interface ReactionMenuProps {
@@ -15,6 +16,10 @@ export const ReactionMenu: React.FC<ReactionMenuProps> = ({
   onReactionSelect,
   onClose
 }) => {
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,8 +55,8 @@ export const ReactionMenu: React.FC<ReactionMenuProps> = ({
       style={{
         left: position.x,
         top: position.y,
-        backgroundColor: DARK_THEME.background.primary,
-        border: `1px solid ${DARK_THEME.border.default}`,
+        backgroundColor: theme.background.primary,
+        border: `1px solid ${theme.border.default}`,
         boxShadow: '0 8px 25px rgba(0, 0, 0, 0.25)',
         transform: 'translateY(-50%)'
       }}
@@ -70,12 +75,12 @@ export const ReactionMenu: React.FC<ReactionMenuProps> = ({
             backgroundColor: 'transparent'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = `${THEME_COLORS.primary[500]}20`;
+            e.currentTarget.style.backgroundColor = `${theme.status.info}20`;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
-          title={reactionType}
+          title={messages?.chat?.reactions?.[reactionType] || reactionType}
         >
           {REACTION_EMOJIS[reactionType]}
         </button>

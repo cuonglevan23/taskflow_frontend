@@ -210,12 +210,6 @@ export function useChat(userId?: number, currentUserAvatar?: string): UseChatRet
         return acc;
       }, []);
 
-      console.log('Loading conversations with deduplication:', {
-        originalCount: response.content.length,
-        uniqueCount: uniqueConversations.length,
-        duplicatesRemoved: response.content.length - uniqueConversations.length
-      });
-
       setConversations(uniqueConversations);
     } catch (err) {
       setError('Failed to load conversations');

@@ -7,9 +7,12 @@ export interface TaskRowProps {
   onTaskEdit?: (task: TaskListItem) => void;
   onTaskDelete?: (taskId: string) => void;
   onTaskStatusChange?: (taskId: string, status: string) => void;
-  onTaskAssign?: (taskId: string, assigneeIdOrEmail: string) => void;
+  onTaskPriorityChange?: (taskId: string, priority: string) => void; // ✅ Add missing prop
+  onTaskAssign?: (taskId: string, assigneeData: { id: string; name: string; email: string } | string) => void; // ✅ Fix type
   isDragging?: boolean;
   dragHandleProps?: any;
+  taskType?: 'mytask' | 'project'; // NEW: Add taskType to identify task source
+  projectId?: string | number; // NEW: Add projectId prop
 }
 
 export interface TaskEditState {

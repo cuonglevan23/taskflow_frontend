@@ -3,76 +3,64 @@
 import React from "react";
 import PrivateHeader from "./PrivateHeader";
 import PrivateSidebar from "./PrivateSidebar";
-import {
-  useLayoutContext,
-  useLayoutActions,
-} from "../context/PrivateLayoutContext";
 import { DetailPanel } from "@/components/features/DetailPanel";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface PrivateLayoutContentProps {
   children: React.ReactNode;
 }
 
-export default function PrivateLayoutContent({
-  children,
-}: PrivateLayoutContentProps) {
-  const { user, isSidebarOpen, isSidebarCollapsed } = useLayoutContext();
-  const { toggleSidebar, setSidebarOpen, toggleSidebarCollapse, signOut } =
-    useLayoutActions();
+export default function PrivateLayoutContent({ children }: PrivateLayoutContentProps) {
+  const { theme } = useThemeContext();
+  const { user, isLoading } = useAuth();
 
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
-
-  // Don't render if user is null (during logout process) - but avoid flicker
-  if (!user) {
-    return null; // Return null instead of loading to prevent layout shift
+  // Simple loading
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ backgroundColor: theme.background.primary }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
+  // ✅ FIX: Always render layout structure, even without user data
   return (
-    <div
-      className="h-screen flex flex-col"
-      style={{ backgroundColor: DARK_THEME.background.primary }}
-    >
+    <div className="h-screen flex flex-col" style={{ backgroundColor: theme.background.primary }}>
       {/* Header - Fixed at top */}
-      <PrivateHeader
-        user={user}
-        onSidebarToggle={toggleSidebar}
-        onSidebarCollapseToggle={toggleSidebarCollapse}
-        isSidebarCollapsed={isSidebarCollapsed}
-        onLogout={signOut}
-      />
-
-      {/* Main Content Area with Sidebar */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <PrivateSidebar
-          user={user}
-          isOpen={isSidebarOpen}
-          isCollapsed={isSidebarCollapsed}
-          onClose={closeSidebar}
-          onToggleCollapse={toggleSidebarCollapse}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <PrivateHeader
+          user={user || { id: '1', email: 'loading@example.com', name: 'Loading...', role: 'USER' }}
+          onSidebarToggle={() => {}}
+          onSidebarCollapseToggle={() => {}}
+          isSidebarCollapsed={false}
+          onLogout={() => {}}
         />
+      </div>
 
-        {/* Main Content */}
+      {/* Main Content Area - Add top padding to account for fixed header */}
+      <div className="flex flex-1 overflow-hidden pt-12">
+        {/* Sidebar - Fixed positioning */}
+        <div className="fixed left-0 top-12 h-[calc(100vh-3rem)] z-40">
+          <PrivateSidebar
+            user={user || { id: '1', email: 'loading@example.com', name: 'Loading...', role: 'USER' }}
+            isOpen={true}
+            isCollapsed={false}
+            onClose={() => {}}
+            onToggleCollapse={() => {}}
+          />
+        </div>
+
+        {/* Content - Adjust margin for fixed sidebar */}
         <div
-          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-            isSidebarOpen
-              ? isSidebarCollapsed
-                ? "lg:ml-16"
-                : "lg:ml-64"
-              : ""
-          }`}
-          style={{ backgroundColor: DARK_THEME.background.primary }}
+          className="flex-1 flex flex-col min-w-0 ml-64"
+          style={{ backgroundColor: theme.background.primary }}
         >
           <main
             className="flex-1 overflow-auto relative"
             style={{
-              backgroundColor: DARK_THEME.background.primary,
+              backgroundColor: theme.background.primary,
               overscrollBehavior: "none",
-              overscrollBehaviorX: "none",
-              overscrollBehaviorY: "none",
               WebkitOverflowScrolling: "touch",
             }}
           >

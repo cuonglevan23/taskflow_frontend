@@ -1,0 +1,1331 @@
+{
+  "settings": {
+    "displayPreferences": "Display Preferences",
+    "customizeLanguageTheme": "Customize your language and theme preferences",
+    "language": "Language",
+    "selectLanguage": "Select your preferred language for the interface",
+    "theme": "Theme",
+    "chooseTheme": "Choose between light and dark appearance",
+    "savePreferences": "Save Display Preferences",
+    "saving": "Saving...",
+    "savedSuccessfully": "Settings saved successfully!",
+    "savingPreferences": "Saving preferences...",
+    "errorLoading": "Error loading settings",
+    "retry": "Retry",
+    "lightAppearance": "Light appearance",
+    "darkAppearance": "Dark appearance",
+    "title": "Settings",
+    "profile": "Profile",
+    "display": "Display"
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "description": "Update your personal information and profile details",
+    "updateSuccess": "Profile updated successfully!",
+    "updateError": "Error updating profile",
+    "avatar": "Profile photo",
+    "uploadPhoto": "Upload photo",
+    "remove": "Remove",
+    "uploading": "Uploading...",
+    "avatarNote": "JPG, PNG or GIF. Max file size 5MB.",
+    "personalInfo": "Personal Information",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "jobTitle": "Job title",
+    "department": "Department",
+    "aboutMe": "About me",
+    "required": "*",
+    "firstNamePlaceholder": "Enter first name",
+    "lastNamePlaceholder": "Enter last name",
+    "jobTitlePlaceholder": "e.g. Senior Product Manager",
+    "departmentPlaceholder": "e.g. Product Team",
+    "aboutMePlaceholder": "Tell your team about yourself...",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "uploadingAvatar": "Uploading avatar...",
+    "savingProfile": "Saving profile..."
+  },
+  "home": {
+    "title": "Home",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "defaultUser": "User",
+    "myWeek": "My week",
+    "tasksCompleted": "tasks completed",
+    "collaborators": "collaborators",
+    "customize": "Customize",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "auth": {
+    "processingLogin": "Processing login...",
+    "loginFailed": "Login failed",
+    "loginSuccessRedirecting": "Login successful! Redirecting...",
+    "authVerificationFailed": "Authentication verification failed",
+    "unexpectedError": "An unexpected error occurred",
+    "processingTitle": "Processing...",
+    "successTitle": "Success!",
+    "errorTitle": "Error",
+    "backToLogin": "Back to Login",
+    "pleaseWait": "Please wait while we verify your authentication..."
+  },
+  "myTaskDashboard": {
+    "title": "My Task Dashboard",
+    "refresh": "Refresh Dashboard",
+    "loading": "Loading dashboard...",
+    "error": "Error loading dashboard",
+    "retry": "Retry",
+    "stats": {
+      "totalCompleted": "Total Completed",
+      "totalIncomplete": "Total Incomplete",
+      "totalOverdue": "Total Overdue",
+      "totalTasks": "Total Tasks",
+      "completionRate": "completion rate",
+      "ofTotal": "of total",
+      "needAttention": "need attention",
+      "createdThisMonth": "created this month"
+    },
+    "taskStats": {
+      "overdue": "Overdue",
+      "completed": "Completed",
+      "countOverdue": "{count} overdue",
+      "countCompleted": "{count} completed",
+      "zeroOverdue": "No overdue tasks",
+      "zeroCompleted": "No completed tasks"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "vi": "Tiếng Việt",
+    "ko": "한국어"
+  },
+  "themes": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "sidebar": {
+    "items": {
+      "home": "Home",
+      "my-tasks": "My Tasks",
+      "messages": "Messages",
+      "newsfeed": "NewsFeed",
+      "inbox": "Inbox",
+      "goals": "Goals"
+    },
+    "sections": {
+      "main": "Main",
+      "analytics": "Insights",
+      "projects": "Projects",
+      "teams": "Teams"
+    }
+  },
+  "navigation": {
+    "goals": {
+      "strategyMap": "Strategy map",
+      "teamGoals": "Team goals",
+      "myGoals": "My goals"
+    },
+    "myTasks": {
+      "list": "List",
+      "board": "Board",
+      "calendar": "Calendar",
+      "dashboard": "Dashboard",
+      "notes": "Notes"
+    },
+    "projects": {
+      "overview": "Overview",
+      "dashboard": "Dashboard",
+      "list": "List",
+      "calendar": "Calendar",
+      "timeline": "Timeline"
+    },
+    "teams": {
+      "overview": "Overview",
+      "dashboard": "Dashboard",
+      "members": "Members",
+      "allWork": "All Work",
+      "calendar": "Calendar",
+      "members": {
+        "title": "Team Members",
+        "loading": "Loading members...",
+        "error": {
+          "loading": "Failed to load team members"
+        },
+        "actions": {
+          "addMember": "Add member",
+          "sendFeedback": "Send feedback",
+          "search": "Search members"
+        }
+      }
+    },
+    "inbox": {
+      "activity": "Activity",
+      "bookmarks": "Bookmarks",
+      "archive": "Archive"
+    }
+  },
+  "chat": {
+    "title": "Messages",
+    "newMessage": "New Message",
+    "searchConversations": "Search conversations...",
+    "noConversations": "No conversations yet",
+    "startNewConversation": "Start a new conversation",
+    "online": "Online",
+    "offline": "Offline",
+    "lastSeen": "Last seen",
+    "typing": "typing...",
+    "isTyping": "is typing...",
+    "areTyping": "are typing...",
+    "sendMessage": "Send message",
+    "typeMessage": "Type a message...",
+    "attachFile": "Attach file",
+    "attachImage": "Attach image",
+    "sendFile": "Send file",
+    "reply": "Reply",
+    "replyTo": "Reply to",
+    "cancelReply": "Cancel reply",
+    "edit": "Edit",
+    "delete": "Delete",
+    "copy": "Copy",
+    "forward": "Forward",
+    "react": "React",
+    "reactions": "Reactions",
+    "addReaction": "Add reaction",
+    "removeReaction": "Remove reaction",
+    "messageDeleted": "This message was deleted",
+    "messageEdited": "edited",
+    "messageUnsent": "This message was unsent",
+    "directMessage": "Direct Message",
+    "groupChat": "Group Chat",
+    "groupMembers": "Group Members",
+    "addMembers": "Add Members",
+    "removeMember": "Remove Member",
+    "leaveGroup": "Leave Group",
+    "groupInfo": "Group Info",
+    "groupName": "Group Name",
+    "groupDescription": "Group Description",
+    "createGroup": "Create Group",
+    "editGroup": "Edit Group",
+    "memberCount": "{count} members",
+    "youLeftGroup": "You left this group",
+    "memberJoined": "{name} joined the group",
+    "memberLeft": "{name} left the group",
+    "groupCreated": "Group created",
+    "groupNameChanged": "Group name changed to {name}",
+    "messageDelivered": "Delivered",
+    "messageRead": "Read",
+    "messageSent": "Sent",
+    "messageFailed": "Failed to send",
+    "retryMessage": "Retry",
+    "deleteMessage": "Delete message",
+    "deleteMessageConfirm": "Are you sure you want to delete this message?",
+    "deleteForEveryone": "Delete for everyone",
+    "deleteForMe": "Delete for me",
+    "fileShared": "File shared",
+    "imageShared": "Image shared",
+    "voiceMessage": "Voice message",
+    "location": "Location",
+    "contact": "Contact",
+    "document": "Document",
+    "video": "Video",
+    "audio": "Audio",
+    "downloadFile": "Download file",
+    "fileSize": "File size",
+    "fileName": "File name",
+    "viewImage": "View image",
+    "playVideo": "Play video",
+    "playAudio": "Play audio",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "lastWeek": "Last week",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "earlierThisYear": "Earlier this year",
+    "connected": "Connected",
+    "connecting": "Connecting...",
+    "disconnected": "Disconnected",
+    "reconnecting": "Reconnecting...",
+    "connectionLost": "Connection lost",
+    "connectionRestored": "Connection restored",
+    "messageNotDelivered": "Message not delivered",
+    "scrollToBottom": "Scroll to bottom",
+    "newMessages": "New messages",
+    "unreadMessages": "{count} unread messages",
+    "markAsRead": "Mark as read",
+    "markAsUnread": "Mark as unread",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "block": "Block",
+    "unblock": "Unblock",
+    "report": "Report",
+    "clearHistory": "Clear history",
+    "exportChat": "Export chat",
+    "searchInChat": "Search in chat",
+    "noResults": "No results found",
+    "searchMessages": "Search messages...",
+    "loading": "Loading...",
+    "loadMore": "Load more",
+    "error": "Something went wrong",
+    "tryAgain": "Try again",
+    "noInternet": "No internet connection",
+    "checkConnection": "Check your connection",
+    "messageLimit": "Message limit reached",
+    "fileTooLarge": "File too large",
+    "fileTypeNotSupported": "File type not supported",
+    "maxFileSize": "Maximum file size is {size}MB",
+    "dragDropFiles": "Drag and drop files here",
+    "selectFiles": "Select files",
+    "camera": "Camera",
+    "gallery": "Gallery",
+    "emoji": "Emoji",
+    "sticker": "Sticker",
+    "gif": "GIF",
+    "sidebar": {
+      "conversations": "Conversations",
+      "newChat": "New Chat",
+      "createNewChat": "Create new chat",
+      "searchConversations": "Search conversations...",
+      "searchPlaceholder": "Search conversations...",
+      "filters": {
+        "all": "All",
+        "unread": "Unread",
+        "teams": "Teams",
+        "direct": "Direct",
+        "archived": "Archived",
+        "starred": "Starred"
+      },
+      "noConversations": "No conversations found",
+      "noResults": "No results found",
+      "startConversation": "Start a conversation",
+      "recentChats": "Recent Chats",
+      "pinnedChats": "Pinned Chats",
+      "activeNow": "Active now",
+      "lastActive": "Last active",
+      "newMessageFrom": "New message from",
+      "unreadCount": "{count} unread",
+      "conversationOptions": "Conversation options",
+      "pinConversation": "Pin conversation",
+      "unpinConversation": "Unpin conversation",
+      "archiveConversation": "Archive conversation",
+      "deleteConversation": "Delete conversation",
+      "markAsRead": "Mark as read",
+      "markAsUnread": "Mark as unread",
+      "muteConversation": "Mute conversation",
+      "unmuteConversation": "Unmute conversation"
+    },
+    "contacts": {
+      "title": "Contacts",
+      "searchContacts": "Search contacts...",
+      "noContacts": "No contacts found",
+      "addContact": "Add contact",
+      "selectContacts": "Select contacts",
+      "selectedContacts": "Selected contacts",
+      "createGroupChat": "Create group chat",
+      "inviteToChat": "Invite to chat",
+      "contactInfo": "Contact info",
+      "blockContact": "Block contact",
+      "unblockContact": "Unblock contact",
+      "removeContact": "Remove contact",
+      "reportContact": "Report contact"
+    },
+    "notifications": {
+      "newMessage": "New message",
+      "missedCall": "Missed call",
+      "incomingCall": "Incoming call",
+      "messageNotifications": "Message notifications",
+      "callNotifications": "Call notifications",
+      "soundEnabled": "Sound enabled",
+      "vibrationEnabled": "Vibration enabled",
+      "desktopNotifications": "Desktop notifications",
+      "emailNotifications": "Email notifications",
+      "notificationSettings": "Notification settings"
+    },
+    "settings": {
+      "chatSettings": "Chat settings",
+      "privacy": "Privacy",
+      "security": "Security",
+      "dataAndStorage": "Data and storage",
+      "appearance": "Appearance",
+      "language": "Language",
+      "autoDownload": "Auto-download",
+      "mediaVisibility": "Media visibility",
+      "readReceipts": "Read receipts",
+      "lastSeen": "Last seen",
+      "profilePhoto": "Profile photo",
+      "whoCanSeeMyPhoto": "Who can see my profile photo",
+      "whoCanAddMe": "Who can add me to groups",
+      "whoCanCallMe": "Who can call me",
+      "blockedContacts": "Blocked contacts",
+      "twoStepVerification": "Two-step verification",
+      "sessionManagement": "Session management",
+      "activeDevices": "Active devices",
+      "logoutAllDevices": "Log out all devices"
+    },
+    "media": {
+      "photos": "Photos",
+      "videos": "Videos",
+      "documents": "Documents",
+      "links": "Links",
+      "audio": "Audio",
+      "sharedMedia": "Shared media",
+      "mediaNotFound": "No media found",
+      "downloadMedia": "Download media",
+      "shareMedia": "Share media",
+      "deleteMedia": "Delete media",
+      "saveToGallery": "Save to gallery",
+      "mediaSize": "Media size",
+      "compressionQuality": "Compression quality",
+      "originalQuality": "Original quality",
+      "compressedQuality": "Compressed quality"
+    },
+    "calls": {
+      "voiceCall": "Voice call",
+      "videoCall": "Video call",
+      "incomingCall": "Incoming call",
+      "outgoingCall": "Outgoing call",
+      "callEnded": "Call ended",
+      "callFailed": "Call failed",
+      "callDuration": "Call duration",
+      "missedCall": "Missed call",
+      "callHistory": "Call history",
+      "redial": "Redial",
+      "speakerOn": "Speaker on",
+      "speakerOff": "Speaker off",
+      "muteCall": "Mute call",
+      "unmuteCall": "Unmute call",
+      "endCall": "End call",
+      "answerCall": "Answer call",
+      "declineCall": "Decline call",
+      "callQuality": "Call quality",
+      "poorConnection": "Poor connection",
+      "reconnecting": "Reconnecting...",
+      "callRecording": "Call recording",
+      "recordingStarted": "Recording started",
+      "recordingStopped": "Recording stopped"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "away": "Away",
+      "busy": "Busy",
+      "invisible": "Invisible",
+      "lastSeenRecently": "Last seen recently",
+      "lastSeenWithin": "Last seen within {time}",
+      "typing": "typing...",
+      "recording": "recording...",
+      "uploading": "uploading...",
+      "customStatus": "Custom status",
+      "setStatus": "Set status",
+      "clearStatus": "Clear status",
+      "statusMessage": "Status message"
+    }
+  },
+  "taskList": {
+    "headers": {
+      "name": "Name",
+      "dueDate": "Due date",
+      "priority": "Priority",
+      "status": "Status",
+      "collaborators": "Collaborators",
+      "comments": "Comments"
+    },
+    "addTask": "Add task...",
+    "addTaskPlaceholder": "Write a task name",
+    "pressEnterToSave": "Press Enter to save",
+    "addSection": "Add section",
+    "search": {
+      "placeholder": "Search tasks...",
+      "expandSearch": "Expand search",
+      "collapseSearch": "Collapse search",
+      "clearSearch": "Clear search",
+      "shortcutHint": "Press ⌘K to search"
+    },
+    "filters": {
+      "title": "Filters",
+      "button": "Filter"
+    },
+    "sort": {
+      "title": "Sort",
+      "button": "Sort"
+    },
+    "group": {
+      "title": "Group",
+      "button": "Group"
+    },
+    "options": {
+      "title": "Options",
+      "button": "Options"
+    }
+  },
+  "myTaskDashboard": {
+    "title": "My Tasks Dashboard",
+    "refresh": "Refresh Dashboard",
+    "loading": "Loading dashboard...",
+    "error": "Failed to load dashboard data",
+    "retry": "Retry",
+    "lastUpdated": "Last updated",
+    "cacheInfo": "Data cached",
+    "stats": {
+      "totalCompleted": "Total completed tasks",
+      "totalIncomplete": "Total incomplete tasks",
+      "totalOverdue": "Total overdue tasks",
+      "totalTasks": "Total tasks",
+      "completionRate": "completion rate",
+      "ofTotal": "of total",
+      "needAttention": "tasks need attention",
+      "createdThisMonth": "created this month"
+    },
+    "taskStats": {
+      "overdue": "Overdue",
+      "completed": "Completed",
+      "countOverdue": "{count} overdue",
+      "countCompleted": "{count} completed",
+      "zeroOverdue": "No overdue tasks",
+      "zeroCompleted": "No completed tasks"
+    },
+    "charts": {
+      "tasksByProject": "Tasks by Project",
+      "tasksByStatus": "Tasks by Status",
+      "topProjects": "Top Projects by Task Count",
+      "completionTrend": "Task Creation vs Completion Trend",
+      "projectsLabel": "project(s)",
+      "totalTasksLabel": "total tasks",
+      "statusDistribution": "Current status distribution",
+      "showingTop": "Showing top",
+      "projects": "projects",
+      "monthsTrend": "months trend",
+      "tasksCreated": "Tasks Created",
+      "tasksCompleted": "Tasks Completed"
+    },
+    "upcomingTasks": {
+      "urgent": "Urgent Tasks",
+      "dueToday": "Due Today",
+      "overdue": "Overdue Tasks",
+      "noTasks": "No tasks found",
+      "viewAll": "View All"
+    },
+    "empty": {
+      "noData": "No dashboard data available",
+      "noTasks": "You don't have any tasks yet",
+      "createFirst": "Create your first task to get started"
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "loading": "Loading notes...",
+    "stats": {
+      "notesCount": "notes"
+    },
+    "actions": {
+      "newNote": "New Note",
+      "createFirst": "Create your first note"
+    },
+    "empty": {
+      "title": "No notes yet",
+      "description": "Create your first note to start organizing your thoughts and ideas."
+    },
+    "error": {
+      "loadFailed": "Failed to load notes"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "noData": "No data available",
+    "noTasksFound": "No tasks found",
+    "noTasksAvailable": "There are no tasks available for this time period.",
+    "task": "Task",
+    "assignee": "Assignee",
+    "member": "Member",
+    "role": "Role",
+    "joined": "Joined",
+    "actions": "Actions",
+    "notAvailable": "N/A",
+    "status": {
+      "joined": "Joined",
+      "complete": "Complete"
+    },
+    "sort": {
+      "aToZ": "A to Z"
+    }
+  },
+  "timeline": {
+    "today": "TODAY",
+    "viewModes": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "navigation": {
+      "previous": "Previous",
+      "next": "Next",
+      "goToToday": "Go to today"
+    }
+  },
+  "noteForm": {
+    "defaultTitle": "Untitled Note",
+    "title": {
+      "create": "Create New Note",
+      "edit": "Edit Note"
+    },
+    "subtitle": {
+      "project": "Create a note for this project",
+      "personal": "Create a personal note"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "content": "Content",
+      "makePublic": "Make this note public (visible to all team members)"
+    },
+    "placeholders": {
+      "title": "Enter note title",
+      "description": "Optional description",
+      "content": "Start writing your note..."
+    },
+    "labels": {
+      "characters": "characters"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "titleTooLong": "Title must be less than 255 characters",
+      "descriptionTooLong": "Description must be less than 1000 characters"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "create": "Create Note",
+      "update": "Update Note",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "saving": "Saving..."
+    },
+    "hints": {
+      "keyboardShortcut": "Press Ctrl+Enter (Cmd+Enter) to save"
+    }
+  },
+  "noteListItem": {
+    "untitled": "Untitled Note",
+    "noContent": "No content available",
+    "confirmDelete": "Are you sure you want to delete this note? This action cannot be undone.",
+    "actions": {
+      "edit": "Edit note",
+      "delete": "Delete note",
+      "archive": "Archive note",
+      "unarchive": "Unarchive note",
+      "makePublic": "Make note public",
+      "makePrivate": "Make note private",
+      "showMore": "Show more",
+      "showLess": "Show less"
+    }
+  },
+  "noteSearch": {
+    "placeholder": "Search notes...",
+    "clearSearch": "Clear search",
+    "advancedFilters": "Advanced Filters",
+    "clearAll": "Clear all",
+    "includeArchived": "Include archived notes",
+    "noteType": "Note Type",
+    "allNotes": "All notes",
+    "publicOnly": "Public only",
+    "privateOnly": "Private only",
+    "createdBy": "Created by",
+    "anyone": "Anyone",
+    "searchLabel": "Search",
+    "includingArchived": "Including archived"
+  },
+  "noteDetailLayout": {
+    "defaultTitle": "Untitled",
+    "back": "Back",
+    "titlePlaceholder": "Add a title",
+    "editorPlaceholder": "Start writing your document...",
+    "saveStatus": {
+      "justNow": "Just now",
+      "oneMinuteAgo": "1 minute ago",
+      "minutesAgo": "{minutes} minutes ago",
+      "oneHourAgo": "1 hour ago",
+      "hoursAgo": "{hours} hours ago"
+    },
+    "templates": {
+      "scratchpad": "My scratchpad",
+      "weeklyPlanning": "Weekly planning",
+      "meetingNotes": "My meeting notes",
+      "quickLinks": "Quick links",
+      "blankNote": "Blank note"
+    },
+    "templateContent": {
+      "scratchpad": {
+        "title": "My Scratchpad",
+        "content": "Quick thoughts and ideas go here..."
+      },
+      "weeklyPlanning": {
+        "title": "Weekly Planning",
+        "goals": "Goals",
+        "goal1": "Goal 1",
+        "tasks": "Tasks",
+        "task1": "Task 1"
+      },
+      "meetingNotes": {
+        "title": "Meeting Notes",
+        "attendees": "Attendees",
+        "attendeesPlaceholder": "Who did I meet with?",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes here",
+        "actionItems": "Action items",
+        "actionItemsPlaceholder": "What do I need to get done?"
+      }
+    }
+  },
+  "noteEditor": {
+    "loadingEditor": "Loading editor...",
+    "saving": "Saving...",
+    "savedAt": "Saved at",
+    "placeholder": "Start writing your note...",
+    "prompts": {
+      "enterUrl": "Enter URL:",
+      "enterImageUrl": "Enter image URL:"
+    }
+  },
+  "noteEditorLayout": {
+    "tableOfContents": "Table of Contents",
+    "showTableOfContents": "Show Table of Contents",
+    "hideTableOfContents": "Hide Table of Contents"
+  },
+  "formattingToolbar": {
+    "bold": "Bold (Ctrl+B)",
+    "italic": "Italic (Ctrl+I)",
+    "underline": "Underline (Ctrl+U)",
+    "strikethrough": "Strikethrough",
+    "code": "Code",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "bulletList": "Bullet List",
+    "numberedList": "Numbered List",
+    "quote": "Quote",
+    "alignLeft": "Align Left",
+    "alignCenter": "Align Center",
+    "alignRight": "Align Right",
+    "addLink": "Add Link (Ctrl+K)",
+    "addImage": "Add Image"
+  },
+  "commentItem": {
+    "invalidDate": "Invalid date",
+    "unknown": "Unknown",
+    "edited": "edited",
+    "edit": "Edit comment",
+    "delete": "Delete comment",
+    "editPlaceholder": "Edit your comment...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutesAgo": "{minutes} minutes ago",
+      "hoursAgo": "{hours} hours ago",
+      "daysAgo": "{days} days ago"
+    }
+  },
+  "commentsList": {
+    "title": "Comments ({count})",
+    "loading": "Loading comments...",
+    "noComments": "No comments yet.",
+    "updateError": "Failed to update comment. Please try again.",
+    "errors": {
+      "accessDenied": "You don't have permission to view comments for this task.",
+      "notFound": "This task was not found or you don't have access to it.",
+      "authRequired": "Please log in again to view comments.",
+      "loadError": "Error loading comments. Please try again."
+    }
+  },
+  "descriptionEditor": {
+    "title": "Description",
+    "placeholder": "Add a description...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "clickToAdd": "Click to add a description...",
+    "noDescription": "No description"
+  },
+  "googleCalendar": {
+    "title": "Google Calendar Integration",
+    "eventId": "Event ID",
+    "googleMeet": "Google Meet",
+    "lastSynced": "Last synced",
+    "status": {
+      "synced": "Synced to Calendar",
+      "notSynced": "Not synced to Google Calendar",
+      "saving": "⏳ Task is being saved... Please wait to use Google Calendar."
+    },
+    "actions": {
+      "addToCalendar": "Add to Calendar",
+      "quickMeeting": "Quick Meeting",
+      "viewInCalendar": "View in Google Calendar",
+      "joinMeet": "Join Google Meet"
+    },
+    "quickMeeting": {
+      "title": "Quick Meeting",
+      "description": "Quick meeting about task"
+    },
+    "loading": {
+      "calendarInfo": "⏳ Loading calendar information...",
+      "processing": "⏳ Processing Google Calendar..."
+    },
+    "success": {
+      "meetingCreated": "✅ Meeting has been created!",
+      "meetingCreatedGeneral": "✅ Meeting has been created successfully!",
+      "eventCreated": "✅ Calendar event created successfully!",
+      "eventCreatedGeneral": "✅ Calendar event created successfully!"
+    },
+    "errors": {
+      "invalidTaskId": "Invalid Task ID",
+      "notConnected": "You haven't connected to Google Calendar.",
+      "connectPrompt": "Do you want to connect to continue?",
+      "backendCreateFailed": "❌ Backend failed to create Google Calendar event.",
+      "projectNotConnected": "You may not have connected Google Calendar for Project Tasks.",
+      "connectQuestion": "Do you want to connect Google Calendar?",
+      "generalError": "❌ An error occurred while working with Google Calendar",
+      "meetingCreateFailed": "❌ Unable to create meeting. Backend returned success: null/false",
+      "eventCreateFailed": "❌ Unable to create calendar event. Backend returned success: null/false"
+    }
+  },
+  "taskDetailFooter": {
+    "addComment": "Add Comment",
+    "currentUser": "Current User",
+    "commentPlaceholder": "Add a comment",
+    "notificationCount": "0 people will be notified",
+    "cancel": "Cancel",
+    "comment": "Comment",
+    "posting": "Posting...",
+    "addCommentAriaLabel": "Add a comment",
+    "addCommentPlaceholder": "Add a comment...",
+    "collaborators": "Collaborators"
+  },
+  "taskDetailHeader": {
+    "upload": "Upload",
+    "googleDrive": "Google Drive",
+    "oneDrive": "OneDrive/SharePoint",
+    "completed": "Completed",
+    "markComplete": "Mark complete",
+    "selectOrDragFiles": "Select or drag files from your computer",
+    "chooseFile": "Choose a file",
+    "connectGoogleDriveDescription": "Connect your Google Drive to import files.",
+    "connectGoogleDrive": "Connect Google Drive",
+    "connectOneDriveDescription": "Connect your OneDrive or SharePoint to import files.",
+    "connectOneDrive": "Connect OneDrive",
+    "taskIsPrivate": "This task is private to you.",
+    "changePrivacy": "Change privacy"
+  },
+  "taskFields": {
+    "assignee": "Assignee",
+    "assign": "Assign",
+    "dueDate": "Due date",
+    "startDate": "Start date",
+    "projects": "Projects",
+    "addToProjects": "Add to projects",
+    "noDueDate": "No due date",
+    "noStartDate": "No start date",
+    "moreAssignees": "more..."
+  },
+  "taskDetailPanel": {
+    "loadingComments": "Loading comments...",
+    "noCommentsYet": "No comments yet",
+    "commentCount": "{count} comment",
+    "commentCountPlural": "{count} comments",
+    "edited": "(edited)",
+    "editCommentPlaceholder": "Edit your comment...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "unknownUser": "Unknown User",
+    "commentAuthor": "Comment Author"
+  },
+  "taskCommentsActivity": {
+    "comments": "Comments",
+    "allActivity": "All activity"
+  },
+  "taskActivityList": {
+    "loadingActivities": "Loading activities...",
+    "noActivityYet": "No activity yet",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "earlier": "Earlier",
+    "unknownUser": "Unknown User"
+  },
+  "taskAttachments": {
+    "title": "Attachments",
+    "preview": "Preview",
+    "download": "Download",
+    "remove": "Remove",
+    "uploadedBy": "by",
+    "previewAlt": "Preview",
+    "closePreview": "Close Preview",
+    "fileSizes": {
+      "bytes": "Bytes",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
+  },
+  "taskTitle": {
+    "placeholder": "Task name"
+  },
+  "projectTaskList": {
+    "loading": "Loading tasks...",
+    "addTask": "Add task...",
+    "addTaskPlaceholder": "Write a task name",
+    "pressEnterToSave": "Press Enter to save",
+    "headers": {
+      "name": "Name",
+      "dueDate": "Due date",
+      "priority": "Priority",
+      "status": "Status",
+      "collaborators": "Collaborators",
+      "comments": "Comments"
+    }
+  },
+  "projectOverview": {
+    "description": {
+      "title": "Project description",
+      "placeholder": "Describe your project...",
+      "clickToAdd": "Click to add project description...",
+      "noDescription": "No description available",
+      "saving": "Saving...",
+      "save": "Save",
+      "cancel": "Cancel",
+      "failedToLoad": "Failed to load project description",
+      "loading": "Loading..."
+    },
+    "members": {
+      "title": "Project Members",
+      "loading": "Loading Project Members...",
+      "error": "Error Loading Members",
+      "tryAgain": "Try Again",
+      "noMembers": "No members",
+      "removeMember": "Are you sure you want to remove {name} from this project?",
+      "memberRemoved": "{name} has been removed from the project",
+      "failedToRemove": "Failed to remove member from project"
+    },
+    "status": {
+      "title": "Project Status",
+      "planned": "Planned",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "atRisk": "At Risk",
+      "blocked": "Blocked",
+      "cancelled": "Cancelled",
+      "onHold": "On Hold"
+    },
+    "timeline": {
+      "title": "Project Timeline",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "duration": "Duration",
+      "noStartDate": "No start date",
+      "noEndDate": "No end date",
+      "days": "days",
+      "saving": "Saving...",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "connectedGoals": {
+      "title": "Connected Goals",
+      "noGoals": "No connected goals",
+      "loading": "Loading goals...",
+      "error": "Failed to load goals",
+      "connectGoal": "Connect Goal",
+      "viewGoal": "View Goal"
+    }
+  },
+  "postModal": {
+    "imageGallery": {
+      "imageAlt": "Image {current} of {total}",
+      "counter": "{current} / {total}",
+      "thumbnailAlt": "Thumbnail {index}"
+    },
+    "commentForm": {
+      "defaultUserName": "You",
+      "placeholder": "Write a comment...",
+      "submitting": "Sending...",
+      "submit": "Send"
+    },
+    "linkedContent": {
+      "linkedTask": "Linked with task",
+      "linkedProject": "Linked with project"
+    },
+    "pinnedPost": "Pinned post",
+    "comments": {
+      "title": "Comments",
+      "loading": "Loading...",
+      "loadMore": "Load more comments",
+      "noComments": "No comments yet",
+      "beFirst": "Be the first to comment!"
+    }
+  },
+  "postHeader": {
+    "verified": "Verified",
+    "pinned": "Pinned",
+    "pinnedPostTitle": "Pinned post",
+    "editPost": "Edit post"
+  },
+  "comments": {
+    "like": "Like",
+    "liked": "Liked",
+    "reply": "Reply",
+    "edit": "Edit",
+    "delete": "Delete",
+    "write_reply": "Write a reply...",
+    "reply_to": "Reply to {{name}}...",
+    "delete_confirmation": "Are you sure you want to delete this comment?",
+    "view_more_replies": "View {{count}} more replies",
+    "hide_replies": "Hide replies",
+    "show_replies": "Show {{count}} replies"
+  },
+  "postActions": {
+    "like": "Like",
+    "liked": "Liked",
+    "unlike": "Unlike",
+    "comment": "Comment",
+    "comments": "comments"
+  },
+  "createPost": {
+    "placeholder": "What's on your mind?",
+    "labels": {
+      "postContent": "Post content"
+    },
+    "hints": {
+      "ctrlEnter": "Press Ctrl+Enter to post quickly",
+      "imageUpload": "Upload images (JPG, PNG, GIF, WebP - will be optimized automatically). Max {{max}} images."
+    },
+    "errors": {
+      "contentRequired": "Please write something or add images",
+      "createFailed": "Failed to create post. Please try again.",
+      "maxImages": "You can only upload up to {{max}} images. Currently selected: {{current}}",
+      "processingFailed": "Failed to process some images. Please try again."
+    },
+    "status": {
+      "processing": "Processing images...",
+      "posting": "Posting..."
+    },
+    "images": {
+      "selected": "{{count}} image{{count === 1 ? '' : 's'}} selected",
+      "previewAlt": "Preview: {{name}}",
+      "removeAlt": "Remove {{name}}"
+    },
+    "actions": {
+      "removeAll": "Remove all",
+      "maxImages": "Max images",
+      "addMore": "Add more",
+      "photos": "Photos",
+      "post": "Post"
+    }
+  },
+  "you": "You",
+  "user": "user",
+  "unknown_user": "Unknown User",
+  "premium": "Premium",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saving": "Saving...",
+  "send": "Send",
+  "sending": "Sending...",
+  "loading": "Loading...",
+  "editPost": {
+    "title": "Edit Post",
+    "subtitle": "Update content, images and settings",
+    "placeholder": "What's on your mind?",
+    "privacy": {
+      "label": "Privacy",
+      "public": {
+        "label": "Public",
+        "description": "Everyone can see this"
+      },
+      "friends": {
+        "label": "Friends",
+        "description": "Only friends can see this"
+      },
+      "private": {
+        "label": "Private",
+        "description": "Only you can see this"
+      }
+    },
+    "pin": {
+      "label": "Pin Post",
+      "pinned": "Post will be pinned at the top",
+      "unpinned": "Post will display normally"
+    },
+    "images": {
+      "current": "Current Images",
+      "new": "New Images",
+      "addImages": "Add Images",
+      "restore": "Restore image",
+      "remove": "Remove image",
+      "willRemove": "Will remove"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "saving": "Saving..."
+    },
+    "status": {
+      "hasChanges": "Unsaved changes",
+      "noChanges": "No changes"
+    },
+    "unsavedWarning": {
+      "title": "You have unsaved changes",
+      "message": "Do you want to exit without saving? All changes will be lost.",
+      "continueEditing": "Continue editing",
+      "exitWithoutSaving": "Exit without saving"
+    }
+  },
+  "friendList": {
+    "title": "Friends",
+    "loading": "Loading...",
+    "error": {
+      "cannotLoad": "Cannot load friends list"
+    },
+    "empty": {
+      "noFriends": "No friends yet",
+      "encouragement": "Make friends to start chatting!"
+    },
+    "status": {
+      "active": "active",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "actions": {
+      "chat": "Chat"
+    },
+    "sections": {
+      "activeCount": "{count} active",
+      "onlineCount": "Online ({count})",
+      "offlineCount": "Offline ({count})"
+    }
+  },
+  "newsfeed": {
+    "createPost": {
+      "placeholder": "What's on your mind?"
+    },
+    "loading": {
+      "posts": "Loading posts...",
+      "more": "Loading more...",
+      "refreshing": "Refreshing..."
+    },
+    "actions": {
+      "refresh": "Refresh posts",
+      "loadMore": "Load more posts",
+      "retry": "Try again"
+    },
+    "error": {
+      "loadPosts": "An error occurred while loading posts"
+    },
+    "empty": {
+      "noPosts": "No posts yet",
+      "createFirst": "Create your first post!"
+    },
+    "endOfFeed": "🎉 You've seen all {count} posts"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "subtitle": "Manage your notifications and stay updated",
+    "error": {
+      "loading": "Error loading notifications",
+      "retry": "Retry"
+    },
+    "empty": {
+      "title": "No notifications",
+      "description": "You're all caught up! Check back later for new updates."
+    },
+    "status": {
+      "unread": "unread"
+    },
+    "pagination": {
+      "showing": "Showing {start} to {end} of {total} notifications",
+      "page": "Page {current} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "archive": {
+    "title": "Archive",
+    "subtitle": "Your archived notifications",
+    "error": {
+      "loading": "Error loading archived notifications",
+      "retry": "Retry"
+    },
+    "empty": {
+      "title": "No archived notifications",
+      "description": "Archived notifications will appear here. Archive notifications to declutter your inbox."
+    },
+    "status": {
+      "archived": "archived"
+    },
+    "actions": {
+      "clearAll": "Clear All",
+      "clearAllTooltip": "Delete all archived notifications permanently",
+      "selected": "{count} selected",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all notifications",
+      "unarchive": "Unarchive",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "showing": "Showing {start} to {end} of {total} archived notifications",
+      "page": "Page {current} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "bookmarks": {
+    "title": "Bookmarks",
+    "subtitle": "Your saved notifications",
+    "error": {
+      "loading": "Error loading bookmarked notifications",
+      "retry": "Retry"
+    },
+    "empty": {
+      "title": "No bookmarked notifications",
+      "description": "Bookmark important notifications to find them easily later."
+    },
+    "status": {
+      "bookmarked": "bookmarked"
+    },
+    "actions": {
+      "selected": "{count} selected",
+      "clearSelection": "Clear selection",
+      "selectAll": "Select all notifications",
+      "removeBookmarks": "Remove Bookmarks",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "showing": "Showing {start} to {end} of {total} bookmarked notifications",
+      "page": "Page {current} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "notifications": {
+    "actions": {
+      "markAsRead": "Mark as read",
+      "markAsUnread": "Mark as unread",
+      "bookmark": "Bookmark",
+      "removeBookmark": "Remove bookmark",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "delete": "Delete",
+      "moreActions": "More actions"
+    },
+    "status": {
+      "bookmarked": "Bookmarked",
+      "overdue": "Overdue",
+      "by": "by"
+    },
+    "filters": {
+      "filter": "Filter",
+      "sort": "Sort",
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read",
+      "allTypes": "All Types",
+      "tasks": "Tasks",
+      "posts": "Posts",
+      "meetings": "Meetings",
+      "system": "System",
+      "dateCreated": "Date Created",
+      "dateRead": "Date Read",
+      "priority": "Priority",
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "clearAllFilters": "Clear all filters"
+    },
+    "bulkActions": {
+      "selected": "{count} selected",
+      "clearSelection": "Clear selection",
+      "markAsRead": "Mark as Read",
+      "archive": "Archive",
+      "delete": "Delete"
+    }
+  },
+  "userMenu": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log out",
+    "loggingOut": "Logging out...",
+    "roles": {
+      "admin": "ADMIN",
+      "member": "MEMBER"
+    }
+  },
+  "strategyMap": {
+    "title": "Strategy Map",
+    "loading": "Loading team goals...",
+    "errorLoading": "Error loading team goals: {error}",
+    "missionAndTeams": "Mission + {count} Teams",
+    "missionAndDemoData": "Mission + Demo Data",
+    "categories": {
+      "Vision": "Vision",
+      "Financial": "Financial",
+      "Customer": "Customer",
+      "Process": "Process",
+      "Learning": "Learning"
+    },
+    "progress": {
+      "complete": "complete",
+      "done": "done",
+      "total": "total"
+    },
+    "team": "Team ({count})",
+    "missionLabel": "Company development in the next month",
+    "buttons": {
+      "createGoal": "Goal",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "fitToView": "Fit to View",
+      "resetView": "Reset View",
+      "save": "Save"
+    },
+    "newGoal": "New {category} Goal"
+  },
+  "teamDashboard": {
+    "loadingTeamDashboard": "Loading team dashboard...",
+    "teamDashboard": "Team Dashboard",
+    "members": "members",
+    "projects": "projects",
+    "completionRate": "completion rate",
+    "refreshData": "Refresh Data",
+    "teamMembersByRole": "Team Members by Role",
+    "currentTeamComposition": "Current team composition by role",
+    "workloadDistribution": "Workload Distribution",
+    "tasksPerMember": "Tasks per Member",
+    "taskDistribution": "Task distribution among team members",
+    "projectsByStatus": "Projects by Status",
+    "totalProjects": "total projects",
+    "teamPerformanceTrend": "Team Performance Trend",
+    "monthlyTaskCompletion": "Monthly Task Completion",
+    "taskCreationVsCompletion": "Task creation vs completion over last 5 months",
+    "activeProjectsProgress": "Active Projects Progress",
+    "upcomingDeadlines": "Upcoming Deadlines",
+    "thisWeek": "This Week",
+    "overdue": "Overdue",
+    "due": "Due",
+    "daysOverdue": "days overdue",
+    "noUrgentDeadlines": "No urgent deadlines",
+    "allTasksOnTrack": "All tasks are on track"
+  },
+  "errors": {
+    "failedToLoadTeamDashboard": "Failed to load team dashboard",
+    "failedToLoadTeamProjects": "Failed to load team projects"
+  },
+  "common": {
+    "tryAgain": "Try Again",
+    "retry": "Retry"
+  }
+}

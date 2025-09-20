@@ -2,7 +2,8 @@
 
 import React, { useCallback } from "react";
 import { Search, X } from "lucide-react";
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export interface SearchInputProps {
   value: string;
@@ -21,15 +22,23 @@ const SearchInput = ({
   onChange,
   onFocus,
   onBlur,
-  placeholder = "Search...",
+  placeholder,
   showShortcut = true,
   className = "",
   size = "md",
   variant = "default",
 }: SearchInputProps) => {
+  // Theme and Language Context
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const handleClear = useCallback(() => {
     onChange("");
   }, [onChange]);
+
+  // Get default placeholder from i18n if not provided
+  const defaultPlaceholder = messages?.search?.placeholder || "Search...";
+  const actualPlaceholder = placeholder || defaultPlaceholder;
 
   // Size variants
   const sizeClasses = {
@@ -52,13 +61,13 @@ const SearchInput = ({
 
   // Get search styles from theme
   const searchStyles = {
-    background: DARK_THEME.search.background,
-    backgroundStrong: DARK_THEME.search.backgroundStrong,
-    backgroundActive: DARK_THEME.search.backgroundActive,
-    text: DARK_THEME.search.text,
-    placeholder: DARK_THEME.search.placeholder,
-    border: DARK_THEME.search.border,
-    focus: DARK_THEME.search.focus,
+    background: theme.search.background,
+    backgroundStrong: theme.search.backgroundStrong,
+    backgroundActive: theme.search.backgroundActive,
+    text: theme.search.text,
+    placeholder: theme.text.muted,
+    border: theme.border.default,
+    focus: theme.border.focus,
   };
 
   return (
@@ -74,7 +83,7 @@ const SearchInput = ({
       {/* Input Field */}
       <input
         type="text"
-        placeholder={placeholder}
+        placeholder={actualPlaceholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={onFocus}
@@ -119,7 +128,8 @@ const SearchInput = ({
             onMouseLeave={(e) => {
               e.currentTarget.style.color = searchStyles.placeholder;
             }}
-            aria-label="Clear search"
+            aria-label={messages?.search?.clearSearch || "Clear search"}
+            title={messages?.search?.clearSearch || "Clear search"}
           >
             <X size={iconSizes[size] - 2} />
           </button>
@@ -135,6 +145,7 @@ const SearchInput = ({
               borderColor: searchStyles.border,
               borderWidth: '1px',
             }}
+            title={messages?.search?.shortcutHint || "Press ⌘K to search"}
           >
             ⌘K
           </kbd>

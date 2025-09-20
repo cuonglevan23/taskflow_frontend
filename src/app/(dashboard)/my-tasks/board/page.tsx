@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TaskDetailPanel } from "@/components/TaskDetailPanel";
+import { MyTaskDetailPanel } from "@/components/TaskDetailPanel"; // 🔥 Changed to MyTaskDetailPanel
 import { KanbanBoard } from "@/components/features/KanbanBoard";
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
 import { TaskListItem, TaskStatus } from "@/components/TaskList/types";
@@ -20,7 +20,8 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
     taskListItems,
     isLoading,
     error,
-    actions
+    actions,
+    revalidate // 🔥 Add revalidate for MyTaskDetailPanel
   } = useMyTasksShared({
     page: 0,
     size: 1000,
@@ -164,13 +165,13 @@ const MyTaskBoardPage = ({ searchValue = "" }: MyTaskBoardPageProps) => {
       </div>
 
       {/* Task Detail Panel */}
-      <TaskDetailPanel
+      {/* 🔥 Use MyTaskDetailPanel with correct props */}
+      <MyTaskDetailPanel
         task={selectedTask}
         isOpen={isPanelOpen}
         onClose={closeTaskPanel}
-        onSave={handleTaskSave}
-        onDelete={handleTaskDelete}
-        onStatusChange={handleTaskStatusChange}
+        myTasksActions={actions} // 🔥 Pass actions as myTasksActions
+        onRevalidate={revalidate} // 🔥 Pass revalidate as onRevalidate
       />
     </>
   );

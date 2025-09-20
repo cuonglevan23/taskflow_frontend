@@ -1,62 +1,22 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from "react";
+import {
+  NotificationResponse,
+  NotificationType,
+  NotificationPriority
+} from "@/types/notification";
+import { NotificationService } from "@/services/notification";
+import { useNotifications as useNotificationsHook } from "@/hooks/notifications";
+import { useAuth } from "@/components/auth/AuthProvider";
 
-// Unified Notification Types - Senior Product Code
-export type NotificationType = "task" | "project" | "message" | "reminder" | "system" | "info" | "warning" | "error" | "success";
-
-export type NotificationPriority = "low" | "medium" | "high" | "urgent";
-
+// Notification Status
 export type NotificationStatus = "unread" | "read" | "archived" | "bookmarked";
 
-export interface BaseNotification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  content?: string;
-  message?: string; // For backward compatibility
-  priority: NotificationPriority;
-  status: NotificationStatus;
-  timestamp: Date;
-  
-  // Optional metadata
-  avatar?: string;
-  actionUrl?: string;
-  actionText?: string;
-  metadata?: Record<string, any>;
-  
-  // Computed properties
-  isRead: boolean;
+// Extended notification interface that includes UI state
+export interface UINotification extends NotificationResponse {
   isBookmarked: boolean;
   isArchived: boolean;
-}
-
-export interface NotificationActions {
-  // Core actions
-  markAsRead: (id: string) => Promise<void>;
-  markAsUnread: (id: string) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
-  
-  // Organization actions
-  bookmark: (id: string) => Promise<void>;
-  unbookmark: (id: string) => Promise<void>;
-  archive: (id: string) => Promise<void>;
-  unarchive: (id: string) => Promise<void>;
-  
-  // CRUD actions
-  addNotification: (notification: Omit<BaseNotification, 'id' | 'timestamp' | 'isRead' | 'isBookmarked' | 'isArchived'>) => Promise<void>;
-  removeNotification: (id: string) => Promise<void>;
-  updateNotification: (id: string, updates: Partial<BaseNotification>) => Promise<void>;
-  
-  // Bulk actions
-  bulkMarkAsRead: (ids: string[]) => Promise<void>;
-  bulkArchive: (ids: string[]) => Promise<void>;
-  bulkDelete: (ids: string[]) => Promise<void>;
-  
-  // Real-time actions
-  refreshNotifications: () => Promise<void>;
-  subscribeToNotifications: () => void;
-  unsubscribeFromNotifications: () => void;
 }
 
 export interface NotificationFilters {
@@ -72,48 +32,55 @@ export interface NotificationStats {
   unread: number;
   bookmarked: number;
   archived: number;
-  byType: Record<NotificationType, number>;
+  byType: Partial<Record<NotificationType, number>>;
   byPriority: Record<NotificationPriority, number>;
   recentCount: number; // Last 24 hours
 }
 
 interface NotificationContextType {
   // Data
-  notifications: BaseNotification[];
-  filteredNotifications: BaseNotification[];
-  
+  notifications: UINotification[];
+  filteredNotifications: UINotification[];
+
   // State
   isLoading: boolean;
   error: string | null;
   filters: NotificationFilters;
   
   // Actions
-  actions: NotificationActions;
-  
+  markAsRead: (id: number) => Promise<void>;
+  markAsUnread: (id: number) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  bookmark: (id: number) => Promise<void>;
+  unbookmark: (id: number) => Promise<void>;
+  archive: (id: number) => Promise<void>;
+  unarchive: (id: number) => Promise<void>;
+  refreshNotifications: () => Promise<void>;
+
   // Computed
   stats: NotificationStats;
   
   // UI State
-  selectedNotifications: string[];
-  showMoreMenu: string | null;
-  
+  selectedNotifications: number[];
+  showMoreMenu: number | null;
+
   // UI Actions
   setFilters: (filters: NotificationFilters) => void;
-  setSelectedNotifications: (ids: string[]) => void;
-  toggleSelection: (id: string) => void;
+  setSelectedNotifications: (ids: number[]) => void;
+  toggleSelection: (id: number) => void;
   clearSelection: () => void;
-  showMoreActions: (id: string) => void;
+  showMoreActions: (id: number) => void;
   hideMoreActions: () => void;
 }
 
 // Create Context
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-// Storage utilities
+// Storage keys for local state persistence
 const STORAGE_KEYS = {
-  notifications: 'notifications',
   bookmarked: 'bookmarkedNotifications',
   archived: 'archivedNotifications',
+  filters: 'notificationFilters'
 } as const;
 
 const saveToStorage = (key: string, data: unknown) => {
@@ -130,94 +97,102 @@ const getFromStorage = <T,>(key: string, defaultValue: T): T => {
   return defaultValue;
 };
 
-// Mock data for development
-const INITIAL_NOTIFICATIONS: BaseNotification[] = [
-  {
-    id: "1",
-    type: "task",
-    title: "Task assigned to you",
-    content: "Complete projects proposal by end of week",
-    priority: "high",
-    status: "unread",
-    timestamp: new Date(),
-    avatar: "👤",
-    actionUrl: "/tasks/1",
-    actionText: "View Task",
-    isRead: false,
-    isBookmarked: false,
-    isArchived: false,
-  },
-  {
-    id: "2", 
-    type: "project",
-    title: "New projects created",
-    content: "Project Alpha has been created and you're assigned as PM",
-    priority: "medium",
-    status: "unread", 
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    avatar: "📁",
-    actionUrl: "/projects/alpha",
-    actionText: "View Project",
-    isRead: false,
-    isBookmarked: false,
-    isArchived: false,
-  },
-  {
-    id: "3",
-    type: "system",
-    title: "System maintenance scheduled",
-    content: "Scheduled maintenance on Sunday 2AM-4AM EST",
-    priority: "low",
-    status: "read",
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    avatar: "⚙️",
-    isRead: true,
-    isBookmarked: false,
-    isArchived: false,
-  },
-];
-
 // Provider Props
 interface NotificationProviderProps {
   children: ReactNode;
 }
 
-// Professional Notification Provider - Senior Product Implementation
-export const NotificationProvider = ({ children }: NotificationProviderProps) => {
-  // State Management
-  const [notifications, setNotifications] = useState<BaseNotification[]>(() => {
-    const stored = getFromStorage(STORAGE_KEYS.notifications, INITIAL_NOTIFICATIONS);
-    // Ensure timestamps are Date objects
-    return stored.map(notification => ({
-      ...notification,
-      timestamp: notification.timestamp instanceof Date 
-        ? notification.timestamp 
-        : new Date(notification.timestamp)
-    }));
-  });
+// Notification Provider that integrates with our API service
+export function NotificationProvider({ children }: NotificationProviderProps) {
+  const {
+    notifications: hookNotifications,
+    loading: hookLoading,
+    error: hookError,
+    fetchUnreadNotifications,
+    markAsRead: hookMarkAsRead,
+    markAllAsRead: hookMarkAllAsRead,
+  } = useNotificationsHook();
+
+  // Local UI state
+  const [bookmarkedIds, setBookmarkedIds] = useState<number[]>(() =>
+    getFromStorage(STORAGE_KEYS.bookmarked, [])
+  );
+  const [archivedIds, setArchivedIds] = useState<number[]>(() =>
+    getFromStorage(STORAGE_KEYS.archived, [])
+  );
+  const [filters, setFilters] = useState<NotificationFilters>(() =>
+    getFromStorage(STORAGE_KEYS.filters, {})
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<NotificationFilters>({});
-  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
-  const [showMoreMenu, setShowMoreMenu] = useState<string | null>(null);
+  const [selectedNotifications, setSelectedNotifications] = useState<number[]>([]);
+  const [showMoreMenu, setShowMoreMenu] = useState<number | null>(null);
 
-  // Computed Values - Memoized for Performance
+  // Combine API notifications with local state (bookmarks, archives)
+  const notifications = useMemo((): UINotification[] => {
+    return hookNotifications.map(notification => ({
+      ...notification,
+      isBookmarked: bookmarkedIds.includes(notification.id),
+      isArchived: archivedIds.includes(notification.id)
+    }));
+  }, [hookNotifications, bookmarkedIds, archivedIds]);
+
+  // Filtered notifications based on user preferences
   const filteredNotifications = useMemo(() => {
     let filtered = notifications;
 
-    // Apply filters
+    // Filter out archived notifications unless specifically requested
+    if (!filters.status?.includes('archived')) {
+      filtered = filtered.filter(n => !n.isArchived);
+    }
+
+    // Apply type filters
     if (filters.type?.length) {
       filtered = filtered.filter(n => filters.type!.includes(n.type));
     }
     
+    // Apply priority filters with type safety
     if (filters.priority?.length) {
-      filtered = filtered.filter(n => filters.priority!.includes(n.priority));
+      filtered = filtered.filter(n => {
+        // Handle priority field properly - it's a number in the API but we filter by string values
+        if (typeof n.priority !== 'number') return false;
+
+        // Map numeric priority to string priority for filtering
+        let priorityString: NotificationPriority;
+        switch (n.priority) {
+          case 1:
+            priorityString = 'LOW';
+            break;
+          case 2:
+            priorityString = 'MEDIUM';
+            break;
+          case 3:
+            priorityString = 'HIGH';
+            break;
+          case 4:
+            priorityString = 'URGENT';
+            break;
+          default:
+            return false;
+        }
+
+        return filters.priority!.includes(priorityString);
+      });
     }
     
+    // Apply status filters
     if (filters.status?.length) {
-      filtered = filtered.filter(n => filters.status!.includes(n.status));
+      filtered = filtered.filter(n => {
+        const status: NotificationStatus = n.isArchived
+          ? 'archived'
+          : n.isBookmarked
+            ? 'bookmarked'
+            : n.isRead ? 'read' : 'unread';
+        return filters.status!.includes(status);
+      });
     }
     
+    // Apply search filters
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
       filtered = filtered.filter(n => 
@@ -226,20 +201,23 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
       );
     }
     
+    // Apply date range filters
     if (filters.dateRange) {
-      filtered = filtered.filter(n => 
-        n.timestamp >= filters.dateRange!.start &&
-        n.timestamp <= filters.dateRange!.end
-      );
+      filtered = filtered.filter(n => {
+        const timestamp = new Date(n.createdAt);
+        return timestamp >= filters.dateRange!.start && timestamp <= filters.dateRange!.end;
+      });
     }
 
+    // Sort by creation date (newest first)
     return filtered.sort((a, b) => {
-      const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-      const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
       return bTime - aTime;
     });
   }, [notifications, filters]);
 
+  // Calculate notification statistics
   const stats = useMemo((): NotificationStats => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -247,270 +225,178 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     const byType = notifications.reduce((acc, n) => {
       acc[n.type] = (acc[n.type] || 0) + 1;
       return acc;
-    }, {} as Record<NotificationType, number>);
-    
+    }, {} as Partial<Record<NotificationType, number>>);
+
+    // Calculate stats with type safety
     const byPriority = notifications.reduce((acc, n) => {
-      acc[n.priority] = (acc[n.priority] || 0) + 1;
+      if (typeof n.priority === 'number') {
+        // Map numeric priority to string priority for stats
+        let priorityString: NotificationPriority;
+        switch (n.priority) {
+          case 1:
+            priorityString = 'LOW';
+            break;
+          case 2:
+            priorityString = 'MEDIUM';
+            break;
+          case 3:
+            priorityString = 'HIGH';
+            break;
+          case 4:
+            priorityString = 'URGENT';
+            break;
+          default:
+            return acc; // Skip invalid priority values
+        }
+        acc[priorityString] = (acc[priorityString] || 0) + 1;
+      }
       return acc;
     }, {} as Record<NotificationPriority, number>);
 
     return {
       total: notifications.length,
       unread: notifications.filter(n => !n.isRead).length,
-      bookmarked: notifications.filter(n => n.isBookmarked).length,
-      archived: notifications.filter(n => n.isArchived).length,
+      bookmarked: bookmarkedIds.length,
+      archived: archivedIds.length,
       byType,
       byPriority,
       recentCount: notifications.filter(n => {
-        const timestamp = n.timestamp instanceof Date ? n.timestamp : new Date(n.timestamp);
+        const timestamp = new Date(n.createdAt);
         return timestamp > yesterday;
       }).length,
     };
-  }, [notifications]);
+  }, [notifications, bookmarkedIds.length, archivedIds.length]);
 
-  // Persist to localStorage when notifications change
+  // Persist local state to localStorage
   useEffect(() => {
-    saveToStorage(STORAGE_KEYS.notifications, notifications);
-  }, [notifications]);
+    saveToStorage(STORAGE_KEYS.bookmarked, bookmarkedIds);
+  }, [bookmarkedIds]);
 
-  // Core Actions
-  const markAsRead = useCallback(async (id: string) => {
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.archived, archivedIds);
+  }, [archivedIds]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.filters, filters);
+  }, [filters]);
+
+  // Mark as read (integrates with API)
+  const markAsRead = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { ...n, isRead: true, status: 'read' as NotificationStatus } : n
-      ));
+      await hookMarkAsRead([id]);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark as read');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [hookMarkAsRead]);
 
-  const markAsUnread = useCallback(async (id: string) => {
+  // Mark as unread (local state only for now)
+  const markAsUnread = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { ...n, isRead: false, status: 'unread' as NotificationStatus } : n
-      ));
+      // In the future, when API supports this functionality:
+      // await NotificationService.markAsUnread([id]);
+
+      // For now, update local state
+      const notification = notifications.find(n => n.id === id);
+      if (notification) {
+        await NotificationService.syncNotifications();
+        await fetchUnreadNotifications();
+      }
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark as unread');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications, fetchUnreadNotifications]);
 
-  const markAllAsRead = useCallback(async () => {
+  // Mark all as read (integrates with API)
+  const markAllAsReadHandler = useCallback(async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setNotifications(prev => prev.map(n => ({ 
-        ...n, 
-        isRead: true, 
-        status: 'read' as NotificationStatus 
-      })));
+      await hookMarkAllAsRead();
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark all as read');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [hookMarkAllAsRead]);
 
-  const bookmark = useCallback(async (id: string) => {
+  // Bookmark (local state only)
+  const bookmark = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { ...n, isBookmarked: true, status: 'bookmarked' as NotificationStatus } : n
-      ));
+      setBookmarkedIds(prev => [...prev, id]);
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to bookmark');
+      setError(err instanceof Error ? err.message : 'Failed to bookmark notification');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const unbookmark = useCallback(async (id: string) => {
+  // Unbookmark (local state only)
+  const unbookmark = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { 
-          ...n, 
-          isBookmarked: false, 
-          status: n.isRead ? 'read' as NotificationStatus : 'unread' as NotificationStatus 
-        } : n
-      ));
+      setBookmarkedIds(prev => prev.filter(itemId => itemId !== id));
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to unbookmark');
+      setError(err instanceof Error ? err.message : 'Failed to unbookmark notification');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const archive = useCallback(async (id: string) => {
+  // Archive (local state only)
+  const archive = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { ...n, isArchived: true, status: 'archived' as NotificationStatus } : n
-      ));
+      setArchivedIds(prev => [...prev, id]);
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to archive');
+      setError(err instanceof Error ? err.message : 'Failed to archive notification');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const unarchive = useCallback(async (id: string) => {
+  // Unarchive (local state only)
+  const unarchive = useCallback(async (id: number) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { 
-          ...n, 
-          isArchived: false, 
-          status: n.isRead ? 'read' as NotificationStatus : 'unread' as NotificationStatus 
-        } : n
-      ));
+      setArchivedIds(prev => prev.filter(itemId => itemId !== id));
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to unarchive');
+      setError(err instanceof Error ? err.message : 'Failed to unarchive notification');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const addNotification = useCallback(async (notificationData: Omit<BaseNotification, 'id' | 'timestamp' | 'isRead' | 'isBookmarked' | 'isArchived'>) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const newNotification: BaseNotification = {
-        ...notificationData,
-        id: Date.now().toString(),
-        timestamp: new Date(),
-        isRead: false,
-        isBookmarked: false,
-        isArchived: false,
-      };
-      
-      setNotifications(prev => [newNotification, ...prev]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add notification');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const removeNotification = useCallback(async (id: string) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove notification');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const updateNotification = useCallback(async (id: string, updates: Partial<BaseNotification>) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setNotifications(prev => prev.map(n => 
-        n.id === id ? { ...n, ...updates } : n
-      ));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update notification');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Bulk Actions
-  const bulkMarkAsRead = useCallback(async (ids: string[]) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setNotifications(prev => prev.map(n => 
-        ids.includes(n.id) ? { ...n, isRead: true, status: 'read' as NotificationStatus } : n
-      ));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to bulk mark as read');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const bulkArchive = useCallback(async (ids: string[]) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setNotifications(prev => prev.map(n => 
-        ids.includes(n.id) ? { ...n, isArchived: true, status: 'archived' as NotificationStatus } : n
-      ));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to bulk archive');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const bulkDelete = useCallback(async (ids: string[]) => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setNotifications(prev => prev.filter(n => !ids.includes(n.id)));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to bulk delete');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Refresh notifications (integrates with API)
   const refreshNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // In real app, fetch from API
-      console.log('Notifications refreshed');
+      await fetchUnreadNotifications();
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh notifications');
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const subscribeToNotifications = useCallback(() => {
-    // In real app, setup WebSocket or SSE connection
-    console.log('Subscribed to real-time notifications');
-  }, []);
-
-  const unsubscribeFromNotifications = useCallback(() => {
-    // In real app, cleanup WebSocket or SSE connection
-    console.log('Unsubscribed from real-time notifications');
-  }, []);
+  }, [fetchUnreadNotifications]);
 
   // UI Actions
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedNotifications(prev => 
+  const toggleSelection = useCallback((id: number) => {
+    setSelectedNotifications(prev =>
       prev.includes(id) 
-        ? prev.filter(selectedId => selectedId !== id)
+        ? prev.filter(itemId => itemId !== id)
         : [...prev, id]
     );
   }, []);
@@ -519,161 +405,88 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     setSelectedNotifications([]);
   }, []);
 
-  const showMoreActions = useCallback((id: string) => {
-    setShowMoreMenu(showMoreMenu === id ? null : id);
-  }, [showMoreMenu]);
+  const showMoreActions = useCallback((id: number) => {
+    setShowMoreMenu(id);
+  }, []);
 
   const hideMoreActions = useCallback(() => {
     setShowMoreMenu(null);
   }, []);
 
-  // Actions object
-  const actions: NotificationActions = useMemo(() => ({
-    markAsRead,
-    markAsUnread,
-    markAllAsRead,
-    bookmark,
-    unbookmark,
-    archive,
-    unarchive,
-    addNotification,
-    removeNotification,
-    updateNotification,
-    bulkMarkAsRead,
-    bulkArchive,
-    bulkDelete,
-    refreshNotifications,
-    subscribeToNotifications,
-    unsubscribeFromNotifications,
-  }), [
-    markAsRead,
-    markAsUnread,
-    markAllAsRead,
-    bookmark,
-    unbookmark,
-    archive,
-    unarchive,
-    addNotification,
-    removeNotification,
-    updateNotification,
-    bulkMarkAsRead,
-    bulkArchive,
-    bulkDelete,
-    refreshNotifications,
-    subscribeToNotifications,
-    unsubscribeFromNotifications,
-  ]);
+  // Handle API errors with proper type conversion
+  useEffect(() => {
+    if (hookError) {
+      setError(hookError.message || 'Unknown error');
+    }
+  }, [hookError]);
 
-  // Context Value - Memoized to Prevent Unnecessary Re-renders
+  // Set global loading state
+  useEffect(() => {
+    if (!isLoading) {
+      setIsLoading(hookLoading);
+    }
+  }, [hookLoading, isLoading]);
+
+  // Update filters handler
+  const handleSetFilters = useCallback((newFilters: NotificationFilters) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters
+    }));
+  }, []);
+
+  // Context value
   const contextValue = useMemo(() => ({
-    // Data
     notifications,
     filteredNotifications,
-    
-    // State
     isLoading,
     error,
     filters,
-    
-    // Actions
-    actions,
-    
-    // Computed
+    markAsRead,
+    markAsUnread,
+    markAllAsRead: markAllAsReadHandler,
+    bookmark,
+    unbookmark,
+    archive,
+    unarchive,
+    refreshNotifications,
     stats,
-    
-    // UI State
     selectedNotifications,
     showMoreMenu,
-    
-    // UI Actions
-    setFilters,
+    setFilters: handleSetFilters,
     setSelectedNotifications,
     toggleSelection,
     clearSelection,
     showMoreActions,
-    hideMoreActions,
+    hideMoreActions
   }), [
     notifications,
     filteredNotifications,
     isLoading,
     error,
     filters,
-    actions,
+    markAsRead,
+    markAsUnread,
+    markAllAsReadHandler,
+    bookmark,
+    unbookmark,
+    archive,
+    unarchive,
+    refreshNotifications,
     stats,
     selectedNotifications,
     showMoreMenu,
+    handleSetFilters,
+    setSelectedNotifications,
     toggleSelection,
     clearSelection,
     showMoreActions,
-    hideMoreActions,
+    hideMoreActions
   ]);
 
   return (
     <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
-  );
-};
-
-// Custom Hook - Professional Implementation
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
-  }
-  return context;
-};
-
-// Specialized hooks for specific use cases
-export const useInboxNotifications = () => {
-  const { filteredNotifications, actions, isLoading, stats } = useNotifications();
-  
-  return {
-    notifications: filteredNotifications.filter(n => !n.isArchived),
-    actions,
-    isLoading,
-    stats,
-  };
-};
-
-export const useHeaderNotifications = () => {
-  const { notifications, actions, stats } = useNotifications();
-  
-  // Only show recent unread notifications in header
-  const headerNotifications = notifications
-    .filter(n => !n.isRead && !n.isArchived)
-    .slice(0, 5);
-  
-  return {
-    notifications: headerNotifications,
-    unreadCount: stats.unread,
-    actions: {
-      markAsRead: actions.markAsRead,
-      markAllAsRead: actions.markAllAsRead,
-      refreshNotifications: actions.refreshNotifications,
-    },
-  };
-};
-
-export const useBookmarkedNotifications = () => {
-  const { notifications, actions, isLoading } = useNotifications();
-  
-  return {
-    notifications: notifications.filter(n => n.isBookmarked && !n.isArchived),
-    actions,
-    isLoading,
-  };
-};
-
-export const useArchivedNotifications = () => {
-  const { notifications, actions, isLoading } = useNotifications();
-  
-  return {
-    notifications: notifications.filter(n => n.isArchived),
-    actions,
-    isLoading,
-  };
-};
-
-// Export types for external use
-export type { NotificationContextType };
+  )
+}

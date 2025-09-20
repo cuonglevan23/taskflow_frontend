@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
 import { MdMoreHoriz } from "react-icons/md";
 
 // Professional TypeScript Interfaces
@@ -58,7 +58,7 @@ const BaseCard = ({
   padding,
   fullHeight = false,
 }: BaseCardProps) => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
 
   // Get size-based spacing
   const getSizeClasses = () => {
@@ -234,21 +234,23 @@ const BaseCard = ({
         </div>
 
         {/* Actions Menu */}
-        <button 
-          onClick={onMenuClick}
-          className="p-2 rounded-lg transition-colors duration-200"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.background.secondary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          <MdMoreHoriz 
-            className="w-5 h-5"
-            style={{ color: theme.text.secondary }}
-          />
-        </button>
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="p-2 rounded-lg transition-colors duration-200"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.background.secondary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <MdMoreHoriz
+              className="w-5 h-5"
+              style={{ color: theme.text.secondary }}
+            />
+          </button>
+        )}
       </div>
 
       {/* Navigation Tabs */}

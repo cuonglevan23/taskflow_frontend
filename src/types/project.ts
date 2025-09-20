@@ -11,8 +11,9 @@ export interface BackendProject {
   startDate: string; // YYYY-MM-DD format
   endDate: string; // YYYY-MM-DD format
   ownerId: number;
-  emailPm: string;
-  organizationId: number;
+  createdById?: number; // Add missing property
+  emailPm?: string; // Change to optional since it can be undefined
+  organizationId?: number | null; // Allow null values
   createdAt?: string; // ISO string
   updatedAt?: string; // ISO string
   priority?: ProjectPriority;
@@ -23,6 +24,9 @@ export interface BackendProject {
   memberCount?: number;
   taskCount?: number;
   completedTaskCount?: number;
+  // Add missing user role properties
+  currentUserRole?: 'OWNER' | 'MEMBER';
+  isCurrentUserMember?: boolean;
 }
 
 // Frontend Project Interface (Transformed for UI)
@@ -37,11 +41,16 @@ export interface Project {
   startDateString: string; // Display format
   endDateString: string; // Display format
   ownerId: number;
-  emailPm: string;
-  organizationId: number;
+  createdById?: number; // Add missing property
+  emailPm?: string; // Make optional to handle undefined
+  organizationId?: number; // Make optional to handle null values
   createdAt: Date;
   updatedAt: Date;
   
+  // User role and permissions
+  currentUserRole?: 'OWNER' | 'MEMBER';
+  isCurrentUserMember?: boolean;
+
   // Computed fields
   duration: number; // days
   isOverdue: boolean;
@@ -71,10 +80,11 @@ export interface CreateProjectDTO {
   status?: ProjectStatus;
   ownerId: number;
   emailPm: string;
-  organizationId: number;
+  organizationId: number | null; // Allow null for personal projects
   priority?: ProjectPriority;
   budget?: number;
   teamIds?: number[];
+  isPersonal?: boolean; // Add missing property
 }
 
 // Update Project DTO (Request Body)
@@ -104,6 +114,8 @@ export interface ProjectFormData {
   emailPm: string;
   budget?: number;
   teamIds: number[];
+  isPersonal?: boolean; // Add missing property
+  teamId?: number; // Add for single team selection
 }
 
 // Project Summary (for lists/cards)
@@ -266,6 +278,12 @@ export interface PaginatedProjectsResponse {
   last: boolean;
   numberOfElements: number;
 }
+
+// Team Projects Response (could be paginated or simple array)
+export type TeamProjectsResponse = PaginatedProjectsResponse | BackendProject[];
+
+// User Projects Response (could be paginated or simple array)
+export type UserProjectsResponse = PaginatedProjectsResponse | BackendProject[];
 
 // Project Filter/Search Parameters
 export interface ProjectFilters {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export interface InboxNotification {
   id: string;
-  type: "task" | "project" | "message" | "reminder" | "system";
+  type: "task" | "project" | "message" | "reminder" | "system" | "post";
   title: string;
   content?: string;
   time: string;
@@ -70,6 +70,11 @@ export const useInboxActions = (
   const [items, setItems] = useState<InboxNotification[]>(notifications);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [showMoreMenu, setShowMoreMenu] = useState<string | null>(null);
+
+  // Add useEffect to update items when notifications change
+  useEffect(() => {
+    setItems(notifications);
+  }, [notifications]);
 
   const updateItems = useCallback((updatedItems: InboxNotification[]) => {
     setItems(updatedItems);
@@ -154,8 +159,6 @@ export const useInboxActions = (
         );
         updateItems(updatedItems);
       }
-      
-      console.log("Bookmarked notification:", id);
     } catch (error) {
       console.error("Failed to bookmark:", error);
     } finally {
@@ -176,8 +179,6 @@ export const useInboxActions = (
         item.id === id ? { ...item, isBookmarked: false } : item
       );
       updateItems(updatedItems);
-      
-      console.log("Unbookmarked notification:", id);
     } catch (error) {
       console.error("Failed to unbookmark:", error);
     } finally {
@@ -204,8 +205,6 @@ export const useInboxActions = (
       // Remove from current items
       const updatedItems = items.filter(item => item.id !== id);
       updateItems(updatedItems);
-      
-      console.log("Archived notification:", id);
     } catch (error) {
       console.error("Failed to archive:", error);
     } finally {
@@ -238,4 +237,4 @@ export const useInboxActions = (
     hideMoreActions,
     isLoading: (id: string) => loading[id] || false,
   };
-}; 
+};

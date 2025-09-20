@@ -13,6 +13,7 @@ interface TaskCardProps {
   isSelected?: boolean;
   onSelect?: (taskId: string) => void;
   className?: string;
+  taskType?: 'mytask' | 'project'; // NEW: Add taskType prop
 }
 
 const TaskCard = ({
@@ -21,6 +22,7 @@ const TaskCard = ({
   isSelected = false,
   onSelect,
   className = '',
+  taskType = 'mytask' // NEW: Default to 'mytask' for backward compatibility
 }: TaskCardProps) => {
   const { theme } = useTheme();
   const priorityConfig = getPriorityConfig(task.priority);
@@ -154,6 +156,7 @@ const TaskCard = ({
             <TaskCommentIndicator
               taskId={task.id}
               initialCount={task.commentCount || 0}
+              taskType={taskType} // Pass taskType to TaskCommentIndicator
             />
             <button
               onClick={handleStatusChange}

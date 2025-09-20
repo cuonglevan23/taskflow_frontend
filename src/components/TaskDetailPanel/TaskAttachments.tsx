@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Download, Eye, X, Image, FileText, File, Video, Music } from 'lucide-react';
 import { TaskAttachment } from '@/components/TaskList/types';
-import { DARK_THEME } from '@/constants/theme';
-import { Button } from '@/components/ui/Button';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { Button } from '@/components/ui/button';
 
 interface TaskAttachmentsProps {
   attachments: TaskAttachment[];
@@ -14,11 +15,28 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
   onRemoveAttachment
 }) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const { themeMode } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get nested message value
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return `0 ${t('taskAttachments.fileSizes.bytes')}`;
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = [
+      t('taskAttachments.fileSizes.bytes'),
+      t('taskAttachments.fileSizes.kb'),
+      t('taskAttachments.fileSizes.mb'),
+      t('taskAttachments.fileSizes.gb')
+    ];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -54,6 +72,8 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
     }
   };
 
+  const isDark = themeMode === 'dark';
+
   if (!attachments || attachments.length === 0) {
     return null;
   }
@@ -61,23 +81,27 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
   return (
     <>
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+        <h3 className={`text-sm font-medium flex items-center gap-2 ${
+          isDark ? 'text-gray-300' : 'text-gray-700'
+        }`}>
           <File className="w-4 h-4" />
-          Attachments ({attachments.length})
+          {t('taskAttachments.title')} ({attachments.length})
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="relative group border rounded-lg overflow-hidden hover:border-gray-500 transition-colors"
-              style={{
-                borderColor: DARK_THEME.border.default,
-                backgroundColor: DARK_THEME.background.secondary
-              }}
+              className={`relative group border rounded-lg overflow-hidden hover:border-gray-500 transition-colors ${
+                isDark 
+                  ? 'border-gray-700 bg-gray-800' 
+                  : 'border-gray-200 bg-white'
+              }`}
             >
               {/* File Preview/Icon */}
-              <div className="aspect-video bg-gray-800 flex items-center justify-center relative overflow-hidden">
+              <div className={`aspect-video flex items-center justify-center relative overflow-hidden ${
+                isDark ? 'bg-gray-800' : 'bg-gray-100'
+              }`}>
                 {isImageFile(attachment.type) ? (
                   <img
                     src={attachment.url}
@@ -86,7 +110,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
                     onClick={() => handlePreview(attachment)}
                   />
                 ) : (
-                  <div className="text-gray-400">
+                  <div className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                     {getFileIcon(attachment.type)}
                   </div>
                 )}
@@ -98,6 +122,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
                     variant="ghost"
                     onClick={() => handlePreview(attachment)}
                     className="text-white hover:bg-white/20"
+                    title={t('taskAttachments.preview')}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -106,6 +131,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
                     variant="ghost"
                     onClick={() => handleDownload(attachment)}
                     className="text-white hover:bg-white/20"
+                    title={t('taskAttachments.download')}
                   >
                     <Download className="w-4 h-4" />
                   </Button>
@@ -115,6 +141,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
                       variant="ghost"
                       onClick={() => onRemoveAttachment(attachment.id)}
                       className="text-red-400 hover:bg-red-500/20"
+                      title={t('taskAttachments.remove')}
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -124,15 +151,21 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
 
               {/* File Info */}
               <div className="p-3">
-                <div className="text-sm text-white truncate" title={attachment.name}>
+                <div className={`text-sm truncate ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`} title={attachment.name}>
                   {attachment.name}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
+                <div className={`text-xs mt-1 ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                   {formatFileSize(attachment.size)}
                 </div>
                 {attachment.uploadedBy && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    by {attachment.uploadedBy.name}
+                  <div className={`text-xs mt-1 ${
+                    isDark ? 'text-gray-500' : 'text-gray-500'
+                  }`}>
+                    {t('taskAttachments.uploadedBy')} {attachment.uploadedBy.name}
                   </div>
                 )}
               </div>
@@ -150,7 +183,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
           <div className="relative max-w-4xl max-h-4xl p-4">
             <img
               src={previewImage}
-              alt="Preview"
+              alt={t('taskAttachments.previewAlt')}
               className="max-w-full max-h-full object-contain"
             />
             <Button
@@ -158,6 +191,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
               size="sm"
               onClick={() => setPreviewImage(null)}
               className="absolute top-2 right-2 text-white hover:bg-white/20"
+              title={t('taskAttachments.closePreview')}
             >
               <X className="w-6 h-6" />
             </Button>

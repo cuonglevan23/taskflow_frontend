@@ -1,60 +1,58 @@
-import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
 
-const nextConfig: NextConfig = {
-  // Disable React StrictMode to reduce duplicate renders/API calls
-  reactStrictMode: false,
-  
-  // Disable NextJS devtools overlay to prevent CORS issues
+const withNextIntl = createNextIntlPlugin('./config/i18n/request.ts');
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ✅ FIX: Disable experimental features that cause HMR issues
   experimental: {
-    devOverlay: false,
-    optimizePackageImports: ['@/components', '@/hooks', '@/contexts'],
+    // reactCompiler: true, // ✅ DISABLED: Causes Fast Refresh issues
   },
 
-  // Add rewrites for API proxy to handle CORS
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/:path*`,
-      },
-      {
-        source: '/ws/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/ws/:path*`,
-      },
-    ];
-  },
-
-  // Image configuration
+  // Image optimization
   images: {
     remotePatterns: [
-      // Allow all HTTPS URLs
       {
         protocol: 'https',
         hostname: '**',
       },
-      // Allow localhost for development
+    ],
+  },
+
+  // ✅ FIX: Simplified webpack config to avoid dev issues
+  webpack: (config, { dev, isServer }) => {
+    // ✅ FIX: Only apply alias in production to avoid HMR conflicts
+    if (!dev && !isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': require('path').resolve(__dirname, './src'),
+      };
+    }
+    return config;
+  },
+
+  // ✅ FIX: Add CORS and dev server configs
+  async headers() {
+    return [
       {
-        protocol: 'http',
-        hostname: 'localhost',
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
       },
-    ],
-    // Keep common domains for better caching
-    domains: [
-      'localhost',
-      'api.taskflow.app',
-      'taskflow-app.vercel.app',
-      'taskflow-app-git-*.vercel.app',
-      'randomuser.me',
-      'lh3.googleusercontent.com',
-      'avatars.githubusercontent.com',
-      's.gravatar.com',
-      'www.gravatar.com',
-      'ui-avatars.com'
-    ],
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    ];
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

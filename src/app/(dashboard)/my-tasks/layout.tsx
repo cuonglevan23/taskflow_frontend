@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import PageLayout from '@/layouts/page/PageLayout';
 import TaskListHeader from '@/components/TaskList/TaskListHeader';
 import { usePathname } from 'next/navigation';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from '@/providers/ThemeProvider';
+import { useLanguageContext } from '@/providers/LanguageProvider';
 import { Clock } from 'lucide-react';
 import { useTasksContext } from '@/contexts';
 import { useMyTasksSummary, useMyTasksStats } from '@/hooks/tasks';
@@ -17,10 +18,21 @@ interface MyTaskLayoutProps {
 
 function MyTaskContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
   const { tasks } = useMyTasksSummary({ page: 0, size: 1000 }); // Use SWR hook for actual data
   const { stats: taskStats } = useMyTasksStats();
   const [searchValue, setSearchValue] = useState("");
-  // Removed calendarView state since Week button is removed - always use Month view
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value);
@@ -30,8 +42,6 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
     // This will be handled by individual tab components
     console.log('Create task from header');
   };
-
-  // Removed calendar view change handler since Week button is removed
 
   // Safe props passing - avoid unsafe cloning
   const childrenWithProps = React.Children.map(children, (child) => {
@@ -60,9 +70,9 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
         <div
           className="sticky top-0 z-30 shadow-sm border-b"
           style={{
-            backgroundColor: DARK_THEME.background.primary,
-            borderColor: DARK_THEME.border.default,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default,
+            boxShadow: `0 2px 8px ${theme.dropdown?.shadow || 'rgba(0, 0, 0, 0.15)'}`,
             width: '100%'
           }}
         >
@@ -76,12 +86,10 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <span
                   className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap"
-                  style={{ color: DARK_THEME.text.secondary }}
+                  style={{ color: theme.text.secondary }}
                 >
-                  No date ({tasks?.filter(t => !t.dueDateISO).length || 0})
+                  {t('calendar.noDate') || 'No date'} ({tasks?.filter(t => !t.dueDateISO).length || 0})
                 </span>
-
-
 
                 <TaskListHeader
                   searchValue={searchValue}
@@ -112,25 +120,52 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
               onOptionsClick={() => {/* Handle options modal */}}
               showSearch={true}
               showFilters={true}
-              showSort={pathname !== '/my-tasks/calendar'}
-              showGroup={pathname === '/my-tasks/list'}
+              showSort={true}
+              showGroup={true}
               showOptions={true}
-              className="mb-0"
             />
           )}
         </div>
       )}
 
-      {/* Tab Content - Adjust height for notes page */}
+      {/* Dashboard-specific header for dashboard tab */}
+      {pathname === '/my-tasks/dashboard' && (
+        <div
+          className="border-b"
+          style={{
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default
+          }}
+        >
+          <div className="flex items-center justify-between py-4 px-6">
+            <div className="flex items-center gap-4">
+              <h1
+                className="text-2xl font-semibold"
+                style={{ color: theme.text.primary }}
+              >
+                {t('navigation.myTasks.dashboard') || 'Dashboard'}
+              </h1>
+
+
+            </div>
+
+            <Button variant="primary" onClick={handleCreateTask}>
+              {t('cards.myTasks.createTask') || 'Create task'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
       <div
-        className={pathname === '/my-tasks/notes' ? "h-screen overflow-y-auto w-full" : "h-[calc(100vh-228px)] overflow-y-auto w-full"}
-        style={{ width: "100%", minWidth: "100%" }}
+        className="flex-1 overflow-hidden"
+        style={{ backgroundColor: theme.background.primary }}
       >
         {childrenWithProps}
       </div>
     </>
   );
-};
+}
 
 export default function MyTaskLayout({ children }: MyTaskLayoutProps) {
   return (

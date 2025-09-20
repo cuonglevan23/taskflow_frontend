@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { TaskListItem } from './';
+import {BucketTaskList, TaskListItem} from './';
 import { TaskRow } from './TaskRow';
-import { useTheme } from '@/layouts/hooks/useTheme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
+import { ProjectTaskDetailPanel } from '@/components/TaskDetailPanel'; // 🔥 Changed import
 
 // Project Task List Layout - Reusable component for task list content only
 export interface ProjectTaskListLayoutProps {
@@ -56,8 +58,19 @@ export const ProjectTaskListLayout: React.FC<ProjectTaskListLayoutProps> = ({
   onTaskAssign,
   onBulkAction,
 }) => {
-  const { theme } = useTheme();
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get nested message value
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   // State for inline task creation (simplified like BucketTaskList)
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
@@ -108,149 +121,176 @@ export const ProjectTaskListLayout: React.FC<ProjectTaskListLayoutProps> = ({
     
     return tasks.filter(task =>
       task.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchValue.toLowerCase())
+      task.description?.toLowerCase().includes(searchValue.toLowerCase())
     );
   }, [tasks, searchValue]);
 
   return (
     <>
       {/* Scrollable Task List Content */}
-      <div className="flex flex-col overflow-hidden" 
-           style={{
-             backgroundColor: theme.background.secondary, 
-             height: 'calc(100vh - var(--header-height, 80px))'
-           }}>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden" 
-             style={{backgroundColor: theme.background.primary}}>
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          height: 'calc(100vh - var(--header-height, 80px))',
+          backgroundColor: theme.background.primary
+        }}
+      >
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden"
+          style={{ backgroundColor: theme.background.primary }}
+        >
           {loading ? (
-            <div className="flex items-center justify-center h-64">
+            <div
+              className="flex items-center justify-center h-64"
+              style={{ backgroundColor: theme.background.primary }}
+            >
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <div style={{color: theme.text.secondary}}>Loading tasks...</div>
-              </div>
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="text-lg font-medium mb-2" style={{ color: theme.text.primary }}>
-                  No tasks found
-                </div>
+                <div
+                  className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
+                  style={{ borderColor: theme.status.info }}
+                ></div>
                 <div style={{ color: theme.text.secondary }}>
-                  Create your first task to get started
+                  {t('projectTaskList.loading') || 'Loading tasks...'}
                 </div>
               </div>
             </div>
           ) : (
             <>
-              {/* Header Row */}
-              <div 
+              {/* Header Row - Always show when not loading */}
+              <div
                 className="sticky top-0 z-20 flex items-center py-2 px-2 text-xs font-medium border-b"
-                style={{ 
+                style={{
                   backgroundColor: theme.background.primary,
                   borderColor: theme.border.default,
-                  color: theme.text.secondary
+                  color: theme.text.muted
                 }}
               >
-                <div className="flex-1 min-w-[300px] px-6">Name</div>
-                <div className="w-[120px] px-4">Due date</div>
-                <div className="w-[150px] px-4">Collaborators</div>
-                <div className="w-[150px] px-4">Projects</div>
-                <div className="w-[140px] px-4">Task visibility</div>
+                <div className="flex-1 min-w-[300px] px-6" style={{ borderRight: `1px solid ${theme.border.default}` }}>
+                  {t('projectTaskList.headers.name') || 'Name'}
+                </div>
+                <div className="w-[120px] px-4" style={{ borderRight: `1px solid ${theme.border.default}` }}>
+                  {t('projectTaskList.headers.dueDate') || 'Due Date'}
+                </div>
+                <div className="w-[100px] px-2 text-center" style={{ borderRight: `1px solid ${theme.border.default}` }}>
+                  {t('projectTaskList.headers.priority') || 'Priority'}
+                </div>
+                <div className="w-[120px] px-2 text-center" style={{ borderRight: `1px solid ${theme.border.default}` }}>
+                  {t('projectTaskList.headers.status') || 'Status'}
+                </div>
+                <div className="w-[150px] px-4" style={{ borderRight: `1px solid ${theme.border.default}` }}>
+                  {t('projectTaskList.headers.collaborators') || 'Collaborators'}
+                </div>
+                <div className="w-[140px] px-4">
+                  {t('projectTaskList.headers.comments') || 'Comments'}
+                </div>
               </div>
               
-              {/* Task List */}
+              {/* Task List Container */}
               <div className="p-2 space-y-1">
-              {/* Existing Tasks */}
-              {filteredTasks.map(task => (
-                <div
-                  key={task.id}
-                  className="border rounded-lg p-2"
-                  style={{
-                    borderColor: theme.border.default,
-                    backgroundColor: theme.background.secondary
-                  }}
-                >
-                  <TaskRow
-                    task={task}
-                    onTaskClick={onTaskClick}
-                    onTaskEdit={onTaskEdit}
-                    onTaskDelete={onTaskDelete}
-                    onTaskStatusChange={onTaskStatusChange}
-                    onTaskAssign={onTaskAssign}
-                  />
-                </div>
-              ))}
-              
-              {/* Add New Task Row - At Bottom */}
-              {isCreatingTask ? (
-                <div 
-                  className="flex items-center py-3 px-4 border-l-2 border-l-blue-500"
-                  style={{
-                    backgroundColor: `${theme.background.secondary}80`,
-                    borderColor: theme.border.default
-                  }}
-                >
-                  <div className="flex-shrink-0 mr-3">
-                    <div className="w-4 h-4 rounded-full border-2 border-blue-400 animate-pulse" />
-                  </div>
-                  <div className="flex-1 min-w-[300px] px-2">
-                    <input
-                      type="text"
-                      value={newTaskName}
-                      onChange={(e) => setNewTaskName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleSaveNewTask();
-                        }
-                        if (e.key === 'Escape') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleCancelCreating();
-                        }
-                      }}
-                      onBlur={handleSaveNewTask}
-                      placeholder="Write a task name"
-                      className="w-full bg-transparent text-sm font-medium outline-none"
-                      style={{
-                        color: theme.text.primary,
-                        '::placeholder': { color: theme.text.secondary }
-                      }}
-                      autoFocus
+                {/* Existing Tasks - Only show if there are tasks */}
+                {filteredTasks.map(task => (
+                  <div
+                    key={task.id}
+                    className="border rounded-lg p-2"
+                    style={{
+                      borderColor: theme.border.default,
+                      backgroundColor: theme.background.secondary
+                    }}
+                  >
+                    <TaskRow
+                      task={task}
+                      onTaskClick={onTaskClick}
+                      onTaskEdit={onTaskEdit}
+                      onTaskDelete={onTaskDelete}
+                      onTaskStatusChange={onTaskStatusChange}
+                      onTaskAssign={onTaskAssign}
+                      taskType="project"
+                      projectId={projectId}
                     />
                   </div>
-                  <div className="w-[120px] px-2">
-                    <span className="text-xs" style={{ color: theme.text.secondary }}>
-                      Press Enter to save
-                    </span>
+                ))}
+
+                {/* Add New Task Row - Always show at bottom */}
+                {isCreatingTask ? (
+                  <div
+                    className="flex items-center py-3 px-4 border-l-2 transition-colors"
+                    style={{
+                      borderLeftColor: theme.status.info,
+                      backgroundColor: theme.background.secondary + '80',
+                      borderColor: theme.border.default
+                    }}
+                  >
+                    <div className="flex-shrink-0 mr-3">
+                      <div
+                        className="w-4 h-4 rounded-full border-2 animate-pulse"
+                        style={{ borderColor: theme.status.info }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[300px] px-2">
+                      <input
+                        type="text"
+                        value={newTaskName}
+                        onChange={(e) => setNewTaskName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSaveNewTask();
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCancelCreating();
+                          }
+                        }}
+                        onBlur={handleSaveNewTask}
+                        placeholder={t('projectTaskList.addTaskPlaceholder') || 'Write a task name'}
+                        className="w-full bg-transparent text-sm font-medium outline-none"
+                        style={{
+                          color: theme.text.primary,
+                          '::placeholder': { color: theme.text.muted }
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="w-[120px] px-2">
+                      <span
+                        className="text-xs"
+                        style={{ color: theme.text.muted }}
+                      >
+                        {t('projectTaskList.pressEnterToSave') || 'Press Enter to save'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div 
-                  className="group flex items-center py-3 px-4 cursor-pointer transition-all duration-200 border-l-2 border-l-transparent hover:border-l-gray-600 rounded-lg"
-                  style={{
-                    borderColor: theme.border.default,
-                    backgroundColor: 'transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = theme.background.weakHover || `${theme.background.secondary}40`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                  onClick={handleStartCreating}
-                >
-                  <div className="flex-shrink-0 mr-3">
-                    <div className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors">+</div>
+                ) : (
+                  <div
+                    className="group flex items-center py-3 px-4 cursor-pointer transition-all duration-200 border-l-2 border-l-transparent rounded-lg"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                      e.currentTarget.style.borderLeftColor = theme.border.muted;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.borderLeftColor = 'transparent';
+                    }}
+                    onClick={handleStartCreating}
+                  >
+                    <div className="flex-shrink-0 mr-3">
+                      <div
+                        className="w-4 h-4 transition-colors"
+                        style={{ color: theme.text.muted }}
+                      >+</div>
+                    </div>
+                    <div className="flex-1 min-w-[300px] px-2">
+                      <span
+                        className="text-sm transition-colors"
+                        style={{ color: theme.text.muted }}
+                      >
+                        {t('projectTaskList.addTask') || 'Add task...'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-[300px] px-2">
-                    <span className="text-sm group-hover:text-gray-300 transition-colors" style={{ color: theme.text.secondary }}>
-                      Add task...
-                    </span>
-                  </div>
-                </div>
-              )}
+                )}
               </div>
             </>
           )}
@@ -343,10 +383,57 @@ const ProjectTaskList: React.FC<ProjectTaskListProps> = ({
   onTaskAssign,
   onBulkAction,
 }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   // Local state for Task Detail Panel
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  
+
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
+  // Project-specific bucket configuration using theme colors
+  const PROJECT_BUCKET_CONFIGS = useMemo(() => ({
+    'backlog': {
+      title: t('projectBuckets.backlog.title') || 'Backlog',
+      description: t('projectBuckets.backlog.description') || 'Ideas and future tasks',
+      color: theme?.status?.info || '#6B7280',
+      textColor: theme?.text?.primary || '#f8fafc'
+    },
+    'todo': {
+      title: t('projectBuckets.todo.title') || 'To Do',
+      description: t('projectBuckets.todo.description') || 'Ready to start',
+      color: theme?.status?.info || '#3B82F6',
+      textColor: theme?.text?.primary || '#f8fafc'
+    },
+    'in-progress': {
+      title: t('projectBuckets.inProgress.title') || 'In Progress',
+      description: t('projectBuckets.inProgress.description') || 'Currently working on',
+      color: theme?.status?.warning || '#F59E0B',
+      textColor: theme?.text?.primary || '#f8fafc'
+    },
+    'review': {
+      title: t('projectBuckets.review.title') || 'Review',
+      description: t('projectBuckets.review.description') || 'Awaiting review',
+      color: theme?.status?.info || '#8B5CF6',
+      textColor: theme?.text?.primary || '#f8fafc'
+    },
+    'done': {
+      title: t('projectBuckets.done.title') || 'Done',
+      description: t('projectBuckets.done.description') || 'Completed tasks',
+      color: theme?.status?.success || '#10B981',
+      textColor: theme?.text?.primary || '#f8fafc'
+    },
+  }), [theme, t]);
+
   // Project-specific bucket grouping logic (different from my-tasks action time grouping)
   const getBucketInfo = useCallback((bucketId: string, taskCount: number) => {
     const config = PROJECT_BUCKET_CONFIGS[bucketId as keyof typeof PROJECT_BUCKET_CONFIGS];
@@ -356,10 +443,10 @@ const ProjectTaskList: React.FC<ProjectTaskListProps> = ({
       ...config,
       description: `${config.description} (${taskCount})`
     };
-  }, []);
+  }, [PROJECT_BUCKET_CONFIGS]);
 
   // Group tasks by project status (not action time like my-tasks)
-  const taskBuckets = useMemo((): TaskBucket[] => {
+  const taskBuckets = useMemo(() => {
     const bucketMap = new Map<string, TaskListItem[]>();
     
     // Initialize project buckets
@@ -414,10 +501,11 @@ const ProjectTaskList: React.FC<ProjectTaskListProps> = ({
         title: bucketInfo.title,
         description: bucketInfo.description,
         color: bucketInfo.color,
+        textColor: bucketInfo.textColor,
         tasks: bucketTasks,
       };
     });
-  }, [tasks, getBucketInfo]);
+  }, [tasks, getBucketInfo, PROJECT_BUCKET_CONFIGS]);
 
   // Get selected task for detail panel
   const selectedTask = useMemo(() => {
@@ -520,15 +608,12 @@ const ProjectTaskList: React.FC<ProjectTaskListProps> = ({
         onBulkAction={onBulkAction}
       />
 
-      {/* Inherit TaskDetailPanel interface */}
+      {/* 🔥 Use ProjectTaskDetailPanel instead of TaskDetailPanel */}
       {isPanelOpen && selectedTask && (
-        <TaskDetailPanel
+        <ProjectTaskDetailPanel
           task={selectedTask}
           isOpen={isPanelOpen}
           onClose={handleClosePanel}
-          onSave={handleTaskSave}
-          onDelete={handleTaskDeleteFromPanel}
-          onStatusChange={onTaskStatusChange}
         />
       )}
     </>

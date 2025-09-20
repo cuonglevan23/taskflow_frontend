@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api';
+import { BaseApiClient } from '@/lib/baseApiClient';
 
 // Type definitions based on API documentation
 export interface UserProfileDto {
@@ -123,12 +123,29 @@ export const getActivityConfig = (activityType: TaskActivityType) => {
 };
 
 // Group activities by date for timeline display
-export const groupActivitiesByDate = (activities: TaskActivityResponseDto[]) => {
+export const groupActivitiesByDate = (activities: TaskActivityResponseDto[] = []): {
+  TODAY: TaskActivityResponseDto[];
+  YESTERDAY: TaskActivityResponseDto[];
+  EARLIER: TaskActivityResponseDto[];
+} => {
+  // Guard against undefined or null activities
+  if (!activities || !Array.isArray(activities)) {
+    return {
+      TODAY: [],
+      YESTERDAY: [],
+      EARLIER: []
+    };
+  }
+
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   
-  const groups: Record<string, TaskActivityResponseDto[]> = {
+  const groups: {
+    TODAY: TaskActivityResponseDto[];
+    YESTERDAY: TaskActivityResponseDto[];
+    EARLIER: TaskActivityResponseDto[];
+  } = {
     TODAY: [],
     YESTERDAY: [],
     EARLIER: []
@@ -158,102 +175,34 @@ export const groupActivitiesByDate = (activities: TaskActivityResponseDto[]) => 
 
 // API Service functions
 export class TaskActivityService {
-  /**
-   * Get all activities for a task
-   * @param taskId - ID of the task
-   * @returns Promise<TaskActivityResponseDto[]>
-   */
-  static async getAllActivities(taskId: number): Promise<TaskActivityResponseDto[]> {
-    try {
-      const response = await apiClient.get<TaskActivityResponseDto[]>(`/api/tasks/${taskId}/activities`);
-      console.log('🔍 Raw activities response:', response.data);
-      return response.data;
-    } catch (error: unknown) {
-      // Handle 401/404 gracefully - API might not be implemented yet
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 401 || axiosError.response?.status === 404) {
-          console.warn('Task activities API requires authentication - feature not available');
-          return [];
-        }
-      }
-      console.error('Error fetching task activities:', error);
-      throw error;
-    }
-  }
+  private static readonly BASE_URL = '/api/tasks';
 
   /**
-   * Get activities with pagination
+   * Get paginated activities for a specific task
    * @param taskId - ID of the task
-   * @param page - Page number (starts from 0)
+   * @param page - Page number (0-based)
    * @param size - Number of items per page
-   * @returns Promise<PaginatedActivitiesResponse>
+   * @returns Promise<PaginatedTaskActivitiesDto>
    */
-  static async getActivitiesPaginated(
-    taskId: number, 
-    page: number = 0, 
-    size: number = 10,
-    sortBy: string = 'createdAt',
-    sortDirection: 'asc' | 'desc' = 'desc'
+  static async getActivities(
+    taskId: string | number,
+    page: number = 0,
+    size: number = 10
   ): Promise<PaginatedTaskActivitiesDto> {
     try {
-      const response = await apiClient.get<PaginatedTaskActivitiesDto>(
-        `/api/tasks/${taskId}/activities`,
-        {
-          params: {
-            page,
-            size,
-            sortBy,
-            sortDirection
-          }
-        }
+      const response = await BaseApiClient.get<PaginatedTaskActivitiesDto>(
+        `${this.BASE_URL}/${taskId}/activities`,
+        { page, size }
       );
-      return response.data;
-    } catch (error: unknown) {
-      // Handle 401/404 gracefully - API might not be implemented yet
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 401 || axiosError.response?.status === 404) {
-          console.warn('Task activities paginated API not available - returning empty page');
-          return {
-            content: [],
-            totalElements: 0,
-            totalPages: 0,
-            size: size,
-            number: page,
-            first: true,
-            last: true,
-            numberOfElements: 0,
-            empty: true
-          };
-        }
-      }
-      console.error('Error fetching paginated task activities:', error);
-      throw error;
-    }
-  }
 
-  /**
-   * Get recent activities (last 5)
-   * @param taskId - ID of the task
-   * @returns Promise<TaskActivityResponseDto[]>
-   */
-  static async getRecentActivities(taskId: number, limit: number = 5): Promise<TaskActivityResponseDto[]> {
-    try {
-      const response = await apiClient.get<TaskActivityResponseDto[]>(`/api/tasks/${taskId}/activities`, {
-        params: { limit }
-      });
-      return response.data;
+      return response;
     } catch (error: unknown) {
-      // Handle 401/404 gracefully - API might not be implemented yet
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 401 || axiosError.response?.status === 404) {
-          console.warn('Task activities recent API not available - returning empty array');
-          return [];
-        }
-      }
-      console.error('Error fetching recent task activities:', error);
+      console.error('❌ TaskActivityService.getActivities: Error occurred', {
+        taskId,
+        page,
+        size,
+        error
+      });
       throw error;
     }
   }
@@ -265,20 +214,21 @@ export class TaskActivityService {
    */
   static async getActivitiesCount(taskId: string | number): Promise<number> {
     try {
-      const response = await apiClient.get<{ count: number }>(`/api/tasks/${taskId}/activities/count`);
-      return response.data.count;
+      const response = await BaseApiClient.get<{ count: number }>(`${this.BASE_URL}/${taskId}/activities/count`);
+
+      return response.count;
     } catch (error: unknown) {
-      console.error('Error fetching task activities count:', error);
-      
+      console.error('❌ Error fetching task activities count:', error);
+
       // Handle 401/404 gracefully - API might not be implemented yet
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError?.response?.status === 401 || axiosError?.response?.status === 404) {
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as Error).message;
+        if (errorMessage.includes('Authentication required') || errorMessage.includes('Resource not found')) {
           console.warn('Task activities count API not available - returning 0');
           return 0;
         }
       }
-      
+
       throw error;
     }
   }

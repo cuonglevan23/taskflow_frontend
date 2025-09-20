@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import BaseCard, { type TabConfig, type ActionButtonConfig } from "@/components/ui/BaseCard";
 import { FaPlus } from "react-icons/fa";
 import { MdKeyboardArrowDown } from "react-icons/md";
@@ -9,8 +10,18 @@ import { useTasksContext, type Goal } from "@/contexts";
 
 // Professional GoalsCard using BaseCard & Direct Context - Senior Product Code
 const GoalsCard = () => {
-  const { theme } = useTheme();
-  
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return value || key;
+  };
+
   // Use direct context to avoid activeTab conflicts
   // TODO: Implement goals SWR hooks
   // For now, provide empty data to prevent errors

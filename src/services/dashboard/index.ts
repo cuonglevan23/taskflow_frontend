@@ -2,7 +2,7 @@
 // Centralized exports for dashboard services, hooks, types and utilities
 
 // Core service
-export { dashboardService, DashboardService } from './dashboardService';
+export { dashboardService, ProjectDashboardService } from './projectDashboardService';
 
 // React hooks
 export {
@@ -60,3 +60,6 @@ export const DASHBOARD_CONFIG = {
   MAX_DUE_TODAY_TASKS: 5,
   MAX_OVERDUE_TASKS: 5
 } as const;
+
+
+

@@ -7,6 +7,8 @@ export * from './useTasksActions';
 export * from './useTasksStats';
 export * from './useTasksUI';
 export * from './useMyTasksShared';
+export * from './useProjectTasks';
+export * from './useProjectTaskCreation';
 
 // Import for backward compatibility aliases
 import { 

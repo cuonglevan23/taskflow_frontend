@@ -1,5 +1,4 @@
 // Centralized hooks export
-export { useRBAC } from "./useRBAC"
 export { usePermissions } from "./usePermissions"
 
 export { useTasks } from "./useTasks"
@@ -34,4 +33,16 @@ export {
 export { useGoogleCalendar } from "./useGoogleCalendar"
 export type { UseGoogleCalendarReturn } from "./useGoogleCalendar"
 
+// Settings hooks - organized in settings folder
+export {
+  useAccountSettings,
+  useDisplaySettings,
+  useProfileSettings,
+  type DisplaySettings,
+  type ProfileData,
+  FONT_SIZE_OPTIONS,
+  ROLE_OPTIONS
+} from './settings';
 
+// Edit Profile hooks
+export { useEditProfile } from './profile/useEditProfile';

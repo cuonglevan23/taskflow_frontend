@@ -2,24 +2,83 @@
 
 import React, { useState } from 'react';
 import { TaskListItem } from '@/components/TaskList/types';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import TaskDetailHeader from './TaskDetailHeader';
 import TaskDetailContent from './TaskDetailContent';
-import TaskDetailFooter from './TaskDetailFooter';
-
+import TaskDetailFooter, { TaskDetailFooterProps } from './TaskDetailFooter';
 
 interface TaskDetailPanelProps {
   task: TaskListItem | null;
   isOpen: boolean;
   onClose: () => void;
   onSave?: (taskId: string, updates: Partial<TaskListItem>) => void;
-  onSaveDescription?: (taskId: string, description: string) => void; // Separate callback for description
+  onSaveDescription?: (taskId: string, description: string) => void;
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, status: string) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
-  onFileUploadComplete?: (result: any) => void; // Change from onFileUpload to onFileUploadComplete
+  // 🔥 Add new handler props for comprehensive task updates
+  onDueDateChange?: (taskId: string, dueDate: string) => void;
+  onStartDateChange?: (taskId: string, startDate: string) => void;
+  onAssigneeChange?: (taskId: string, assigneeData: { id: string; name: string; email: string }) => void;
+  onProjectChange?: (taskId: string, projectId: string) => void;
+  onFileUploadComplete?: (result: any) => void;
   onRemoveAttachment?: (attachmentId: string) => void;
-  onTaskRefresh?: () => void; // Add callback để refresh task data sau khi tạo calendar event
+  onTaskRefresh?: () => void;
+
+  // NEW: Add taskType prop to determine which API to use
+  taskType?: 'mytask' | 'project';
+
+  // Computed assignees from ProjectTaskAssignees - replaces old calculations
+  computedAssignees?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  }>;
+
+  // Project-specific comment override props
+  overrideComments?: boolean;
+  projectComments?: Array<{
+    id: string;
+    content: string;
+    author: {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string | null;
+    };
+    createdAt: string;
+    updatedAt: string;
+    isEdited?: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+  }>;
+  projectActivities?: Array<{
+    id: string;
+    description: string;
+    author: {
+      name: string;
+      avatar?: string | null;
+    };
+    createdAt: string;
+    timeAgo: string;
+    activityType: string;
+  }>;
+  commentsLoading?: boolean;
+  activitiesLoading?: boolean;
+  newComment?: string;
+  onNewCommentChange?: (value: string) => void;
+  onCreateComment?: () => void;
+  onDeleteComment?: (commentId: string) => void;
+  onEditComment?: (commentId: string, currentContent: string) => void;
+  commentSubmitting?: boolean;
+  // Edit comment props
+  editingCommentId?: string | null;
+  editingCommentContent?: string;
+  onEditCommentChange?: (value: string) => void;
+  onEditCommentSubmit?: () => void;
+  onEditCommentCancel?: () => void;
 }
 
 const TaskDetailPanel = ({
@@ -28,18 +87,58 @@ const TaskDetailPanel = ({
   onClose,
   onSave,
   onSaveDescription,
-  onDelete, // Keep for future use
+  onDelete,
   onStatusChange,
   onPriorityChange,
+  onDueDateChange,
+  onStartDateChange,
+  onAssigneeChange,
+  onProjectChange,
   onFileUploadComplete,
   onRemoveAttachment,
-  onTaskRefresh // Destructure onTaskRefresh
+  onTaskRefresh,
+  taskType = 'mytask', // NEW: Default to mytask
+  // Computed assignees from ProjectTaskAssignees - replaces old calculations
+  computedAssignees = [],
+  // Project-specific comment override props
+  overrideComments,
+  projectComments,
+  projectActivities,
+  commentsLoading,
+  activitiesLoading,
+  newComment,
+  onNewCommentChange,
+  onCreateComment,
+  onDeleteComment,
+  onEditComment,
+  commentSubmitting,
+  editingCommentId,
+  editingCommentContent,
+  onEditCommentChange,
+  onEditCommentSubmit,
+  onEditCommentCancel
 }: TaskDetailPanelProps) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  // Helper function to get nested translation
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key; // fallback to key if translation not found
+      }
+    }
+    return String(value);
+  };
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [comment, setComment] = useState('');
-  const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0); // Add refresh trigger
-
+  const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
 
   React.useEffect(() => {
     if (task) {
@@ -52,110 +151,112 @@ const TaskDetailPanel = ({
   }, [task]);
 
   const handleSave = () => {
-    if (onSave && task) {
+    if (task && onSave) {
       onSave(task.id, {
         name: title,
-        description: description,
+        description: description
       });
     }
   };
 
-  const handleSaveDescription = (newDescription: string) => {
-    // Update local state immediately
-    setDescription(newDescription);
-    
-    // Use dedicated description save callback if available
-    if (onSaveDescription && task) {
+  const handleDescriptionSave = (newDescription: string) => {
+    if (task && onSaveDescription) {
       onSaveDescription(task.id, newDescription);
     }
-    // Don't call general onSave to prevent closing the panel
   };
 
-  const handleMarkComplete = () => {
-    console.log('🔄 TaskDetailPanel handleMarkComplete:', {
-      task: task ? { id: task.id, status: task.status } : null,
-      onStatusChange: !!onStatusChange
-    });
-    
-    if (task && onStatusChange) {
-      // Helper function to check if task is completed
-      const isCurrentlyCompleted = task.completed || 
-                                   task.status === 'DONE' || 
-                                   (task.status as string) === 'completed' ||
-                                   (task.status as string) === 'done';
-      const newStatus = isCurrentlyCompleted ? 'todo' : 'completed';
-      console.log('📤 Calling onStatusChange:', { 
-        taskId: task.id, 
-        currentStatus: task.status, 
-        isCurrentlyCompleted,
-        newStatus 
-      });
-      onStatusChange(task.id, newStatus);
-    } else {
-      console.warn('❌ Cannot mark complete:', { hasTask: !!task, hasOnStatusChange: !!onStatusChange });
-    }
-  };
-
-  const handleFileUpload = (files: FileList, source: string) => {
-    if (onFileUploadComplete && task) {
-      console.log(`📎 Uploading ${files.length} files from ${source} for task ${task.id}`);
-      onFileUploadComplete(files, source);
-    }
-  };
-
-  const handleFileUploadComplete = (result: any) => {
-    console.log('📎 File upload completed:', result);
-
-    // Trigger refresh for FileDisplayGrid
-    setFileRefreshTrigger(prev => prev + 1);
-
-    // Call parent callback if provided
+  const handleFileUpload = (result: any) => {
     if (onFileUploadComplete) {
       onFileUploadComplete(result);
+    }
+    setFileRefreshTrigger(prev => prev + 1);
+  };
+
+  // Handle mark complete functionality
+  const handleMarkComplete = () => {
+    if (task && onStatusChange) {
+      // Toggle between completed and in progress
+      const isCompleted = task.completed || task.status === 'DONE';
+      const newStatus = isCompleted ? 'IN_PROGRESS' : 'DONE';
+      onStatusChange(task.id, newStatus);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className={`fixed top-12 right-0 w-[700px] h-[calc(100vh-4rem)] border-l shadow-2xl z-[55] transform transition-transform duration-300 ease-in-out flex flex-col ${
-        isOpen ? 'translate-x-0' : 'translate-x-full' 
-      }`}
-      style={{
-        backgroundColor: DARK_THEME.background.primary,
-        borderColor: DARK_THEME.border.default
-      }}
-    >
-      <TaskDetailHeader
-        task={task}
-        onClose={onClose}
-        onMarkComplete={handleMarkComplete}
-        onFileUploadComplete={handleFileUploadComplete}
-      />
-      
-      <TaskDetailContent
-        task={task}
-        title={title}
-        setTitle={setTitle}
-        description={description}
-        setDescription={setDescription}
-        onSave={handleSave}
-        onSaveDescription={handleSaveDescription}
-        onTaskStatusChange={onStatusChange}
-        onTaskPriorityChange={onPriorityChange}
-        onRemoveAttachment={onRemoveAttachment}
-        fileRefreshTrigger={fileRefreshTrigger}
-        onTaskRefresh={onTaskRefresh} // Truyền callback refresh task data xuống TaskDetailContent
-      />
+      <div
+          className={`fixed top-12 right-0 w-[700px] h-[calc(100vh-4rem)] border-l shadow-2xl z-[55] flex flex-col
+    transform transition-transform transition-opacity duration-300 ease-in-out
+    ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
+          style={{
+            backgroundColor: theme.background.primary,
+            borderColor: theme.border.default
+          }}
+      >
+        <TaskDetailHeader
+            task={task}
+            onClose={onClose}
+            onMarkComplete={handleMarkComplete}
+            onFileUploadComplete={handleFileUpload}
+        />
 
-      <TaskDetailFooter
-        task={task}
-        comment={comment}
-        setComment={setComment}
-      />
+        <TaskDetailContent
+            task={task}
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            onSave={handleSave}
+            onSaveDescription={handleDescriptionSave}
+            onTaskStatusChange={onStatusChange}
+            onTaskPriorityChange={onPriorityChange}
+            onDueDateChange={onDueDateChange}
+            onStartDateChange={onStartDateChange}
+            onAssigneeChange={onAssigneeChange}
+            onProjectChange={onProjectChange}
+            onRemoveAttachment={onRemoveAttachment}
+            fileRefreshTrigger={fileRefreshTrigger}
+            onTaskRefresh={onTaskRefresh}
+            // 🔥 FIXED: Pass taskType prop down to TaskDetailContent
+            taskType={taskType}
+            // Pass computed assignees from ProjectTaskAssignees
+            computedAssignees={computedAssignees}
+            // Pass project-specific comment and activity data
+            overrideComments={overrideComments}
+            projectComments={projectComments}
+            projectActivities={projectActivities}
+            commentsLoading={commentsLoading}
+            activitiesLoading={activitiesLoading}
+            // FIXED: Pass down all comment editing props
+            editingCommentId={editingCommentId}
+            editingCommentContent={editingCommentContent}
+            onEditComment={onEditComment}
+            onEditCommentChange={onEditCommentChange}
+            onEditCommentSubmit={onEditCommentSubmit}
+            onEditCommentCancel={onEditCommentCancel}
+            onDeleteComment={onDeleteComment}
+        />
 
-    </div>
+        <TaskDetailFooter
+            task={task}
+            comment={overrideComments ? (newComment || '') : comment}
+            setComment={overrideComments ? (onNewCommentChange || (() => {})) : setComment}
+            // Pass computed assignees to footer
+            computedAssignees={computedAssignees}
+            // Pass project-specific comment handlers
+            overrideComments={overrideComments}
+            onCreateComment={onCreateComment}
+            onDeleteComment={onDeleteComment}
+            onEditComment={onEditComment}
+            commentSubmitting={commentSubmitting}
+            editingCommentId={editingCommentId}
+            editingCommentContent={editingCommentContent}
+            onEditCommentChange={onEditCommentChange}
+            onEditCommentSubmit={onEditCommentSubmit}
+            onEditCommentCancel={onEditCommentCancel}
+        />
+      </div>
   );
 };
 

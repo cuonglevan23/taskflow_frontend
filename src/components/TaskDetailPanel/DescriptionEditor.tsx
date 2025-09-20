@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Save, Edit, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { MinimalTiptap } from '@/components/ui/shadcn-io/minimal-tiptap';
-import { useTaskDescription } from '@/hooks/useComments';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface DescriptionEditorProps {
   taskId: string | null;
@@ -19,140 +19,149 @@ const DescriptionEditor = ({
   editable = true,
 }: DescriptionEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [localDescription, setLocalDescription] = useState(description);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [tempDescription, setTempDescription] = useState(description);
 
-  const { updateDescription, isUpdating } = useTaskDescription(taskId);
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
 
-  // Sync local state with prop changes
+  // Helper function to get translated text
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    return typeof value === 'string' ? value : key;
+  };
+
+  // Update tempDescription when description prop changes
   useEffect(() => {
-    setLocalDescription(description);
-    setHasChanges(false);
+    if (!isEditing) {
+      setTempDescription(description);
+    }
+  }, [description, isEditing]);
+
+  const handleStartEdit = useCallback(() => {
+    setIsEditing(true);
+    setTempDescription(description);
   }, [description]);
 
-  const handleContentChange = useCallback((content: string) => {
-    setLocalDescription(content);
-    setHasChanges(content !== description);
-    // Optimistic update for immediate UI feedback
-    onDescriptionChange(content);
-  }, [description, onDescriptionChange]);
-
-  const handleSave = useCallback(async () => {
-    if (!taskId || !hasChanges) return;
-
-    try {
-      await updateDescription(localDescription);
-      setHasChanges(false);
-      setIsEditing(false);
-    } catch (error) {
-      // Revert optimistic update on error
-      setLocalDescription(description);
-      onDescriptionChange(description);
-      console.error('Failed to save description:', error);
-    }
-  }, [taskId, localDescription, hasChanges, updateDescription, description, onDescriptionChange]);
+  const handleSave = useCallback(() => {
+    onDescriptionChange(tempDescription);
+    setIsEditing(false);
+  }, [tempDescription, onDescriptionChange]);
 
   const handleCancel = useCallback(() => {
-    setLocalDescription(description);
-    onDescriptionChange(description);
-    setHasChanges(false);
+    setTempDescription(description);
     setIsEditing(false);
-  }, [description, onDescriptionChange]);
+  }, [description]);
 
-  const handleEdit = useCallback(() => {
-    setIsEditing(true);
-  }, []);
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditing) {
+        if (event.key === 'Escape') {
+          handleCancel();
+        }
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          handleSave();
+        }
+      }
+    };
 
-  // Auto-save on blur if there are changes
-  const handleBlur = useCallback(() => {
-    if (hasChanges && !isUpdating) {
-      handleSave();
+    if (isEditing) {
+      document.addEventListener('keydown', handleKeyDown);
     }
-  }, [hasChanges, isUpdating, handleSave]);
 
-  if (!editable) {
-    return (
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-300">Description</label>
-        <div 
-          className="rounded-lg p-4 border min-h-[100px]"
-          style={{
-            backgroundColor: DARK_THEME.background.weakHover,
-            borderColor: DARK_THEME.border.default
-          }}
-        >
-          {description ? (
-            <div 
-              className="text-sm text-gray-200"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
-          ) : (
-            <div className="text-gray-400 text-sm italic">No description provided</div>
-          )}
-        </div>
-      </div>
-    );
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditing, handleCancel, handleSave]);
+
+  if (!editable && !description) {
+    return null;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-300">Description</label>
-        <div className="flex items-center gap-2">
-          {hasChanges && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-200 text-xs h-7 px-2"
-                disabled={isUpdating}
-              >
-                <X className="w-3 h-3 mr-1" />
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-7 px-3"
-                disabled={isUpdating || !hasChanges}
-              >
-                <Save className="w-3 h-3 mr-1" />
-                {isUpdating ? 'Saving...' : 'Save'}
-              </Button>
-            </div>
-          )}
-          {!isEditing && !hasChanges && (
+        <h3 className="text-sm font-medium" style={{ color: theme.text.primary }}>
+          {t('descriptionEditor.title')}
+        </h3>
+        {editable && !isEditing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleStartEdit}
+            className="text-gray-400 hover:text-gray-200"
+            style={{ color: theme.text.muted }}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {isEditing ? (
+        <div className="space-y-3">
+          <div
+            className="min-h-[120px] border rounded-lg overflow-hidden"
+            style={{ borderColor: theme.border.default }}
+          >
+            <MinimalTiptap
+              content={tempDescription}
+              onChange={setTempDescription}
+              placeholder={t('descriptionEditor.placeholder')}
+            />
+          </div>
+
+          {/* Save/Cancel buttons */}
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
               size="sm"
-              onClick={handleEdit}
-              className="text-gray-400 hover:text-gray-200 text-xs h-7 px-2"
+              onClick={handleSave}
+              className="flex items-center gap-1.5"
+              style={{
+                backgroundColor: theme.button.primary.background,
+                color: theme.button.primary.text
+              }}
             >
-              <Edit className="w-3 h-3 mr-1" />
-              Edit
+              <Save className="w-3.5 h-3.5" />
+              {t('descriptionEditor.save')}
             </Button>
-          )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCancel}
+              className="flex items-center gap-1.5"
+              style={{ color: theme.text.muted }}
+            >
+              <X className="w-3.5 h-3.5" />
+              {t('descriptionEditor.cancel')}
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="transition-all duration-300 ease-in-out transform">
-        <MinimalTiptap
-          content={localDescription}
-          onChange={handleContentChange}
-          placeholder="What is this task about?"
-          editable={isEditing || hasChanges}
-          className={`
-            ${isEditing || hasChanges ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
-            transition-all duration-200
-          `}
-        />
-      </div>
-
-      {hasChanges && (
-        <div className="text-xs text-gray-400 flex items-center gap-2">
-          <div className="w-1 h-1 bg-yellow-400 rounded-full animate-pulse"></div>
-          Unsaved changes
+      ) : (
+        <div
+          className={`min-h-[120px] border rounded-lg p-4 transition-colors duration-200 ${
+            editable ? 'cursor-pointer' : ''
+          }`}
+          style={{
+            borderColor: theme.border.default,
+            backgroundColor: editable ? theme.background.weakHover : 'transparent'
+          }}
+          onClick={editable ? handleStartEdit : undefined}
+        >
+          {description ? (
+            <div
+              className="prose prose-invert max-w-none"
+              style={{ color: theme.text.primary }}
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : (
+            <p className="italic" style={{ color: theme.text.muted }}>
+              {editable ? t('descriptionEditor.clickToAdd') : t('descriptionEditor.noDescription')}
+            </p>
+          )}
         </div>
       )}
     </div>

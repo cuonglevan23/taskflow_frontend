@@ -1,12 +1,16 @@
 "use client";
 
-import React, { memo, useRef, useCallback, useMemo } from 'react';
-import { DARK_THEME, THEME_COLORS } from '@/constants/theme';
+import React, { memo, useMemo } from 'react';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { ChatMessage, ChatUser, ReactionType } from '@/types/chat';
 import MessageItem from './MessageItem';
 
 // Date Separator component
 const DateSeparator = memo(({ date }: { date: Date }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -14,9 +18,9 @@ const DateSeparator = memo(({ date }: { date: Date }) => {
   let dateText: string;
 
   if (date.toDateString() === today.toDateString()) {
-    dateText = 'Today';
+    dateText = messages.chat.today;
   } else if (date.toDateString() === yesterday.toDateString()) {
-    dateText = 'Yesterday';
+    dateText = messages.chat.yesterday;
   } else {
     dateText = date.toLocaleDateString('en-US', {
       day: 'numeric',
@@ -30,8 +34,8 @@ const DateSeparator = memo(({ date }: { date: Date }) => {
       <div
         className="px-4 py-1 rounded-full text-xs font-medium"
         style={{
-          backgroundColor: DARK_THEME.background.muted,
-          color: DARK_THEME.text.muted
+          backgroundColor: theme.background.muted,
+          color: theme.text.muted
         }}
       >
         {dateText}
@@ -44,6 +48,9 @@ DateSeparator.displayName = 'DateSeparator';
 
 // Typing Indicator component
 const TypingIndicator = memo(({ typingUsers }: { typingUsers: string[] }) => {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   if (typingUsers.length === 0) return null;
 
   return (
@@ -54,16 +61,16 @@ const TypingIndicator = memo(({ typingUsers }: { typingUsers: string[] }) => {
             key={index}
             className="w-2 h-2 rounded-full animate-bounce"
             style={{
-              backgroundColor: DARK_THEME.text.muted,
+              backgroundColor: theme.text.muted,
               animationDelay: `${delay}ms`
             }}
           />
         ))}
       </div>
-      <span className="text-xs" style={{ color: DARK_THEME.text.muted }}>
+      <span className="text-xs" style={{ color: theme.text.muted }}>
         {typingUsers.length === 1
-          ? `${typingUsers[0]} is typing...`
-          : `${typingUsers.length} people are typing...`
+          ? `${typingUsers[0]} ${messages.chat.isTyping}`
+          : `${typingUsers.length} ${messages.chat.areTyping}`
         }
       </span>
     </div>
@@ -81,8 +88,8 @@ interface ChatMessagesProps {
   onReply: (message: ChatMessage) => void;
   onScrollToBottom: () => void;
   onScroll: () => void;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
-  messagesContainerRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  messagesContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -97,6 +104,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   messagesEndRef,
   messagesContainerRef
 }) => {
+  const { theme } = useThemeContext();
+  const { messages: i18nMessages } = useLanguageContext();
+
   // Fix duplicate keys issue and optimize message rendering
   const uniqueMessages = useMemo(() => {
     const seen = new Set();
@@ -168,11 +178,11 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             <div className="text-center">
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${THEME_COLORS.info[500]}20` }}
+                style={{ backgroundColor: `${theme.status.info}20` }}
               >
                 <svg
                   className="w-8 h-8"
-                  style={{ color: THEME_COLORS.info[500] }}
+                  style={{ color: theme.status.info }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -180,8 +190,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <p style={{ color: DARK_THEME.text.muted }} className="text-sm">
-                No messages yet. Start the conversation!
+              <p style={{ color: theme.text.muted }} className="text-sm">
+                {i18nMessages.chat.noConversations}
               </p>
             </div>
           </div>
@@ -200,9 +210,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           onClick={onScrollToBottom}
           className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
           style={{
-            backgroundColor: THEME_COLORS.primary[500],
-            color: '#ffffff'
+            backgroundColor: theme.button.primary.background,
+            color: theme.button.primary.text
           }}
+          title={i18nMessages.chat.scrollToBottom}
         >
           <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />

@@ -1,130 +1,275 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useTheme } from "@/layouts/hooks/useTheme";
+import React from "react";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import InboxNotificationItem from "../components/InboxNotificationItem";
-import { useInboxActions, InboxNotification } from "../hooks/useInboxActions";
-import FilterSortControls from "../components/FilterSortControls";
+import { useArchivedNotifications } from "../hooks/useArchivedNotifications";
+import { useNotificationFormatter } from "../hooks/useNotificationFormatter";
 
 const ArchivePage = () => {
-  const { theme } = useTheme();
-  const [archivedNotifications, setArchivedNotifications] = useState<InboxNotification[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const { theme, themeMode } = useThemeContext();
+  const { messages, isLoading: languageLoading } = useLanguageContext();
+  const isDark = themeMode === 'dark';
+  const {
+    notifications,
+    enhancedCounts,
+    loading,
+    error,
+    pagination,
 
-  // Load archived notifications from localStorage after component mounts
-  useEffect(() => {
-    const saved = localStorage.getItem("archivedNotifications");
-    if (saved) {
-      setArchivedNotifications(JSON.parse(saved));
-    }
-    setMounted(true);
-  }, []);
+    // Actions
+    unarchiveNotification,
+    markAsRead,
+    toggleBookmark,
+    deleteNotification,
 
-  const { notifications, actions, showMoreMenu, hideMoreActions, isLoading } =
-    useInboxActions(archivedNotifications, (updatedNotifications) => {
-      // Update localStorage when archived notifications change
-      localStorage.setItem(
-        "archivedNotifications",
-        JSON.stringify(updatedNotifications)
-      );
-      setArchivedNotifications(updatedNotifications);
-    });
+    // Selection
+    selectedIds,
+    isSelected,
+    isAllSelected,
+    isIndeterminate,
+    selectedCount,
+    hasSelection,
+    selectNotification,
+    deselectNotification,
+    toggleSelection,
+    selectAll,
+    deselectAll,
 
+    // Bulk actions
+    unarchiveMultiple,
+    deleteMultiple,
+    clearAllArchived,
 
+    // Data fetching
+    refreshArchive,
+    setPage,
+  } = useArchivedNotifications();
 
-  const clearAllArchived = () => {
-    localStorage.removeItem("archivedNotifications");
-    setArchivedNotifications([]);
-  };
+  const { getNotificationIcon, getNotificationColor } = useNotificationFormatter();
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
+  // Add loading state for language
+  if (languageLoading || !messages || !messages.archive) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="space-y-3">
-            <div className="h-16 bg-gray-200 rounded"></div>
-            <div className="h-16 bg-gray-200 rounded"></div>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p style={{ color: theme.status.error }} className="mb-4">{messages.archive?.error?.loading || "Error loading archived notifications"}</p>
+          <button
+            onClick={refreshArchive}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.button.primary.background,
+              color: theme.button.primary.text
+            }}
+          >
+            {messages.archive?.error?.retry || "Retry"}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Filter and Sort Controls */}
-      <div
-        className="flex items-center justify-end mb-6 pb-4 border-b"
-        style={{ borderColor: theme.border.default }}
-      >
-        <FilterSortControls />
-      </div>
+    <div className="h-screen flex flex-col" style={{ backgroundColor: theme.background.primary }}>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text.primary }}>
+                  {messages.archive.title}
+                </h1>
+                <p style={{ color: theme.text.secondary }}>
+                  {messages.archive.subtitle}
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                {enhancedCounts && (
+                  <div className="text-right">
+                    <div className="text-sm" style={{ color: theme.text.muted }}>
+                      {enhancedCounts.archivedCount} {messages.archive.status.archived}
+                    </div>
+                  </div>
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    onClick={clearAllArchived}
+                    className="px-3 py-1 text-sm rounded hover:opacity-90"
+                    style={{
+                      backgroundColor: theme.status.error,
+                      color: '#ffffff'
+                    }}
+                    title={messages.archive.actions.clearAllTooltip}
+                  >
+                    {messages.archive.actions.clearAll}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
-      {/* Clear All Button */}
-      {notifications.length > 0 && (
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={clearAllArchived}
-            className="px-4 py-2 text-sm rounded-lg border transition-colors hover:bg-gray-50"
-            style={{
-              color: theme.text.secondary,
-              borderColor: theme.border.default,
-            }}
-          >
-            Clear all archived
-          </button>
-        </div>
-      )}
-
-      {/* Archived Notifications */}
-      {notifications.length > 0 ? (
-        <div className="space-y-1">
-          {notifications.map((notification) => (
-            <InboxNotificationItem
-              key={notification.id}
-              notification={notification}
-              actions={actions}
-              isLoading={isLoading(notification.id)}
-              showMoreMenu={showMoreMenu === notification.id}
-              onHideMoreActions={hideMoreActions}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16" style={{ color: theme.text.muted }}>
-          <div className="mb-4">
+          {/* Bulk Actions */}
+          {hasSelection && (
             <div
-              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4"
+              className="mb-4 p-4 rounded-lg"
               style={{ backgroundColor: theme.background.secondary }}
             >
-              <span className="text-2xl">📁</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm font-medium" style={{ color: theme.text.primary }}>
+                    {messages.archive.actions.selected.replace('{count}', selectedCount.toString())}
+                  </span>
+                  <button
+                    onClick={deselectAll}
+                    className="text-sm hover:underline"
+                    style={{ color: theme.button.primary.background }}
+                  >
+                    {messages.archive.actions.clearSelection}
+                  </button>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => unarchiveMultiple(Array.from(selectedIds))}
+                    className="px-3 py-1 text-sm rounded hover:opacity-90"
+                    style={{
+                      backgroundColor: theme.status.success,
+                      color: '#ffffff'
+                    }}
+                  >
+                    {messages.archive.actions.unarchive}
+                  </button>
+                  <button
+                    onClick={() => deleteMultiple(Array.from(selectedIds))}
+                    className="px-3 py-1 text-sm rounded hover:opacity-90"
+                    style={{
+                      backgroundColor: theme.status.error,
+                      color: '#ffffff'
+                    }}
+                  >
+                    {messages.archive.actions.delete}
+                  </button>
+                </div>
+              </div>
             </div>
-            <h3
-              className="text-lg font-medium mb-2"
-              style={{ color: theme.text.primary }}
-            >
-              No archived notifications
-            </h3>
-            <p>Notifications you archive will appear here.</p>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Loading Feedback */}
-      {Object.values(isLoading).some(Boolean) && (
-        <div
-          className="fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg"
-          style={{
-            backgroundColor: theme.background.secondary,
-            border: `1px solid ${theme.border.default}`,
-            color: theme.text.primary,
-          }}
-        >
-          Processing action...
+          {/* Select All Checkbox */}
+          {notifications.length > 0 && (
+            <div className="mb-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  ref={(input) => {
+                    if (input) input.indeterminate = isIndeterminate;
+                  }}
+                  onChange={isAllSelected ? deselectAll : selectAll}
+                  className="rounded shadow-sm focus:ring focus:ring-opacity-50"
+                  style={{
+                    borderColor: theme.border.default,
+                    accentColor: theme.button.primary.background
+                  }}
+                />
+                <span className="text-sm" style={{ color: theme.text.secondary }}>
+                  {messages.archive.actions.selectAll}
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Notifications List */}
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div
+                className="animate-spin rounded-full h-8 w-8 border-b-2"
+                style={{ borderColor: theme.button.primary.background }}
+              ></div>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-12" style={{ color: theme.text.muted }}>
+              <div className="text-4xl mb-4">📦</div>
+              <h3 className="text-lg font-medium mb-2">{messages.archive.empty.title}</h3>
+              <p>{messages.archive.empty.description}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((notification) => (
+                <InboxNotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  isSelected={isSelected(notification.id)}
+                  onSelect={() => selectNotification(notification.id)}
+                  onDeselect={() => deselectNotification(notification.id)}
+                  onToggleSelection={() => toggleSelection(notification.id)}
+                  onMarkAsRead={() => markAsRead(notification.id)}
+                  onBookmark={() => toggleBookmark(notification.id)}
+                  onArchive={() => unarchiveNotification(notification.id)}
+                  onDelete={() => deleteNotification(notification.id)}
+                  getIcon={getNotificationIcon}
+                  getColor={getNotificationColor}
+                  isArchivePage={true}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-between">
+              <div className="text-sm" style={{ color: theme.text.muted }}>
+                {messages.archive.pagination.showing
+                  .replace('{start}', ((pagination.page * pagination.size) + 1).toString())
+                  .replace('{end}', Math.min((pagination.page + 1) * pagination.size, pagination.totalElements).toString())
+                  .replace('{total}', pagination.totalElements.toString())}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setPage(pagination.page - 1)}
+                  disabled={!pagination.hasPrevious}
+                  className="px-3 py-1 rounded text-sm font-medium"
+                  style={{
+                    backgroundColor: pagination.hasPrevious ? theme.button.primary.background : theme.button.secondary.background,
+                    color: pagination.hasPrevious ? theme.button.primary.text : theme.text.muted,
+                    cursor: pagination.hasPrevious ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  {messages.archive.pagination.previous}
+                </button>
+
+                <span className="text-sm" style={{ color: theme.text.muted }}>
+                  {messages.archive.pagination.page
+                    .replace('{current}', (pagination.page + 1).toString())
+                    .replace('{total}', pagination.totalPages.toString())}
+                </span>
+
+                <button
+                  onClick={() => setPage(pagination.page + 1)}
+                  disabled={!pagination.hasNext}
+                  className="px-3 py-1 rounded text-sm font-medium"
+                  style={{
+                    backgroundColor: pagination.hasNext ? theme.button.primary.background : theme.button.secondary.background,
+                    color: pagination.hasNext ? theme.button.primary.text : theme.text.muted,
+                    cursor: pagination.hasNext ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  {messages.archive.pagination.next || 'Next'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

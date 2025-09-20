@@ -234,8 +234,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     // Actions - Messages
     sendMessage: chat.sendMessage,
     sendMessageWithAttachments: async (conversationId: number, content: string, files: File[], images: File[], replyToId?: number) => {
-      // If sendMessageWithAttachments doesn't exist in useChat, use regular sendMessage for now
-      return chat.sendMessage(conversationId, content, replyToId);
+      // Use the proper sendMessageWithAttachments from the chat hook
+      if (chat.sendMessageWithAttachments) {
+        return chat.sendMessageWithAttachments(conversationId, content, files, images, replyToId);
+      } else {
+        // Fallback: if the hook doesn't have the method, log an error
+        console.error('sendMessageWithAttachments not available in chat hook');
+        return chat.sendMessage(conversationId, content || 'Shared attachment', replyToId);
+      }
     },
     loadMessages: chat.loadMessages,
     markAsRead: chat.markAsRead,

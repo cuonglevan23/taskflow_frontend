@@ -14,6 +14,8 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { SearchDropdown, SearchResult, SavedSearch, SearchTab } from "@/components/ui/SearchDropdown";
 import { useSearch } from "@/hooks/useSearch";
 import { SearchEntity, SearchTask, SearchProject, SearchUser, SearchTeam } from "@/types/search";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 
 interface SearchPanelProps {
   onSearch: (query: string) => void;
@@ -41,6 +43,19 @@ export default function SearchPanel({
   className = "",
   scope = 'all'
 }: SearchPanelProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
+  const t = (key: string): string => {
+    const keys = key.split('.');
+    let value: any = messages;
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    // Return the value if found, otherwise return a fallback
+    return value || "";
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("tasks");
   const searchRef = useRef<HTMLDivElement>(null);
@@ -173,27 +188,19 @@ export default function SearchPanel({
     }));
   }, [searchHistory]);
 
-  // Saved searches aligned with backend smart suggestions API
-  const savedSearches = useMemo(() => [
-    {
-      id: "s1",
-      title: "My assigned tasks",
-      description: "→ Tasks assigned to me",
-      icon: CheckSquare,
-    },
-    {
-      id: "s2",
-      title: "Recently completed tasks",
-      description: "● Tasks completed in last 7 days",
-      icon: Clock,
-    },
-    {
-      id: "s3",
-      title: "High priority items",
-      description: "⚡ Urgent and high priority tasks",
-      icon: CheckSquare,
-    },
-  ], []);
+  // Transform search history to saved searches format
+  const transformedSavedSearches = useMemo((): SavedSearch[] => {
+    // Ensure searchHistory is an array before calling map
+    if (!Array.isArray(searchHistory)) {
+      return [];
+    }
+    return searchHistory.map((historyItem) => ({
+      id: historyItem.id,
+      title: historyItem.query,
+      description: `${historyItem.resultCount} results • ${new Date(historyItem.timestamp).toLocaleDateString()}`,
+      icon: Clock, // Use Clock icon for history items
+    }));
+  }, [searchHistory]);
 
   // Keyboard shortcuts and click outside handling
   useEffect(() => {
@@ -229,19 +236,17 @@ export default function SearchPanel({
       setSearchQuery(value);
       onSearch(value);
 
-      // Only open panel if value has content and is different from current
-      if (value.trim() && value !== searchQuery) {
+      // Only open panel if value has content
+      if (value.trim()) {
         setIsOpen(true);
-        // Manually trigger search with debouncing
-        const timeoutId = setTimeout(() => {
-          search(value);
-        }, 500);
-        return () => clearTimeout(timeoutId);
-      } else if (!value.trim()) {
+        // Trigger search with debouncing handled by useSearch hook
+        search(value);
+      } else {
         setIsOpen(false);
+        clearResults();
       }
     },
-    [onSearch, setSearchQuery, search, searchQuery] // Add searchQuery to dependencies
+    [onSearch, setSearchQuery, search, clearResults] // Remove searchQuery from dependencies to prevent stale closure
   );
 
   const handleOpenPanel = useCallback(() => {
@@ -338,7 +343,7 @@ export default function SearchPanel({
         value={searchQuery}
         onChange={handleSearchChange}
         onFocus={handleOpenPanel}
-        placeholder="Search tasks, projects, and more..."
+        placeholder={undefined} // Let SearchInput handle the translation internally
         showShortcut={true}
         size="md"
         variant="default"
@@ -347,18 +352,34 @@ export default function SearchPanel({
 
       {/* Enhanced error state with retry functionality */}
       {searchError && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-50">
+        <div
+          className="absolute top-full left-0 right-0 mt-1 border rounded-lg p-3 z-50"
+          style={{
+            backgroundColor: theme.background.secondary,
+            borderColor: theme.border.default
+          }}
+        >
           <div className="flex items-center justify-between">
-            <div className="flex items-center text-red-600">
+            <div className="flex items-center" style={{ color: theme.status.error }}>
               <AlertCircle className="h-4 w-4 mr-2" />
               <span className="text-sm">{searchError}</span>
             </div>
             <button
               onClick={handleRetry}
-              className="flex items-center px-2 py-1 text-xs text-red-600 hover:text-red-800 transition-colors"
+              className="flex items-center px-2 py-1 text-xs transition-colors rounded"
+              style={{
+                color: theme.status.error,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.background.muted;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <RefreshCw className="h-3 w-3 mr-1" />
-              Retry
+              {t('search.retry') || 'Retry'}
             </button>
           </div>
         </div>
@@ -369,7 +390,7 @@ export default function SearchPanel({
         searchQuery={searchQuery}
         searchResults={transformedResults}
         recentItems={recentItems}
-        savedSearches={savedSearches}
+        savedSearches={transformedSavedSearches}
         isSearching={isSearching}
         activeTab={activeTab}
         tabs={SEARCH_TABS}
