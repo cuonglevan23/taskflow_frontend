@@ -38,6 +38,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@stomp/stompjs": "^7.1.1",
+    "@stripe/react-stripe-js": "^4.0.2",
+    "@stripe/stripe-js": "^7.9.0",
     "@tiptap/core": "^3.2.0",
     "@tiptap/extension-blockquote": "^3.2.0",
     "@tiptap/extension-bold": "^3.2.0",

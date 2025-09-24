@@ -5,6 +5,9 @@ export { TasksProvider, useTasksContext } from './TasksContext';
 export { NotificationProvider, useNotifications, useInboxNotifications, useHeaderNotifications, useBookmarkedNotifications, useArchivedNotifications } from './NotificationContext';
 export { NewsfeedProvider, useNewsfeedContext } from './NewsfeedContext';
 
+// ChatBot Context - AI Agent Services
+export { ChatBotProvider, useChatBot } from './ChatBotContext';
+
 
 // Type Exports for Global Data Models
 export type { 

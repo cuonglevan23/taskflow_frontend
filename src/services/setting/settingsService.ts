@@ -10,20 +10,11 @@ import {
 export class SettingsService {
   /**
    * Get account settings including preferred language, theme and available options
-   * Sử dụng endpoint có sẵn: GET /api/user-profiles/me (settings sẽ được include trong profile)
+   * GET /api/profile/account-settings
    */
   static async getAccountSettings(): Promise<AccountSettings> {
     try {
-      // Tạm thời sử dụng profile endpoint để lấy settings
-      const profile = await BaseApiClient.get<any>('/api/user-profiles/me');
-
-      // Map từ profile response sang AccountSettings format
-      return {
-        preferredLanguage: profile.preferredLanguage || 'en',
-        theme: profile.theme || 'light',
-        // Có thể thêm các settings khác từ profile
-        ...profile.settings
-      };
+      return await BaseApiClient.get<AccountSettings>('/api/profile/account-settings');
     } catch (error) {
       console.error('Failed to get account settings:', error);
       throw error;
@@ -32,23 +23,11 @@ export class SettingsService {
 
   /**
    * Update account settings (language and theme preferences)
-   * Sử dụng endpoint có sẵn: PUT /api/user-profiles/me
+   * PUT /api/profile/account-settings
    */
   static async updateAccountSettings(settings: UpdateAccountSettingsRequest): Promise<AccountSettings> {
     try {
-      // Update profile với settings mới
-      const updatedProfile = await BaseApiClient.put<any>('/api/user-profiles/me', {
-        preferredLanguage: settings.preferredLanguage,
-        theme: settings.theme,
-        settings: settings
-      });
-
-      // Return formatted settings
-      return {
-        preferredLanguage: updatedProfile.preferredLanguage || settings.preferredLanguage,
-        theme: updatedProfile.theme || settings.theme,
-        ...updatedProfile.settings
-      };
+      return await BaseApiClient.put<AccountSettings>('/api/profile/account-settings', settings);
     } catch (error) {
       console.error('Failed to update account settings:', error);
       throw error;

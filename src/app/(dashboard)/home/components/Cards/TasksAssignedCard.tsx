@@ -61,11 +61,12 @@ const TasksAssignedCard = () => {
 
   // Local activeTab state for this component only
   const [activeTab, setActiveTab] = React.useState("upcoming");
+  const [showAllTasks, setShowAllTasks] = React.useState(false);
 
   // Filter tasks based on active tab
   const filteredTasks = React.useMemo(() => {
     if (!tasks || !Array.isArray(tasks)) return [];
-    
+
     switch (activeTab) {
       case "upcoming":
         return tasks.filter(task => !task.completed && task.status !== 'completed');
@@ -80,6 +81,19 @@ const TasksAssignedCard = () => {
         return tasks;
     }
   }, [tasks, activeTab]);
+
+  // Displayed tasks with show more/less logic
+  const displayedTasks = React.useMemo(() => {
+    return showAllTasks ? filteredTasks : filteredTasks.slice(0, 4);
+  }, [filteredTasks, showAllTasks]);
+
+  // Check if there are more tasks to show
+  const hasMoreTasks = React.useMemo(() => {
+    return filteredTasks.length > 4;
+  }, [filteredTasks]);
+
+  // Helper function to toggle show all
+  const toggleShowAll = () => setShowAllTasks(!showAllTasks);
 
   // Business Logic - Safe date handling
   const getDueDateColor = (dueDate?: string): string => {
@@ -240,6 +254,12 @@ const TasksAssignedCard = () => {
     onClick: handleAssignTask
   };
 
+  const showMoreButton = {
+    show: hasMoreTasks, // Always show when there are more tasks, regardless of current state
+    onClick: toggleShowAll,
+    label: showAllTasks ? t('common.showLess') : t('common.showMore') // Dynamic label based on current state
+  };
+
   return (
     <BaseCard
       title="Tasks I've assigned"
@@ -247,26 +267,35 @@ const TasksAssignedCard = () => {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       createAction={createAction}
+      showMoreButton={showMoreButton}
       onMenuClick={handleMenuClick}
       fullHeight={true}
     >
-      <div className="space-y-0 h-full flex flex-col">
-        <div className="flex-1 overflow-y-auto">
-          {isLoading && (
-            <div className="flex-1 flex items-center justify-center min-h-[200px]">
-              <span className="text-sm" style={{ color: theme.text.secondary }}>
-                Loading...
-              </span>
-            </div>
-          )}
-          {!isLoading && filteredTasks && filteredTasks.length > 0 ? filteredTasks.map((task) => (
-            <AssignedTaskItem key={task.id} task={task} />
-          )) : !isLoading && (
-            <div className="flex-1 flex items-center justify-center min-h-[200px]">
-              <div className="text-gray-500 text-sm">No assigned tasks found</div>
-            </div>
-          )}
-        </div>
+      <div className={`space-y-0 h-full flex flex-col ${showAllTasks ? 'overflow-hidden' : ''}`}>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <span className="text-sm" style={{ color: theme.text.secondary }}>
+              Loading...
+            </span>
+          </div>
+        )}
+
+        {/* Tasks display - Scrollable when expanded */}
+        {!isLoading && displayedTasks && displayedTasks.length > 0 && (
+          <div className={`flex-1 ${showAllTasks ? 'overflow-y-auto space-y-0' : 'space-y-0'}`}>
+            {displayedTasks.map((task) => (
+              <AssignedTaskItem key={task.id} task={task} />
+            ))}
+          </div>
+        )}
+
+        {/* No tasks found */}
+        {!isLoading && (!displayedTasks || displayedTasks.length === 0) && (
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <div className="text-gray-500 text-sm">No assigned tasks found</div>
+          </div>
+        )}
       </div>
     </BaseCard>
   );

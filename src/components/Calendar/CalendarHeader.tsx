@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, Settings, Plus, Upload, Download } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useThemeContext } from '@/providers/ThemeProvider';
 import { useLanguageContext } from '@/providers/LanguageProvider';
 
@@ -140,7 +140,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {/* Create Button - Only show if user has permissions */}
         {showCreateButton && canManageTasks && (
           <Button 
-            variant="primary"
+            variant="ghost"
             size="sm"
             onClick={onCreateNew}
             className="flex items-center gap-2"

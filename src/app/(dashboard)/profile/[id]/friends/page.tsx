@@ -7,7 +7,8 @@ import { useChatContext } from '@/contexts/ChatContext';
 import { useFriendsList, FriendData } from '@/hooks/profile/useFriendsList';
 import { useFriendship } from '@/hooks/profile/useFriendship';
 import { useGlobalData } from '@/contexts/GlobalDataContext';
-import { DARK_THEME } from "@/constants/theme";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { Users, UserPlus, MessageCircle, UserMinus, Loader2, Search, Clock, Check, X, AlertCircle } from "lucide-react";
 import Button from "@/components/ui/Button/Button";
 import BaseCard from "@/components/ui/BaseCard/BaseCard";
@@ -46,8 +47,10 @@ export default function UserFriendsPage() {
   const { id: userId } = useParams();
   const { user } = useAuth();
   const router = useRouter();
-  const { openChatWindow } = useChatContext(); // ← Chuẩn hóa sử dụng ChatContext
+  const { openChatWindow } = useChatContext();
   const { invalidatePostsCache } = useGlobalData();
+  const { theme, isLoading: themeLoading } = useThemeContext();
+  const { messages } = useLanguageContext();
 
   // State management
   const [activeTab, setActiveTab] = useState<TabType>('friends');
@@ -62,43 +65,39 @@ export default function UserFriendsPage() {
   // Check if viewing own profile
   const isOwnProfile = !userId || userId === "me" || (user && userId === user.id?.toString());
 
+  // Get target user ID for friends list
+  const targetUserId = isOwnProfile ? undefined : parseInt(userId as string);
+
   // Use friends list hook for real-time friends data with online status
   const {
     friends,
     friendsCount,
-    onlineFriendsCount,
-    offlineFriendsCount,
     loading: friendsLoading,
     error: friendsError,
     loadFriends,
-    updateFriendOnlineStatus,
     removeFriend,
-    searchFriends,
-    getOnlineFriends,
-    getOfflineFriends
-  } = useFriendsList();
+    searchFriends
+  } = useFriendsList(targetUserId);
 
   // Use friendship hook for target user (when viewing others' profiles)
-  // Only use friendship hook for other users' profiles, not for own profile or friends list
   const {
     friendshipStatus,
     loading: friendshipLoading,
-    handleFriendAction: handleTargetUserFriendAction,
-    refetchFriendshipStatus
+    handleFriendAction: handleTargetUserFriendAction
   } = useFriendship(
     isOwnProfile ? null : (profileData ? {
       id: profileData.id,
-      email: '', // Not needed for friendship
+      email: '',
       firstName: profileData.firstName,
       lastName: profileData.lastName,
       username: profileData.username,
       avatarUrl: profileData.avatarUrl,
-      coverImageUrl: null, // Not needed for friendship
+      coverImageUrl: null,
       department: '',
       jobTitle: '',
       aboutMe: '',
-      joinedAt: new Date().toISOString(), // Default value
-      isPremium: false, // Default value
+      joinedAt: new Date().toISOString(),
+      isPremium: false,
       isOwnProfile: profileData.isOwnProfile,
       tabCounts: {
         postsCount: 0,
@@ -117,7 +116,7 @@ export default function UserFriendsPage() {
         taskCompletionRate: 0,
         isOwnProfile: profileData.isOwnProfile
       },
-      isOnline: false, // Default value
+      isOnline: false,
       onlineStatus: 'offline' as const,
       lastSeen: null
     } : null),
@@ -151,7 +150,7 @@ export default function UserFriendsPage() {
       });
     } catch (error) {
       console.error('Error loading profile data:', error);
-      setError('Failed to load profile data');
+      setError(messages.friendtab.error.loadProfile);
     }
   };
 
@@ -210,12 +209,12 @@ export default function UserFriendsPage() {
     router.push(`/profile/${personId}/posts`);
   };
 
-  // Handle message friend - chuẩn hóa với ProfileHeader
+  // Handle message friend
   const handleMessageFriend = async (friend: FriendData) => {
     try {
       openChatWindow({
         id: friend.userId,
-        name: `${friend.firstName} ${friend.lastName}`, // ← Chuẩn hóa với ProfileHeader
+        name: `${friend.firstName} ${friend.lastName}`,
         firstName: friend.firstName,
         lastName: friend.lastName,
         email: friend.email,
@@ -229,7 +228,7 @@ export default function UserFriendsPage() {
 
   // Handle unfriend with confirmation
   const handleUnfriend = async (friend: FriendData) => {
-    const confirmMessage = `Are you sure you want to unfriend ${friend.firstName} ${friend.lastName}?`;
+    const confirmMessage = messages.friendtab.confirmation.unfriend.replace('{name}', `${friend.firstName} ${friend.lastName}`);
 
     if (!confirm(confirmMessage)) return;
 
@@ -248,7 +247,7 @@ export default function UserFriendsPage() {
       console.log(`✅ Successfully unfriended ${friend.firstName} ${friend.lastName}`);
     } catch (error) {
       console.error('Error unfriending:', error);
-      setError(error instanceof Error ? error.message : 'Failed to unfriend user');
+      setError(error instanceof Error ? error.message : messages.friendtab.error.unfriendUser);
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }));
     }
@@ -293,7 +292,7 @@ export default function UserFriendsPage() {
       console.log(`✅ Successfully ${action}ed friend request`);
     } catch (error) {
       console.error(`Error ${action}ing request:`, error);
-      setError(error instanceof Error ? error.message : `Failed to ${action} request`);
+      setError(error instanceof Error ? error.message : messages.friendtab.error[`${action}Request` as keyof typeof messages.friendtab.error]);
     } finally {
       setActionLoading(prev => ({ ...prev, [actionKey]: false }));
     }
@@ -352,27 +351,32 @@ export default function UserFriendsPage() {
       <div className="flex items-center gap-1 text-xs">
         {isOnline ? (
           <>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400">Online</span>
+            <div
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: theme.status.success }}
+            />
+            <span style={{ color: theme.status.success }}>{messages.friendtab.status.online}</span>
           </>
         ) : (
           <>
-            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-            <span className="text-gray-500">Offline</span>
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: theme.text.muted }}
+            />
+            <span style={{ color: theme.text.muted }}>{messages.friendtab.status.offline}</span>
           </>
         )}
       </div>
     );
-  }, []); // Empty dependency array since this function doesn't depend on any props/state
+  }, [theme, messages]);
 
   // Render individual friend card with enhanced features
   const renderFriendCard = (friend: FriendData) => {
     const fullName = `${friend.firstName} ${friend.lastName}`;
     const jobInfo = friend.jobTitle && friend.department
       ? `${friend.jobTitle} at ${friend.department}`
-      : friend.jobTitle || friend.department || 'Team Member';
+      : friend.jobTitle || friend.department || messages.friendtab.status.teamMember;
 
-    // ✅ FIXED: Using real data from API properly processed through ProfileService
     const isOnline = Boolean(friend.isOnline);
     const unfriendLoading = actionLoading[`unfriend-${friend.userId}`];
 
@@ -381,9 +385,13 @@ export default function UserFriendsPage() {
         key={friend.userId}
         title=""
         variant="compact"
-        className="hover:border-gray-600 transition-colors cursor-pointer group"
+        className="transition-colors cursor-pointer group hover:opacity-90"
       >
-        <div className="p-4" onClick={() => handlePersonClick(friend.userId)}>
+        <div
+          className="p-4"
+          onClick={() => handlePersonClick(friend.userId)}
+          style={{ borderColor: theme.border.default }}
+        >
           <div className="flex items-start space-x-3">
             <div className="relative">
               <UserAvatar
@@ -392,24 +400,28 @@ export default function UserFriendsPage() {
                 size="md"
                 variant="circle"
                 className="flex-shrink-0"
-                fallbackColor="#6366f1"
+                fallbackColor={theme.status.info}
               />
               {/* Online status indicator */}
-              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-gray-800 ${
-                isOnline ? 'bg-green-400' : 'bg-gray-500'
-              }`}></div>
+              <div
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                style={{
+                  backgroundColor: isOnline ? theme.status.success : theme.text.muted,
+                  borderColor: theme.background.primary
+                }}
+              />
             </div>
 
             <div className="flex-1 min-w-0">
               <h3
-                className="font-semibold text-base truncate hover:text-blue-400 transition-colors"
-                style={{ color: DARK_THEME.text.primary }}
+                className="font-semibold text-base truncate transition-colors hover:opacity-80"
+                style={{ color: theme.text.primary }}
               >
                 {fullName}
               </h3>
               <p
                 className="text-sm truncate mb-1"
-                style={{ color: DARK_THEME.text.secondary }}
+                style={{ color: theme.text.secondary }}
               >
                 {jobInfo}
               </p>
@@ -418,8 +430,11 @@ export default function UserFriendsPage() {
               <div className="flex items-center justify-between mb-3">
                 {renderOnlineStatus(isOnline)}
                 {friend.friendsSince && (
-                  <span className="text-xs text-gray-500">
-                    Friends since {formatDate(friend.friendsSince)}
+                  <span
+                    className="text-xs"
+                    style={{ color: theme.text.muted }}
+                  >
+                    {messages.friendtab.status.friendsSince.replace('{date}', formatDate(friend.friendsSince))}
                   </span>
                 )}
               </div>
@@ -428,21 +443,20 @@ export default function UserFriendsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                  className="flex-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMessageFriend(friend);
                   }}
                 >
                   <MessageCircle className="w-4 h-4 mr-1" />
-                  Message
+                  {messages.friendtab.actions.message}
                 </Button>
 
                 {isOwnProfile && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-red-400 hover:bg-red-500/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnfriend(friend);
@@ -469,7 +483,7 @@ export default function UserFriendsPage() {
     const fullName = `${request.firstName} ${request.lastName}`;
     const jobInfo = request.jobTitle && request.department
       ? `${request.jobTitle} at ${request.department}`
-      : request.jobTitle || request.department || 'Team Member';
+      : request.jobTitle || request.department || messages.friendtab.status.teamMember;
 
     const acceptLoading = actionLoading[`accept-${request.id}`];
     const rejectLoading = actionLoading[`reject-${request.id}`];
@@ -480,7 +494,7 @@ export default function UserFriendsPage() {
         key={request.id}
         title=""
         variant="compact"
-        className="hover:border-gray-600 transition-colors cursor-pointer"
+        className="transition-colors cursor-pointer hover:opacity-90"
       >
         <div className="p-4" onClick={() => handlePersonClick(request.userId)}>
           <div className="flex items-start space-x-3">
@@ -490,25 +504,25 @@ export default function UserFriendsPage() {
               size="md"
               variant="circle"
               className="flex-shrink-0"
-              fallbackColor="#6366f1"
+              fallbackColor={theme.status.info}
             />
 
             <div className="flex-1 min-w-0">
               <h3
-                className="font-semibold text-base truncate hover:text-blue-400 transition-colors"
-                style={{ color: DARK_THEME.text.primary }}
+                className="font-semibold text-base truncate transition-colors hover:opacity-80"
+                style={{ color: theme.text.primary }}
               >
                 {fullName}
               </h3>
               <p
                 className="text-sm truncate mb-1"
-                style={{ color: DARK_THEME.text.secondary }}
+                style={{ color: theme.text.secondary }}
               >
                 {jobInfo}
               </p>
               <p
                 className="text-xs mb-3"
-                style={{ color: DARK_THEME.text.muted }}
+                style={{ color: theme.text.muted }}
               >
                 {formatDate(request.createdAt)}
               </p>
@@ -533,12 +547,11 @@ export default function UserFriendsPage() {
                       ) : (
                         <Check className="w-4 h-4 mr-1" />
                       )}
-                      Accept
+                      {messages.friendtab.actions.accept}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRequestAction(request, 'reject');
@@ -557,7 +570,7 @@ export default function UserFriendsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex-1 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                    className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRequestAction(request, 'cancel');
@@ -569,7 +582,7 @@ export default function UserFriendsPage() {
                     ) : (
                       <Clock className="w-4 h-4 mr-1" />
                     )}
-                    Cancel Request
+                    {messages.friendtab.actions.cancel}
                   </Button>
                 )}
               </div>
@@ -604,17 +617,44 @@ export default function UserFriendsPage() {
   const isDataLoading = loading || friendsLoading;
   const dataError = error || friendsError;
 
+  if (themeLoading) {
+    return (
+      <div
+        className="flex justify-center items-center min-h-screen"
+        style={{ backgroundColor: theme.background.primary }}
+      >
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: theme.status.info }} />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div
+      className="p-6 max-w-6xl mx-auto"
+      style={{ backgroundColor: theme.background.primary, color: theme.text.primary }}
+    >
       {/* Header Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: DARK_THEME.text.primary }}>
-              {isOwnProfile ? "Your Friends" : `${profileData?.firstName || 'User'}'s Friends`}
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: theme.text.primary }}
+            >
+              {isOwnProfile
+                ? messages.friendtab.title.yourFriends
+                : messages.friendtab.title.userFriends.replace('{name}', profileData?.firstName || 'User')
+              }
             </h1>
-            <p style={{ color: DARK_THEME.text.secondary }}>
-              {isDataLoading ? "Loading..." : `${filteredData.length} ${activeTab === 'friends' ? 'friend' : 'request'}${filteredData.length !== 1 ? 's' : ''}`}
+            <p style={{ color: theme.text.secondary }}>
+              {isDataLoading
+                ? messages.friendtab.status.loading
+                : `${filteredData.length} ${
+                    activeTab === 'friends' 
+                      ? (filteredData.length === 1 ? messages.friendtab.counts.friend : messages.friendtab.counts.friends)
+                      : (filteredData.length === 1 ? messages.friendtab.counts.request : messages.friendtab.counts.requests)
+                  }`
+              }
             </p>
           </div>
 
@@ -625,7 +665,7 @@ export default function UserFriendsPage() {
               onClick={() => router.push('/discover/people')}
             >
               <UserPlus className="w-4 h-4 mr-2" />
-              Find Friends
+              {messages.friendtab.actions.findFriends}
             </Button>
           )}
         </div>
@@ -640,9 +680,15 @@ export default function UserFriendsPage() {
               className="flex items-center gap-2"
             >
               <Users className="w-4 h-4" />
-              Friends
+              {messages.friendtab.tabs.friends}
               {tabCounts.friends > 0 && (
-                <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs">
+                <span
+                  className="px-2 py-0.5 rounded-full text-xs"
+                  style={{
+                    backgroundColor: theme.badge.background,
+                    color: theme.badge.text
+                  }}
+                >
                   {tabCounts.friends}
                 </span>
               )}
@@ -654,9 +700,15 @@ export default function UserFriendsPage() {
               className="flex items-center gap-2"
             >
               <Clock className="w-4 h-4" />
-              Received
+              {messages.friendtab.tabs.received}
               {tabCounts.received > 0 && (
-                <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs">
+                <span
+                  className="px-2 py-0.5 rounded-full text-xs"
+                  style={{
+                    backgroundColor: theme.badge.background,
+                    color: theme.badge.text
+                  }}
+                >
                   {tabCounts.received}
                 </span>
               )}
@@ -668,9 +720,15 @@ export default function UserFriendsPage() {
               className="flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
-              Sent
+              {messages.friendtab.tabs.sent}
               {tabCounts.sent > 0 && (
-                <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-xs">
+                <span
+                  className="px-2 py-0.5 rounded-full text-xs"
+                  style={{
+                    backgroundColor: theme.badge.background,
+                    color: theme.badge.text
+                  }}
+                >
                   {tabCounts.sent}
                 </span>
               )}
@@ -681,13 +739,25 @@ export default function UserFriendsPage() {
         {/* Search Bar */}
         {filteredData.length > 0 && (
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
+              style={{ color: theme.text.muted }}
+            />
             <input
               type="text"
-              placeholder={`Search ${activeTab === 'friends' ? 'friends' : 'requests'}...`}
+              placeholder={
+                activeTab === 'friends'
+                  ? messages.friendtab.search.searchFriends
+                  : messages.friendtab.search.searchRequests
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors placeholder:text-gray-400"
+              style={{
+                backgroundColor: theme.background.secondary,
+                borderColor: theme.border.default,
+                color: theme.text.primary
+              }}
             />
           </div>
         )}
@@ -697,15 +767,27 @@ export default function UserFriendsPage() {
       {dataError && (
         <BaseCard title="" variant="compact">
           <div className="text-center py-8">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-            <p className="text-red-400 mb-4">Error loading data</p>
-            <p className="text-gray-500 text-sm mb-4">{dataError}</p>
+            <AlertCircle
+              className="w-12 h-12 mx-auto mb-4"
+              style={{ color: theme.status.error }}
+            />
+            <p
+              className="mb-4"
+              style={{ color: theme.status.error }}
+            >
+              {messages.friendtab.error.loadingData}
+            </p>
+            <p
+              className="text-sm mb-4"
+              style={{ color: theme.text.muted }}
+            >
+              {dataError}
+            </p>
             <Button
               variant="ghost"
               onClick={loadData}
-              className="text-blue-400 hover:text-blue-300"
             >
-              Try Again
+              {messages.friendtab.actions.tryAgain}
             </Button>
           </div>
         </BaseCard>
@@ -714,8 +796,16 @@ export default function UserFriendsPage() {
       {/* Loading State */}
       {isDataLoading && (
         <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-          <span className="ml-2 text-gray-400">Loading...</span>
+          <Loader2
+            className="w-8 h-8 animate-spin"
+            style={{ color: theme.status.info }}
+          />
+          <span
+            className="ml-2"
+            style={{ color: theme.text.muted }}
+          >
+            {messages.friendtab.status.loading}
+          </span>
         </div>
       )}
 
@@ -725,14 +815,26 @@ export default function UserFriendsPage() {
           <div className="text-center py-12">
             {activeTab === 'friends' ? (
               <>
-                <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium mb-2" style={{ color: DARK_THEME.text.primary }}>
-                  {isOwnProfile ? "No friends yet" : "No friends to show"}
-                </h3>
-                <p style={{ color: DARK_THEME.text.secondary }} className="mb-4">
+                <Users
+                  className="w-16 h-16 mx-auto mb-4"
+                  style={{ color: theme.text.muted }}
+                />
+                <h3
+                  className="text-lg font-medium mb-2"
+                  style={{ color: theme.text.primary }}
+                >
                   {isOwnProfile
-                    ? "Start connecting with people to build your network!"
-                    : "This user hasn't connected with anyone yet."
+                    ? messages.friendtab.empty.noFriends.title
+                    : messages.friendtab.empty.noFriendsToShow.title
+                  }
+                </h3>
+                <p
+                  className="mb-4"
+                  style={{ color: theme.text.secondary }}
+                >
+                  {isOwnProfile
+                    ? messages.friendtab.empty.noFriends.description
+                    : messages.friendtab.empty.noFriendsToShow.description
                   }
                 </p>
                 {isOwnProfile && (
@@ -741,28 +843,46 @@ export default function UserFriendsPage() {
                     onClick={() => router.push('/discover/people')}
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Find Friends
+                    {messages.friendtab.actions.findFriends}
                   </Button>
                 )}
               </>
             ) : activeTab === 'received' ? (
               <>
-                <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium mb-2" style={{ color: DARK_THEME.text.primary }}>
-                  No friend requests
+                <Clock
+                  className="w-16 h-16 mx-auto mb-4"
+                  style={{ color: theme.text.muted }}
+                />
+                <h3
+                  className="text-lg font-medium mb-2"
+                  style={{ color: theme.text.primary }}
+                >
+                  {messages.friendtab.empty.noReceivedRequests.title}
                 </h3>
-                <p style={{ color: DARK_THEME.text.secondary }} className="mb-4">
-                  You don't have any pending friend requests.
+                <p
+                  className="mb-4"
+                  style={{ color: theme.text.secondary }}
+                >
+                  {messages.friendtab.empty.noReceivedRequests.description}
                 </p>
               </>
             ) : (
               <>
-                <UserPlus className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium mb-2" style={{ color: DARK_THEME.text.primary }}>
-                  No sent requests
+                <UserPlus
+                  className="w-16 h-16 mx-auto mb-4"
+                  style={{ color: theme.text.muted }}
+                />
+                <h3
+                  className="text-lg font-medium mb-2"
+                  style={{ color: theme.text.primary }}
+                >
+                  {messages.friendtab.empty.noSentRequests.title}
                 </h3>
-                <p style={{ color: DARK_THEME.text.secondary }} className="mb-4">
-                  You haven't sent any friend requests yet.
+                <p
+                  className="mb-4"
+                  style={{ color: theme.text.secondary }}
+                >
+                  {messages.friendtab.empty.noSentRequests.description}
                 </p>
               </>
             )}
@@ -774,19 +894,30 @@ export default function UserFriendsPage() {
       {!isDataLoading && !dataError && filteredData.length === 0 && searchQuery && (
         <BaseCard title="" variant="compact">
           <div className="text-center py-8">
-            <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2" style={{ color: DARK_THEME.text.primary }}>
-              No results found
+            <Search
+              className="w-12 h-12 mx-auto mb-4"
+              style={{ color: theme.text.muted }}
+            />
+            <h3
+              className="text-lg font-medium mb-2"
+              style={{ color: theme.text.primary }}
+            >
+              {messages.friendtab.search.noResults}
             </h3>
-            <p style={{ color: DARK_THEME.text.secondary }} className="mb-4">
-              No {activeTab === 'friends' ? 'friends' : 'requests'} match your search for "{searchQuery}"
+            <p
+              className="mb-4"
+              style={{ color: theme.text.secondary }}
+            >
+              {messages.friendtab.search.noResultsFor
+                .replace('{type}', activeTab === 'friends' ? messages.friendtab.counts.friends : messages.friendtab.counts.requests)
+                .replace('{query}', searchQuery)
+              }
             </p>
             <Button
               variant="ghost"
               onClick={() => setSearchQuery("")}
-              className="text-blue-400 hover:text-blue-300"
             >
-              Clear Search
+              {messages.friendtab.actions.clearSearch}
             </Button>
           </div>
         </BaseCard>

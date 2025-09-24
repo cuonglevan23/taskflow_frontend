@@ -32,7 +32,9 @@
     "firstName": "First name",
     "lastName": "Last name",
     "jobTitle": "Job title",
+
     "department": "Department",
+
     "aboutMe": "About me",
     "required": "*",
     "firstNamePlaceholder": "Enter first name",
@@ -144,18 +146,20 @@
       "timeline": "Timeline"
     },
     "teams": {
+
       "overview": "Overview",
       "dashboard": "Dashboard",
-      "members": "Members",
       "allWork": "All Work",
       "calendar": "Calendar",
       "members": {
+
         "title": "Team Members",
         "loading": "Loading members...",
         "error": {
           "loading": "Failed to load team members"
         },
         "actions": {
+          "deleteMember": "Delete member",
           "addMember": "Add member",
           "sendFeedback": "Send feedback",
           "search": "Search members"
@@ -425,6 +429,25 @@
       "statusMessage": "Status message"
     }
   },
+  "taskSections": {
+    "recentlyAssigned": {
+      "title": "Recently Assigned",
+      "description": "Tasks that were recently assigned"
+    },
+    "doToday": {
+      "title": "To Do Today",
+      "description": "Tasks you want to handle today"
+    },
+    "doNextWeek": {
+      "title": "To Do Next Week",
+      "description": "Tasks planned for next week"
+    },
+    "doLater": {
+      "title": "To Do Later",
+      "description": "Tasks to be done later"
+    }
+  },
+
   "taskList": {
     "headers": {
       "name": "Name",
@@ -462,6 +485,49 @@
       "button": "Options"
     }
   },
+  "cards": {
+    "myTasks": {
+      "title": "My Tasks",
+      "createTask": "Create Task",
+      "upcoming": "Upcoming",
+      "overdue": "Overdue",
+      "completed": "Completed",
+      "noTasks": "No tasks found",
+      "loading": "Loading..."
+    },
+    "projects": {
+      "title": "Projects",
+      "createProject": "Create Project",
+      "createProjects": "Create Projects",
+      "recents": "Recent",
+      "noProjects": "No projects found",
+      "loading": "Loading projects...",
+      "failedToLoad": "Failed to load projects"
+    },
+    "tasksAssigned": {
+      "title": "Tasks Assigned by Me",
+      "assignTask": "Assign Task",
+      "upcoming": "Upcoming",
+      "overdue": "Overdue",
+      "completed": "Completed",
+      "noTasks": "No assigned tasks found",
+      "direct": "Direct",
+      "team": "Team",
+      "project": "Project"
+    },
+    "goals": {
+      "title": "Goals",
+      "createGoal": "Create Goal",
+      "myGoals": "My Goals",
+      "team": "Team",
+      "openGoals": "Open Goals",
+      "noGoals": "No goals found",
+      "onTrack": "On Track",
+      "atRisk": "At Risk",
+      "offTrack": "Off Track"
+    }
+  },
+
   "myTaskDashboard": {
     "title": "My Tasks Dashboard",
     "refresh": "Refresh Dashboard",
@@ -534,6 +600,7 @@
     }
   },
   "common": {
+
     "loading": "Loading...",
     "error": "Error",
     "retry": "Retry",
@@ -544,10 +611,14 @@
     "task": "Task",
     "assignee": "Assignee",
     "member": "Member",
+    "jobTitle": "Job title",
+    "department": "Department",
     "role": "Role",
     "joined": "Joined",
     "actions": "Actions",
-    "notAvailable": "N/A",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "notAvailable": "Not available",
     "status": {
       "joined": "Joined",
       "complete": "Complete"
@@ -807,6 +878,7 @@
     "addCommentPlaceholder": "Add a comment...",
     "collaborators": "Collaborators"
   },
+
   "taskDetailHeader": {
     "upload": "Upload",
     "googleDrive": "Google Drive",
@@ -1259,6 +1331,7 @@
     "settings": "Settings",
     "logout": "Log out",
     "loggingOut": "Logging out...",
+    "pricing": "pricing",
     "roles": {
       "admin": "ADMIN",
       "member": "MEMBER"
@@ -1325,7 +1398,138 @@
     "failedToLoadTeamProjects": "Failed to load team projects"
   },
   "common": {
-    "tryAgain": "Try Again",
-    "retry": "Retry"
+    "error": "Error",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "noData": "No data available",
+    "noTasksFound": "No tasks found",
+    "noTasksAvailable": "There are no tasks available for this time period.",
+    "task": "Task",
+    "assignee": "Assignee",
+    "member": "Member",
+    "jobTitle": "Job title",
+    "department": "Department",
+    "role": "Role",
+    "joined": "Joined",
+    "actions": "Actions",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "tryAgain": "Try Again"
+
+  },
+  "banner": {
+    "premium": {
+      "title": "Upgrade to Premium",
+      "greeting": "Hi {name}!",
+      "subtitle": "Unlock powerful features to boost your productivity",
+      "choosePlan": "Choose Your Plan",
+      "features": {
+        "title": "Premium Features",
+        "unlimitedTasks": "Unlimited tasks and projects",
+        "analytics": "Advanced analytics and reports",
+        "prioritySupport": "Priority customer support",
+        "teamCollaboration": "Team collaboration features",
+        "customIntegrations": "Custom integrations",
+        "advancedSecurity": "Advanced security features"
+      },
+      "plans": {
+        "popular": "Most Popular",
+        "monthly": {
+          "name": "Monthly Plan",
+          "description": "Premium features for 1 month",
+          "billing": "/month"
+        },
+        "quarterly": {
+          "name": "Quarterly Plan",
+          "description": "Premium features for 3 months",
+          "billing": "/3 months",
+          "savings": "Save 17%"
+        },
+        "yearly": {
+          "name": "Yearly Plan",
+          "description": "Premium features for 1 year",
+          "billing": "/year",
+          "savings": "Save 25%"
+        }
+      },
+      "pricing": {
+        "guarantee": "Cancel anytime • 30-day money back guarantee"
+      },
+      "buttons": {
+        "upgradeNow": "Upgrade Now",
+        "maybeLater": "Maybe Later"
+      },
+      "footerNote": "Join thousands of professionals who trust our platform"
+    }
+  },
+  "friendtab": {
+    "title": {
+      "yourFriends": "Your Friends",
+      "userFriends": "{name}'s Friends"
+    },
+    "tabs": {
+      "friends": "Friends",
+      "received": "Received",
+      "sent": "Sent"
+    },
+    "actions": {
+      "findFriends": "Find Friends",
+      "message": "Message",
+      "unfriend": "Unfriend",
+      "accept": "Accept",
+      "reject": "Reject",
+      "cancel": "Cancel Request",
+      "tryAgain": "Try Again",
+      "clearSearch": "Clear Search"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "loading": "Loading...",
+      "friendsSince": "Friends since {date}",
+      "teamMember": "Team Member"
+    },
+    "search": {
+      "searchFriends": "Search friends...",
+      "searchRequests": "Search requests...",
+      "noResults": "No results found",
+      "noResultsFor": "No {type} match your search for \"{query}\""
+    },
+    "counts": {
+      "friend": "friend",
+      "friends": "friends",
+      "request": "request",
+      "requests": "requests",
+      "loading": "Loading..."
+    },
+    "empty": {
+      "noFriends": {
+        "title": "No friends yet",
+        "description": "Start connecting with people to build your network!"
+      },
+      "noFriendsToShow": {
+        "title": "No friends to show",
+        "description": "This user hasn't connected with anyone yet."
+      },
+      "noReceivedRequests": {
+        "title": "No friend requests",
+        "description": "You don't have any pending friend requests."
+      },
+      "noSentRequests": {
+        "title": "No sent requests",
+        "description": "You haven't sent any friend requests yet."
+      }
+    },
+    "error": {
+      "loadingData": "Error loading data",
+      "unfriendUser": "Failed to unfriend user",
+      "acceptRequest": "Failed to accept request",
+      "rejectRequest": "Failed to reject request",
+      "cancelRequest": "Failed to cancel request",
+      "loadProfile": "Failed to load profile data"
+    },
+    "confirmation": {
+      "unfriend": "Are you sure you want to unfriend {name}?"
+    }
   }
 }

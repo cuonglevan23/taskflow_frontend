@@ -22,13 +22,15 @@ export default function DisplaySettingsTab({}: DisplaySettingsTabProps) {
     updating,
     error: settingsError,
     clearError,
-    retry
+    retry,
+    updateBothSettings
   } = useAccountSettings();
 
   // Local form state - synced with Provider contexts
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Helper function to get translated text
   const t = (key: string): string => {
@@ -40,45 +42,79 @@ export default function DisplaySettingsTab({}: DisplaySettingsTabProps) {
     return value || key;
   };
 
-  // Sync form state with Provider contexts
+  // Sync form state with Provider contexts and check for changes
   useEffect(() => {
     if (locale) {
-      setSelectedLanguage(locale.toUpperCase());
+      const currentLanguage = locale.toUpperCase();
+      setSelectedLanguage(currentLanguage);
+
+      // Check if different from backend settings
+      const backendLanguage = settings?.preferredLanguage?.toUpperCase();
+      const languageChanged = backendLanguage && backendLanguage !== currentLanguage;
+      const themeChanged = selectedTheme && settings?.preferredTheme && selectedTheme !== settings.preferredTheme.toUpperCase();
+      setHasChanges(Boolean(languageChanged || themeChanged));
     }
-  }, [locale]);
+  }, [locale, settings, selectedTheme]);
 
   useEffect(() => {
     if (themeMode) {
-      setSelectedTheme(themeMode.toUpperCase());
+      const currentTheme = themeMode.toUpperCase();
+      setSelectedTheme(currentTheme);
+
+      // Check if different from backend settings
+      const backendTheme = settings?.preferredTheme?.toUpperCase();
+      const themeChanged = backendTheme && backendTheme !== currentTheme;
+      const languageChanged = selectedLanguage && settings?.preferredLanguage && selectedLanguage !== settings.preferredLanguage.toUpperCase();
+      setHasChanges(Boolean(themeChanged || languageChanged));
     }
-  }, [themeMode]);
+  }, [themeMode, settings, selectedLanguage]);
 
   // Handle language change - use Provider method (includes backend sync)
   const handleLanguageChange = async (newLanguage: string) => {
     setSelectedLanguage(newLanguage);
+    setHasChanges(true);
 
     // Update via Provider (includes backend sync)
     const languageCode = newLanguage.toLowerCase() as 'en' | 'vi' | 'ko';
-    await setLocale(languageCode);
+    setLocale(languageCode);
   };
 
   // Handle theme change - use Provider method (includes backend sync)
   const handleThemeChange = async (newTheme: string) => {
     setSelectedTheme(newTheme);
+    setHasChanges(true);
 
     // Update via Provider (includes backend sync)
     const themeMode = newTheme.toLowerCase() as 'light' | 'dark';
-    await setTheme(themeMode);
+    setTheme(themeMode);
   };
 
-  // Save changes - now just triggers UI feedback since Providers handle backend sync
+  // Save changes - now actually sends data to backend
   const handleSaveChanges = async () => {
     try {
-      // Show success message since changes are already synced via Providers
-      setSaveSuccess(true);
+      if (!hasChanges) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        return;
+      }
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Send both settings to backend - backend expects UPPERCASE values
+      const languageCode = selectedLanguage.toUpperCase(); // VI, EN, KO
+      const themeCode = selectedTheme.toUpperCase();       // LIGHT, DARK
+
+      const success = await updateBothSettings(languageCode, themeCode);
+
+      if (success) {
+        setHasChanges(false);
+        setSaveSuccess(true);
+
+        // Also update providers to ensure UI is in sync (providers expect lowercase)
+        setLocale(selectedLanguage.toLowerCase() as 'en' | 'vi' | 'ko');
+        setTheme(selectedTheme.toLowerCase() as 'light' | 'dark');
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
     } catch (error) {
       console.error('Save changes error:', error);
     }

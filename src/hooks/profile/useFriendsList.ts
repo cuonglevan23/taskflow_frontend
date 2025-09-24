@@ -22,7 +22,7 @@ export interface FriendsListResponse {
   data: FriendData[];
 }
 
-export const useFriendsList = () => {
+export const useFriendsList = (targetUserId?: number) => {
   const [friends, setFriends] = useState<FriendData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,8 @@ export const useFriendsList = () => {
     setError(null);
 
     try {
-      const response = await ProfileService.getFriendsList();
+      // ✅ FIX: Truyền targetUserId vào ProfileService để gọi endpoint đúng
+      const response = await ProfileService.getFriendsList(targetUserId);
 
       if (response.success) {
         setFriends(response.data || []);
@@ -47,7 +48,7 @@ export const useFriendsList = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [targetUserId]);
 
   // Update online status for a specific friend
   const updateFriendOnlineStatus = useCallback((userId: number, isOnline: boolean) => {

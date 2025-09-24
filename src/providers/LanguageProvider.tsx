@@ -24,13 +24,15 @@ interface LanguageProviderProps {
   defaultLocale?: Locale;
   initialMessages?: Record<string, any>;
   enableBackendSync?: boolean; // Option to enable/disable backend sync
+  isAuthenticated?: boolean; // Add auth check prop
 }
 
 export function LanguageProvider({
   children,
   defaultLocale: initialLocale = defaultLocale,
   initialMessages = {},
-  enableBackendSync = true
+  enableBackendSync = true,
+  isAuthenticated = false // Default to false for safety
 }: LanguageProviderProps) {
   const [locale, setCurrentLocale] = useState<Locale>(initialLocale);
   const [messages, setMessages] = useState<Record<string, any>>(initialMessages);
@@ -65,9 +67,9 @@ export function LanguageProvider({
     }
   };
 
-  // Load initial language from backend
+  // Load initial language from backend - only if authenticated
   const loadInitialLanguageFromBackend = async () => {
-    if (!enableBackendSync) return null;
+    if (!enableBackendSync || !isAuthenticated) return null;
 
     try {
       const settings = await SettingsService.getAccountSettings();
@@ -78,9 +80,9 @@ export function LanguageProvider({
     }
   };
 
-  // Update language in backend
+  // Update language in backend - only if authenticated
   const updateLanguageInBackend = async (newLocale: Locale): Promise<boolean> => {
-    if (!enableBackendSync) return true;
+    if (!enableBackendSync || !isAuthenticated) return true;
 
     try {
       await SettingsService.updateLanguage(newLocale.toUpperCase());
@@ -135,21 +137,28 @@ export function LanguageProvider({
       try {
         let targetLocale: Locale = initialLocale;
 
-        // Priority 1: Try to get from backend
-        const backendLocale = await loadInitialLanguageFromBackend();
-        if (backendLocale && locales.includes(backendLocale)) {
-          targetLocale = backendLocale;
-        } else if (typeof window !== 'undefined') {
-          // Priority 2: Check localStorage
-          const storedLocale = localStorage.getItem('user-locale') as Locale;
-          if (storedLocale && locales.includes(storedLocale)) {
-            targetLocale = storedLocale;
-          } else {
-            // Priority 3: Browser language detection
-            const browserLang = navigator.language.toLowerCase();
-            if (browserLang.startsWith('vi')) targetLocale = 'vi';
-            else if (browserLang.startsWith('ko')) targetLocale = 'ko';
-            else targetLocale = 'en';
+        // Only try to get from backend if authenticated
+        if (isAuthenticated) {
+          const backendLocale = await loadInitialLanguageFromBackend();
+          if (backendLocale && locales.includes(backendLocale)) {
+            targetLocale = backendLocale;
+          }
+        }
+
+        // If not authenticated or no backend locale, check localStorage
+        if (!isAuthenticated || targetLocale === initialLocale) {
+          if (typeof window !== 'undefined') {
+            // Priority 2: Check localStorage
+            const storedLocale = localStorage.getItem('user-locale') as Locale;
+            if (storedLocale && locales.includes(storedLocale)) {
+              targetLocale = storedLocale;
+            } else {
+              // Priority 3: Browser language detection
+              const browserLang = navigator.language.toLowerCase();
+              if (browserLang.startsWith('vi')) targetLocale = 'vi';
+              else if (browserLang.startsWith('ko')) targetLocale = 'ko';
+              else targetLocale = 'en';
+            }
           }
         }
 
@@ -176,7 +185,7 @@ export function LanguageProvider({
     };
 
     initializeLocale();
-  }, [initialLocale, enableBackendSync]);
+  }, [initialLocale, enableBackendSync, isAuthenticated]); // Add isAuthenticated to dependencies
 
   const contextValue: LanguageContextType = {
     locale,

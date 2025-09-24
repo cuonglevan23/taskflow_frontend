@@ -2,8 +2,20 @@
 
 import React from "react";
 import { Button, UserAvatar } from "@/components/ui";
+import Dropdown from "@/components/ui/Dropdown/Dropdown";
 import { useThemeContext } from "@/providers/ThemeProvider";
 import { useLanguageContext } from "@/providers/LanguageProvider";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Helper function to get initials from name
 const getInitials = (name: string): string => {
@@ -35,12 +47,18 @@ export interface MembersTableProps {
   members: TeamMember[];
   onAddMember: () => void;
   onMemberAction?: (member: TeamMember) => void;
+  onDeleteMember?: (member: TeamMember) => void; // Add delete member handler
+  currentUserRole?: string; // Add prop to determine if actions should be shown
+  currentUserEmail?: string; // Add current user email to prevent self-deletion
 }
 
 export default function MembersTable({ 
   members, 
   onAddMember, 
-  onMemberAction 
+  onMemberAction,
+  onDeleteMember,
+  currentUserRole,
+  currentUserEmail
 }: MembersTableProps) {
   const { theme } = useThemeContext();
   const { messages } = useLanguageContext();
@@ -88,12 +106,14 @@ export default function MembersTable({
     }
   };
 
+  const showActions = currentUserRole === 'OWNER';
+
   return (
     <div className="w-full">
       {/* Table Header */}
       <div 
-        className="grid grid-cols-12 border-b"
-        style={{ 
+        className={`grid border-b ${showActions ? 'grid-cols-12' : 'grid-cols-11'}`}
+        style={{
           backgroundColor: theme.background.secondary,
           borderColor: theme.border.default,
           color: theme.text.secondary
@@ -109,13 +129,13 @@ export default function MembersTable({
           className="col-span-2 text-sm font-medium p-4 border-r"
           style={{ borderColor: theme.border.default }}
         >
-          {t('profile.jobTitle')}
+          {t('common.jobTitle')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
           style={{ borderColor: theme.border.default }}
         >
-          {t('profile.department')}
+          {t('common.department')}
         </div>
         <div 
           className="col-span-2 text-sm font-medium p-4 border-r"
@@ -129,7 +149,9 @@ export default function MembersTable({
         >
           {t('common.joined')}
         </div>
-        <div className="col-span-1 text-sm font-medium p-4">{t('common.actions')}</div>
+        {showActions && (
+          <div className="col-span-1 text-sm font-medium p-4">{t('common.actions')}</div>
+        )}
       </div>
 
       {/* Table Body */}
@@ -142,7 +164,7 @@ export default function MembersTable({
           return (
             <div
               key={member.id}
-              className="grid grid-cols-12 border-b transition-colors"
+              className={`grid border-b transition-colors ${showActions ? 'grid-cols-12' : 'grid-cols-11'}`}
               style={{
                 borderColor: theme.border.default
               }}
@@ -210,7 +232,7 @@ export default function MembersTable({
 
               {/* Joined Column */}
               <div 
-                className="col-span-2 p-4 flex items-center border-r"
+                className={`col-span-2 p-4 flex items-center ${showActions ? 'border-r' : ''}`}
                 style={{ borderColor: theme.border.default }}
               >
                 <p style={{ color: theme.text.secondary }} className="text-sm">
@@ -219,27 +241,126 @@ export default function MembersTable({
               </div>
 
               {/* Action Column */}
-              <div className="col-span-1 flex items-center justify-center p-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onMemberAction?.(member)}
-                  className="w-8 h-8 p-0 rounded-full transition-colors"
-                  style={{
-                    color: theme.text.muted
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = theme.background.weakHover;
-                    e.currentTarget.style.color = theme.text.primary;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = theme.text.muted;
-                  }}
-                >
-                  <span className="text-lg font-light">⋯</span>
-                </Button>
-              </div>
+              {showActions && (
+                <div className="col-span-1 flex items-center justify-center p-4">
+                  {(() => {
+                    // Check if this member is the current user
+                    const isCurrentUser = member.email === currentUserEmail;
+
+                    if (isCurrentUser) {
+                      // Show disabled button for current user
+                      return (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled
+                          className="w-8 h-8 p-0 rounded-full transition-colors opacity-50 cursor-not-allowed"
+                          style={{
+                            color: theme.text.muted
+                          }}
+                        >
+                          <span className="text-lg font-light">⋯</span>
+                        </Button>
+                      );
+                    }
+
+                    // Show normal dropdown for other users
+                    return (
+                      <Dropdown
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-8 h-8 p-0 rounded-full transition-colors"
+                            style={{
+                              color: theme.text.muted
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                              e.currentTarget.style.color = theme.text.primary;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = theme.text.muted;
+                            }}
+                          >
+                            <span className="text-lg font-light">⋯</span>
+                          </Button>
+                        }
+                        placement="bottom-right"
+                        usePortal={true}
+                      >
+                        <div
+                          className="py-1 min-w-[160px]"
+                          style={{
+                            backgroundColor: theme.background.secondary,
+                            border: `1px solid ${theme.border.default}`,
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                          }}
+                        >
+                          {/* Delete Member Action */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center space-x-2"
+                                style={{
+                                  color: theme.status.error
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                              >
+                                <span>🗑️</span>
+                                <span>{t('teams.members.actions.delete')}</span>
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent
+                              style={{
+                                backgroundColor: theme.background.primary,
+                                borderColor: theme.border.default,
+                                color: theme.text.primary
+                              }}
+                            >
+                              <AlertDialogHeader>
+                                <AlertDialogTitle style={{ color: theme.text.primary }}>
+                                  {t('teams.members.delete.title')}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription style={{ color: theme.text.secondary }}>
+                                  {`Are you sure you want to remove ${member.name} from this team? This action cannot be undone.`}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel
+                                  style={{
+                                    backgroundColor: theme.background.secondary,
+                                    borderColor: theme.border.default,
+                                    color: theme.text.primary
+                                  }}
+                                >
+                                  {t('common.cancel')}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onDeleteMember?.(member)}
+                                  style={{
+                                    backgroundColor: theme.status.error,
+                                    color: 'white'
+                                  }}
+                                >
+                                  {t('common.delete')}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </Dropdown>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           );
         })}

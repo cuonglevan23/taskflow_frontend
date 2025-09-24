@@ -21,18 +21,11 @@ export const useProfileTabs = (profileData: ProfileData | null, isOwnProfile: bo
       count: profileData?.tabCounts?.friendsCount || 0,
       href: isOwnProfile ? '/profile/me/friends' : `/profile/${userId}/friends`
     },
-    {
-      id: 'portfolio' as TabType,
-      label: 'Portfolio',
-      count: profileData?.tabCounts?.tasksCount || 0,
-      href: isOwnProfile ? '/profile/me/portfolio' : `/profile/${userId}/portfolio`
-    },
   ], [profileData?.tabCounts, isOwnProfile, userId]);
 
   // Memoize tab detection logic
   const getTabFromPath = useCallback((path: string): TabType => {
     if (path.includes('/friends')) return 'friends';
-    if (path.includes('/portfolio')) return 'portfolio';
     return 'posts';
   }, []);
 

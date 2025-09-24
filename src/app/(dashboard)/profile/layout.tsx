@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import PageLayout from "@/layouts/page/PageLayout";
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useProfile, useFriendship, useProfileTabs } from '@/hooks/profile';
@@ -11,6 +11,7 @@ import {
   ProfileSkeleton
 } from '@/components/profile';
 import { ChatManager } from '@/components/chat';
+import { SettingsContainer } from '@/components/settings';
 
 
 interface ProfileLayoutProps {
@@ -19,6 +20,7 @@ interface ProfileLayoutProps {
 
 const ProfileLayout = React.memo(({ children }: ProfileLayoutProps) => {
   const { isLoading } = useAuth();
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Use custom hooks for modular logic
   const {
@@ -42,7 +44,7 @@ const ProfileLayout = React.memo(({ children }: ProfileLayoutProps) => {
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleEditProfile = useCallback(() => {
-    // Handle edit profile action
+    setShowSettingsModal(true);
   }, []);
 
   const handleChangeCoverPhoto = useCallback(() => {
@@ -105,6 +107,14 @@ const ProfileLayout = React.memo(({ children }: ProfileLayoutProps) => {
 
       {/* Chat Manager - Renders all open chat windows */}
       <ChatManager />
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <SettingsContainer
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
     </PageLayout>
   );
 });

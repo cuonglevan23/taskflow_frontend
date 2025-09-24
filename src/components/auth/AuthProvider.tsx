@@ -1,4 +1,4 @@
-// Auth Guard - Bảo vệ routes và quản lý authentication state
+// AuthProvider.tsx - Bảo vệ routes và quản lý authentication state
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
@@ -35,26 +35,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Refs for managing timers and activity tracking
+  // Define public routes that don't require authentication
+  const publicRoutes = ['/', '/login', '/register'];
+  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/auth/');
+
+  // Refs
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
   const isRefreshingRef = useRef<boolean>(false);
 
-  // Configuration constants
-  const REFRESH_INTERVAL = 4 * 60 * 1000; // 4 minutes (refresh before 5min expiry)
-  const ACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes of inactivity before logout
+  // Config
+  const REFRESH_INTERVAL = 4 * 60 * 1000; // 4 minutes
+  const ACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
 
+  /** Refresh authentication */
   const refreshAuth = useCallback(async () => {
-    // Prevent multiple simultaneous refresh calls
-    if (isRefreshingRef.current) {
+    if (isRefreshingRef.current) return;
+
+    // Skip auth check for public routes
+    if (isPublicRoute) {
+      setIsLoading(false);
       return;
     }
 
+    isRefreshingRef.current = true;
     try {
-      isRefreshingRef.current = true;
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/user-profiles/me`, {
         method: 'GET',
         credentials: 'include',
@@ -67,43 +74,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: userData.id?.toString() || userData.userId?.toString() || '1',
           email: userData.email || 'user@example.com',
           name: userData.firstName && userData.lastName
-            ? `${userData.firstName} ${userData.lastName}`.trim()
-            : userData.name || userData.email || 'User',
+              ? `${userData.firstName} ${userData.lastName}`.trim()
+              : userData.name || userData.email || 'User',
           role: userData.role || 'USER',
           avatar: userData.avatar || userData.avatarUrl,
         };
 
         setUser(formattedUser);
         setIsAuthenticated(true);
-
-        // Update last activity time on successful auth
         lastActivityRef.current = Date.now();
         console.log('✅ Auth refresh successful');
       } else if (response.status === 401) {
-        // 401 = Token hết hạn hoặc không hợp lệ
-        // Backend sẽ tự động try refresh token, nếu fail thì mới clear state
-        console.log('❌ Auth check failed with 401 - token may be expired');
+        // Token invalid / expired - but only redirect if not on a public route
+        console.log('❌ Auth failed 401');
+        setUser(null);
+        setIsAuthenticated(false);
 
-        // Đợi một chút để backend có thể tự refresh token
-        setTimeout(() => {
-          if (!isAuthenticated) {
-            console.log('🚪 No auth recovery, redirecting to login');
-            setUser(null);
-            setIsAuthenticated(false);
-          }
-        }, 2000);
+        // Only redirect to login if not already on a public route
+        if (!isPublicRoute) {
+          console.log('❌ Redirecting to login from private route');
+          router.replace('/login');
+        } else {
+          console.log('ℹ️ On public route, skipping redirect to login');
+        }
       } else {
-        // Các lỗi khác (403, 500, etc.)
-        console.log('❌ Auth check failed with status:', response.status);
+        console.log('❌ Auth failed with status:', response.status);
         setUser(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('❌ Auth refresh error:', error);
-      // Chỉ clear state nếu là lỗi nghiêm trọng, không phải network timeout
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.log('🌐 Network error during auth check - keeping current state');
-      } else {
+      if (!(error instanceof TypeError && error.message.includes('Failed to fetch'))) {
         setUser(null);
         setIsAuthenticated(false);
       }
@@ -111,108 +112,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       isRefreshingRef.current = false;
     }
-  }, [isAuthenticated]);
+  }, [router, isPublicRoute]);
 
-  // Handle user activity tracking
+  /** Handle user activity */
   const handleUserActivity = useCallback(() => {
     lastActivityRef.current = Date.now();
+    if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
 
-    // Clear existing activity timeout
-    if (activityTimeoutRef.current) {
-      clearTimeout(activityTimeoutRef.current);
-    }
-
-    // Set new activity timeout
     activityTimeoutRef.current = setTimeout(() => {
       console.log('User inactive for 30 minutes, logging out...');
       logout();
     }, ACTIVITY_TIMEOUT);
   }, []);
 
-  // Setup automatic refresh and activity monitoring
+  /** Setup auto-refresh + activity monitoring */
   const setupAutoRefresh = useCallback(() => {
-    // Clear existing intervals
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-    }
-    if (activityTimeoutRef.current) {
-      clearTimeout(activityTimeoutRef.current);
-    }
+    if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
 
-    // Only setup auto-refresh if authenticated
-    if (!isAuthenticated) {
-      return;
-    }
+    if (!isAuthenticated) return;
 
-    // Setup periodic token refresh
-    refreshIntervalRef.current = setInterval(async () => {
+    refreshIntervalRef.current = setInterval(() => {
       const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-
-      // Only refresh if user has been active recently (within 30 minutes)
       if (timeSinceLastActivity < ACTIVITY_TIMEOUT) {
-        console.log('Auto-refreshing authentication...');
-        await refreshAuth();
+        console.log('Auto-refreshing token...');
+        refreshAuth();
       }
     }, REFRESH_INTERVAL);
 
-    // Setup activity tracking
-    handleUserActivity(); // Initialize activity timeout
-
-    // Add activity listeners
-    ACTIVITY_EVENTS.forEach(event => {
-      document.addEventListener(event, handleUserActivity, { passive: true });
-    });
-
-    console.log('Auto-refresh and activity monitoring setup complete');
+    handleUserActivity();
+    ACTIVITY_EVENTS.forEach(event => document.addEventListener(event, handleUserActivity, { passive: true }));
   }, [isAuthenticated, refreshAuth, handleUserActivity]);
 
-  // Cleanup function
+  /** Cleanup timers and listeners */
   const cleanup = useCallback(() => {
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-    if (activityTimeoutRef.current) {
-      clearTimeout(activityTimeoutRef.current);
-      activityTimeoutRef.current = null;
-    }
-
-    // Remove activity listeners
-    ACTIVITY_EVENTS.forEach(event => {
-      document.removeEventListener(event, handleUserActivity);
-    });
+    if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+    ACTIVITY_EVENTS.forEach(event => document.removeEventListener(event, handleUserActivity));
   }, [handleUserActivity]);
 
-  const login = async () => {
-    try {
-      await AuthService.loginWithGoogle();
-    } catch (error) {
-      throw error;
-    }
-  };
-
+  /** Login / Logout */
+  const login = async () => await AuthService.loginWithGoogle();
   const logout = async () => {
-    try {
-      setIsLoading(true);
-
-      // Cleanup timers and listeners
-      cleanup();
-
-      await AuthService.logout();
-
-      setUser(null);
-      setIsAuthenticated(false);
-
-      router.replace('/');
-
-    } catch (error) {
-      setUser(null);
-      setIsAuthenticated(false);
-      router.replace('/');
-
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    cleanup();
+    await AuthService.logout();
+    setUser(null);
+    setIsAuthenticated(false);
+    router.replace('/');
+    setIsLoading(false);
   };
 
   // Initial auth check
@@ -220,58 +168,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshAuth();
   }, []);
 
-  // Setup auto-refresh when authentication state changes
+  // Auto-refresh when user changes
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        setupAutoRefresh();
-      } else {
-        cleanup();
-      }
-    }
-
-    // Cleanup on unmount
+    if (user) setupAutoRefresh();
+    else cleanup();
     return cleanup;
-  }, [isAuthenticated, isLoading, setupAutoRefresh, cleanup]);
+  }, [user, setupAutoRefresh, cleanup]);
 
-  // Handle route protection
+  // Route protection
   useEffect(() => {
     if (isLoading) return;
 
-    const isPublicRoute = ['/login', '/auth/success', '/auth/error', '/'].includes(pathname) || pathname.startsWith('/auth/');
+    if (isAuthenticated && pathname === '/login') router.replace('/home');
+    else if (!isAuthenticated && !isPublicRoute) router.replace('/login');
+  }, [isAuthenticated, isLoading, pathname, router, isPublicRoute]);
 
-    if (isAuthenticated && pathname === '/login') {
-      router.replace('/home');
-    } else if (!isAuthenticated && !isPublicRoute) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, isLoading, pathname, router]);
+  const contextValue: AuthContextType = { user, isLoading, isAuthenticated, login, logout, refreshAuth };
 
-  const contextValue: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated,
-    login,
-    logout,
-    refreshAuth,
-  };
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }
 
-// Enhanced AuthGuard component
+/** AuthGuard component */
 interface AuthGuardProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -282,54 +205,39 @@ export function AuthGuard({ children, fallback, requiredRole }: AuthGuardProps) 
   const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
 
-  // Public routes
   const publicRoutes = ['/login', '/register', '/auth/callback', '/auth/success', '/auth/error', '/'];
   const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/auth/');
 
-  // Loading state
   if (isLoading) {
-    return (
-        fallback || (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-600">Đang kiểm tra quyền truy cập...</p>
-              </div>
-            </div>
-        )
+    return fallback || (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
     );
   }
 
-  // Public routes - always allow
-  if (isPublicRoute) {
-    return <>{children}</>;
-  }
+  if (isPublicRoute) return <>{children}</>;
 
-  // Protected routes - require authentication
   if (!isAuthenticated) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Đang chuyển hướng đến trang đăng nhập...
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Redirecting to login...</h2>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           </div>
         </div>
     );
   }
 
-  // Role-based protection
   if (requiredRole && user?.role !== requiredRole) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center space-y-4">
-            <h2 className="text-xl font-semibold text-red-600">
-              Không có quyền truy cập
-            </h2>
-            <p className="text-gray-600">
-              Bạn không có quyền truy cập vào trang này.
-            </p>
+            <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
+            <p className="text-gray-600">You do not have permission to view this page.</p>
           </div>
         </div>
     );

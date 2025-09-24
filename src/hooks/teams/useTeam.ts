@@ -1,7 +1,6 @@
-
-
 import { useEffect, useMemo } from 'react';
 import { useTeamContext } from '@/contexts/TeamContext';
+import { useAuth } from '@/components/auth/AuthProvider';
 import type { TeamMember, TeamInvitationRequestDto } from '@/types/teams';
 
 // Custom hook for team operations
@@ -16,6 +15,8 @@ export function useTeam(teamId?: number) {
     removeMember,
     setEditingDescription,
   } = useTeamContext();
+
+  const { user } = useAuth();
 
   // Auto-fetch team and members when teamId changes
   useEffect(() => {
@@ -36,7 +37,7 @@ export function useTeam(teamId?: number) {
 
       // Member stats
       memberCount: members.length,
-      activeMembers: members.filter(m => m.isActive !== false),
+      activeMembers: members.filter(m => m.status === 'ACTIVE'),
 
       // Member roles
       owners: members.filter(m => m.role === 'OWNER'),
@@ -44,14 +45,24 @@ export function useTeam(teamId?: number) {
       regularMembers: members.filter(m => m.role === 'MEMBER'),
 
       // Current user role (if available in members list)
-      currentUserRole: members.find(m => m.isCurrent)?.role || 'MEMBER',
+      currentUserRole: (() => {
+        if (!user) return 'MEMBER';
+
+        // Try to find by userId first, then by email
+        const currentUserMember = members.find(m =>
+          (m.userId && m.userId.toString() === user.id) ||
+          (m.email && m.email === user.email)
+        );
+
+        return currentUserMember?.role || 'MEMBER';
+      })(),
 
       // Permissions
       canEditTeam: currentTeam?.leaderId !== undefined, // Basic check
       canInviteMembers: true, // TODO: Add proper permission logic
       canRemoveMembers: true, // TODO: Add proper permission logic
     };
-  }, [state.currentTeam, state.members]);
+  }, [state.currentTeam, state.members, user]);
 
   // Team operations with teamId binding
   const teamOperations = useMemo(() => {

@@ -21,12 +21,14 @@ interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: ThemeMode;
   enableBackendSync?: boolean;
+  isAuthenticated?: boolean; // Add auth check prop
 }
 
 export function ThemeProvider({
   children,
   defaultTheme = 'dark',
-  enableBackendSync = true
+  enableBackendSync = true,
+  isAuthenticated = false // Default to false for safety
 }: ThemeProviderProps) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(defaultTheme);
   const [theme, setCurrentTheme] = useState<Theme>(DEFAULT_THEME);
@@ -43,9 +45,9 @@ export function ThemeProvider({
     }
   };
 
-  // Load initial theme from backend
+  // Load initial theme from backend - only if authenticated
   const loadInitialThemeFromBackend = async (): Promise<ThemeMode | null> => {
-    if (!enableBackendSync) return null;
+    if (!enableBackendSync || !isAuthenticated) return null;
 
     try {
       const settings = await SettingsService.getAccountSettings();
@@ -56,9 +58,9 @@ export function ThemeProvider({
     }
   };
 
-  // Update theme in backend
+  // Update theme in backend - only if authenticated
   const updateThemeInBackend = async (mode: ThemeMode): Promise<boolean> => {
-    if (!enableBackendSync) return true;
+    if (!enableBackendSync || !isAuthenticated) return true;
 
     try {
       await SettingsService.updateTheme(mode.toUpperCase());
@@ -115,10 +117,12 @@ export function ThemeProvider({
           }
         }
 
-        // Try to load from backend
-        const backendMode = await loadInitialThemeFromBackend();
-        if (backendMode) {
-          initialMode = backendMode;
+        // Only try to load from backend if authenticated
+        if (isAuthenticated) {
+          const backendMode = await loadInitialThemeFromBackend();
+          if (backendMode) {
+            initialMode = backendMode;
+          }
         }
 
         // Apply the determined theme
@@ -150,7 +154,7 @@ export function ThemeProvider({
     };
 
     initializeTheme();
-  }, [defaultTheme, enableBackendSync]);
+  }, [defaultTheme, enableBackendSync, isAuthenticated]); // Add isAuthenticated to dependencies
 
   // Listen for system theme changes
   useEffect(() => {
@@ -194,4 +198,3 @@ export function useThemeContext(): ThemeContextType {
   }
   return context;
 }
-

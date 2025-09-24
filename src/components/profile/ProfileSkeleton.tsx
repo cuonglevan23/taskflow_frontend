@@ -4,7 +4,7 @@ import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export const ProfileSkeleton: React.FC = () => {
   const { theme } = useThemeContext();
-  const { language } = useLanguageContext();
+
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">

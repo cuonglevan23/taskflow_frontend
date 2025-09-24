@@ -292,7 +292,7 @@
     "empty": {
       "noData": "Không có dữ liệu bảng điều khiển",
       "noTasks": "Bạn chưa có công việc nào",
-      "createFirst": "Tạo công việc đầu tiên để bắt đầu"
+      "createFirst": "Tạo công vi��c đầu tiên để bắt đầu"
     }
   },
   "customize": "Tùy chỉnh",
@@ -629,7 +629,7 @@
       "invalidTaskId": "ID công việc không hợp lệ",
       "notConnected": "Bạn chưa kết nối với Google Calendar.",
       "connectPrompt": "Bạn có muốn kết nối để tiếp tục không?",
-      "backendCreateFailed": "❌ Backend không thể tạo sự kiện Google Calendar.",
+      "backendCreateFailed": "❌ Backend không thể tạo sự ki��n Google Calendar.",
       "projectNotConnected": "Bạn có thể chưa kết nối Google Calendar cho các Công việc Dự án.",
       "connectQuestion": "Bạn có muốn kết nối Google Calendar không?",
       "generalError": "❌ Có lỗi xảy ra khi làm việc với Google Calendar",
@@ -909,7 +909,7 @@
       "current": "Hình ảnh hiện tại",
       "new": "Hình ảnh mới",
       "addImages": "Thêm ảnh",
-      "restore": "Khôi phục ảnh",
+      "restore": "Khôi phục ���nh",
       "remove": "Xóa ảnh",
       "willRemove": "Sẽ xóa"
     },
@@ -1103,6 +1103,7 @@
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
     "loggingOut": "Đang đăng xuất...",
+    "pricing": "Gói đăng ký",
     "roles": {
       "admin": "QUẢN TRỊ",
       "member": "THÀNH VIÊN"
@@ -1273,7 +1274,21 @@
     "notAvailable": "Không có",
     "status": { "joined": "Đã tham gia", "complete": "Hoàn thành" },
     "sort": { "aToZ": "A → Z" }
-
+  },
+  "teams": {
+    "members": {
+      "loading": "Đang tải thành viên...",
+      "error": {
+        "loading": "Không thể tải thành viên nhóm"
+      },
+      "actions": {
+        "delete": "Xóa khỏi nhóm"
+      },
+      "delete": {
+        "title": "Xóa thành viên",
+        "description": "Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm?"
+      }
+    }
   },
   "timeline": {
     "today": "HÔM NAY",
@@ -1315,5 +1330,121 @@
     "daysOverdue": "ngày quá hạn",
     "noUrgentDeadlines": "Không có hạn chót khẩn cấp",
     "allTasksOnTrack": "Tất cả nhiệm vụ đang đúng tiến độ"
+  },
+  "banner": {
+    "premium": {
+      "title": "Nâng cấp lên Premium",
+      "greeting": "Xin chào {name}!",
+      "subtitle": "Mở khóa các tính năng mạnh mẽ để tăng năng suất làm việc",
+      "choosePlan": "Chọn Gói Của Bạn",
+      "features": {
+        "title": "Premium Features",
+        "unlimitedTasks": "Unlimited tasks and projects",
+        "analytics": "Advanced analytics and reports",
+        "prioritySupport": "Priority customer support",
+        "teamCollaboration": "Team collaboration features",
+        "customIntegrations": "Custom integrations",
+        "advancedSecurity": "Advanced security features"
+      },
+
+      "plans": {
+        "popular": "Phổ Biến Nhất",
+        "monthly": {
+          "name": "Gói Tháng",
+          "description": "Tính năng Premium trong 1 tháng",
+          "billing": "/tháng"
+        },
+        "quarterly": {
+          "name": "Gói Quý",
+          "description": "Tính năng Premium trong 3 tháng",
+          "billing": "/3 tháng",
+          "savings": "Tiết kiệm 17%"
+        },
+        "yearly": {
+          "name": "Gói Năm",
+          "description": "Tính năng Premium trong 1 năm",
+          "billing": "/năm",
+          "savings": "Tiết kiệm 25%"
+        }
+      },
+      "pricing": {
+        "guarantee": "Hủy bất cứ lúc nào • Hoàn tiền trong 30 ngày"
+      },
+      "buttons": {
+        "upgradeNow": "Nâng cấp ngay",
+        "maybeLater": "Để sau"
+      },
+      "footerNote": "Tham gia cùng hàng nghìn chuyên gia tin tưởng nền tảng của chúng tôi"
+    }
+  },
+  "friendtab": {
+    "title": {
+      "yourFriends": "Bạn bè của bạn",
+      "userFriends": "Bạn bè của {name}"
+    },
+    "tabs": {
+      "friends": "Bạn bè",
+      "received": "Đã nhận",
+      "sent": "Đã gửi"
+    },
+    "actions": {
+      "findFriends": "Tìm bạn bè",
+      "message": "Nhắn tin",
+      "unfriend": "Hủy kết bạn",
+      "accept": "Chấp nhận",
+      "reject": "Từ chối",
+      "cancel": "Hủy yêu cầu",
+      "tryAgain": "Thử lại",
+      "clearSearch": "Xóa tìm kiếm"
+    },
+    "status": {
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến",
+      "loading": "Đang tải...",
+      "friendsSince": "Bạn bè từ {date}",
+      "teamMember": "Thành viên nhóm"
+    },
+    "search": {
+      "searchFriends": "Tìm bạn bè...",
+      "searchRequests": "Tìm yêu cầu...",
+      "noResults": "Không tìm thấy kết quả",
+      "noResultsFor": "Không có {type} nào phù hợp với tìm kiếm \"{query}\""
+    },
+    "counts": {
+      "friend": "bạn",
+      "friends": "bạn bè",
+      "request": "yêu cầu",
+      "requests": "yêu cầu",
+      "loading": "Đang tải..."
+    },
+    "empty": {
+      "noFriends": {
+        "title": "Chưa có bạn bè",
+        "description": "Bắt đầu kết nối với mọi người để xây dựng mạng lưới của bạn!"
+      },
+      "noFriendsToShow": {
+        "title": "Không có bạn bè để hiển thị",
+        "description": "Người dùng này chưa kết nối với ai."
+      },
+      "noReceivedRequests": {
+        "title": "Không có yêu cầu kết bạn",
+        "description": "Bạn không có yêu cầu kết bạn nào đang chờ."
+      },
+      "noSentRequests": {
+        "title": "Không có yêu cầu đã gửi",
+        "description": "Bạn chưa gửi yêu cầu kết bạn nào."
+      }
+    },
+    "error": {
+      "loadingData": "Lỗi tải dữ liệu",
+      "unfriendUser": "Không thể hủy kết bạn",
+      "acceptRequest": "Không thể chấp nhận yêu cầu",
+      "rejectRequest": "Không thể từ chối yêu cầu",
+      "cancelRequest": "Không thể hủy yêu cầu",
+      "loadProfile": "Không thể tải dữ liệu hồ sơ"
+    },
+    "confirmation": {
+      "unfriend": "Bạn có chắc chắn muốn hủy kết bạn với {name}?"
+    }
   }
 }

@@ -1,5 +1,5 @@
 // Providers index file - Export all providers and their hooks
-export { ThemeProvider, useThemeContext, useTheme } from './ThemeProvider';
+export { ThemeProvider, useThemeContext } from './ThemeProvider';
 export { LanguageProvider, useLanguageContext, useLanguage } from './LanguageProvider';
 
 // Combined Provider for easy setup
@@ -13,23 +13,32 @@ interface AppProvidersProps {
   children: React.ReactNode;
   defaultTheme?: ThemeMode;
   defaultLocale?: Locale;
-  enableBackendSync?: boolean; // Option to enable/disable backend sync globally
+  enableBackendSync?: boolean;
+  isAuthenticated?: boolean;
+  isAuthLoading?: boolean;
 }
 
 export function AppProviders({
   children,
   defaultTheme = 'dark',
   defaultLocale = 'en',
-  enableBackendSync = true
+  enableBackendSync = true,
+  isAuthenticated = false,
+  isAuthLoading = true
 }: AppProvidersProps) {
+  // Only enable backend sync when auth is loaded and optionally when authenticated
+  const shouldSyncWithBackend = enableBackendSync && !isAuthLoading;
+
   return (
     <ThemeProvider
       defaultTheme={defaultTheme}
-      enableBackendSync={enableBackendSync}
+      enableBackendSync={shouldSyncWithBackend}
+      isAuthenticated={isAuthenticated}
     >
       <LanguageProvider
         defaultLocale={defaultLocale}
-        enableBackendSync={enableBackendSync}
+        enableBackendSync={shouldSyncWithBackend}
+        isAuthenticated={isAuthenticated}
       >
         {children}
       </LanguageProvider>

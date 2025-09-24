@@ -448,8 +448,9 @@ const MyTasksCard = () => {
   };
 
   const showMoreButton = {
-    show: hasMoreTasks && !showAllTasks,
-    onClick: toggleShowAll
+    show: hasMoreTasks, // Always show when there are more tasks, regardless of current state
+    onClick: toggleShowAll,
+    label: showAllTasks ? t('common.showLess') : t('common.showMore') // Dynamic label based on current state
   };
 
   // Debug tab changes

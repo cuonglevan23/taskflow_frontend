@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button/Button";
 import { useAuth } from '@/components/auth/AuthProvider';
 import { CreatePostCard, PostCard } from "@/components/posts";
 import { useUserPosts } from "@/hooks";
+import { ProfileService } from '@/services/profile';
 import {
   ImageIcon,
   Calendar,
@@ -40,75 +41,51 @@ export default function UserPostsPage() {
   // Check if viewing own profile
   const isOwnProfile = !userId || userId === "me" || (user && userId === user.id?.toString());
 
-  // Load profile data from API
+  // Load profile data using ProfileService
   const loadProfileData = async () => {
     setLoading(true);
     try {
-      let response;
+      console.log('🔍 Loading profile data...', { isOwnProfile, userId });
 
-      if (isOwnProfile) {
-        // Load own profile
-        response = await fetch('/api/user-profiles/me/profile', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          }
-        });
+      const apiData = await ProfileService.loadProfileData(
+        isOwnProfile ? undefined : (Array.isArray(userId) ? userId[0] : userId),
+        isOwnProfile
+      );
 
-        if (!response.ok) {
-          response = await fetch('/api/user-profiles/me', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json',
-            }
-          });
-        }
-      } else {
-        // Load other user's profile
-        response = await fetch(`/api/user-profiles/user/${userId}/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          }
-        });
-      }
 
-      if (response.ok) {
-        const apiData = await response.json();
-        const mappedProfile: ProfileData = {
-          id: apiData.id || 0,
-          email: apiData.email || user?.email || "",
-          firstName: apiData.firstName || user?.name?.split(' ')[0] || "User",
-          lastName: apiData.lastName || user?.name?.split(' ').slice(1).join(' ') || "",
-          username: apiData.username || "user",
-          avatarUrl: apiData.avatarUrl || apiData.avtUrl || user?.avatar || null,
-          department: apiData.department,
-          jobTitle: apiData.jobTitle,
-          aboutMe: apiData.aboutMe,
-          joinedAt: apiData.joinedAt || new Date().toISOString(),
-          isPremium: apiData.premium || apiData.isPremium || false
-        };
-        setProfileData(mappedProfile);
-      }
+      const mappedProfile: ProfileData = {
+        id: apiData.id || 0,
+        email: apiData.email || user?.email || "",
+        firstName: apiData.firstName || user?.name?.split(' ')[0] || "User",
+        lastName: apiData.lastName || user?.name?.split(' ').slice(1).join(' ') || "",
+        username: apiData.username || "user",
+        avatarUrl: apiData.avatarUrl || user?.avatar || null,
+        department: apiData.department || undefined,
+        jobTitle: apiData.jobTitle || undefined,
+        aboutMe: apiData.aboutMe !== undefined ? apiData.aboutMe : undefined, // Preserve empty string
+        joinedAt: apiData.joinedAt || new Date().toISOString(),
+        isPremium: apiData.isPremium || false
+      };
+
+
+      setProfileData(mappedProfile);
     } catch (error) {
-      console.error("Error loading profile data:", error);
-      // Create fallback profile data
+      console.error("❌ Error loading profile data:", error);
+      // Create minimal fallback profile data only when API fails
       const fallbackProfile: ProfileData = {
-        id: 0,
-        email: user?.email || "user@example.com",
-        firstName: isOwnProfile ? (user?.name?.split(' ')[0] || "User") : "Unknown",
-        lastName: isOwnProfile ? (user?.name?.split(' ').slice(1).join(' ') || "") : "User",
-        username: "user",
+        id: isOwnProfile ? (user?.id ? parseInt(user.id) : 0) : 0,
+        email: user?.email || "",
+        firstName: user?.name?.split(' ')[0] || "User",
+        lastName: user?.name?.split(' ').slice(1).join(' ') || "",
+        username: user?.email?.split('@')[0] || "user",
         avatarUrl: user?.avatar || null,
-        department: "Engineering",
-        jobTitle: "Team Member",
-        aboutMe: isOwnProfile ? "Welcome to TaskFlow!" : "This user hasn't added a bio yet.",
+        department: null,
+        jobTitle: null,
+        aboutMe: null,
         joinedAt: new Date().toISOString(),
         isPremium: false
       };
+      console.log('🔄 Using fallback profile data:', fallbackProfile);
       setProfileData(fallbackProfile);
     } finally {
       setLoading(false);
@@ -161,33 +138,19 @@ export default function UserPostsPage() {
           {/* Intro Card */}
           <BaseCard
             title="Intro"
-            onMenuClick={() => console.log("Intro menu")}
             variant="compact"
           >
             <div className="space-y-4">
               {/* Bio */}
-              {profileData?.aboutMe && profileData.aboutMe !== "No bio available" ? (
-                <div className="text-center">
+              <div className="text-center">
+                {profileData?.aboutMe ? (
                   <p className="text-gray-300 text-base mb-3">{profileData.aboutMe}</p>
-                </div>
-              ) : (
-                <div className="text-center">
+                ) : (
                   <p className="text-gray-500 text-sm mb-3">
                     {isOwnProfile ? "Add a bio to tell people about yourself" : "No bio yet"}
                   </p>
-                  {isOwnProfile && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-400 hover:text-blue-300"
-                      onClick={() => console.log("Edit bio")}
-                    >
-                      <Edit3 className="w-4 h-4 mr-2" />
-                      Add Bio
-                    </Button>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Job & Department - Only show if available and meaningful */}
               {profileData?.jobTitle && profileData.jobTitle !== "Team Member" && (
@@ -210,23 +173,8 @@ export default function UserPostsPage() {
                   <span className="text-sm">Joined {formatJoinDate(profileData.joinedAt)}</span>
                 </div>
               )}
-
-              {/* Edit Details Button - Only for own profile */}
-              {isOwnProfile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-gray-400 hover:text-white hover:bg-gray-700"
-                  onClick={() => console.log("Edit details")}
-                >
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit details
-                </Button>
-              )}
             </div>
           </BaseCard>
-
-
         </div>
 
         {/* Main Content Column */}

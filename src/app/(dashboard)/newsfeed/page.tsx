@@ -183,7 +183,7 @@ function NewsfeedContent() {
 			</div>
 
 			{/* Right Sidebar - Friends List */}
-			<div className="hidden lg:block w-80 fixed right-0 top-12 h-[calc(100vh-3rem)] overflow-y-auto z-30">
+			<div className="hidden lg:block w-80 fixed right-0 top-30 h-[calc(100vh-3rem)] overflow-y-auto z-30">
 				<div className="pt-4 pr-4 pl-4 pb-4">
 					<FriendList />
 				</div>

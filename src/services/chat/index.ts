@@ -62,20 +62,43 @@ export class ChatService {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
+      console.warn('🔌 Max reconnection attempts reached. Stopping reconnection.');
       this.emit('max-reconnect-attempts-reached');
       return;
     }
 
-    const delay = Math.pow(2, this.reconnectAttempts) * 1000;
+    // Exponential backoff with jitter to prevent thundering herd
+    const baseDelay = Math.pow(2, this.reconnectAttempts) * 1000;
+    const jitter = Math.random() * 1000; // Add up to 1 second of randomness
+    const delay = Math.min(baseDelay + jitter, 30000); // Cap at 30 seconds
+
     this.reconnectAttempts++;
+
+    console.log(`🔄 Scheduling reconnection attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS} in ${Math.round(delay/1000)}s`);
 
     this.reconnectTimeout = setTimeout(() => {
       if (this.userId) {
-        this.connect(this.userId).catch(() => {
-          this.scheduleReconnect();
+        this.connect(this.userId).catch((error) => {
+          console.error('🚫 Reconnection attempt failed:', error);
+          // Only continue reconnecting if it's not an auth error
+          if (!this.isAuthError(error)) {
+            this.scheduleReconnect();
+          } else {
+            console.warn('🔐 Authentication error detected. Stopping reconnection attempts.');
+            this.emit('auth-error');
+          }
         });
       }
     }, delay);
+  }
+
+  private isAuthError(error: any): boolean {
+    const errorStr = error.toString().toLowerCase();
+    return errorStr.includes('401') ||
+        errorStr.includes('unauthorized') ||
+        errorStr.includes('authentication') ||
+        errorStr.includes('no valid jwt') ||
+        errorStr.includes('jwt token');
   }
 
   private emit(event: string, data?: any): void {
@@ -105,22 +128,25 @@ export class ChatService {
 
         console.log('=== CHAT SERVICE DEBUG ===');
         console.log('User ID:', userId);
-        console.log('App uses HTTP-only cookie authentication, connecting directly to backend WebSocket...');
-
-        // Since the WebSocket token endpoint doesn't exist, connect directly to backend
-        // using session-based authentication
-        console.log('Attempting to connect to WebSocket...');
+        console.log('Connecting to WebSocket with cookie-based authentication...');
 
         // Get backend URL from environment
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-        // SockJS expects HTTP URL, not WebSocket URL - it handles the upgrade internally
+
+        // Create SockJS URL - backend will authenticate via HTTP-only cookies
         const sockJsUrl = backendUrl + '/ws/chat';
 
         console.log('SockJS URL:', sockJsUrl);
 
-        // Create SockJS connection to backend server
-        // SockJS will automatically upgrade to WebSocket connection
-        const socket = new SockJS(sockJsUrl);
+        // Create SockJS connection with specific transport configuration
+        // Disable iframe and jsonp transports to avoid CORS/X-Frame-Options issues
+        const socket = new SockJS(sockJsUrl, null, {
+          transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+          timeout: 10000
+          // Note: SockJS doesn't support withCredentials in constructor options
+          // Credentials are automatically sent with XHR transports when same-origin
+        });
+
         this.client = Stomp.over(socket);
 
         // Configure debug logging for development
@@ -132,52 +158,88 @@ export class ChatService {
           this.client.debug = () => {}; // Disable in production
         }
 
-        // Set connection timeout
+        // Set connection timeout and heartbeat
         this.client.heartbeat.outgoing = 20000;
         this.client.heartbeat.incoming = 20000;
 
-        // Prepare connection headers - backend should authenticate via session
+        // Prepare connection headers - backend will authenticate via cookies
         const connectHeaders: any = {
-          'X-User-ID': userId.toString()
+          'X-User-ID': userId.toString(),
+          'Accept-Version': '1.0,1.1,1.2'
         };
-
 
         console.log('Connecting with headers:', Object.keys(connectHeaders));
 
+        // Set connection timeout
+        const connectionTimeout = setTimeout(() => {
+          console.error('🚫 WebSocket connection timeout');
+          if (this.client) {
+            this.client.disconnect();
+          }
+          reject(new Error('WebSocket connection timeout'));
+        }, this.CONNECTION_TIMEOUT);
+
         // Connect with authentication headers
         this.client.connect(
-          connectHeaders,
-          () => {
-            console.log('WebSocket connected successfully');
-            this.connected = true;
-            this.reconnectAttempts = 0;
-            this.setupSubscriptions();
-            this.processMessageQueue();
-            this.emit('connected');
-            resolve();
-          },
-          (error: any) => {
-            console.error('WebSocket connection failed:', error);
-            this.connected = false;
+            connectHeaders,
+            () => {
+              clearTimeout(connectionTimeout);
+              console.log('✅ WebSocket connected successfully');
+              this.connected = true;
+              this.reconnectAttempts = 0;
+              this.setupSubscriptions();
+              this.processMessageQueue();
+              this.emit('connected');
+              resolve();
+            },
+            (error: any) => {
+              clearTimeout(connectionTimeout);
+              console.error('❌ WebSocket connection failed:', error);
+              this.connected = false;
 
-            // Handle specific error cases
-            if (error.headers && error.headers.message) {
-              console.error('Server error message:', error.headers.message);
+              // Handle specific error cases
+              if (error.headers && error.headers.message) {
+                console.error('Server error message:', error.headers.message);
+              }
+
+              // Check if it's an authentication error
+              if (this.isAuthError(error)) {
+                console.error('🔐 Authentication failed. WebSocket requires valid session.');
+                this.emit('auth-error');
+              } else {
+                // Only schedule reconnect if it's not an auth error
+                console.log('🔄 Non-auth error, will attempt reconnection');
+                this.scheduleReconnect();
+              }
+
+              reject(error);
             }
-
-            // Only schedule reconnect if it's not an auth error
-            if (!error.toString().includes('401') && !error.toString().includes('Unauthorized')) {
-              this.scheduleReconnect();
-            } else {
-              console.error('Authentication failed. User may need to log in again.');
-              this.emit('auth-error');
-            }
-
-            reject(error);
-          }
         );
+
+        // Handle SockJS connection events
+        socket.onopen = () => {
+          console.log('SockJS connection opened');
+        };
+
+        socket.onclose = (event) => {
+          console.log('SockJS connection closed:', event.code, event.reason);
+          if (this.connected) {
+            this.connected = false;
+            this.emit('disconnected');
+
+            // Only reconnect if it wasn't a normal closure
+            if (event.code !== 1000 && !this.isAuthError(event)) {
+              this.scheduleReconnect();
+            }
+          }
+        };
+
+        socket.onerror = (error) => {
+          console.error('SockJS connection error:', error);
+        };
+
       } catch (error) {
-        console.error('Error creating WebSocket connection:', error);
+        console.error('❌ Error creating WebSocket connection:', error);
         reject(error);
       }
     });
@@ -237,29 +299,29 @@ export class ChatService {
     if (!this.userId || !this.client) return;
 
     const personalQueue = this.client.subscribe(
-      `/queue/user/${this.userId}/messages`,
-      (message: any) => {
-        const chatMessage = JSON.parse(message.body);
-        this.handleIncomingMessage(chatMessage);
-      }
+        `/queue/user/${this.userId}/messages`,
+        (message: any) => {
+          const chatMessage = JSON.parse(message.body);
+          this.handleIncomingMessage(chatMessage);
+        }
     );
     this.subscriptions.set('personal-messages', personalQueue);
 
     const personalReactions = this.client.subscribe(
-      `/queue/user/${this.userId}/reaction`,
-      (reaction: any) => {
-        const reactionEvent = JSON.parse(reaction.body);
-        this.emit('reaction', reactionEvent);
-      }
+        `/queue/user/${this.userId}/reaction`,
+        (reaction: any) => {
+          const reactionEvent = JSON.parse(reaction.body);
+          this.emit('reaction', reactionEvent);
+        }
     );
     this.subscriptions.set('personal-reactions', personalReactions);
 
     const offlineSync = this.client.subscribe(
-      `/queue/user/${this.userId}/offline-sync`,
-      (syncData: any) => {
-        const offlineMessages = JSON.parse(syncData.body);
-        this.emit('offline-sync', offlineMessages);
-      }
+        `/queue/user/${this.userId}/offline-sync`,
+        (syncData: any) => {
+          const offlineMessages = JSON.parse(syncData.body);
+          this.emit('offline-sync', offlineMessages);
+        }
     );
     this.subscriptions.set('offline-sync', offlineSync);
   }
@@ -358,29 +420,29 @@ export class ChatService {
     if (!this.client || !this.connected) return;
 
     const messagesSub = this.client.subscribe(
-      `/topic/conversation/${conversationId}/messages`,
-      (message: any) => {
-        const chatMessage = JSON.parse(message.body);
-        this.handleIncomingMessage(chatMessage);
-      }
+        `/topic/conversation/${conversationId}/messages`,
+        (message: any) => {
+          const chatMessage = JSON.parse(message.body);
+          this.handleIncomingMessage(chatMessage);
+        }
     );
     this.subscriptions.set(`conv-${conversationId}-messages`, messagesSub);
 
     const reactionsSub = this.client.subscribe(
-      `/topic/conversation/${conversationId}/reaction`,
-      (reaction: any) => {
-        const reactionEvent = JSON.parse(reaction.body);
-        this.emit('reaction', reactionEvent);
-      }
+        `/topic/conversation/${conversationId}/reaction`,
+        (reaction: any) => {
+          const reactionEvent = JSON.parse(reaction.body);
+          this.emit('reaction', reactionEvent);
+        }
     );
     this.subscriptions.set(`conv-${conversationId}-reactions`, reactionsSub);
 
     const typingSub = this.client.subscribe(
-      `/topic/conversation/${conversationId}/typing`,
-      (status: any) => {
-        const typingStatus = JSON.parse(status.body);
-        this.emit('typing', typingStatus);
-      }
+        `/topic/conversation/${conversationId}/typing`,
+        (status: any) => {
+          const typingStatus = JSON.parse(status.body);
+          this.emit('typing', typingStatus);
+        }
     );
     this.subscriptions.set(`conv-${conversationId}-typing`, typingSub);
   }
@@ -430,8 +492,8 @@ export class ChatService {
    * Automatically sends system notification messages
    */
   async addMembersToConversation(
-    conversationId: number,
-    request: AddMembersRequest
+      conversationId: number,
+      request: AddMembersRequest
   ): Promise<AddMembersResponse> {
     try {
       // Validate input
@@ -443,8 +505,8 @@ export class ChatService {
       const uniqueUserIds = [...new Set(request.userIds)];
 
       const response = await BaseApiClient.post<AddMembersResponse>(
-        `/api/chat/conversations/${conversationId}/members`,
-        { userIds: uniqueUserIds }
+          `/api/chat/conversations/${conversationId}/members`,
+          { userIds: uniqueUserIds }
       );
 
       // Emit event for real-time UI updates
@@ -485,12 +547,12 @@ export class ChatService {
    * Automatically sends system notification messages
    */
   async removeMemberFromConversation(
-    conversationId: number,
-    memberId: number
+      conversationId: number,
+      memberId: number
   ): Promise<RemoveMemberResponse> {
     try {
       const response = await BaseApiClient.delete<RemoveMemberResponse>(
-        `/api/chat/conversations/${conversationId}/members/${memberId}`
+          `/api/chat/conversations/${conversationId}/members/${memberId}`
       );
 
       // Emit event for real-time UI updates
@@ -533,7 +595,7 @@ export class ChatService {
   async leaveConversation(conversationId: number): Promise<LeaveConversationResponse> {
     try {
       const response = await BaseApiClient.post<LeaveConversationResponse>(
-        `/api/chat/conversations/${conversationId}/leave`
+          `/api/chat/conversations/${conversationId}/leave`
       );
 
       // Emit event for real-time UI updates
@@ -574,7 +636,7 @@ export class ChatService {
   async getConversationMembers(conversationId: number): Promise<ConversationMemberDto[]> {
     try {
       return await BaseApiClient.get<ConversationMemberDto[]>(
-        `/api/chat/conversations/${conversationId}/members`
+          `/api/chat/conversations/${conversationId}/members`
       );
     } catch (error) {
       console.error('Failed to get conversation members:', error);
@@ -587,14 +649,14 @@ export class ChatService {
    * Only owners can change roles
    */
   async updateMemberRole(
-    conversationId: number,
-    memberId: number,
-    role: 'ADMIN' | 'MEMBER'
+      conversationId: number,
+      memberId: number,
+      role: 'ADMIN' | 'MEMBER'
   ): Promise<ConversationMemberDto> {
     try {
       const response = await BaseApiClient.put<ConversationMemberDto>(
-        `/api/chat/conversations/${conversationId}/members/${memberId}/role`,
-        { role }
+          `/api/chat/conversations/${conversationId}/members/${memberId}/role`,
+          { role }
       );
 
       // Emit event for real-time UI updates
@@ -650,12 +712,12 @@ export class ChatService {
   // ==================== MESSAGE MANAGEMENT ====================
 
   async getConversationMessages(
-    conversationId: number,
-    page: number = 0,
-    size: number = 50
+      conversationId: number,
+      page: number = 0,
+      size: number = 50
   ): Promise<ChatHistoryResponse> {
     return BaseApiClient.get<ChatHistoryResponse>(
-      `/api/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`
+        `/api/chat/conversations/${conversationId}/messages?page=${page}&size=${size}`
     );
   }
 

@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import Image from 'next/image';
 import Button from '@/components/ui/Button/Button';
 import UserAvatar from '@/components/ui/UserAvatar/UserAvatar';
-import { DARK_THEME } from '@/constants/theme';
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { Camera, Edit3, Check } from 'lucide-react';
 import { ProfileData } from '@/types/profile';
 import { ChatIcon } from '@/components/chat';
@@ -24,6 +25,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   friendshipComponent
 }) => {
   const { openChatWindow } = useChatContext();
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
 
   // Generate avatar background for Facebook-like effect
   const avatarBackgroundUrl = useMemo(() => {
@@ -45,6 +48,27 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         avatarUrl: profileData.avatarUrl || undefined,
         isOnline: profileData.isOnline || false
       });
+    }
+  };
+
+  // Format last seen date based on current language
+  const formatLastSeen = (lastSeen: string) => {
+    const date = new Date(lastSeen);
+    // Use appropriate locale based on current language
+    const locale = messages.chat?.lastSeen ? 'vi-VN' : 'en-US';
+    return date.toLocaleString(locale);
+  };
+
+  // Get online status text based on language and context
+  const getOnlineStatusText = () => {
+    if (isOwnProfile) {
+      return profileData.isOnline
+        ? `${messages.you || 'You'} ${profileData.onlineStatus || messages.chat?.status?.online || 'online'}`
+        : `${messages.you || 'You'} ${messages.chat?.status?.offline || 'offline'}`;
+    } else {
+      return profileData.isOnline
+        ? (profileData.onlineStatus || messages.chat?.status?.online || 'Online')
+        : (messages.chat?.status?.offline || 'Offline');
     }
   };
 
@@ -83,26 +107,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           /* Fallback gradient when no cover photo */
           <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/40 via-purple-600/40 to-blue-800/40"></div>
         )}
-
-        {/* Cover Photo Edit Button - only show for own profile */}
-        {isOwnProfile && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 backdrop-blur-sm bg-black/30 text-white border border-white/30 hover:bg-black/40 transition-all duration-200 z-20"
-            onClick={onChangeCoverPhoto}
-          >
-            <Camera className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Edit cover photo</span>
-            <span className="sm:hidden">Edit</span>
-          </Button>
-        )}
       </div>
 
       {/* Profile Info */}
       <div
         className="relative px-4 sm:px-6 pb-4 sm:pb-6"
-        style={{ backgroundColor: DARK_THEME.background.primary }}
+        style={{ backgroundColor: theme.background.primary }}
       >
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-end sm:justify-between -mt-12 sm:-mt-16 relative z-10">
           {/* Avatar and Basic Info */}
@@ -119,45 +129,46 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   size="2xl"
                   variant="circle"
                   className="profile-avatar-responsive shadow-2xl border-4 ring-4 ring-white/20 transition-all duration-300 hover:scale-105 hover:ring-white/30 relative z-10"
-                  style={{ borderColor: DARK_THEME.background.primary }}
-                  fallbackColor="#f8a5c2"
+                  style={{ borderColor: theme.background.primary }}
+                  fallbackColor={theme.status.info}
                 />
 
-                {/* Online Status Indicator - Hiển thị cho tất cả profile với logic cập nhật */}
+                {/* Online Status Indicator */}
                 <div className="absolute bottom-2 right-2 z-20">
                   <div
                     className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full border-3 sm:border-4 transition-all duration-300 ${
                       profileData.isOnline 
-                        ? 'bg-green-500 border-white shadow-lg shadow-green-500/30' 
-                        : 'bg-gray-400 border-white shadow-lg'
+                        ? 'shadow-lg' 
+                        : 'shadow-lg'
                     }`}
-                    style={{ borderColor: DARK_THEME.background.primary }}
-                    title={
-                      isOwnProfile
-                        ? (profileData.isOnline
-                            ? `Bạn đang ${profileData.onlineStatus || 'online'}`
-                            : 'Bạn đang offline'
-                          )
-                        : (profileData.isOnline
-                            ? `${profileData.onlineStatus || 'Online'}`
-                            : 'Offline'
-                          )
-                    }
+                    style={{
+                      backgroundColor: profileData.isOnline ? theme.status.success : theme.text.muted,
+                      borderColor: theme.background.primary,
+                      boxShadow: profileData.isOnline ? `0 0 20px ${theme.status.success}30` : undefined
+                    }}
+                    title={getOnlineStatusText()}
                   >
                     {/* Inner dot với animation khi online */}
                     <div
                       className={`w-full h-full rounded-full ${
-                        profileData.isOnline 
-                          ? 'bg-green-400 animate-pulse' 
-                          : 'bg-gray-400'
+                        profileData.isOnline ? 'animate-pulse' : ''
                       }`}
+                      style={{
+                        backgroundColor: profileData.isOnline ? theme.status.success : theme.text.muted
+                      }}
                     />
                   </div>
 
                   {/* Last seen indicator cho offline users */}
                   {!profileData.isOnline && profileData.lastSeen && (
-                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-black/75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {new Date(profileData.lastSeen).toLocaleString('vi-VN')}
+                    <div
+                      className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                      style={{
+                        backgroundColor: `${theme.background.secondary}ee`,
+                        color: theme.text.primary
+                      }}
+                    >
+                      {formatLastSeen(profileData.lastSeen)}
                     </div>
                   )}
                 </div>
@@ -169,14 +180,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-8">
                 <h1
                   className="text-2xl sm:text-3xl lg:text-4xl font-bold"
-                  style={{ color: DARK_THEME.text.primary }}
+                  style={{ color: theme.text.primary }}
                 >
                   {profileData.firstName} {profileData.lastName}
                 </h1>
 
                 {/* Premium Badge next to name */}
                 {profileData.isPremium && (
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full shadow-md border border-white" style={{ backgroundColor: '#1DA1F2' }}>
+                  <div
+                    className="flex items-center justify-center w-5 h-5 rounded-full shadow-md border border-white"
+                    style={{ backgroundColor: theme.status.info }}
+                    title={messages.premium || 'Premium'}
+                  >
                     <Check className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -186,7 +201,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               {profileData.email && (
                 <p
                   className="text-sm sm:text-base mb-2"
-                  style={{ color: DARK_THEME.text.secondary }}
+                  style={{ color: theme.text.secondary }}
                 >
                   {profileData.email}
                 </p>
@@ -201,11 +216,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <Button
                 variant="primary"
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm px-3 sm:px-4 py-2 transition-colors duration-200"
+                className="text-xs sm:text-sm px-3 sm:px-4 py-2 transition-colors duration-200"
                 onClick={onEditProfile}
               >
                 <Edit3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Edit profile
+                {messages.profile?.editPost || messages.userMenu?.profile || 'Edit profile'}
               </Button>
             ) : (
               // Show friendship actions and chat button for other users

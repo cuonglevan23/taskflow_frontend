@@ -4,6 +4,9 @@ export { usePermissions } from "./usePermissions"
 export { useTasks } from "./useTasks"
 export { useTaskActivities, useTaskActivitiesPaginated, useRecentTaskActivities } from "./useTaskActivities"
 
+// ChatBot hooks - AI Agent Services
+export { useChatBotHook } from "./useChatBot"
+
 // Posts and Newsfeed hooks - organized in posts folder
 export {
   useNewsfeed,

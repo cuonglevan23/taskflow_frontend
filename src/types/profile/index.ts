@@ -44,7 +44,7 @@ export interface ProfileData {
   lastSeen: string | null;
 }
 
-export type TabType = 'friends' | 'posts' | 'portfolio';
+export type TabType = 'friends' | 'posts';
 
 export interface FriendshipStatus {
   status: string;

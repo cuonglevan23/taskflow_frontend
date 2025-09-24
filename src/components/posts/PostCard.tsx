@@ -11,6 +11,8 @@ import { PostData } from "@/types/post";
 import { usePostCard, useSyncedPost } from "@/hooks";
 import { usePostManagement } from "@/hooks/posts";
 import { useGalleryLayout, ImageItem } from "@/hooks/posts/useGalleryLayout";
+import { useThemeContext } from "@/providers/ThemeProvider";
+import { useLanguageContext } from "@/providers/LanguageProvider";
 import { Edit3, Trash2 } from "lucide-react";
 
 interface PostCardProps {
@@ -25,6 +27,8 @@ interface ImageGridProps {
 }
 
 const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
+  const { theme } = useThemeContext();
+
   // Convert string URLs to ImageItem objects
   const imageItems: ImageItem[] = useMemo(() =>
     images.map((url, index) => ({
@@ -52,7 +56,8 @@ const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
           <img
             src={image.url}
             alt={image.alt}
-            className="w-full h-auto max-h-[500px] object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+            className="w-full h-auto max-h-[500px] object-cover group-hover:brightness-95 transition-all duration-200"
+            style={{ backgroundColor: theme.background.muted }}
             loading="lazy"
           />
         </figure>
@@ -74,7 +79,8 @@ const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
               <img
                 src={url}
                 alt={`Post image ${index + 1}`}
-                className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                className="w-full h-full object-cover group-hover:brightness-95 transition-all duration-200"
+                style={{ backgroundColor: theme.background.muted }}
                 loading="lazy"
               />
             </figure>
@@ -97,7 +103,8 @@ const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
             <img
               src={images[0]}
               alt="Post image 1"
-              className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+              className="w-full h-full object-cover group-hover:brightness-95 transition-all duration-200"
+              style={{ backgroundColor: theme.background.muted }}
               loading="lazy"
             />
           </figure>
@@ -113,7 +120,8 @@ const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
                 <img
                   src={url}
                   alt={`Post image ${index + 2}`}
-                  className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                  className="w-full h-full object-cover group-hover:brightness-95 transition-all duration-200"
+                  style={{ backgroundColor: theme.background.muted }}
                   loading="lazy"
                 />
               </figure>
@@ -144,14 +152,21 @@ const ImageGrid = ({ images, onImageClick }: ImageGridProps) => {
               <img
                 src={url}
                 alt={`Post image ${index + 1}`}
-                className="w-full h-full object-cover bg-gray-800 group-hover:brightness-95 transition-all duration-200"
+                className="w-full h-full object-cover group-hover:brightness-95 transition-all duration-200"
+                style={{ backgroundColor: theme.background.muted }}
                 loading="lazy"
               />
 
               {/* Overlay for additional images */}
               {showOverlay && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
-                  <span className="text-white text-2xl font-semibold">
+                <div
+                  className="absolute inset-0 flex items-center justify-center group-hover:opacity-80 transition-opacity"
+                  style={{ backgroundColor: `${theme.background.primary}aa` }}
+                >
+                  <span
+                    className="text-2xl font-semibold"
+                    style={{ color: theme.text.inverse }}
+                  >
                     +{remainingCount}
                   </span>
                 </div>
@@ -168,6 +183,9 @@ export default function PostCard({
   post: initialPost,
   showShareCount = false
 }: PostCardProps) {
+  const { theme } = useThemeContext();
+  const { messages } = useLanguageContext();
+
   // Use synced post data that updates with SWR cache changes
   const post = useSyncedPost(initialPost);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -243,7 +261,8 @@ export default function PostCard({
       return;
     }
 
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
+    const confirmMessage = messages.editPost?.unsavedWarning?.message || 'Bạn có chắc chắn muốn xóa bài viết này?';
+    if (window.confirm(confirmMessage)) {
       try {
         await deletePost(
           post.id,
@@ -252,7 +271,8 @@ export default function PostCard({
           },
           (error) => {
             console.error('Failed to delete post:', error);
-            alert('Không thể xóa bài viết. Vui lòng thử lại.');
+            const errorMessage = messages.createPost?.errors?.createFailed || 'Không thể xóa bài viết. Vui lòng thử lại.';
+            alert(errorMessage);
           }
         );
       } catch (error) {
@@ -305,8 +325,14 @@ export default function PostCard({
           {/* Pinned Indicator */}
           {post.isPinned && (
             <div className="mb-2" role="banner" aria-label="Pinned post">
-              <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
-                📌 Pinned Post
+              <span
+                className="text-xs px-2 py-1 rounded"
+                style={{
+                  color: theme.status.warning,
+                  backgroundColor: `${theme.status.warning}20`
+                }}
+              >
+                📌 {messages.postModal?.pinnedPost || 'Pinned Post'}
               </span>
             </div>
           )}
@@ -314,24 +340,30 @@ export default function PostCard({
           {/* Linked Task/Project */}
           {(post.linkedTask || post.linkedProject) && (
             <aside
-              className="mb-3 p-2 bg-gray-700/50 rounded border-l-4 border-blue-500"
+              className="mb-3 p-2 rounded border-l-4"
+              style={{
+                backgroundColor: `${theme.background.secondary}80`,
+                borderLeftColor: theme.status.info
+              }}
               aria-label="Related content"
             >
               {post.linkedTask && (
-                <div className="text-sm text-gray-300">
+                <div className="text-sm" style={{ color: theme.text.secondary }}>
                   <span role="img" aria-label="Task">🎯</span>
                   <span className="font-medium ml-1">Task:</span>
                   <Link
                     href={`/tasks/${post.linkedTask.id}`}
-                    className="hover:text-blue-400 transition-colors ml-1"
+                    className="hover:opacity-80 transition-colors ml-1"
+                    style={{ color: theme.status.info }}
                     aria-label={`View task: ${post.linkedTask.title}`}
                   >
                     {post.linkedTask.title}
                   </Link>
                   <span
-                    className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                      post.linkedTask.status === 'COMPLETED' ? 'bg-green-600' : 'bg-blue-600'
-                    }`}
+                    className="ml-2 px-2 py-0.5 rounded text-xs text-white"
+                    style={{
+                      backgroundColor: post.linkedTask.status === 'COMPLETED' ? theme.status.success : theme.status.info
+                    }}
                     aria-label={`Task status: ${post.linkedTask.status}`}
                   >
                     {post.linkedTask.status}
@@ -339,12 +371,13 @@ export default function PostCard({
                 </div>
               )}
               {post.linkedProject && (
-                <div className="text-sm text-gray-300">
+                <div className="text-sm" style={{ color: theme.text.secondary }}>
                   <span role="img" aria-label="Project">📁</span>
                   <span className="font-medium ml-1">Project:</span>
                   <Link
                     href={`/projects/${post.linkedProject.id}`}
-                    className="hover:text-blue-400 transition-colors ml-1"
+                    className="hover:opacity-80 transition-colors ml-1"
+                    style={{ color: theme.status.info }}
                     aria-label={`View project: ${post.linkedProject.title}`}
                   >
                     {post.linkedProject.title}
@@ -356,7 +389,11 @@ export default function PostCard({
 
           {/* Post Content */}
           <article className="mb-4 min-w-0 overflow-hidden">
-            <p className="text-white whitespace-pre-wrap break-words" role="main">
+            <p
+              className="whitespace-pre-wrap break-words"
+              style={{ color: theme.text.primary }}
+              role="main"
+            >
               {post.content}
             </p>
 
@@ -383,25 +420,48 @@ export default function PostCard({
         {isMenuOpen && hasMenuActions && (
           <div
             ref={menuRef}
-            className="absolute top-12 right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-2 z-50 min-w-[160px]"
+            className="absolute top-12 right-4 border rounded-lg shadow-lg py-2 z-50 min-w-[160px]"
+            style={{
+              backgroundColor: theme.background.secondary,
+              borderColor: theme.border.default
+            }}
           >
             {canEditPost(post) && (
               <button
                 onClick={handleEditClick}
-                className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2 transition-colors"
+                className="w-full px-4 py-2 text-left flex items-center gap-2 transition-colors"
+                style={{ color: theme.text.primary }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 <Edit3 className="w-4 h-4" />
-                Chỉnh sửa
+                {messages.editPost?.title || 'Chỉnh sửa'}
               </button>
             )}
             {canDeletePost(post) && (
               <button
                 onClick={handleDeleteClick}
                 disabled={isDeleting(post.id)}
-                className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center gap-2 transition-colors disabled:opacity-50"
+                className="w-full px-4 py-2 text-left flex items-center gap-2 transition-colors disabled:opacity-50"
+                style={{ color: theme.status.error }}
+                onMouseEnter={(e) => {
+                  if (!isDeleting(post.id)) {
+                    e.currentTarget.style.backgroundColor = theme.background.weakHover;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 <Trash2 className="w-4 h-4" />
-                {isDeleting(post.id) ? 'Đang xóa...' : 'Xóa'}
+                {isDeleting(post.id)
+                  ? (messages.loading || 'Đang xóa...')
+                  : (messages.notifications?.actions?.delete || 'Xóa')
+                }
               </button>
             )}
           </div>

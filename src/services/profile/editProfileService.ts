@@ -11,11 +11,11 @@ import {
 export class EditProfileService {
   /**
    * Get current user profile information
-   * Sử dụng endpoint có sẵn: GET /api/user-profiles/me
+   * GET /api/profile/info
    */
   static async getProfileInfo(): Promise<UserProfileInfoDto> {
     try {
-      return await BaseApiClient.get<UserProfileInfoDto>('/api/user-profiles/me');
+      return await BaseApiClient.get<UserProfileInfoDto>('/api/profile/info');
     } catch (error) {
       console.error('Failed to get profile info:', error);
       throw error;
@@ -24,11 +24,11 @@ export class EditProfileService {
 
   /**
    * Update user profile information (name, job title, department, about me)
-   * Sử dụng endpoint có sẵn: PUT /api/user-profiles/me
+   * PUT /api/profile/info
    */
   static async updateProfileInfo(profileData: UpdateUserProfileInfoRequestDto): Promise<UserProfileInfoDto> {
     try {
-      return await BaseApiClient.put<UserProfileInfoDto>('/api/user-profiles/me', profileData);
+      return await BaseApiClient.put<UserProfileInfoDto>('/api/profile/info', profileData);
     } catch (error) {
       console.error('Failed to update profile info:', error);
       throw error;
@@ -37,8 +37,7 @@ export class EditProfileService {
 
   /**
    * Update user avatar
-   * Note: Tạm thời comment endpoint này vì chưa có trong backend
-   * Có thể sử dụng PUT /api/user-profiles/me với avatar field
+   * POST /api/profile/avatar
    */
   static async updateAvatar(avatarFile: File): Promise<AvatarUploadResponse> {
     try {
@@ -46,8 +45,7 @@ export class EditProfileService {
       const formData = new FormData();
       formData.append('avatar', avatarFile);
 
-      // Tạm thời sử dụng general update endpoint
-      return await BaseApiClient.postFormData<AvatarUploadResponse>('/api/user-profiles/me/avatar', formData);
+      return await BaseApiClient.postFormData<AvatarUploadResponse>('/api/profile/avatar', formData);
     } catch (error) {
       console.error('Failed to update avatar:', error);
       throw error;

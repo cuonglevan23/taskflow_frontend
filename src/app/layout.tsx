@@ -3,8 +3,10 @@ import { AppProviders } from "@/providers";
 import "./globals.css";
 import { DetailPanelProvider } from "@/contexts/DetailPanelContext";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { ChatBotProvider } from "@/contexts/ChatBotContext";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SWRProvider } from "@/providers/SWRProvider";
+import { StripeProvider } from "@/providers/StripeProvider";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppProvider } from "@/contexts/AppProvider";
 import { NotificationProvider } from "@/components/ui/NotificationProvider";
@@ -35,19 +37,31 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <AppProviders defaultTheme="dark" enableBackendSync={true}>
-          <AuthProvider>
+        <AuthProvider>
+          <AppProviders
+            defaultTheme="dark"
+            enableBackendSync={true}
+            isAuthenticated={true}
+            isAuthLoading={false}
+          >
             <SWRProvider>
-              <ChatProvider>
-                <NotificationProvider>
-                  <DetailPanelProvider>
-                    <AppProvider>{children}</AppProvider>
-                  </DetailPanelProvider>
-                </NotificationProvider>
-              </ChatProvider>
+              <StripeProvider>
+                <ChatProvider>
+                  <ChatBotProvider
+                    autoLoadConversations={true}
+                    autoLoadConfig={true}
+                  >
+                    <NotificationProvider>
+                      <DetailPanelProvider>
+                        <AppProvider>{children}</AppProvider>
+                      </DetailPanelProvider>
+                    </NotificationProvider>
+                  </ChatBotProvider>
+                </ChatProvider>
+              </StripeProvider>
             </SWRProvider>
-          </AuthProvider>
-        </AppProviders>
+          </AppProviders>
+        </AuthProvider>
       </body>
     </html>
   );

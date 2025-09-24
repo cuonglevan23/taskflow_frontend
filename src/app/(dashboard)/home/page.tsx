@@ -1,7 +1,8 @@
 "use client";
-
+import PremiumBanner from "@/components/Banner";
 import React, { useState } from "react";
-
+import { usePremiumBannerVisibility } from "@/hooks/usePremiumBannerVisibility";
+import { useRouter } from "next/navigation";
 import { useThemeContext } from "@/providers/ThemeProvider";
 import { useLanguageContext } from "@/providers/LanguageProvider";
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -417,6 +418,36 @@ export default function HomeDashboard() {
     const { theme } = useThemeContext();
     const { messages } = useLanguageContext();
     const { user } = useAuth();
+    const router = useRouter();
+
+    // Premium Banner Visibility Hook
+    const {
+        shouldShowBanner,
+        isLoading: bannerLoading,
+        dismissBanner
+    } = usePremiumBannerVisibility({
+        userId: user?.id?.toString()
+    });
+
+    // Helper function to convert User to UserInfo for PremiumBanner
+    const convertUserToUserInfo = (user: any) => {
+        if (!user) return null;
+
+        return {
+            userId: parseInt(user.id) || 0,
+            firstName: user.name?.split(' ')[0] || '',
+            lastName: user.name?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+            avatar: user.avatar || '',
+            onlineStatus: 'online',
+            isOnline: true,
+            lastSeen: new Date().toISOString(),
+            isPremium: false, // Default to false, will be checked by PremiumBanner
+            premiumExpiry: undefined,
+            premiumPlanType: undefined,
+            profile: user
+        };
+    };
 
     // Helper function to get translated text
     const t = (key: string): string => {
@@ -427,6 +458,7 @@ export default function HomeDashboard() {
         }
         return value || key;
     };
+
 
     return (
         <div className="p-6">
@@ -479,6 +511,18 @@ export default function HomeDashboard() {
                     <RefactoredGoalsCard />
                 </div>
             </div>
+
+            {/* Premium Banner for non-premium users - Only show once per day */}
+            {!bannerLoading && shouldShowBanner && user && convertUserToUserInfo(user) && (
+                <PremiumBanner
+                    userInfo={convertUserToUserInfo(user)!} // Use converter function and non-null assertion
+                    onUpgrade={() => {
+                        // Logic xử lý upgrade
+                        window.location.href = "/pricing";
+                    }}
+                    onDismiss={dismissBanner} // Add dismiss functionality
+                />
+            )}
         </div>
     );
 }

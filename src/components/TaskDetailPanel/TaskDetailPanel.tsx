@@ -186,7 +186,7 @@ const TaskDetailPanel = ({
 
   return (
       <div
-          className={`fixed top-12 right-0 w-[700px] h-[calc(100vh-4rem)] border-l shadow-2xl z-[55] flex flex-col
+          className={`fixed top-12 right-0 w-[700px] h-[calc(100vh-2rem)] border-l shadow-2xl z-[55] flex flex-col
     transform transition-transform transition-opacity duration-300 ease-in-out
     ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
           style={{

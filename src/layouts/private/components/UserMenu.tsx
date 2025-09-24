@@ -10,7 +10,8 @@ import {
   Plus, 
   Users, 
   LogOut,
-  Monitor
+  Monitor,
+  Crown
 } from "lucide-react";
 import { SettingsContainer } from "@/components/settings";
 import { useAuth } from "@/components/auth/AuthProvider"; // ✅ FIX: Use AuthProvider instead of AuthService
@@ -128,11 +129,18 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       onClick: () => router.push('/profile/me/posts'),
     },
     {
+      id: 'pricing',
+      label: t('userMenu.pricing') || 'Pricing',
+      icon: <Crown className="w-4 h-4" />,
+      onClick: () => router.push('/pricing'),
+    },
+    {
       id: 'settings',
       label: t('userMenu.settings') || 'Settings',
       icon: <Settings className="w-4 h-4" />,
       onClick: () => setShowSettingsModal(true),
     },
+
   ];
 
   return (

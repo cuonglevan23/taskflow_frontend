@@ -36,13 +36,36 @@ const TeamMembersPage = React.memo(() => {
     members,
     membersLoading,
     membersError,
-    refresh
+    refresh,
+    currentUserRole,
+    kickMember
   } = useTeam(teamId);
 
   // Memoized handlers to prevent unnecessary re-renders
   const handleAddMember = useCallback(() => {
     // TODO: Open add member modal or navigate to invite page
   }, []);
+
+  const handleDeleteMember = useCallback(async (member: any) => {
+    try {
+      if (!member.id) {
+        console.error('Member ID is required for deletion');
+        return;
+      }
+
+      if (kickMember) {
+        await kickMember(member.id);
+      }
+
+      // Refresh the members list after deletion
+      if (refresh) {
+        await refresh();
+      }
+    } catch (error) {
+      console.error('Failed to delete member:', error);
+      // TODO: Show error notification to user
+    }
+  }, [kickMember, refresh]);
 
   const handleSendFeedback = useCallback(() => {
     // TODO: Open feedback form or modal
@@ -132,6 +155,9 @@ const TeamMembersPage = React.memo(() => {
             <MembersTable
               members={transformedMembers}
               onAddMember={handleAddMember}
+              onDeleteMember={handleDeleteMember}
+              currentUserRole={currentUserRole}
+              currentUserEmail={user?.email}
             />
           )}
         </div>

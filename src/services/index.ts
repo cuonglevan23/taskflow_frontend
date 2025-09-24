@@ -3,6 +3,20 @@
  * Central export file for all task-related services
  */
 
+// ChatBot/AI Agent Services
+export { ChatBotService } from './chatbot';
+export type {
+  ChatMessage,
+  SendMessageRequest,
+  SendMessageResponse,
+  GetMessagesResponse,
+  ConversationContext,
+  ChatBotConfig,
+  ChatBotStatus,
+  ChatBotError,
+  ApiResponse
+} from './chatbot';
+
 // Task Activity Services
 export { TaskActivityService, getActivityConfig, groupActivitiesByDate } from './taskActivityService';
 export type {

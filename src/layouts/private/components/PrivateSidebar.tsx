@@ -30,6 +30,8 @@ interface PrivateSidebarProps {
   isCollapsed: boolean;
   onClose: () => void;
   onToggleCollapse: () => void;
+  onPremiumClick?: () => void;
+  isPremiumUser?: boolean;
 }
 
 export default function PrivateSidebar({
@@ -38,6 +40,8 @@ export default function PrivateSidebar({
   isCollapsed,
   onClose,
   onToggleCollapse,
+  onPremiumClick,
+  isPremiumUser = false,
 }: PrivateSidebarProps) {
   const { theme, isLoading } = useThemeContext();
   const { messages } = useLanguageContext();
@@ -136,7 +140,9 @@ export default function PrivateSidebar({
         {/* Role-Based Footer */}
         <SidebarFooter 
           showLabels={showLabels} 
-          rbac={rbac} 
+          rbac={rbac}
+          onPremiumClick={onPremiumClick}
+          isPremiumUser={isPremiumUser}
         />
       </div>
     </>
