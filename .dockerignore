@@ -1,0 +1,41 @@
+# Dependencies (they will be re-installed in image)
+node_modules
+.pnpm-store
+
+# Build output
+.next/cache
+.next/types
+out
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files (copy selectively if needed)
+.env.local
+.env.development
+.env.test
+.env.production.local
+.env*.backup
+
+# Git
+.git
+.gitignore
+
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+.idea
+.vscode
+
+# Misc
+coverage
+dist
+tmp
+temp
+

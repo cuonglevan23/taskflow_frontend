@@ -1,10 +1,10 @@
 // Auth Error Handler - Xử lý lỗi authentication
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState('Có lỗi xảy ra trong quá trình đăng nhập');
@@ -29,7 +29,7 @@ export default function AuthErrorPage() {
         <div className="text-center space-y-4">
           <div className="rounded-full h-16 w-16 bg-red-100 mx-auto flex items-center justify-center">
             <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
 
@@ -56,5 +56,13 @@ export default function AuthErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+      <AuthErrorContent />
+    </Suspense>
   );
 }

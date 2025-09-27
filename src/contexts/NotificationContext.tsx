@@ -37,7 +37,7 @@ export interface NotificationStats {
   recentCount: number; // Last 24 hours
 }
 
-interface NotificationContextType {
+export interface NotificationContextType {
   // Data
   notifications: UINotification[];
   filteredNotifications: UINotification[];
@@ -490,3 +490,16 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     </NotificationContext.Provider>
   )
 }
+
+// Helper hook to access full context
+export function useNotificationContext(): NotificationContextType {
+  const ctx = React.useContext(NotificationContext);
+  if (!ctx) throw new Error('useNotificationContext must be used within NotificationProvider');
+  return ctx;
+}
+// Backward compatible hooks (simple projections)
+export function useNotifications() { return useNotificationContext(); }
+export function useInboxNotifications() { return useNotificationContext(); }
+export function useHeaderNotifications() { return useNotificationContext(); }
+export function useBookmarkedNotifications() { return useNotificationContext(); }
+export function useArchivedNotifications() { return useNotificationContext(); }

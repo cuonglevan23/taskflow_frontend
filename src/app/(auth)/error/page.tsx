@@ -1,10 +1,13 @@
 "use client"
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button" // fixed casing
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
+
+export const dynamic = 'force-dynamic';
 
 const errorMessages = {
   Configuration: "There is a problem with the server configuration.",
@@ -13,7 +16,7 @@ const errorMessages = {
   Default: "An error occurred during authentication.",
 }
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error") as keyof typeof errorMessages
 
@@ -33,18 +36,21 @@ export default function AuthErrorPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Button asChild className="w-full">
-            <Link href="/login">
-              Try Again
-            </Link>
+            <Link href="/login">Try Again</Link>
           </Button>
-          
           <Button variant="outline" asChild className="w-full">
-            <Link href="/">
-              Go Home
-            </Link>
+            <Link href="/">Go Home</Link>
           </Button>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <AuthErrorContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useThemeContext } from '@/providers/ThemeProvider';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -8,24 +8,23 @@ import PricingService from '@/services/pricing';
 import { CheckCircle, Loader2, CreditCard, Calendar, ArrowRight } from "lucide-react";
 import { toast } from 'react-hot-toast';
 
-export default function PaymentSuccessPage() {
+export const dynamic = 'force-dynamic';
+
+function PaymentSuccessInner() {
   const { theme } = useThemeContext();
   const { user, refreshAuth } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
     const sessionIdParam = searchParams.get('session_id');
-
     if (sessionIdParam) {
       setSessionId(sessionIdParam);
       handlePaymentSuccess(sessionIdParam);
     } else {
-      // No session ID, redirect to pricing
       toast.error('Invalid payment session');
       router.push('/pricing');
     }
@@ -34,16 +33,9 @@ export default function PaymentSuccessPage() {
   const handlePaymentSuccess = async (sessionId: string) => {
     try {
       setLoading(true);
-
-      console.log('Processing payment success for session:', sessionId);
-
-      // Refresh user auth to get updated info
       await refreshAuth();
-
-      // Fetch updated subscription info
       const updatedSubscription = await PricingService.getCurrentSubscription();
       setSubscription(updatedSubscription);
-
       toast.success('Payment successful! Welcome to Premium! 🎉');
     } catch (error: any) {
       console.error('Error processing payment success:', error);
@@ -53,25 +45,16 @@ export default function PaymentSuccessPage() {
     }
   };
 
-  const goToHome = () => {
-    router.push('/home');
-  };
-
-  const goToPricing = () => {
-    router.push('/pricing');
-  };
+  const goToHome = () => router.push('/home');
+  const goToPricing = () => router.push('/pricing');
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.background.primary }}>
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: theme.text.primary }} />
-          <h2 className="text-xl font-semibold mb-2" style={{ color: theme.text.primary }}>
-            Processing your payment...
-          </h2>
-          <p style={{ color: theme.text.secondary }}>
-            Please wait while we confirm your subscription
-          </p>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: theme.text.primary }}>Processing your payment...</h2>
+          <p style={{ color: theme.text.secondary }}>Please wait while we confirm your subscription</p>
         </div>
       </div>
     );
@@ -302,5 +285,13 @@ export default function PaymentSuccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải thanh toán...</div>}>
+      <PaymentSuccessInner />
+    </Suspense>
   );
 }

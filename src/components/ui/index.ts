@@ -42,8 +42,8 @@ export * from './CollaboratorSelector';
 // Icon Components
 export * from './Icon';
 
-// Input Components
-export * from './Input';
+// Input Components (AdvancedInput alias to avoid conflict)
+export { Input as AdvancedInput } from './Input';
 
 // Portal Components
 export * from './Portal';
@@ -52,7 +52,7 @@ export * from './Portal';
 export * from './ServerStatus';
 
 // Progress Components
-export { default as ProgressBar } from './ProgressBar';
+export { ProgressBar } from './ProgressBar';
 
 // Notification Provider
 export { default as NotificationProvider } from './NotificationProvider';

@@ -189,3 +189,18 @@ export function InfoIcon({
 
 // Export types
 export type { BaseIconProps };
+
+// Provide a default export object aggregating all icons (backward compatibility)
+const Icons = {
+  TaskIcon,
+  ProjectIcon,
+  MessageIcon,
+  TeamIcon,
+  GoalIcon,
+  InviteIcon,
+  SuccessIcon,
+  WarningIcon,
+  ErrorIcon,
+  InfoIcon,
+};
+export default Icons;

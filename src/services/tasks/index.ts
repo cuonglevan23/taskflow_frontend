@@ -10,7 +10,7 @@ export { default as ProjectTaskService } from './projectTaskService';
 export { default as ProjectTaskCommentsService } from './projectTaskCommentsService';
 export { default as ProjectTaskActivitiesService } from './projectTaskActivitiesService';
 export { default as ProjectTaskGoogleCalendarService } from './projectTaskGoogleCalendarService';
-export { default as ProjectMembersService } from '../projects/projectMembersService';
+export { projectMembersService as ProjectMembersService } from '../projects/projectMembersService';
 
 // Export types
 export * from './types';
