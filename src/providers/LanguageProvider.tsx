@@ -129,7 +129,7 @@ export function LanguageProvider({
     }
   };
 
-  // Initialize language from multiple sources (priority: backend > localStorage > browser > default)
+  // Initialize language from multiple sources (priority: backend > browser > default)
   useEffect(() => {
     const initializeLocale = async () => {
       setIsLoading(true);
@@ -137,32 +137,31 @@ export function LanguageProvider({
       try {
         let targetLocale: Locale = initialLocale;
 
-        // Only try to get from backend if authenticated
+        // Priority 1: Try to get from backend if authenticated (highest priority)
         if (isAuthenticated) {
           const backendLocale = await loadInitialLanguageFromBackend();
           if (backendLocale && locales.includes(backendLocale)) {
             targetLocale = backendLocale;
-          }
-        }
-
-        // If not authenticated or no backend locale, check localStorage
-        if (!isAuthenticated || targetLocale === initialLocale) {
-          if (typeof window !== 'undefined') {
-            // Priority 2: Check localStorage
-            const storedLocale = localStorage.getItem('user-locale') as Locale;
-            if (storedLocale && locales.includes(storedLocale)) {
-              targetLocale = storedLocale;
-            } else {
-              // Priority 3: Browser language detection
+          } else {
+            // Priority 2: Browser language detection (fallback when backend fails)
+            if (typeof window !== 'undefined') {
               const browserLang = navigator.language.toLowerCase();
               if (browserLang.startsWith('vi')) targetLocale = 'vi';
               else if (browserLang.startsWith('ko')) targetLocale = 'ko';
               else targetLocale = 'en';
             }
           }
+        } else {
+          // Priority 2: Browser language detection (when not authenticated)
+          if (typeof window !== 'undefined') {
+            const browserLang = navigator.language.toLowerCase();
+            if (browserLang.startsWith('vi')) targetLocale = 'vi';
+            else if (browserLang.startsWith('ko')) targetLocale = 'ko';
+            else targetLocale = 'en';
+          }
         }
 
-        // Set initial locale without backend sync (already loaded from backend)
+        // Set locale
         setCurrentLocale(targetLocale);
 
         // Update DOM attributes
@@ -177,6 +176,8 @@ export function LanguageProvider({
       } catch (err) {
         console.error('Locale initialization error:', err);
         setError('Failed to initialize language');
+
+        // Fallback to default locale
         setCurrentLocale(defaultLocale);
         await loadMessages(defaultLocale);
       } finally {
@@ -185,7 +186,7 @@ export function LanguageProvider({
     };
 
     initializeLocale();
-  }, [initialLocale, enableBackendSync, isAuthenticated]); // Add isAuthenticated to dependencies
+  }, [initialLocale, enableBackendSync, isAuthenticated]);
 
   const contextValue: LanguageContextType = {
     locale,

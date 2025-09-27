@@ -37,9 +37,7 @@ function MyGoalsContent() {
             {messages?.navigation?.goals?.myGoals || "My Goals"}
           </h1>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <CreateGoalButton onClick={() => alert("Create goal here")} />
-          </div>
+
         </div>
 
         {/* Content */}

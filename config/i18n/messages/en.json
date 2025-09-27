@@ -75,6 +75,20 @@
     "backToLogin": "Back to Login",
     "pleaseWait": "Please wait while we verify your authentication..."
   },
+  "calendar": {"month" : "Month",
+    "week": "Week",
+    "today": "Today",
+  "days": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  }
+},
+
   "myTaskDashboard": {
     "title": "My Task Dashboard",
     "refresh": "Refresh Dashboard",
@@ -152,7 +166,6 @@
       "allWork": "All Work",
       "calendar": "Calendar",
       "members": {
-
         "title": "Team Members",
         "loading": "Loading members...",
         "error": {
@@ -163,6 +176,9 @@
           "addMember": "Add member",
           "sendFeedback": "Send feedback",
           "search": "Search members"
+        },
+        "delete": {
+          "title": "Remove Team Member"
         }
       }
     },
@@ -600,7 +616,8 @@
     }
   },
   "common": {
-
+    "confirmDelete": "Confirm Delete",
+    "notAvailable": "Not Available",
     "loading": "Loading...",
     "error": "Error",
     "retry": "Retry",
@@ -618,7 +635,7 @@
     "actions": "Actions",
     "delete": "Delete",
     "cancel": "Cancel",
-    "notAvailable": "Not available",
+    "tryAgain": "Try Again",
     "status": {
       "joined": "Joined",
       "complete": "Complete"
@@ -1331,7 +1348,7 @@
     "settings": "Settings",
     "logout": "Log out",
     "loggingOut": "Logging out...",
-    "pricing": "pricing",
+    "pricing": "Pricing",
     "roles": {
       "admin": "ADMIN",
       "member": "MEMBER"
@@ -1397,26 +1414,6 @@
     "failedToLoadTeamDashboard": "Failed to load team dashboard",
     "failedToLoadTeamProjects": "Failed to load team projects"
   },
-  "common": {
-    "error": "Error",
-    "retry": "Retry",
-    "refresh": "Refresh",
-    "noData": "No data available",
-    "noTasksFound": "No tasks found",
-    "noTasksAvailable": "There are no tasks available for this time period.",
-    "task": "Task",
-    "assignee": "Assignee",
-    "member": "Member",
-    "jobTitle": "Job title",
-    "department": "Department",
-    "role": "Role",
-    "joined": "Joined",
-    "actions": "Actions",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "tryAgain": "Try Again"
-
-  },
   "banner": {
     "premium": {
       "title": "Upgrade to Premium",
@@ -1460,6 +1457,16 @@
         "maybeLater": "Maybe Later"
       },
       "footerNote": "Join thousands of professionals who trust our platform"
+    },
+    "trial": {
+      "daysRemaining": "{days} days left in trial",
+      "hoursRemaining": "{hours} hours left in trial",
+      "startFree": "Start your 14-day free trial",
+      "upgradeMessage": "Upgrade now to continue using premium features",
+      "startMessage": "Get full access to all premium features for 14 days",
+      "startButton": "Start Free Trial",
+      "upgradeButton": "Upgrade Now",
+      "viewPlans": "View Plans"
     }
   },
   "friendtab": {

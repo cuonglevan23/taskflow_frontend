@@ -84,7 +84,7 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
       const history = await SearchService.getSearchHistory(10);
       setSearchHistory(history);
     } catch (error) {
-      console.warn('Failed to load search history:', error);
+      console.error('Failed to load search history:', error);
     }
   };
 
@@ -124,7 +124,7 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
     [debounceMs, entities, filters, enableSuggestions] // Remove dependencies that cause loops
   );
 
-  // Enhanced main search function with retry logic
+  // Enhanced main search function with retry logic and global search support
   const performSearch = async (
     searchQuery: string,
     customFilters: SearchFilters = {},
@@ -142,68 +142,92 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
     setCurrentPage(page);
 
     try {
-      const searchRequest: SearchQuery = {
-        query: searchQuery,
-        entities,
-        filters: { ...filters, ...customFilters },
-        pagination: { page, size: pageSize },
-        sorting: { field: 'relevance', direction: 'desc' },
-        context: {
-          userId: getCurrentUserId(),
-          includePrivate: false,
-          scope: defaultScope
-        }
-      };
+      let searchResponse: SearchResponse | any;
 
-      lastSearchQueryRef.current = searchRequest;
+      // Check if this is a global search (all entities)
+      const isGlobalSearch = entities.length > 1 ||
+        (entities.length === 1 && entities.includes('tasks') && entities.includes('projects') &&
+         entities.includes('users') && entities.includes('teams'));
 
-      const response = await SearchService.search(searchRequest);
+      if (isGlobalSearch || (entities.length === 4 &&
+          entities.includes('tasks') && entities.includes('projects') &&
+          entities.includes('users') && entities.includes('teams'))) {
+        // Use global search endpoint
+        const globalResult = await SearchService.globalSearch(searchQuery, page, pageSize);
 
-      if (response.success) {
-        // Merge results for pagination
-        if (page > 0 && results) {
-          const mergedResults = { ...results };
-          Object.keys(response.data).forEach(entityKey => {
-            const entity = entityKey as keyof typeof response.data;
-            if (mergedResults[entity] && response.data[entity]) {
-              mergedResults[entity] = {
-                ...mergedResults[entity]!,
-                content: [
-                  ...mergedResults[entity]!.content,
-                  ...response.data[entity]!.content
-                ]
-              };
-            }
-          });
-          setResults(mergedResults);
-        } else {
-          setResults(response.data);
-        }
-
-        // Save to history if query is not empty and it's a new search
-        if (searchQuery.trim() && page === 0 && enableHistory) {
-          await SearchService.saveSearchToHistory(searchRequest, response.meta.totalResults);
-          await loadSearchHistory();
-        }
-
-        setRetryCount(0); // Reset retry count on success
+        // Transform global search result to match SearchResponse format
+        searchResponse = {
+          success: globalResult.success,
+          data: globalResult.data, // Already in correct format from backend
+          meta: {
+            query: globalResult.query,
+            totalResults: globalResult.totalResults,
+            searchTime: '0ms', // Global search doesn't return timing
+            suggestions: []
+          }
+        };
       } else {
-        throw new Error('Search failed');
-      }
-    } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        // Retry logic for network errors
-        if (retryAttempt < 2 && (error.message.includes('network') || error.message.includes('timeout'))) {
-          setTimeout(() => {
-            performSearch(searchQuery, customFilters, page, retryAttempt + 1);
-          }, 1000 * (retryAttempt + 1)); // Exponential backoff
-          return;
-        }
+        // Use regular search for single entity
+        const searchRequest: SearchQuery = {
+          query: searchQuery,
+          entities,
+          filters: { ...filters, ...customFilters },
+          pagination: { page, size: pageSize },
+          sorting: { field: 'relevance', direction: 'desc' },
+          context: {
+            userId: 1, // Will be populated by SearchService
+            includePrivate: false,
+            scope: defaultScope,
+            organizationId: 1,
+            userTeamIds: [],
+            userProjectIds: []
+          }
+        };
 
-        setError(error.message || 'Search failed. Please try again.');
-        setRetryCount(retryAttempt);
-        console.error('Search error:', error);
+        searchResponse = await SearchService.search(searchRequest);
       }
+
+      // Save search to history if enabled and successful
+      if (enableHistory && searchResponse.success && searchQuery.trim()) {
+        await SearchService.saveSearchToHistory(
+          {
+            query: searchQuery,
+            entities,
+            filters: { ...filters, ...customFilters },
+            pagination: { page, size: pageSize },
+            sorting: { field: 'relevance', direction: 'desc' },
+            context: {
+              userId: 1,
+              includePrivate: false,
+              scope: defaultScope,
+              organizationId: 1,
+              userTeamIds: [],
+              userProjectIds: []
+            }
+          },
+          searchResponse.meta?.totalResults || 0
+        );
+
+        // Reload history to show latest search
+        await loadSearchHistory();
+      }
+
+      setResults(searchResponse.data);
+      setRetryCount(0); // Reset retry count on success
+    } catch (err: any) {
+      console.error('Search failed:', err);
+
+      // Implement exponential backoff retry
+      if (retryAttempt < 2) {
+        const delay = Math.pow(2, retryAttempt) * 1000; // 1s, 2s, 4s
+        setTimeout(() => {
+          performSearch(searchQuery, customFilters, page, retryAttempt + 1);
+        }, delay);
+        return;
+      }
+
+      setError(err.message || 'Search failed');
+      setRetryCount(retryAttempt + 1);
     } finally {
       setLoading(false);
     }
@@ -292,17 +316,39 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
 
       try {
         lastAutocompletQueryRef.current = searchQuery; // Update ref BEFORE API call
-        const response = await SearchService.getAutocompleteSuggestions(
-          searchQuery,
-          entities[0]
-        );
-        setSuggestions(response.suggestions);
+
+        // Try different entities if the first one doesn't return suggestions
+        let response;
+        for (const entity of entities) {
+          response = await SearchService.getAutocompleteSuggestions(searchQuery, entity);
+
+          // If we got suggestions, use them
+          if (response.suggestions && response.suggestions.length > 0) {
+            setSuggestions(response.suggestions);
+            return;
+          }
+        }
+
+        // If no entity returned suggestions, try some fallback suggestions based on search history
+        const fallbackSuggestions = searchHistory
+          .filter(historyItem => {
+            const historyQuery = typeof historyItem === 'string' ? historyItem : historyItem.query;
+            return historyQuery && historyQuery.toLowerCase().includes(searchQuery.toLowerCase());
+          })
+          .slice(0, 3)
+          .map(historyItem => typeof historyItem === 'string' ? historyItem : historyItem.query);
+
+        if (fallbackSuggestions.length > 0) {
+          setSuggestions(fallbackSuggestions);
+        } else {
+          setSuggestions([]);
+        }
       } catch (error) {
-        console.warn('❌ Autocomplete error:', error);
+        console.error('Autocomplete error:', error);
         setSuggestions([]);
       }
     },
-    [entities] // Minimal dependencies
+    [entities, searchHistory] // Add searchHistory to dependencies
   );
 
   // Get smart AI suggestions - PREVENT SPAM

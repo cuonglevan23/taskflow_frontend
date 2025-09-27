@@ -20,7 +20,7 @@ import { useThemeContext } from "@/providers/ThemeProvider";
 import { useLanguageContext } from "@/providers/LanguageProvider";
 
 export interface SearchResult {
-  id: string;
+  id: number;
   title: string;
   type: "task" | "project" | "people" | "portfolio" | "team" | "recent" | "goal";
   description?: string;

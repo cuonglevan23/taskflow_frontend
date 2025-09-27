@@ -11,6 +11,7 @@ interface User {
   name: string;
   role: string;
   avatar?: string;
+  isFirstLogin?: boolean; // Add first login detection
 }
 
 interface AuthContextType {
@@ -52,19 +53,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /** Refresh authentication */
   const refreshAuth = useCallback(async () => {
-    if (isRefreshingRef.current) return;
-
-    // Skip auth check for public routes
-    if (isPublicRoute) {
-      setIsLoading(false);
+    if (isRefreshingRef.current) {
       return;
     }
 
     isRefreshingRef.current = true;
+    setIsLoading(true);
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/user-profiles/me`, {
         method: 'GET',
         credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
 
       if (response.ok) {
@@ -78,32 +81,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
               : userData.name || userData.email || 'User',
           role: userData.role || 'USER',
           avatar: userData.avatar || userData.avatarUrl,
+          isFirstLogin: userData.isFirstLogin // Map isFirstLogin field
         };
 
         setUser(formattedUser);
         setIsAuthenticated(true);
         lastActivityRef.current = Date.now();
-        console.log('✅ Auth refresh successful');
       } else if (response.status === 401) {
-        // Token invalid / expired - but only redirect if not on a public route
-        console.log('❌ Auth failed 401');
+        // Token invalid / expired
         setUser(null);
         setIsAuthenticated(false);
 
-        // Only redirect to login if not already on a public route
-        if (!isPublicRoute) {
-          console.log('❌ Redirecting to login from private route');
+        // Only redirect to login if not already on a public route or auth callback
+        if (!isPublicRoute && !pathname.startsWith('/auth/')) {
           router.replace('/login');
-        } else {
-          console.log('ℹ️ On public route, skipping redirect to login');
         }
       } else {
-        console.log('❌ Auth failed with status:', response.status);
         setUser(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('❌ Auth refresh error:', error);
       if (!(error instanceof TypeError && error.message.includes('Failed to fetch'))) {
         setUser(null);
         setIsAuthenticated(false);
@@ -112,7 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       isRefreshingRef.current = false;
     }
-  }, [router, isPublicRoute]);
+  }, [router, isPublicRoute, pathname]); // Add pathname to dependencies
 
   /** Handle user activity */
   const handleUserActivity = useCallback(() => {
@@ -120,7 +117,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
 
     activityTimeoutRef.current = setTimeout(() => {
-      console.log('User inactive for 30 minutes, logging out...');
       logout();
     }, ACTIVITY_TIMEOUT);
   }, []);
@@ -135,7 +131,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshIntervalRef.current = setInterval(() => {
       const timeSinceLastActivity = Date.now() - lastActivityRef.current;
       if (timeSinceLastActivity < ACTIVITY_TIMEOUT) {
-        console.log('Auto-refreshing token...');
         refreshAuth();
       }
     }, REFRESH_INTERVAL);

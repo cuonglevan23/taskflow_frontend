@@ -14,6 +14,25 @@
 
   /* shadcn/ui compatibility variables */
   --radius: 0.625rem;
+
+  /* Toast theme variables - will be set by theme provider */
+  --toast-bg: #1f2937;
+  --toast-text: #ffffff;
+  --toast-border: #374151;
+}
+
+/* Light theme toast variables */
+:root:not(.dark) {
+  --toast-bg: #ffffff;
+  --toast-text: #111827;
+  --toast-border: #e5e7eb;
+}
+
+/* Dark theme toast variables */
+:root.dark {
+  --toast-bg: #1f2937;
+  --toast-text: #ffffff;
+  --toast-border: #374151;
 }
 
 .custom-date::-webkit-calendar-picker-indicator {

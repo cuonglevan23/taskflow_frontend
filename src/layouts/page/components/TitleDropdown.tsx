@@ -254,23 +254,24 @@ const TitleDropdown: React.FC<TitleDropdownProps> = ({
             <AlertDialogTitle>
               Delete {type === 'team' ? 'Team' : 'Project'}?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <div>
-                This action cannot be undone. This {type === 'team' ? 'team' : 'project'} will be permanently deleted
-                {type === 'project' ? ' along with all tasks and related data' : ' along with all member data'}.
-              </div>
-              <div className="font-medium">
-                To confirm, please type the {type === 'team' ? 'team' : 'project'} name: <span className="font-bold text-foreground">{currentTitle}</span>
-              </div>
-              <Input
-                placeholder={`Type "${currentTitle}" to confirm`}
-                value={confirmationText}
-                onChange={(e) => setConfirmationText(e.target.value)}
-                className="mt-2"
-                disabled={isDeleting}
-              />
+            <AlertDialogDescription>
+              This action cannot be undone. This {type === 'team' ? 'team' : 'project'} will be permanently deleted
+              {type === 'project' ? ' along with all tasks and related data' : ' along with all member data'}.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="font-medium">
+              To confirm, please type the {type === 'team' ? 'team' : 'project'} name: <span className="font-bold text-foreground">{currentTitle}</span>
+            </div>
+            <Input
+              placeholder={`Type "${currentTitle}" to confirm`}
+              value={confirmationText}
+              onChange={(e) => setConfirmationText(e.target.value)}
+              disabled={isDeleting}
+            />
+          </div>
+
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleDeleteCancel} disabled={isDeleting}>
               Cancel

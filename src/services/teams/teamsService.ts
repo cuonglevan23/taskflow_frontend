@@ -297,7 +297,8 @@ export const teamsService = {
           : userInfo.firstName || userInfo.lastName || userInfo.email || 'Unknown User';
 
         return {
-          id: user.id || member.id,
+          id: user.id || member.id, // This is the member record ID
+          userId: user.id, // This is the actual user ID that backend needs for deletion
           name: name,
           email: userInfo.email,
           role: member.role || 'MEMBER',

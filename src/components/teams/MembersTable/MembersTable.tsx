@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button, UserAvatar } from "@/components/ui";
-import Dropdown from "@/components/ui/Dropdown/Dropdown";
 import { useThemeContext } from "@/providers/ThemeProvider";
 import { useLanguageContext } from "@/providers/LanguageProvider";
+import toast from "react-hot-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ const getInitials = (name: string): string => {
 // TeamMember interface for the table
 export interface TeamMember {
   id: number;
-  userId?: number;
+  userId?: number; // User ID for backend operations like deletion
   name: string;
   email?: string;
   role: string; // Allow any role string from backend
@@ -62,6 +62,8 @@ export default function MembersTable({
 }: MembersTableProps) {
   const { theme } = useThemeContext();
   const { messages } = useLanguageContext();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   // Helper function to get translated text
   const t = (key: string): string => {
@@ -106,7 +108,11 @@ export default function MembersTable({
     }
   };
 
-  const showActions = currentUserRole === 'OWNER';
+  // Check if current user has permission to perform member actions
+  // OWNER and ADMIN should be able to delete members
+  // LEADER might also have permission depending on your business logic
+  const showActions = currentUserRole === 'OWNER' || currentUserRole === 'ADMIN' || currentUserRole === 'LEADER';
+
 
   return (
     <div className="w-full">
@@ -264,99 +270,101 @@ export default function MembersTable({
                       );
                     }
 
-                    // Show normal dropdown for other users
+                    // Show delete button directly without dropdown
                     return (
-                      <Dropdown
-                        trigger={
+                      <AlertDialog open={dialogOpen && selectedMember?.id === member.id} onOpenChange={(open) => {
+                        if (!open) {
+                          setDialogOpen(false);
+                          setSelectedMember(null);
+                        }
+                      }}>
+                        <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
                             className="w-8 h-8 p-0 rounded-full transition-colors"
                             style={{
-                              color: theme.text.muted
+                              color: theme.status.error
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor = theme.background.weakHover;
-                              e.currentTarget.style.color = theme.text.primary;
+                              e.currentTarget.style.color = theme.status.error;
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent';
-                              e.currentTarget.style.color = theme.text.muted;
+                              e.currentTarget.style.color = theme.status.error;
+                            }}
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setDialogOpen(true);
                             }}
                           >
-                            <span className="text-lg font-light">⋯</span>
+                            Remove Member
                           </Button>
-                        }
-                        placement="bottom-right"
-                        usePortal={true}
-                      >
-                        <div
-                          className="py-1 min-w-[160px]"
+                        </AlertDialogTrigger>
+                        <AlertDialogContent
                           style={{
-                            backgroundColor: theme.background.secondary,
-                            border: `1px solid ${theme.border.default}`,
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                            backgroundColor: theme.background.primary,
+                            borderColor: theme.border.default,
+                            color: theme.text.primary
                           }}
                         >
-                          {/* Delete Member Action */}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <button
-                                className="w-full text-left px-3 py-2 text-sm transition-colors flex items-center space-x-2"
-                                style={{
-                                  color: theme.status.error
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = theme.background.weakHover;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                }}
-                              >
-                                <span>🗑️</span>
-                                <span>{t('teams.members.actions.delete')}</span>
-                              </button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent
+                          <AlertDialogHeader>
+                            <AlertDialogTitle style={{ color: theme.text.primary }}>
+                              {t('common.confirmDelete')}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription style={{ color: theme.text.secondary }}>
+                              {`Are you sure you want to remove ${member.name} from this team? This action cannot be undone.`}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel
+                              onClick={() => {
+                                setDialogOpen(false);
+                                setSelectedMember(null);
+                              }}
                               style={{
-                                backgroundColor: theme.background.primary,
+                                backgroundColor: theme.background.secondary,
                                 borderColor: theme.border.default,
                                 color: theme.text.primary
                               }}
                             >
-                              <AlertDialogHeader>
-                                <AlertDialogTitle style={{ color: theme.text.primary }}>
-                                  {t('teams.members.delete.title')}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription style={{ color: theme.text.secondary }}>
-                                  {`Are you sure you want to remove ${member.name} from this team? This action cannot be undone.`}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel
-                                  style={{
-                                    backgroundColor: theme.background.secondary,
-                                    borderColor: theme.border.default,
-                                    color: theme.text.primary
-                                  }}
-                                >
-                                  {t('common.cancel')}
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => onDeleteMember?.(member)}
-                                  style={{
-                                    backgroundColor: theme.status.error,
-                                    color: 'white'
-                                  }}
-                                >
-                                  {t('common.delete')}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </Dropdown>
+                              {t('common.cancel')}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                setDialogOpen(false);
+
+                                // Show loading toast
+                                const loadingToast = toast.loading(`Removing ${member.name} from team...`);
+
+                                try {
+                                  await onDeleteMember?.(member);
+                                  // Success toast
+                                  toast.success(`Successfully removed ${member.name} from the team`, {
+                                    id: loadingToast,
+                                  });
+                                } catch (error) {
+                                  console.error('Error in delete action:', error);
+                                  // Error toast
+                                  const errorMessage = error instanceof Error ? error.message : 'Failed to remove member from team';
+                                  toast.error(errorMessage, {
+                                    id: loadingToast,
+                                  });
+                                } finally {
+                                  setSelectedMember(null);
+                                }
+                              }}
+                              style={{
+                                backgroundColor: theme.status.error,
+                                color: 'white'
+                              }}
+                            >
+                              {t('common.delete')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     );
                   })()}
                 </div>

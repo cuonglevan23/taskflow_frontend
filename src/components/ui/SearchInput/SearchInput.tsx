@@ -10,7 +10,10 @@ export interface SearchInputProps {
   onChange: (value: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
   placeholder?: string;
+  suggestions?: string[];
+  onSuggestionSelect?: (suggestion: string) => void;
   showShortcut?: boolean;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -22,7 +25,10 @@ const SearchInput = ({
   onChange,
   onFocus,
   onBlur,
+  onKeyDown,
   placeholder,
+  suggestions = [],
+  onSuggestionSelect,
   showShortcut = true,
   className = "",
   size = "md",
@@ -35,6 +41,44 @@ const SearchInput = ({
   const handleClear = useCallback(() => {
     onChange("");
   }, [onChange]);
+
+  // Get the first matching suggestion
+  const getFirstMatchingSuggestion = useCallback(() => {
+    if (!value || suggestions.length === 0) return "";
+
+    const matchingSuggestion = suggestions.find(suggestion =>
+      suggestion.toLowerCase().startsWith(value.toLowerCase()) &&
+      suggestion.toLowerCase() !== value.toLowerCase()
+    );
+
+    return matchingSuggestion || "";
+  }, [value, suggestions]);
+
+  const firstSuggestion = getFirstMatchingSuggestion();
+  const suggestionCompletion = firstSuggestion.slice(value.length);
+
+  // Handle key events for auto-complete
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    switch (e.key) {
+      case 'Tab':
+      case 'ArrowRight':
+        if (firstSuggestion && suggestionCompletion) {
+          e.preventDefault();
+          onChange(firstSuggestion);
+          onSuggestionSelect?.(firstSuggestion);
+        }
+        break;
+      case 'Enter':
+        if (firstSuggestion && suggestionCompletion) {
+          e.preventDefault();
+          onChange(firstSuggestion);
+          onSuggestionSelect?.(firstSuggestion);
+        }
+        break;
+    }
+
+    onKeyDown?.(e);
+  }, [firstSuggestion, suggestionCompletion, onChange, onSuggestionSelect, onKeyDown]);
 
   // Get default placeholder from i18n if not provided
   const defaultPlaceholder = messages?.search?.placeholder || "Search...";
@@ -73,47 +117,72 @@ const SearchInput = ({
   return (
     <div className={`relative ${className}`}>
       {/* Search Icon */}
-      <div className={`absolute inset-y-0 ${iconPositions[size]} flex items-center pointer-events-none`}>
-        <Search 
+      <div className={`absolute inset-y-0 ${iconPositions[size]} flex items-center pointer-events-none z-20`}>
+        <Search
           size={iconSizes[size]} 
           style={{ color: searchStyles.placeholder }}
         />
       </div>
 
-      {/* Input Field */}
+      {/* Input Field with transparent background */}
       <input
         type="text"
         placeholder={actualPlaceholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         onFocus={onFocus}
         onBlur={onBlur}
-        className={`w-full rounded-full transition-all duration-200 outline-none ${sizeClasses[size]}`}
+        className={`w-full rounded-full transition-all duration-200 outline-none relative z-15 ${sizeClasses[size]}`}
         style={{
-          backgroundColor: searchStyles.background,
+          backgroundColor: 'transparent', // Make input transparent to show suggestion behind
           borderColor: searchStyles.border,
           borderWidth: '1px',
           color: searchStyles.text,
         }}
-        onFocusCapture={(e) => {
-          e.target.style.backgroundColor = searchStyles.backgroundActive;
-          e.target.style.borderColor = searchStyles.focus;
-        }}
-        onBlurCapture={(e) => {
-          e.target.style.backgroundColor = searchStyles.background;
-          e.target.style.borderColor = searchStyles.border;
+        autoComplete="off"
+        spellCheck={false}
+      />
+
+      {/* Background div for input styling */}
+      <div
+        className="absolute inset-0 rounded-full pointer-events-none z-5"
+        style={{
+          backgroundColor: searchStyles.background,
+          borderColor: searchStyles.border,
+          borderWidth: '1px',
         }}
       />
-      
-      {/* Custom CSS for placeholder */}
+
+      {/* Auto-complete suggestion text - positioned behind input */}
+      {suggestionCompletion && (
+        <div
+          className={`absolute inset-0 pointer-events-none ${sizeClasses[size]} rounded-full flex items-center z-10`}
+          style={{
+            paddingLeft: size === 'sm' ? '2.25rem' : size === 'md' ? '2.5rem' : '3rem',
+            whiteSpace: 'nowrap',
+            color: searchStyles.placeholder,
+            opacity: 0.6,
+          }}
+        >
+          <span style={{ visibility: 'hidden' }}>{value}</span>
+          <span>{suggestionCompletion}</span>
+        </div>
+      )}
+
+      {/* Custom CSS for placeholder and focus effects */}
       <style jsx>{`
         input::placeholder {
           color: ${searchStyles.placeholder} !important;
         }
+        input:focus + div {
+          background-color: ${searchStyles.backgroundActive} !important;
+          border-color: ${searchStyles.focus} !important;
+        }
       `}</style>
 
       {/* Right Side Actions */}
-      <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-3">
+      <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-3 z-20">
         {/* Clear Button */}
         {value && (
           <button

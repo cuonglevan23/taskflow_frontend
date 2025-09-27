@@ -1,0 +1,41 @@
+name: Deploy Frontend to ECS
+
+on:
+  push:
+    branches:
+      - main   # chạy khi push vào nhánh main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2   # region của bạn
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push image to ECR
+        run: |
+          IMAGE_REPO_NAME=taskflow-frontend
+          IMAGE_TAG=latest
+          docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+          docker tag $IMAGE_REPO_NAME:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$IMAGE_REPO_NAME:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ecs-task.json      # file task definition ECS
+          service: taskflow-frontend-service  # ECS service name
+          cluster: taskflow-cluster           # ECS cluster name
+          wait-for-service-stability: true

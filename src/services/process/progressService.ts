@@ -226,20 +226,39 @@ export async function getUserTeams(): Promise<{ id: number, name: string }[]> {
   }
 }
 
-// Fetch user's projects - sử dụng endpoint /api/projects (nếu có route handler)
+// Fetch user's projects - use a more specific endpoint that only returns accessible projects
 export async function getUserProjects(): Promise<{ id: number, name: string }[]> {
   try {
-    // Sử dụng BaseApiClient để gọi endpoint có route handler
-    const response = await BaseApiClient.get<any[]>('/api/projects');
+    // First try to get projects the user has access to via a user-specific endpoint
+    try {
+      // Try getting user's own projects first (this should be permission-safe)
+      const response = await BaseApiClient.get<any[]>('/api/users/me/projects');
+      return response.map((project: any) => ({
+        id: project.id,
+        name: project.name || project.projectName || `Project ${project.id}`
+      }));
+    } catch (userProjectsError) {
+      console.warn('⚠️ [getUserProjects] User-specific projects endpoint failed, trying general endpoint');
 
-    // Transform backend response to match expected format
-    return response.map((project: any) => ({
-      id: project.id,
-      name: project.name
-    }));
+      // Fallback to general projects endpoint but with better error handling
+      const response = await BaseApiClient.get<any[]>('/api/projects');
+
+      // Filter out projects that we know will fail permission checks
+      // by doing a quick permission pre-check or using project membership info
+      return response
+        .filter((project: any) => {
+          // Only include projects where user might have access
+          // You might want to add additional filtering logic here based on your backend structure
+          return project.createdBy || project.ownerId || project.members?.length > 0;
+        })
+        .map((project: any) => ({
+          id: project.id,
+          name: project.name || project.projectName || `Project ${project.id}`
+        }));
+    }
   } catch (error) {
-    console.error('Error fetching user projects:', error);
-    // Return empty array thay vì throw để tránh crash app
+    console.error('❌ [getUserProjects] Error fetching user projects:', error);
+    // Return empty array instead of throwing to prevent app crashes
     return [];
   }
 }
@@ -378,7 +397,7 @@ export async function getAllTeamsProgress(): Promise<TeamProgress[]> {
   }
 }
 
-// Fetch all goals (combining projects and teams)
+// Fetch all goals (combining projects and teams) - with proper permission handling
 export async function getAllGoals(): Promise<GoalListItem[]> {
   try {
     // 1. Get user's teams
@@ -387,21 +406,31 @@ export async function getAllGoals(): Promise<GoalListItem[]> {
     // 2. Get user's projects
     const projects = await getUserProjects();
     
-    // 3. Collect all team progress data
-    const teamProgressPromises = teams.map(team => getTeamProgress(team.id));
-    const teamProgressList = await Promise.all(teamProgressPromises);
-    
-    // 4. Collect all project progress data
-    const projectProgressPromises = projects.map(project => getProjectProgress(project.id));
-    const projectProgressList = await Promise.all(projectProgressPromises);
-    
-    // 5. Convert team progress to goal items
-    const teamGoals = teamProgressList.map(convertTeamToGoal);
-    
-    // 6. Convert project progress to goal items
-    const projectGoals = projectProgressList.map(convertProjectToGoal);
-    
-    // 7. Combine and return
+    // 3. Collect all team progress data with error handling
+    const teamGoals: GoalListItem[] = [];
+    for (const team of teams) {
+      try {
+        const teamProgress = await getTeamProgress(team.id);
+        teamGoals.push(convertTeamToGoal(teamProgress));
+      } catch (error) {
+        console.warn(`⚠️ [getAllGoals] Failed to get progress for team ${team.id}:`, error);
+        // Skip teams that can't be accessed
+      }
+    }
+
+    // 4. Collect all project progress data with proper error handling
+    const projectGoals: GoalListItem[] = [];
+    for (const project of projects) {
+      try {
+        const projectProgress = await getProjectProgress(project.id);
+        projectGoals.push(convertProjectToGoal(projectProgress));
+      } catch (error) {
+        console.warn(`⚠️ [getAllGoals] Failed to get progress for project ${project.id}:`, error);
+        // Skip projects that can't be accessed due to permissions
+      }
+    }
+
+    // 5. Return only accessible goals
     return [...teamGoals, ...projectGoals];
   } catch (error) {
     console.error('Error fetching all goals:', error);

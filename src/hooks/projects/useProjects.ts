@@ -64,9 +64,17 @@ export const useMyProjects = (params?: {
   status?: ProjectStatus[];
   priority?: ProjectPriority[];
 }) => {
+  // Ensure stable dependencies by providing default values
+  const stableParams = React.useMemo(() => ({
+    page: params?.page,
+    size: params?.size,
+    status: params?.status,
+    priority: params?.priority,
+  }), [params?.page, params?.size, params?.status, params?.priority]);
+
   const key = React.useMemo(() =>
-    projectKeys.list(params),
-    [params?.page, params?.size, params?.status, params?.priority]
+    projectKeys.list(stableParams),
+    [stableParams.page, stableParams.size, stableParams.status, stableParams.priority]
   );
 
   return useSWR(

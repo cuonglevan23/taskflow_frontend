@@ -48,13 +48,22 @@ const TeamMembersPage = React.memo(() => {
 
   const handleDeleteMember = useCallback(async (member: any) => {
     try {
-      if (!member.id) {
-        console.error('Member ID is required for deletion');
+      // Log để debug
+      console.log('Attempting to delete member:', member);
+
+      // Kiểm tra có ID không
+      const memberId = member.userId || member.id;
+      if (!memberId) {
+        console.error('Member ID is required for deletion. Member data:', member);
+        // TODO: Show error notification to user
         return;
       }
 
+      console.log('Using member ID for deletion:', memberId);
+
       if (kickMember) {
-        await kickMember(member.id);
+        await kickMember(memberId);
+        console.log('Member deleted successfully');
       }
 
       // Refresh the members list after deletion
@@ -82,12 +91,6 @@ const TeamMembersPage = React.memo(() => {
     return members.map(transformTeamMemberForMembersTable);
   }, [members, team, user]);
 
-  // Debug logs
-  console.log('Team data:', team);
-  console.log('Original members:', members);
-  console.log('Current user role from team:', team?.currentUserRole);
-  console.log('Transformed members:', transformedMembers);
-  console.log('Loading state:', membersLoading);
 
   // Handle loading and error states
   if (membersError) {

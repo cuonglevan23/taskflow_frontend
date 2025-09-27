@@ -174,10 +174,15 @@ export class ProfileService {
         }
 
       case 'CANCEL_FRIEND_REQUEST':
-        if (requestId) {
-          return await BaseApiClient.delete(`/api/friends/cancel/${requestId}`);
-        } else {
+        // For cancel, try targetUserId approach first since requestId might be stale
+        try {
           return await BaseApiClient.post('/api/friends/cancel', { targetUserId });
+        } catch (error: any) {
+          // If that fails and we have requestId, try the requestId approach
+          if (requestId) {
+            return await BaseApiClient.delete(`/api/friends/cancel/${requestId}`);
+          }
+          throw error;
         }
 
       case 'UNFRIEND':
@@ -294,6 +299,27 @@ export class ProfileService {
   }
 
   /**
+   * Clear friendship status cache for a specific user or all users
+   */
+  static clearFriendshipStatusCache(userId?: number): void {
+    if (userId) {
+      this.friendshipStatusCache.delete(userId);
+    } else {
+      this.friendshipStatusCache.clear();
+    }
+  }
+
+  // Clear friendship cache for a specific user (used for optimistic updates)
+  static clearFriendshipCache(profileId: number): void {
+    this.friendshipStatusCache.delete(profileId);
+  }
+
+  // Clear all friendship cache
+  static clearAllFriendshipCache(): void {
+    this.friendshipStatusCache.clear();
+  }
+
+  /**
    * Set online status through auth endpoints only
    * This should be called by AuthController on login/logout
    */
@@ -313,16 +339,6 @@ export class ProfileService {
     console.debug('Last seen updated automatically by backend');
   }
 
-  /**
-   * Clear friendship status cache for a specific user or all users
-   */
-  static clearFriendshipStatusCache(userId?: number): void {
-    if (userId) {
-      this.friendshipStatusCache.delete(userId);
-    } else {
-      this.friendshipStatusCache.clear();
-    }
-  }
 
   /**
    * Clear online status cache

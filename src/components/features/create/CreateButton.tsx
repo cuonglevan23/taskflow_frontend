@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from 'react-hot-toast';
 import {
   CheckSquare,
   Folder,
@@ -75,24 +76,7 @@ const getDefaultActions = (
       createTeamModal.onOpen();
     },
   },
-  {
-    id: "message",
-    label: "Message",
-    icon: <MessageSquare className="w-4 h-4" />,
-    onClick: () => {
-      onActionClick?.("message");
-      console.log("Create Message clicked");
-    },
-  },
-  {
-    id: "goal",
-    label: "Goal",
-    icon: <Target className="w-4 h-4" />,
-    onClick: () => {
-      onActionClick?.("goal");
-      console.log("Create Goal clicked");
-    },
-  },
+
   {
     id: "separator",
     label: "",
@@ -100,15 +84,7 @@ const getDefaultActions = (
     onClick: () => {},
     separator: true,
   },
-  {
-    id: "invite",
-    label: "Invite People",
-    icon: <Users className="w-4 h-4" />,
-    onClick: () => {
-      onActionClick?.("invite");
-      inviteModal.onOpen();
-    },
-  },
+
 ];
 
 /* ===================== Main Component ===================== */
@@ -181,8 +157,20 @@ export default function CreateButton({
         isOpen={createProjectModal.isOpen}
         onClose={createProjectModal.onClose}
         onCreateProject={(projectData) => {
-          console.log('Creating project:', projectData);
           // Handle project creation logic here
+          createProjectModal.onClose();
+          toast.success(`Project "${projectData.name || 'New Project'}" created successfully! 🎉`, {
+            duration: 4000,
+            position: 'top-right',
+            style: {
+              background: '#10B981',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#10B981',
+            },
+          });
         }}
       />
       
@@ -190,19 +178,22 @@ export default function CreateButton({
         isOpen={createTeamModal.isOpen}
         onClose={createTeamModal.onClose}
         onSuccess={(team) => {
-          console.log('✅ Team created successfully:', team);
-          
-          // Show success feedback
-          alert(`🎉 Team "${team.name}" created successfully!`);
-          
+          createTeamModal.onClose();
+          toast.success(`Team "${team.name || 'New Team'}" created successfully! 👥`, {
+            duration: 4000,
+            position: 'top-right',
+            style: {
+              background: '#3B82F6',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#3B82F6',
+            },
+          });
           // Navigate to teams page to see the new team
-          router.push('/manager/teams');
+          router.push('/home');
         }}
-      />
-      
-      <InviteModal
-        isOpen={inviteModal.isOpen}
-        onClose={inviteModal.onClose}
       />
     </>
   );

@@ -53,6 +53,7 @@ class SearchQueryBuilder {
 export class SearchService {
   private static readonly ENDPOINTS = {
     SEARCH: '/api/search',
+    GLOBAL_SEARCH: '/api/search/global', // Add global search endpoint
     QUICK_SEARCH: '/api/search/quick',
     AUTOCOMPLETE: '/api/search/autocomplete',
     MY_CONTENT: '/api/search/my',
@@ -82,6 +83,40 @@ export class SearchService {
       throw new Error(`Unsupported HTTP method: ${options.method}`);
     } catch (error: any) {
       throw new Error(error.message || 'API request failed');
+    }
+  }
+
+  /**
+   * Global search across all entities (tasks, projects, users, teams)
+   * Matches the backend /api/search/global endpoint
+   */
+  static async globalSearch(
+    query: string = "",
+    page: number = 0,
+    size: number = 10
+  ): Promise<{
+    success: boolean;
+    query: string;
+    totalResults: number;
+    data: {
+      tasks: any;
+      projects: any;
+      users: any;
+      teams: any;
+    };
+  }> {
+    try {
+      const queryString = new SearchQueryBuilder()
+        .add('q', query)
+        .add('page', page)
+        .add('size', size)
+        .build();
+
+      return await BaseApiClient.get(
+        `${this.ENDPOINTS.GLOBAL_SEARCH}?${queryString}`
+      );
+    } catch (error: any) {
+      throw new Error(error.message || 'Global search failed. Please try again.');
     }
   }
 
@@ -139,10 +174,26 @@ export class SearchService {
         .add('entity', entity)
         .build();
 
-      return await BaseApiClient.get<AutocompleteResponse>(
+      const result = await BaseApiClient.get<any>(
         `${this.ENDPOINTS.AUTOCOMPLETE}?${queryString}`
       );
+
+      // Handle the API response structure - it might return {success: true, suggestions: [...]} or direct {suggestions: [...]}
+      if (result && typeof result === 'object') {
+        // If result has suggestions array, return it
+        if (Array.isArray(result.suggestions)) {
+          return { suggestions: result.suggestions };
+        }
+
+        // If result is directly the suggestions array
+        if (Array.isArray(result)) {
+          return { suggestions: result };
+        }
+      }
+
+      return { suggestions: [] };
     } catch (error: any) {
+      console.error('Autocomplete error:', error);
       return { suggestions: [] }; // Graceful fallback for autocomplete
     }
   }
@@ -271,11 +322,22 @@ export class SearchService {
         .add('limit', limit)
         .build();
 
-      return await this.makeRequest<SearchHistory[]>(
-        `${this.ENDPOINTS.HISTORY}?${queryString}`
-      );
+      const apiUrl = `${this.ENDPOINTS.HISTORY}?${queryString}`;
+      const result = await this.makeRequest<any>(apiUrl);
+
+      // Handle the API response structure {success: true, history: [...]}
+      if (result && result.success && Array.isArray(result.history)) {
+        return result.history;
+      }
+
+      // Fallback: if result is directly an array
+      if (Array.isArray(result)) {
+        return result;
+      }
+
+      return [];
     } catch (error: any) {
-      console.warn('Failed to load search history:', error);
+      console.error('Failed to load search history:', error);
       return []; // Graceful fallback for history
     }
   }
@@ -298,7 +360,6 @@ export class SearchService {
         })
       });
     } catch (error: any) {
-      console.warn('Failed to save search to history:', error);
       // Don't throw error for history saving failure - it's not critical
     }
   }

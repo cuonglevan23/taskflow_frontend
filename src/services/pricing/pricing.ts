@@ -4,7 +4,9 @@ import {
   CheckoutResponse,
   Subscription,
   PaymentHistoryResponse,
-  PricingError
+  PricingError,
+  PremiumStatusResponse,
+  StartTrialResponse
 } from '@/types/pricing';
 
 /* ===================== Pricing Service ===================== */
@@ -192,6 +194,68 @@ export class PricingService {
         isSuccessful: payment.status === 'SUCCEEDED',
       })),
     };
+  }
+
+  /**
+   * Get premium status with trial information
+   * GET /api/premium/status
+   */
+  static async getPremiumStatus(): Promise<PremiumStatusResponse> {
+    try {
+      console.log('🏆 Fetching premium status...');
+
+      const response = await BaseApiClient.get<PremiumStatusResponse>(
+        '/api/premium/status'
+      );
+
+      console.log('✅ Premium status fetched:', response);
+      return response;
+    } catch (error: any) {
+      console.error('❌ Failed to fetch premium status:', error);
+      throw new Error(error.message || 'Failed to fetch premium status');
+    }
+  }
+
+  /**
+   * Start premium trial (14 days)
+   * POST /api/premium/start-trial
+   */
+  static async startTrial(): Promise<StartTrialResponse> {
+    try {
+      console.log('🚀 Starting premium trial...');
+
+      const response = await BaseApiClient.post<StartTrialResponse>(
+        '/api/premium/start-trial',
+        {}
+      );
+
+      console.log('✅ Premium trial started:', response);
+      return response;
+    } catch (error: any) {
+      console.error('❌ Failed to start premium trial:', error);
+      throw new Error(error.message || 'Failed to start premium trial');
+    }
+  }
+
+  /**
+   * Get premium trial analytics
+   * GET /api/premium/trial/analytics
+   */
+  static async getTrialAnalytics(): Promise<any> {
+    try {
+      console.log('📊 Fetching trial analytics...');
+
+      const response = await BaseApiClient.get<any>(
+        '/api/premium/trial/analytics'
+      );
+
+      console.log('✅ Trial analytics fetched:', response);
+      return response;
+    } catch (error: any) {
+      console.error('❌ Failed to fetch trial analytics:', error);
+      // Graceful degradation - don't throw error for analytics
+      return null;
+    }
   }
 }
 

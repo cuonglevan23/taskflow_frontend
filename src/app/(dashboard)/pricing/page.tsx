@@ -264,140 +264,119 @@ export default function PricingPage() {
               borderColor: theme.status.success
             }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div
-                  className="p-3 rounded-full"
-                  style={{ backgroundColor: theme.status.success }}
-                >
-                  <Check className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold" style={{ color: theme.text.primary }}>
-                    Active Subscription - {currentSubscription.planType} Plan
-                  </h3>
-                  <p style={{ color: theme.text.secondary }}>
-                    ${currentSubscription.amount}/month • Renews on {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleCancelSubscription}
-                disabled={upgradeLoading}
-                className="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50 transition-colors"
+            <div className="flex items-center space-x-4">
+              <div
+                className="p-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: theme.status.success }}
               >
-                Cancel Plan
-              </button>
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: theme.text.primary }}>
+                  Active Subscription - {currentSubscription.planType} Plan
+                </h3>
+                <p style={{ color: theme.text.secondary }}>
+                  ${currentSubscription.amount}/month • Renews on {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Pricing Plans */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {pricingPlans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                plan.isPopular ? 'border-blue-500 shadow-2xl' : 'border-gray-200 shadow-lg'
-              }`}
-              style={{
-                backgroundColor: plan.isPopular
-                  ? 'linear-gradient(135deg, #667eea10, #764ba210)'
-                  : theme.background.secondary,
-                borderColor: plan.isPopular ? '#3B82F6' : theme.border.default
-              }}
-            >
-              {plan.isPopular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                    🔥 Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold mb-2" style={{ color: theme.text.primary }}>
-                  {plan.name}
-                </h3>
-                <p className="text-sm opacity-80 mb-6" style={{ color: theme.text.secondary }}>
-                  {plan.description}
-                </p>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline justify-center">
-                    <span className="text-5xl font-bold" style={{ color: theme.text.primary }}>
-                      ${plan.price}
-                    </span>
-                    <span className="text-lg ml-2" style={{ color: theme.text.secondary }}>
-                      {plan.billing}
-                    </span>
-                  </div>
-                  {plan.savings && (
-                    <p className="text-green-600 font-bold text-sm mt-2 bg-green-100 px-3 py-1 rounded-full inline-block">
-                      💰 {plan.savings}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Features List */}
-              <div className="mb-8">
-                <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center space-x-3">
-                      <div
-                        className="p-1 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: theme.status.success }}
-                      >
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-sm" style={{ color: theme.text.primary }}>
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Action Button */}
-              <button
-                onClick={() =>
-                  currentSubscription
-                    ? handlePlanChange(plan.id)
-                    : handleUpgrade(plan.id)
-                }
-                disabled={upgradeLoading || currentSubscription?.planType === plan.id}
-                className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
-                  currentSubscription?.planType === plan.id
-                    ? 'bg-green-500 text-white cursor-default'
-                    : ''
+      {/* Pricing Plans - Only show when user doesn't have active subscription */}
+      {!currentSubscription && (
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
+                  plan.isPopular ? 'border-blue-500 shadow-2xl' : 'border-gray-200 shadow-lg'
                 }`}
                 style={{
-                  background: currentSubscription?.planType === plan.id
-                    ? theme.status.success
-                    : "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
-                  color: 'white'
+                  backgroundColor: plan.isPopular
+                    ? 'linear-gradient(135deg, #667eea10, #764ba210)'
+                    : theme.background.secondary,
+                  borderColor: plan.isPopular ? '#3B82F6' : theme.border.default
                 }}
               >
-                {upgradeLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Processing...</span>
+                {plan.isPopular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                      🔥 Most Popular
+                    </span>
                   </div>
-                ) : currentSubscription?.planType === plan.id ? (
-                  'Current Plan'
-                ) : currentSubscription ? (
-                  'Switch to This Plan'
-                ) : (
-                  `Upgrade to ${plan.name}`
                 )}
-              </button>
-            </div>
-          ))}
+
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold mb-2" style={{ color: theme.text.primary }}>
+                    {plan.name}
+                  </h3>
+                  <p className="text-sm opacity-80 mb-6" style={{ color: theme.text.secondary }}>
+                    {plan.description}
+                  </p>
+
+                  <div className="mb-4">
+                    <div className="flex items-baseline justify-center">
+                      <span className="text-5xl font-bold" style={{ color: theme.text.primary }}>
+                        ${plan.price}
+                      </span>
+                      <span className="text-lg ml-2" style={{ color: theme.text.secondary }}>
+                        {plan.billing}
+                      </span>
+                    </div>
+                    {plan.savings && (
+                      <p className="text-green-600 font-bold text-sm mt-2 bg-green-100 px-3 py-1 rounded-full inline-block">
+                        💰 {plan.savings}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Features List */}
+                <div className="mb-8">
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-center space-x-3">
+                        <div
+                          className="p-1 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: theme.status.success }}
+                        >
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-sm" style={{ color: theme.text.primary }}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Action Button */}
+                <button
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={upgradeLoading}
+                  className="w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                  style={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
+                    color: 'white'
+                  }}
+                >
+                  {upgradeLoading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    `Upgrade to ${plan.name}`
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Payment History */}
       {paymentHistory && paymentHistory.content.length > 0 && (

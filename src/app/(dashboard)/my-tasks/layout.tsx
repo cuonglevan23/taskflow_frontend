@@ -76,55 +76,7 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
             width: '100%'
           }}
         >
-          {/* Calendar-specific header */}
-          {pathname === '/my-tasks/calendar' ? (
-            <div className="flex items-center justify-between py-4 px-6">
-              {/* Left side - Empty */}
-              <div />
 
-              {/* Right side - Calendar Controls */}
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-sm px-3 py-1 inline-flex items-center whitespace-nowrap"
-                  style={{ color: theme.text.secondary }}
-                >
-                  {t('calendar.noDate') || 'No date'} ({tasks?.filter(t => !t.dueDateISO).length || 0})
-                </span>
-
-                <TaskListHeader
-                  searchValue={searchValue}
-                  onSearchChange={handleSearchChange}
-                  onCreateTask={handleCreateTask}
-                  onFilterClick={() => {/* Handle filter modal */}}
-                  onSortClick={() => {/* Handle sort modal */}}
-                  onGroupClick={() => {/* Handle group modal */}}
-                  onOptionsClick={() => {/* Handle options modal */}}
-                  showSearch={true}
-                  showFilters={true}
-                  showSort={false}
-                  showGroup={false}
-                  showOptions={true}
-                  className="mb-0 !py-0 !px-0"
-                  hideLeftSide={true}
-                />
-              </div>
-            </div>
-          ) : (
-            <TaskListHeader
-              searchValue={searchValue}
-              onSearchChange={handleSearchChange}
-              onCreateTask={handleCreateTask}
-              onFilterClick={() => {/* Handle filter modal */}}
-              onSortClick={() => {/* Handle sort modal */}}
-              onGroupClick={() => {/* Handle group modal */}}
-              onOptionsClick={() => {/* Handle options modal */}}
-              showSearch={true}
-              showFilters={true}
-              showSort={true}
-              showGroup={true}
-              showOptions={true}
-            />
-          )}
         </div>
       )}
 
@@ -148,10 +100,6 @@ function MyTaskContent({ children }: { children: React.ReactNode }) {
 
 
             </div>
-
-            <Button variant="primary" onClick={handleCreateTask}>
-              {t('cards.myTasks.createTask') || 'Create task'}
-            </Button>
           </div>
         </div>
       )}

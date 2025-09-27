@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
+import { toast } from 'react-hot-toast';
 import { BucketTaskList } from "@/components/TaskList";
 import { MyTaskDetailPanel } from "@/components/TaskDetailPanel"; // 🔥 Changed import
 import { useMyTasksShared } from "@/hooks/tasks/useMyTasksShared";
@@ -145,7 +146,11 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
   }, [taskListItems, searchInput, t, theme]);
 
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    // Replace with actual toast notification system if available
+    if (type === 'success') {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
   }, []);
 
   const handleTaskClick = useCallback((task: TaskListItem) => {
@@ -216,6 +221,29 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
     }
   }, [actions, showNotification, revalidate]);
 
+  // Add missing handleTaskDelete function with task name in notification
+  const handleTaskDelete = useCallback(async (taskId: string) => {
+    try {
+      // Find the task to get its name before deletion
+      const taskToDelete = taskListItems.find(t => t.id === taskId);
+      const taskName = taskToDelete?.name || 'Unknown Task';
+
+      await actions.onTaskDelete(taskId);
+      await revalidate(); // Force revalidation after delete
+
+      // Show success notification with task name
+      showNotification(`Task "${taskName}" deleted successfully`, 'success');
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+
+      // Find the task name for error notification too
+      const taskToDelete = taskListItems.find(t => t.id === taskId);
+      const taskName = taskToDelete?.name || 'Unknown Task';
+
+      showNotification(`Failed to delete task "${taskName}"`, 'error');
+    }
+  }, [actions, showNotification, revalidate, taskListItems]);
+
   const handleTaskCreate = useCallback(async (taskData: {
     name: string;
     description?: string;
@@ -248,6 +276,7 @@ const MyTaskListPage = ({ searchValue = "" }: MyTaskListPageProps) => {
               buckets={taskBuckets}
               onTaskClick={handleTaskClick}
               onTaskEdit={handleTaskEdit}
+              onTaskDelete={handleTaskDelete}
               onTaskStatusChange={(taskId: string, status: string) => handleTaskStatusChange(taskId, status as TaskStatus)}
               onTaskPriorityChange={handleTaskPriorityChange}
               onTaskAssign={handleTaskAssign}

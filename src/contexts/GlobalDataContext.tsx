@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { SWRConfig, mutate } from 'swr';
 import { projectsService } from '@/services/projects/projectService';
@@ -52,6 +52,9 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     isLoading: false,
     error: null,
   });
+
+  // ✅ ADD: Track previous authentication state to detect changes
+  const [prevUserId, setPrevUserId] = React.useState<string | null>(null);
 
   // Prefetch all critical data once on login
   const prefetchAllData = async () => {
@@ -121,28 +124,37 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     }
   };
 
-  // ✅ ADD: Effect to handle authentication state changes
+  // ✅ CRITICAL FIX: Improved effect to handle authentication state changes
   useEffect(() => {
-    if (!authLoading) {
-      if (isAuthenticated && user && !globalData.isLoaded) {
-        // Only prefetch if data hasn't been loaded yet
-        prefetchAllData();
-      } else if (!isAuthenticated) {
-        // User logged out - clear data
-        setGlobalData({
-          user: null,
-          teams: [],
-          projects: [],
-          taskStats: null,
-          tasksSummary: [],
-          posts: [],
-          isLoaded: false,
-          isLoading: false,
-          error: null,
-        });
-      }
+    if (authLoading) {
+      // Still loading authentication state
+      return;
     }
-  }, [isAuthenticated, user?.id, authLoading, globalData.isLoaded]); // Use user.id instead of entire user object
+
+    if (isAuthenticated && user) {
+      const currentUserId = user.id;
+
+      // Check if this is a new user login or data hasn't been loaded for current user
+      if (currentUserId !== prevUserId || !globalData.isLoaded || globalData.user?.id !== currentUserId) {
+        setPrevUserId(currentUserId);
+        prefetchAllData();
+      }
+    } else if (!isAuthenticated) {
+      // User logged out - clear data
+      setPrevUserId(null);
+      setGlobalData({
+        user: null,
+        teams: [],
+        projects: [],
+        taskStats: null,
+        tasksSummary: [],
+        posts: [],
+        isLoaded: false,
+        isLoading: false,
+        error: null,
+      });
+    }
+  }, [isAuthenticated, user?.id, authLoading]);
 
   const refetchAll = async () => {
     if (!isAuthenticated || !user) {
@@ -182,32 +194,8 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
     }
 
     try {
-      // 🔍 DEBUG: Log the exact data being sent to the API
-      console.log('🚀 [GlobalDataContext] addPost called with:', {
-        content: newPost.content,
-        hasImages: !!newPost.images,
-        imageCount: newPost.images?.length || 0,
-        hasImage: !!newPost.image,
-        privacy: newPost.privacy,
-        imageFiles: newPost.images?.map(img => ({
-          name: img.name,
-          size: img.size,
-          type: img.type
-        })) || []
-      });
-
       // Create post via API first
       const response = await PostsService.createPost(newPost);
-
-      // 🔍 DEBUG: Log the API response
-      console.log('📥 [GlobalDataContext] API response received:', {
-        success: response.success,
-        hasData: !!response.data,
-        postId: response.data?.id,
-        imageUrl: response.data?.imageUrl,
-        imageUrls: response.data?.imageUrls,
-        imageUrlsCount: response.data?.imageUrls?.length || 0
-      });
 
       if (response.success && response.data) {
         // Add to local state immediately for optimistic update
@@ -243,7 +231,6 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
 
       throw new Error('Failed to create post - no data returned');
     } catch (error) {
-      console.error('❌ [GlobalDataContext] addPost error:', error);
       throw error;
     }
   };
@@ -308,11 +295,12 @@ export function GlobalDataProvider({ children }: GlobalDataProviderProps) {
   // SWR Configuration with authentication-aware error handling
   const swrConfig = {
     onError: (error: any, key: string) => {
-      console.log('SWR Error:', error, 'Key:', key);
-
       // Don't log authentication errors as they are expected when not logged in
       if (!error.message?.includes('Unauthorized') && !error.message?.includes('401')) {
-        console.error('SWR Error:', error, 'Key:', key);
+        // Only log non-authentication errors in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('SWR Error:', error, 'Key:', key);
+        }
       }
     },
     // Only revalidate if user is authenticated

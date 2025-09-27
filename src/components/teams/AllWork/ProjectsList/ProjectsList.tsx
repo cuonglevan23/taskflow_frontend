@@ -111,15 +111,6 @@ export default function ProjectsList({
         >
           {t('projectOverview.members.title')}
         </div>
-        <div
-          className="col-span-2 text-sm font-medium flex items-center justify-end gap-1"
-          style={{ color: theme.text.secondary }}
-        >
-          <span>{t('common.sort.aToZ')}</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M6 3l3 3H3l3-3z"/>
-          </svg>
-        </div>
       </div>
 
       {/* Projects List */}

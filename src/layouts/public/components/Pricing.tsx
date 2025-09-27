@@ -123,7 +123,7 @@ const Pricing = () => {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {plans.map((plan, index) => {
             const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
             return (
@@ -196,39 +196,137 @@ const Pricing = () => {
                   ))}
                 </ul>
 
-                {/* CTA button */}
-                <Button
-                  variant={plan.popular ? "primary" : "outline"}
-                  size="lg"
-                  className="w-full"
-                >
-                  {plan.cta}
-                </Button>
+                {/* CTA section - Replace button with attractive info card */}
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-6">
+                    <div className="mb-4">
+                      <svg className="w-12 h-12 mx-auto text-blue-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        Ready for Enterprise?
+                      </h4>
+
+                      <p className="text-sm text-gray-600 mb-4">
+                        Get custom pricing and dedicated support for your organization
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center space-x-4 text-sm">
+                      <div className="flex items-center text-green-600">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Custom Setup
+                      </div>
+                      <div className="flex items-center text-blue-600">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        24/7 Support
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                      💎 Premium features • 🚀 Priority setup • 📞 Dedicated support
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* Bottom note */}
-        <div
-          className="text-center mt-16 p-6 rounded-xl"
-          style={{ backgroundColor: LIGHT_THEME.background.primary }}
-        >
-          <h3
-            className="text-lg font-semibold mb-2"
-            style={{ color: LIGHT_THEME.text.primary }}
+        {/* Custom Solution Section */}
+        <div className="text-center">
+          <div
+            className="max-w-3xl mx-auto p-8 rounded-2xl shadow-lg border"
+            style={{
+              backgroundColor: LIGHT_THEME.background.primary,
+              borderColor: LIGHT_THEME.border.default
+            }}
           >
-            Need a custom solution?
-          </h3>
+            <div className="mb-6">
+              <svg className="w-16 h-16 mx-auto mb-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+
+              <h3
+                className="text-2xl font-bold mb-3"
+                style={{ color: LIGHT_THEME.text.primary }}
+              >
+                Need a custom solution?
+              </h3>
+
+              <p
+                className="text-lg mb-6"
+                style={{ color: LIGHT_THEME.text.secondary }}
+              >
+                We offer custom plans for large enterprises with specific requirements.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span style={{ color: LIGHT_THEME.text.secondary }}>Custom integrations & workflows</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <span style={{ color: LIGHT_THEME.text.secondary }}>Enhanced security & compliance</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <span style={{ color: LIGHT_THEME.text.secondary }}>Dedicated account management</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <span style={{ color: LIGHT_THEME.text.secondary }}>Priority support & training</span>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              style={{ color: '#ffffff' }}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Contact our sales team
+            </Button>
+          </div>
+        </div>
+
+        {/* Bottom note */}
+        <div className="text-center mt-12">
           <p
-            className="mb-4"
+            className="text-sm"
             style={{ color: LIGHT_THEME.text.secondary }}
           >
-            We offer custom plans for large enterprises with specific requirements.
+            All plans include a 14-day free trial. No credit card required. Cancel anytime.
           </p>
-          <Button variant="ghost" className="text-blue-600">
-            Contact our sales team
-          </Button>
         </div>
       </div>
     </section>

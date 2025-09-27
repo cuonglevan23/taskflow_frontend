@@ -9,6 +9,7 @@ import {
   CheckSquare,
   AlertCircle,
   RefreshCw,
+  Search, // Add Search icon for global search
 } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SearchDropdown, SearchResult, SavedSearch, SearchTab } from "@/components/ui/SearchDropdown";
@@ -24,18 +25,20 @@ interface SearchPanelProps {
 }
 
 const SEARCH_TABS: SearchTab[] = [
+  { id: "all", label: "All", icon: Search }, // Add global search tab
   { id: "tasks", label: "Tasks", icon: CheckSquare },
   { id: "projects", label: "Projects", icon: Folder },
   { id: "people", label: "People", icon: Users },
-  { id: "teams", label: "Teams", icon: Users }, // Changed from Portfolios to Teams
+  { id: "teams", label: "Teams", icon: Users },
 ];
 
 // Map our search entities to UI tabs (aligned with backend implementation)
-const TAB_TO_ENTITY_MAP: Record<string, SearchEntity> = {
+const TAB_TO_ENTITY_MAP: Record<string, SearchEntity | 'all'> = {
+  all: 'all', // Add global search mapping
   tasks: 'tasks',
   projects: 'projects',
   people: 'users',
-  teams: 'teams', // Changed from portfolios to teams
+  teams: 'teams',
 };
 
 export default function SearchPanel({
@@ -52,16 +55,23 @@ export default function SearchPanel({
     for (const k of keys) {
       value = value?.[k];
     }
-    // Return the value if found, otherwise return a fallback
     return value || "";
   };
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState("all"); // Start with global search
+  const [inputQuery, setInputQuery] = useState(""); // Add separate state for input query
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Use real search hook with all implemented features - OPTIMIZED
+  // Use real search hook with dynamic entities based on active tab
+  const searchEntities = useMemo(() => {
+    if (activeTab === 'all') {
+      return ['tasks', 'projects', 'users', 'teams'] as SearchEntity[]; // Global search across all entities
+    }
+    return [TAB_TO_ENTITY_MAP[activeTab]] as SearchEntity[];
+  }, [activeTab]);
+
   const {
     query: searchQuery,
     setQuery: setSearchQuery,
@@ -78,19 +88,108 @@ export default function SearchPanel({
     retry,
     loadMore
   } = useSearch({
-    entities: [TAB_TO_ENTITY_MAP[activeTab]],
-    autoSearch: true, // ENABLE auto-search to trigger suggestions
-    debounceMs: 500, // Increase debounce time
+    entities: searchEntities, // Use dynamic entities
+    autoSearch: true,
+    debounceMs: 500,
     enableHistory: true,
-    enableSuggestions: true, // ENABLE smart suggestions since backend endpoint is available
+    enableSuggestions: true,
     defaultScope: scope,
     pageSize: 20
   });
 
-  // Transform API results to UI format (aligned with backend DTO structure)
+  // Sync input query with search hook when entities change
+  useEffect(() => {
+    if (inputQuery && inputQuery !== searchQuery) {
+      setSearchQuery(inputQuery);
+    }
+  }, [searchEntities, inputQuery, setSearchQuery]);
+
+  // Enhanced transform API results to handle global search
   const transformedResults = useMemo(() => {
     if (!searchResults) return [];
 
+    // For global search, combine results from all entities
+    if (activeTab === 'all') {
+      const allResults: SearchResult[] = [];
+
+      // Process tasks
+      if (searchResults.tasks?.content) {
+        searchResults.tasks.content.forEach((task: SearchTask) => {
+          allResults.push({
+            id: task.id,
+            title: task.title,
+            type: 'task',
+            description: task.description || `Assigned to: ${task.assigneeName}`,
+            avatar: task.assigneeName?.slice(0, 2).toUpperCase() || 'T',
+            metadata: {
+              status: task.status,
+              priority: task.priority,
+              dueDate: task.dueDate,
+              projectName: task.projectName
+            }
+          });
+        });
+      }
+
+      // Process projects
+      if (searchResults.projects?.content) {
+        searchResults.projects.content.forEach((project: SearchProject) => {
+          allResults.push({
+            id: project.id, // Fix: Use numeric id directly
+            title: project.name,
+            type: 'project',
+            description: project.description || `Owner: ${project.ownerName}`,
+            avatar: project.name?.slice(0, 2).toUpperCase() || 'P',
+            metadata: {
+              status: project.status,
+              memberCount: project.memberCount,
+              completion: project.completionPercentage
+            }
+          });
+        });
+      }
+
+      // Process users
+      if (searchResults.users?.content) {
+        searchResults.users.content.forEach((user: SearchUser) => {
+          allResults.push({
+            id: user.id,
+            title: user.fullName,
+            type: 'people',
+            description: user.jobTitle || user.email,
+            avatar: user.avatar || user.fullName?.slice(0, 2).toUpperCase() || 'U',
+            metadata: {
+              department: user.department,
+              isActive: user.isActive,
+              email: user.email
+            }
+          });
+        });
+      }
+
+      // Process teams
+      if (searchResults.teams?.content) {
+        searchResults.teams.content.forEach((team: SearchTeam) => {
+          allResults.push({
+            id: team.id, // Fix: Use numeric id directly
+            title: team.name,
+            type: 'team',
+            description: team.description || `${team.memberCount} members`,
+            avatar: team.name?.slice(0, 2).toUpperCase() || 'T',
+            metadata: {
+              type: team.type,
+              memberCount: team.memberCount,
+              department: team.department,
+              performanceScore: team.performanceScore
+            }
+          });
+        });
+      }
+
+      return allResults;
+    }
+
+    // Single entity search (existing logic)
     const entityKey = TAB_TO_ENTITY_MAP[activeTab] as keyof typeof searchResults;
     const entityResults = searchResults[entityKey];
 
@@ -101,7 +200,7 @@ export default function SearchPanel({
         case 'tasks':
           const task = item as SearchTask;
           return {
-            id: task.id.toString(),
+            id: task.id, // Fix: Use numeric id directly
             title: task.title,
             type: 'task',
             description: task.description || `Assigned to: ${task.assigneeName}`,
@@ -117,7 +216,7 @@ export default function SearchPanel({
         case 'projects':
           const project = item as SearchProject;
           return {
-            id: project.id.toString(),
+            id: project.id, // Fix: Use numeric id directly
             title: project.name,
             type: 'project',
             description: project.description || `Owner: ${project.ownerName}`,
@@ -132,7 +231,7 @@ export default function SearchPanel({
         case 'people':
           const user = item as SearchUser;
           return {
-            id: user.id.toString(),
+            id: user.id, // Fix: Use numeric id directly
             title: user.fullName,
             type: 'people',
             description: user.jobTitle || user.email,
@@ -147,9 +246,9 @@ export default function SearchPanel({
         case 'teams':
           const team = item as SearchTeam;
           return {
-            id: team.id.toString(),
+            id: team.id, // Fix: Use numeric id directly
             title: team.name,
-            type: 'team', // Changed from 'portfolio' to 'team'
+            type: 'team',
             description: team.description || `${team.memberCount} members`,
             avatar: team.name?.slice(0, 2).toUpperCase() || 'T',
             metadata: {
@@ -162,7 +261,7 @@ export default function SearchPanel({
 
         default:
           return {
-            id: item.id?.toString() || Math.random().toString(),
+            id: typeof item.id === 'number' ? item.id : parseInt(item.id) || Math.floor(Math.random() * 10000), // Fix: Ensure numeric id
             title: item.title || item.name || 'Unknown',
             type: activeTab as any,
             description: item.description || '',
@@ -174,32 +273,64 @@ export default function SearchPanel({
 
   // Transform search history to recent items
   const recentItems = useMemo(() => {
-    // Ensure searchHistory is an array before calling slice
-    if (!Array.isArray(searchHistory)) {
+    // Handle both array of strings and SearchHistory objects
+    if (!searchHistory || !Array.isArray(searchHistory) || searchHistory.length === 0) {
       return [];
     }
 
-    return searchHistory.slice(0, 5).map((historyItem): SearchResult => ({
-      id: historyItem.id,
-      title: historyItem.query,
-      type: 'recent',
-      description: `${historyItem.resultCount} results • ${new Date(historyItem.timestamp).toLocaleDateString()}`,
-      avatar: 'H'
-    }));
+    // Check if searchHistory is an array of strings (current API format)
+    if (typeof searchHistory[0] === 'string') {
+      return (searchHistory as unknown as string[]).slice(0, 5).map((query: string, index): SearchResult => ({
+        id: index + 1,
+        title: query,
+        type: 'recent',
+        description: `Recent search`,
+        avatar: 'H'
+      }));
+    }
+
+    // Handle SearchHistory object format (future API format)
+    if (typeof searchHistory[0] === 'object' && searchHistory[0] !== null) {
+      return searchHistory.slice(0, 5).map((historyItem: any, index): SearchResult => ({
+        id: typeof historyItem.id === 'number' ? historyItem.id : parseInt(historyItem.id) || index + 1,
+        title: historyItem.query,
+        type: 'recent',
+        description: `${historyItem.resultCount || 0} results • ${historyItem.timestamp ? new Date(historyItem.timestamp).toLocaleDateString() : 'Recent'}`,
+        avatar: 'H'
+      }));
+    }
+
+    return [];
   }, [searchHistory]);
 
   // Transform search history to saved searches format
   const transformedSavedSearches = useMemo((): SavedSearch[] => {
-    // Ensure searchHistory is an array before calling map
-    if (!Array.isArray(searchHistory)) {
+    // Handle both array of strings and SearchHistory objects
+    if (!searchHistory || !Array.isArray(searchHistory) || searchHistory.length === 0) {
       return [];
     }
-    return searchHistory.map((historyItem) => ({
-      id: historyItem.id,
-      title: historyItem.query,
-      description: `${historyItem.resultCount} results • ${new Date(historyItem.timestamp).toLocaleDateString()}`,
-      icon: Clock, // Use Clock icon for history items
-    }));
+
+    // Check if searchHistory is an array of strings (current API format)
+    if (typeof searchHistory[0] === 'string') {
+      return (searchHistory as unknown as string[]).map((query: string, index) => ({
+        id: `history_${index + 1}`,
+        title: query,
+        description: `Recent search`,
+        icon: Clock,
+      }));
+    }
+
+    // Handle SearchHistory object format (future API format)
+    if (typeof searchHistory[0] === 'object' && searchHistory[0] !== null) {
+      return searchHistory.map((historyItem: any) => ({
+        id: historyItem.id,
+        title: historyItem.query,
+        description: `${historyItem.resultCount || 0} results • ${historyItem.timestamp ? new Date(historyItem.timestamp).toLocaleDateString() : 'Recent'}`,
+        icon: Clock,
+      }));
+    }
+
+    return [];
   }, [searchHistory]);
 
   // Keyboard shortcuts and click outside handling
@@ -233,40 +364,52 @@ export default function SearchPanel({
 
   const handleSearchChange = useCallback(
     (value: string) => {
-      setSearchQuery(value);
+      setInputQuery(value); // Update input query state
+      setSearchQuery(value); // Also update search hook
       onSearch(value);
 
-      // Only open panel if value has content
+      // Always open panel when user is interacting with search
+      setIsOpen(true);
+
       if (value.trim()) {
-        setIsOpen(true);
         // Trigger search with debouncing handled by useSearch hook
         search(value);
       } else {
-        setIsOpen(false);
+        // Clear results when input is empty, but keep panel open to show recent items
         clearResults();
       }
     },
-    [onSearch, setSearchQuery, search, clearResults] // Remove searchQuery from dependencies to prevent stale closure
+    [onSearch, setSearchQuery, search, clearResults]
   );
+
+  // Handle auto-complete suggestion selection
+  const handleSuggestionSelect = useCallback((suggestion: string) => {
+    setInputQuery(suggestion);
+    setSearchQuery(suggestion);
+    onSearch(suggestion);
+    search(suggestion);
+  }, [onSearch, setSearchQuery, search]);
 
   const handleOpenPanel = useCallback(() => {
     setIsOpen(true);
+    // If there's no query, we want to show recent items, so don't trigger search
+    // The SearchDropdown will handle showing recent items when searchQuery is empty
   }, []);
 
   const handleTabChange = useCallback((tabId: string) => {
     setActiveTab(tabId);
 
     // Only trigger search if there's a query AND tab actually changed
-    if (searchQuery.trim() && tabId !== activeTab) {
+    if (inputQuery.trim() && tabId !== activeTab) {
       // Clear previous results first
       clearResults();
 
       // Trigger new search with delay to prevent spam
       setTimeout(() => {
-        search(searchQuery);
+        search(inputQuery); // Use inputQuery instead of searchQuery
       }, 300);
     }
-  }, [searchQuery, search, activeTab, clearResults]); // Fixed dependencies
+  }, [inputQuery, search, activeTab, clearResults]);
 
   const handleResultClick = useCallback((result: SearchResult) => {
     console.log("Navigate to:", result.type, result.id);
@@ -321,7 +464,8 @@ export default function SearchPanel({
 
   const handleRecentClick = useCallback((item: SearchResult) => {
     console.log("Execute recent search:", item.title);
-    setSearchQuery(item.title);
+    setInputQuery(item.title); // Update input query
+    setSearchQuery(item.title); // Also update search hook
     setIsOpen(true);
   }, [setSearchQuery]);
 
@@ -334,15 +478,21 @@ export default function SearchPanel({
   }, [clearHistory]);
 
   const handleLoadMore = useCallback(async () => {
-    await loadMore(TAB_TO_ENTITY_MAP[activeTab]);
+    const entityType = TAB_TO_ENTITY_MAP[activeTab];
+    // Fix: Only call loadMore for specific entities, not for 'all' tab
+    if (entityType !== 'all') {
+      await loadMore(entityType as SearchEntity);
+    }
   }, [loadMore, activeTab]);
 
   return (
     <div className={`relative w-full ${className}`} ref={searchRef}>
       <SearchInput
-        value={searchQuery}
+        value={inputQuery} // Use inputQuery for display
         onChange={handleSearchChange}
         onFocus={handleOpenPanel}
+        suggestions={suggestions} // Pass suggestions from useSearch hook
+        onSuggestionSelect={handleSuggestionSelect}
         placeholder={undefined} // Let SearchInput handle the translation internally
         showShortcut={true}
         size="md"
@@ -387,7 +537,7 @@ export default function SearchPanel({
 
       <SearchDropdown
         isOpen={isOpen && !searchError}
-        searchQuery={searchQuery}
+        searchQuery={inputQuery} // Use inputQuery for dropdown
         searchResults={transformedResults}
         recentItems={recentItems}
         savedSearches={transformedSavedSearches}

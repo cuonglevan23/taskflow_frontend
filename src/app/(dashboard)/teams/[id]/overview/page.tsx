@@ -8,10 +8,8 @@ import { useTeam } from "@/hooks/teams/useTeam";
 import InviteModal, { type InviteFormData } from "@/components/modals/InviteModal";
 import { teamsService } from "@/services/teams/teamsService";
 import {
-  TeamHeader, 
-  CuratedWork, 
-  Members, 
-  Goals,
+  TeamHeader,
+  Members,
   type WorkItem,
   type TeamMember 
 } from "@/components/teams";
@@ -415,21 +413,8 @@ function TeamOverviewContent() {
         />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Curated Work Section */}
-            <CuratedWork
-              onCreateWork={handleCreateWork}
-              onViewAllWork={handleViewAllWork}
-              onWorkItemClick={handleWorkItemClick}
-              onAddSection={handleAddSection}
-            />
-          </div>
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-8">
-            {/* Members Section */}
             <Members
               members={transformedMembers}
               memberCount={memberCount}
@@ -439,12 +424,6 @@ function TeamOverviewContent() {
               isRemoving={isRemoving}
             />
 
-            {/* Goals Section */}
-            <Goals
-              onViewAllGoals={handleViewAllGoals}
-              onCreateGoal={handleCreateGoal}
-            />
-          </div>
         </div>
 
         {/* Invite Modal */}

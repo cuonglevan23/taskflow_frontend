@@ -4,11 +4,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useThemeContext } from '@/providers/ThemeProvider';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useThemeContext();
+  const { refreshAuth } = useAuth(); // Add useAuth hook
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing login...');
@@ -41,9 +43,14 @@ export default function AuthCallbackPage() {
           });
 
           if (response.ok) {
-            const userData = await response.json();
+            await response.json(); // Verify response but don't need to store userData
 
             setStatus('success');
+            setMessage('Login successful! Loading your data...');
+
+            // ✅ CRITICAL FIX: Trigger AuthProvider refresh to update authentication state
+            await refreshAuth();
+
             setMessage('Login successful! Redirecting...');
 
             setTimeout(() => {
@@ -73,7 +80,7 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [hasProcessed, searchParams, router]);
+  }, [hasProcessed, searchParams, router, refreshAuth]); // Add refreshAuth to dependencies
 
   const getStatusIcon = () => {
     switch (status) {

@@ -1,21 +1,24 @@
-// Providers index file - Export all providers and their hooks
-export { ThemeProvider, useThemeContext } from './ThemeProvider';
-export { LanguageProvider, useLanguageContext, useLanguage } from './LanguageProvider';
-
 // Combined Provider for easy setup
+'use client';
+
 import React from 'react';
 import { ThemeProvider } from './ThemeProvider';
 import { LanguageProvider } from './LanguageProvider';
+import { PremiumProvider } from './PremiumProvider';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { ThemeMode } from '../../config/theme/types';
 import { Locale } from '../../config/i18n';
+
+// Providers index file - Export all providers and their hooks
+export { ThemeProvider, useThemeContext } from './ThemeProvider';
+export { LanguageProvider, useLanguageContext, useLanguage } from './LanguageProvider';
+export { PremiumProvider, usePremium } from './PremiumProvider';
 
 interface AppProvidersProps {
   children: React.ReactNode;
   defaultTheme?: ThemeMode;
   defaultLocale?: Locale;
   enableBackendSync?: boolean;
-  isAuthenticated?: boolean;
-  isAuthLoading?: boolean;
 }
 
 export function AppProviders({
@@ -23,11 +26,12 @@ export function AppProviders({
   defaultTheme = 'dark',
   defaultLocale = 'en',
   enableBackendSync = true,
-  isAuthenticated = false,
-  isAuthLoading = true
 }: AppProvidersProps) {
-  // Only enable backend sync when auth is loaded and optionally when authenticated
-  const shouldSyncWithBackend = enableBackendSync && !isAuthLoading;
+  // ✅ FIX: Use actual authentication state from AuthProvider
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Only enable backend sync when user is actually authenticated and auth is loaded
+  const shouldSyncWithBackend = enableBackendSync && !authLoading && isAuthenticated;
 
   return (
     <ThemeProvider
@@ -40,7 +44,9 @@ export function AppProviders({
         enableBackendSync={shouldSyncWithBackend}
         isAuthenticated={isAuthenticated}
       >
-        {children}
+        <PremiumProvider>
+          {children}
+        </PremiumProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

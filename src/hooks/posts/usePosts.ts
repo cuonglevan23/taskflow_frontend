@@ -270,8 +270,9 @@ export function usePostCard(post: PostData) {
   }, [post.id, post.authorName, post.content]);
 
   const handleAuthorClick = useCallback(() => {
-    router.push(`/profile/${post.authorUsername}`);
-  }, [post.authorUsername, router]);
+    // Use authorId instead of authorUsername for proper routing
+    router.push(`/profile/${post.authorId}`);
+  }, [post.authorId, router]);
 
   // Generate descriptive alt text for images
   const getImageAlt = useCallback((): string => {
